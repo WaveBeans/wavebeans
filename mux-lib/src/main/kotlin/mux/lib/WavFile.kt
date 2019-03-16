@@ -1,9 +1,6 @@
 package mux.lib
 
-import java.io.ByteArrayInputStream
-import java.io.DataInputStream
-import java.io.InputStream
-import java.io.OutputStream
+import java.io.*
 
 /** RIFF constant which should always be first 4 bytes of the wav-file. */
 private const val RIFF = 0x52494646
@@ -71,7 +68,7 @@ class WavFileReader(
         source: InputStream
 ) : AudioFileReader<WavLEAudioFileDescriptor>(source) {
 
-    override fun readHeader(source: InputStream): WavLEAudioFileDescriptor {
+    override fun read(): Pair<WavLEAudioFileDescriptor, SampleStream> {
 
         fun readByteArray(target: String, s: InputStream, amount: Int): ByteArray {
             val bb = ByteArray(amount)
@@ -136,8 +133,8 @@ class WavFileReader(
         readConstantInt("fmt ", dis, FMT)
 
         /** sub Chunk 1 */
-        val subChunkSize = readLittleEndianInt("subChunkSize", dis)
-        val subChunk1Stream = startChunkStream("subChunk1", dis, subChunkSize)
+        val subChunk1Size = readLittleEndianInt("subChun1kSize", dis)
+        val subChunk1Stream = startChunkStream("subChunk1", dis, subChunk1Size)
         /*val audioFormat = */readConstantShort("PCM format", subChunk1Stream, PCM_FORMAT)
         val numberOfChannels = readLittleEndianShortAsInt("numberOfChannels", subChunk1Stream)
         val sampleRate = readLittleEndianInt("sampleRate", subChunk1Stream)
@@ -149,19 +146,13 @@ class WavFileReader(
         /*val subChunk2ID =*/ readConstantInt("data", dis, DATA)
         val dataSize = readLittleEndianInt("dataSize", dis)
 
-        return WavLEAudioFileDescriptor(sampleRate, bitDepth, numberOfChannels, dataSize)
-    }
+        val descriptor = WavLEAudioFileDescriptor(sampleRate, bitDepth, numberOfChannels)
 
-    override fun readSamples(descriptor: WavLEAudioFileDescriptor, source: InputStream): SampleStream {
         if (descriptor.numberOfChannels == 1) {
-            if (descriptor.bitDepth == 16) {
-                val bb = ByteArray(descriptor.dataSize)
-                val c = source.read(bb)
-                if (c != descriptor.dataSize) TODO("handle stream reading better")
-                return SampleStream16(bb, descriptor)
-            } else {
-                TODO("make support of other bit depth")
-            }
+            val bb = ByteArray(dataSize)
+            val c = source.read(bb)
+            if (c != dataSize) TODO("handle stream reading better")
+            return Pair(descriptor, SampleByteArrayStream(bb, descriptor))
         } else {
             TODO("implement non-mono wav files")
         }
@@ -171,18 +162,85 @@ class WavFileReader(
 
 class WavFileWriter(
         private val descriptor: AudioFileDescriptor,
-        source: InputStream,
-        destination: OutputStream,
-        samplesCount: Int
-) : AudioFileWriter<AudioFileDescriptor>(source, destination, samplesCount) {
+        destination: OutputStream
+) : AudioFileWriter<AudioFileDescriptor>(destination) {
 
-    override fun writeBody(destination: OutputStream, sampleStream: InputStream) {
-        repeat(dataSize) {
-            destination.write(sampleStream.read())
+    protected fun writeConstantInt(target: String, d: DataOutputStream, v: Int) {
+        try {
+            d.writeInt(v)
+        } catch (e: Exception) {
+            throw AudioFileWriterException("Can't write `$v` for `$target`", e)
         }
     }
 
-    override fun getHeader(): ByteArray {
-        TODO()
+    protected fun writeConstantShort(target: String, d: DataOutputStream, v: Short) {
+        try {
+            d.writeShort(v.toInt())
+        } catch (e: Exception) {
+            throw AudioFileWriterException("Can't write `$v` for `$target`", e)
+        }
+    }
+
+    protected fun writeLittleEndianInt(target: String, d: DataOutputStream, v: Int) {
+        try {
+            val b = (0..3)
+                    .map { ((v shr (it * 8)) and 0xFF).toByte() }
+                    .toByteArray()
+            d.write(b)
+        } catch (e: Exception) {
+            throw AudioFileWriterException("Can't read $target. Expected Int.", e)
+        }
+
+    }
+
+    protected fun writeLittleEndianIntAsShort(target: String, d: DataOutputStream, v: Int) {
+        try {
+            val b = (0..1)
+                    .map { ((v shr (it * 8)) and 0xFF).toByte() }
+                    .toByteArray()
+            d.write(b)
+        } catch (e: Exception) {
+            throw AudioFileWriterException("Can't read $target. Expected Int.", e)
+        }
+
+    }
+
+    override fun write(sampleStream: SampleStream) {
+        /** Create sub chunk 1 content*/
+        val sc1Content = ByteArrayOutputStream()
+        val sc1ContentStream = DataOutputStream(sc1Content)
+        writeConstantShort("PCM audio format", sc1ContentStream, PCM_FORMAT)
+        writeLittleEndianIntAsShort("numberOfChannels", sc1ContentStream, descriptor.numberOfChannels)
+        writeLittleEndianInt("sampleRate", sc1ContentStream, descriptor.sampleRate)
+        writeLittleEndianInt("byteRate", sc1ContentStream, descriptor.sampleRate * descriptor.numberOfChannels * descriptor.bitDepth / 8)
+        writeLittleEndianIntAsShort("byteAlign", sc1ContentStream, descriptor.numberOfChannels * descriptor.bitDepth / 8)
+        writeLittleEndianIntAsShort("bitDepth", sc1ContentStream, descriptor.bitDepth)
+        val sc1 = sc1Content.toByteArray()
+
+        /** Creating sub chunk. */
+        val subChunk1ByteArrayStream = ByteArrayOutputStream()
+        val chunk1Stream = DataOutputStream(subChunk1ByteArrayStream)
+        writeConstantInt("WAVE", chunk1Stream, WAVE)
+        writeConstantInt("fmt", chunk1Stream, FMT)
+        writeLittleEndianInt("subChunk1Size", chunk1Stream, sc1.size)
+        chunk1Stream.write(sc1)
+        val subChunk1 = subChunk1ByteArrayStream.toByteArray()
+
+        val dos = DataOutputStream(destination)
+        /** Chunk */
+        writeConstantInt("RIFF", dos, RIFF)
+        val chunkSize = 4 + (8 + subChunk1.size) + (8 + sampleStream.dataSize())
+        writeLittleEndianInt("chunkSize", dos, chunkSize)
+        /** Sub Chunk 1 */
+        dos.write(subChunk1)
+
+        /** Sub Chunk 2 */
+        writeConstantInt("Data", dos, DATA)
+        writeLittleEndianInt("dataSize", dos, sampleStream.dataSize())
+
+        val inputStream = BufferedInputStream(sampleStream.getInputStream(), 4096)
+        repeat(sampleStream.dataSize()) {
+            destination.write(inputStream.read())
+        }
     }
 }

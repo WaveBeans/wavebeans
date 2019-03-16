@@ -8,7 +8,7 @@ import org.spekframework.spek2.style.specification.describe
 
 object SelectionSpec : Spek({
     describe("A wav audio file 44100Hz 16 bit 1 channel") {
-        val descriptor = WavLEAudioFileDescriptor(44100, 16, 1, 0)
+        val descriptor = WavLEAudioFileDescriptor(44100, 16, 1)
 
         describe("when selecting with input 0..1") {
             val selection = Selection.parse("0..1")

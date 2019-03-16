@@ -10,7 +10,7 @@ class PlayCommand(
         val samples: SampleStream,
         val start: Int?,
         val end: Int?
-) : InScopeCommand("play", "Play the whole file from the beginning or selection if any.", { caller, args ->
+) : InScopeCommand("play", "Play the whole file from the beginning or selection if any.", { _, _ ->
 
     val clip = AudioSystem.getClip()!!
     val data = samples.toByteArray()

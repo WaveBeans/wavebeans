@@ -58,8 +58,14 @@ fun main() {
                         }
                     }
                     is InScopeCommand -> {
-                        val output = command.run(currentScope, args)
-                        if (output != null) println(output)
+                        try {
+                            val output = command.run(currentScope, args)
+                            if (output != null) println(output)
+                        } catch (e: ArgumentMissingException) {
+                            println("${command.name}: ${e.message}")
+                        } catch (e: ArgumentWrongException) {
+                            println("${command.name}: ${e.message}")
+                        }
                     }
                     else -> throw UnsupportedOperationException("$command is unsupported")
                 }

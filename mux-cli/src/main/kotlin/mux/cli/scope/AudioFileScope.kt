@@ -3,8 +3,6 @@ package mux.cli.scope
 import mux.cli.Session
 import mux.cli.command.*
 import mux.lib.SampleStream
-import java.io.File
-import javax.sound.sampled.AudioSystem
 
 
 class AudioFileScope(session: Session, val filename: String) : Scope {
@@ -28,9 +26,17 @@ class AudioFileScope(session: Session, val filename: String) : Scope {
                         "info",
                         "Outputs the file info. Usage: info"
                 ) { _, _ ->
-                    samples.descriptor.toString()
+                    """
+                        Audio format:
+                        ${samples.descriptor}
+                        -------
+                        Data size = ${samples.dataSize()}
+                        Sample count size = ${samples.samplesCount()}
+                        Length = ${samples.length() / 1000.0}s
+                    """.replace(Regex("^\\s+", RegexOption.MULTILINE), "")
                 },
                 PlayCommand(samples, null, null),
+                SaveFileCommand(samples, null, null),
                 NewScopeCommand(
                         "select",
                         """

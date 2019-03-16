@@ -2,6 +2,7 @@ package mux.cli.scope
 
 import mux.cli.command.Command
 import mux.cli.command.PlayCommand
+import mux.cli.command.SaveFileCommand
 
 class AudioFileSelectRangeScope(val parent: AudioFileScope, val selection: Selection) : Scope {
 
@@ -10,7 +11,8 @@ class AudioFileSelectRangeScope(val parent: AudioFileScope, val selection: Selec
     override fun commands(): Set<Command> {
         val descriptor = parent.samples().descriptor
         return setOf(
-                PlayCommand(parent.samples(), selection.start.sampleIndex(descriptor), selection.end.sampleIndex(descriptor))
+                PlayCommand(parent.samples(), selection.start.sampleIndex(descriptor), selection.end.sampleIndex(descriptor)),
+                SaveFileCommand(parent.samples(), selection.start.sampleIndex(descriptor), selection.end.sampleIndex(descriptor))
         )
     }
 
