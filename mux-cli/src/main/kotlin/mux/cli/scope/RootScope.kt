@@ -5,7 +5,7 @@ import mux.cli.command.Command
 import mux.cli.command.NewScopeCommand
 import mux.cli.Session
 
-class RootScope(val session: Session) : Scope {
+class RootScope(private val session: Session) : Scope {
 
     override fun initialOutput(): String? = null
 
@@ -17,8 +17,11 @@ class RootScope(val session: Session) : Scope {
                         "open",
                         "Opens file for playing and editing. Usage: open <path to file>"
                 ) { filename ->
-                    AudioFileScope(session, filename
+                    val f = (filename
                             ?: throw ArgumentMissingException("You need to specify path to the file to edit"))
+                    session.openAudioFile(f)
+                    val samples = session.samples()
+                    AudioFileScope(f, samples)
                 }
         )
     }

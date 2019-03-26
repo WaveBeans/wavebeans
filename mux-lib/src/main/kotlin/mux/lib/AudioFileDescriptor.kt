@@ -19,6 +19,15 @@ abstract class AudioFileDescriptor(
         return "${this.javaClass.simpleName}(sampleRate=$sampleRate, bitDepth=$bitDepth, numberOfChannels=$numberOfChannels, frameSize=$frameSize, frameRate=$frameRate, bigEndian=$bigEndian)"
     }
 
+    abstract fun copy(
+            sampleRate: Int = this.sampleRate,
+            bitDepth: Int = this.bitDepth,
+            numberOfChannels: Int = this.numberOfChannels,
+            frameSize: Int = this.frameSize,
+            frameRate: Int = this.frameRate,
+            bigEndian: Boolean = this.bigEndian
+    ): AudioFileDescriptor
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -60,6 +69,9 @@ class WavLEAudioFileDescriptor(
         sampleRate / numberOfChannels,
         false
 ) {
+    override fun copy(sampleRate: Int, bitDepth: Int, numberOfChannels: Int, frameSize: Int, frameRate: Int, bigEndian: Boolean): AudioFileDescriptor =
+            WavLEAudioFileDescriptor(sampleRate, bitDepth, numberOfChannels)
+
     override fun getWriter(destination: OutputStream): AudioFileWriter<AudioFileDescriptor> {
         return WavFileWriter(this, destination)
     }

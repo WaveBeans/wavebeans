@@ -1,18 +1,10 @@
 package mux.cli.scope
 
-import mux.cli.Session
 import mux.cli.command.*
 import mux.lib.SampleStream
 
 
-class AudioFileScope(session: Session, val filename: String) : Scope {
-
-    private var samples: SampleStream
-
-    init {
-        session.openAudioFile(filename)
-        samples = session.samples()
-    }
+class AudioFileScope(private val filename: String, private val samples: SampleStream) : Scope {
 
     fun samples() = samples
 
@@ -37,6 +29,7 @@ class AudioFileScope(session: Session, val filename: String) : Scope {
                 },
                 PlayCommand(samples, null, null),
                 SaveFileCommand(samples, null, null),
+                DownsampleCommand(samples),
                 NewScopeCommand(
                         "select",
                         """
