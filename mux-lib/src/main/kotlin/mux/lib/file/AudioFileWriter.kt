@@ -1,5 +1,6 @@
-package mux.lib
+package mux.lib.file
 
+import mux.lib.stream.SampleStream
 import java.io.OutputStream
 
 

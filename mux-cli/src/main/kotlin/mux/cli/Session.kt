@@ -1,8 +1,8 @@
 package mux.cli
 
 import mux.lib.AudioFileDescriptor
-import mux.lib.SampleStream
-import mux.lib.WavFileReader
+import mux.lib.stream.SampleStream
+import mux.lib.file.WavFileReader
 import java.io.File
 import java.io.FileInputStream
 

@@ -3,4 +3,3 @@ dependencies {
 
     implementation(group = "org.jline", name = "jline", version = "3.10.0")
 }
-

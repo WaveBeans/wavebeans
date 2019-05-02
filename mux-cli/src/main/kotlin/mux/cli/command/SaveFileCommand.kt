@@ -1,6 +1,6 @@
 package mux.cli.command
 
-import mux.lib.SampleStream
+import mux.lib.stream.SampleStream
 import java.io.File
 import java.io.FileOutputStream
 
@@ -25,7 +25,8 @@ class SaveFileCommand(
                 samples
             }
 
-            val writer = samples.descriptor.getWriter(FileOutputStream(file))
-            writer.write(sampleStream)
+//            val writer = samples.descriptor.getWriter(FileOutputStream(file))
+//            writer.write(sampleStream)
+            TODO()
             "Saved [$start, $end] to `$file`"
         })

@@ -9,11 +9,12 @@ class AudioFileSelectRangeScope(val parent: AudioFileScope, val selection: Selec
     override fun prompt(): String = "${parent.prompt()}[${selection.start}:${selection.end}]"
 
     override fun commands(): Set<Command> {
-        val descriptor = parent.samples().descriptor
-        return setOf(
-                PlayCommand(parent.samples(), selection.start.sampleIndex(descriptor), selection.end.sampleIndex(descriptor)),
-                SaveFileCommand(parent.samples(), selection.start.sampleIndex(descriptor), selection.end.sampleIndex(descriptor))
-        )
+        TODO()
+//        val descriptor = parent.samples().descriptor
+//        return setOf(
+//                PlayCommand(parent.samples(), selection.start.sampleIndex(descriptor), selection.end.sampleIndex(descriptor)),
+//                SaveFileCommand(parent.samples(), selection.start.sampleIndex(descriptor), selection.end.sampleIndex(descriptor))
+//        )
     }
 
     override fun initialOutput(): String? {

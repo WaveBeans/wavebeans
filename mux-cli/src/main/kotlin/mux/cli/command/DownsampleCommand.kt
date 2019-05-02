@@ -1,7 +1,7 @@
 package mux.cli.command
 
 import mux.cli.scope.AudioFileScope
-import mux.lib.SampleStream
+import mux.lib.stream.SampleStream
 
 class DownsampleCommand(
         val samples: SampleStream

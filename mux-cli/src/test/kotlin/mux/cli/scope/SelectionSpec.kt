@@ -2,13 +2,14 @@ package mux.cli.scope
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import mux.lib.BitDepth
 import mux.lib.WavLEAudioFileDescriptor
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 
 object SelectionSpec : Spek({
     describe("A wav audio file 44100Hz 16 bit 1 channel") {
-        val descriptor = WavLEAudioFileDescriptor(44100, 16, 1)
+        val descriptor = WavLEAudioFileDescriptor(44100.0f, BitDepth.BIT_16, 1)
 
         describe("when selecting with input 0..1") {
             val selection = Selection.parse("0..1")

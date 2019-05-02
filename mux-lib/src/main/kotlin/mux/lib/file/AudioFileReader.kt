@@ -1,5 +1,7 @@
-package mux.lib
+package mux.lib.file
 
+import mux.lib.AudioFileDescriptor
+import mux.lib.stream.SampleStream
 import java.io.InputStream
 
 abstract class AudioFileReader<A : AudioFileDescriptor>(

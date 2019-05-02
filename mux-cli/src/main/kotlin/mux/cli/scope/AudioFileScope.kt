@@ -1,14 +1,14 @@
 package mux.cli.scope
 
 import mux.cli.command.*
-import mux.lib.SampleStream
+import mux.lib.stream.SampleStream
 
 
 class AudioFileScope(private val filename: String, private val samples: SampleStream) : Scope {
 
     fun samples() = samples
 
-    override fun initialOutput(): String? = samples.descriptor.toString()
+    override fun initialOutput(): String? = ""//samples.descriptor.toString()
 
     override fun prompt(): String = "`$filename`"
 
@@ -18,14 +18,14 @@ class AudioFileScope(private val filename: String, private val samples: SampleSt
                         "info",
                         "Outputs the file info. Usage: info"
                 ) { _, _ ->
-                    """
-                        Audio format:
-                        ${samples.descriptor}
-                        -------
-                        Data size = ${samples.dataSize()}
-                        Sample count size = ${samples.samplesCount()}
-                        Length = ${samples.length() / 1000.0}s
-                    """.replace(Regex("^\\s+", RegexOption.MULTILINE), "")
+                    ""
+//                    """
+//                        Audio format:
+//                        ${samples.descriptor}
+//                        -------
+//                        Sample count size = ${samples.samplesCount()}
+//                        Length = ${samples.length() / 1000.0}s
+//                    """.replace(Regex("^\\s+", RegexOption.MULTILINE), "")
                 },
                 PlayCommand(samples, null, null),
                 SaveFileCommand(samples, null, null),
