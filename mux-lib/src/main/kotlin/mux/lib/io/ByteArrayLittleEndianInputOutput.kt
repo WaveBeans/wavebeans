@@ -7,6 +7,13 @@ import java.io.InputStream
 
 class ByteArrayLittleEndianAudioInput(val bitDepth: BitDepth, val buffer: ByteArray) : AudioInput {
 
+    override fun info(): Map<String, String> {
+        return mapOf(
+                "Bit depth" to "${bitDepth.bits} bit",
+                "Size" to "${buffer.size} bytes"
+        )
+    }
+
     override fun size(): Int = buffer.size / (bitDepth.bytesPerSample)
 
     override fun subInput(skip: Int, length: Int): AudioInput =

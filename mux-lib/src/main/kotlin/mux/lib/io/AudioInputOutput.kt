@@ -1,5 +1,6 @@
 package mux.lib.io
 
+import mux.lib.file.Informable
 import mux.lib.stream.Sample
 import java.io.InputStream
 
@@ -12,7 +13,7 @@ interface AudioOutput {
 
 }
 
-interface AudioInput {
+interface AudioInput : Informable {
     /** Amount of samples available */
     fun size(): Int
 

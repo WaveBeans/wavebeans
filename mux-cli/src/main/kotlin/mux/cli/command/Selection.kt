@@ -1,4 +1,4 @@
-package mux.cli.scope
+package mux.cli.command
 
 import mux.lib.AudioFileDescriptor
 
@@ -6,7 +6,7 @@ data class Selection(val start: SelectionValue, val end: SelectionValue) {
     companion object {
         fun parse(input: String): Selection {
             val (start, end) = input.trim()
-                    .split("..", limit = 2)
+                    .split("", limit = 2)
                     .map { it.trim() }
                     .map { v ->
                         when {

@@ -1,8 +1,8 @@
 package mux.cli.scope
 
 import mux.cli.command.Command
-import mux.cli.command.PlayCommand
 import mux.cli.command.SaveFileCommand
+import mux.cli.command.Selection
 
 class AudioFileSelectRangeScope(val parent: AudioFileScope, val selection: Selection) : Scope {
 

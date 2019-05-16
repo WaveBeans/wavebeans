@@ -1,7 +1,8 @@
-package mux.cli.scope
+package mux.cli.command
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import mux.cli.command.Selection
 import mux.lib.BitDepth
 import mux.lib.WavLEAudioFileDescriptor
 import org.spekframework.spek2.Spek

@@ -17,8 +17,20 @@ class SineGeneratedInput(
         /** Phase of the sinusoid in radians. */
         val phase: Double = 0.0
 ) : AudioInput {
-    override fun size(): Int =
-        (time / sampleRate).toInt()
+
+    private val samplesCount = (time * sampleRate).toInt()
+
+    override fun info(): Map<String, String> {
+        return mapOf(
+                "Sinusoid amplitude" to "$amplitude",
+                "Sinusoid phase" to "$phase",
+                "Sinusoid frequency" to "${frequency}Hz"
+        )
+    }
+
+    override fun size(): Int {
+        return samplesCount
+    }
 
     override fun subInput(skip: Int, length: Int): AudioInput {
         val newLength = length / sampleRate

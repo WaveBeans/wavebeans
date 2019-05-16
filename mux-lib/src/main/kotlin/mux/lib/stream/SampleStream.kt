@@ -1,8 +1,6 @@
 package mux.lib.stream
 
-import mux.lib.io.AudioInput
-import java.lang.Math.max
-import java.lang.Math.min
+import mux.lib.file.Informable
 
 /** Internal representation of sample. */
 typealias Sample = Double
@@ -36,15 +34,14 @@ inline fun Sample.asByte(): Byte = (this * Byte.MAX_VALUE).toByte()
 
 abstract class SampleStream(
         val sampleRate: Float
-) {
+) : Informable {
 
     abstract fun rangeProjection(sampleStartIdx: Int, sampleEndIdx: Int): SampleStream
-
 
     /** number of samples in the stream. */
     abstract fun samplesCount(): Int
 
-    /** samplesCount of the stream in milliseconds. */
+    /** length of the stream in milliseconds. */
     fun length(): Int = (samplesCount() / (sampleRate / 1000.0f)).toInt()
 
     fun downSample(ratio: Int): SampleStream = RatioDownSampledStream(this, ratio)
@@ -52,53 +49,4 @@ abstract class SampleStream(
     abstract fun asSequence(): Sequence<Sample>
 }
 
-class RatioDownSampledStream(
-        private val sourceStream: SampleStream,
-        private val ratio: Int,
-        sourceStartIdx: Int? = null,
-        sourceEndIdx: Int? = null
 
-) : SampleStream(sourceStream.sampleRate / ratio) {
-
-    init {
-        if (sourceStartIdx != null && sourceEndIdx ?: Int.MAX_VALUE <= sourceStartIdx)
-            throw IllegalArgumentException("sourceStartIdx[$sourceStartIdx] should be less then sourceEndIdx[$sourceEndIdx]")
-    }
-
-    private val stream = if (sourceStartIdx != null) {
-        sourceStream.rangeProjection(sourceStartIdx, sourceEndIdx ?: sourceStream.samplesCount())
-    } else {
-        sourceStream
-    }
-
-    override fun samplesCount(): Int = stream.samplesCount() / ratio
-
-    override fun asSequence(): Sequence<Sample> {
-        return stream.asSequence()
-                .filterIndexed { index, _ -> index % ratio == 0 }
-
-    }
-
-
-    override fun rangeProjection(sampleStartIdx: Int, sampleEndIdx: Int): SampleStream {
-        val sourceStartIdx = sampleStartIdx * ratio
-        val sourceEndIdx = sampleEndIdx * ratio
-
-        return RatioDownSampledStream(sourceStream, ratio, sourceStartIdx, sourceEndIdx)
-    }
-}
-
-
-class AudioSampleStream(private val input: AudioInput, sampleRate: Float) : SampleStream(sampleRate) {
-
-    override fun samplesCount(): Int = input.size()
-
-    override fun asSequence(): Sequence<Sample> = input.asSequence()
-
-    override fun rangeProjection(sampleStartIdx: Int, sampleEndIdx: Int): SampleStream {
-        val s = max(sampleStartIdx, 0)
-        val e = min(sampleEndIdx, input.size())
-
-        return AudioSampleStream(input.subInput(s, e - s), sampleRate)
-    }
-}

@@ -8,7 +8,7 @@ import mux.lib.stream.sampleOf
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 
-object ByeArrayLittleEndianInputOutputSpec : Spek({
+object ByteArrayLittleEndianInputOutputSpec : Spek({
     val sampleRate = 50.0f
     val buffer = ByteArray(100) { (it and 0xFF).toByte() }
     describe("Wav LE input, sample rate = 50.0Hz, bit depth = 8, mono") {
