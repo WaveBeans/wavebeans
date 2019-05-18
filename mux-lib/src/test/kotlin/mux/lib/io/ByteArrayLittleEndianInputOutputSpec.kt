@@ -4,9 +4,11 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import mux.lib.BitDepth
 import mux.lib.stream.AudioSampleStream
+import mux.lib.stream.Sample
 import mux.lib.stream.sampleOf
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
+import java.lang.UnsupportedOperationException
 
 object ByteArrayLittleEndianInputOutputSpec : Spek({
     val sampleRate = 50.0f
@@ -64,6 +66,69 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
             it("should return byte array as input stream the same as initial buffer") {
                 assertThat(output.getInputStream().readBytes()).isEqualTo(buffer)
             }
+        }
+    }
+
+    describe("Output of ByteArray LE, sequence of -100:100, encoding to 8 bit ") {
+        val signal = (-100 until 100).toList()
+        val output = ByteArrayLittleEndianAudioOutput(BitDepth.BIT_8, AudioSampleStream(
+                object : AudioInput {
+                    override fun size(): Int = signal.size
+
+                    override fun subInput(skip: Int, length: Int): AudioInput = throw UnsupportedOperationException()
+
+                    override fun asSequence(): Sequence<Sample> = signal.asSequence().map { sampleOf(it.toByte()) }
+
+                    override fun info(): Map<String, String> = throw UnsupportedOperationException()
+
+                },
+                44100.0f
+        ))
+
+        it("output should be equal to 16 byte array 0-0x0F") {
+            assertThat(output.toByteArray().map { it.toInt() }).isEqualTo(signal)
+        }
+    }
+
+    describe("Output of ByteArray LE, sequence of -100:100, encoding to 16 bit ") {
+        val signal = (-100 until 100).toList()
+        val output = ByteArrayLittleEndianAudioOutput(BitDepth.BIT_16, AudioSampleStream(
+                object : AudioInput {
+                    override fun size(): Int = signal.size
+
+                    override fun subInput(skip: Int, length: Int): AudioInput = throw UnsupportedOperationException()
+
+                    override fun asSequence(): Sequence<Sample> = signal.asSequence().map { sampleOf(it.toShort()) }
+
+                    override fun info(): Map<String, String> = throw UnsupportedOperationException()
+
+                },
+                44100.0f
+        ))
+
+        it("output should be equal to 16 byte array 0-0x0F") {
+            assertThat(output.toByteArray().map { it.toInt() and 0xFF }).isEqualTo(signal.map { listOf(it and 0xFF, it and 0xFF00 shr 8) }.flatten())
+        }
+    }
+
+    describe("Output of ByteArray LE, sequence of -100:100, encoding to 24 bit ") {
+        val signal = (-100 until 100).toList()
+        val output = ByteArrayLittleEndianAudioOutput(BitDepth.BIT_24, AudioSampleStream(
+                object : AudioInput {
+                    override fun size(): Int = signal.size
+
+                    override fun subInput(skip: Int, length: Int): AudioInput = throw UnsupportedOperationException()
+
+                    override fun asSequence(): Sequence<Sample> = signal.asSequence().map { sampleOf(it) }
+
+                    override fun info(): Map<String, String> = throw UnsupportedOperationException()
+
+                },
+                44100.0f
+        ))
+
+        it("output should be equal to 16 byte array 0-0x0F") {
+            assertThat(output.toByteArray().map { it.toInt() and 0xFF }).isEqualTo(signal.map { listOf(it and 0xFF, it and 0xFF00 shr 8, it and 0xFF0000 shr 16) }.flatten())
         }
     }
 

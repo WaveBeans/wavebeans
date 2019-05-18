@@ -64,7 +64,7 @@ class ByteArrayLittleEndianAudioOutput(val bitDepth: BitDepth, val sampleStream:
             private var bufIndex = Int.MAX_VALUE
 
             override fun read(): Int {
-                return if (bufIndex > bufSize && iterator.hasNext()) {
+                return if (bufIndex >= bufSize && iterator.hasNext()) {
                     bufSize = 0
                     // buffer is empty and something left to read
                     var samplesRead = 0
@@ -89,14 +89,14 @@ class ByteArrayLittleEndianAudioOutput(val bitDepth: BitDepth, val sampleStream:
                     }
                     bufIndex = 1
 
-                    buf[0].toInt()
+                    buf[0].toInt() and 0xFF
 
                 } else if (bufIndex < bufSize) {
                     // there is something in buffer -- return it
                     val r = buf[bufIndex]
                     bufIndex++
 
-                    r.toInt()
+                    r.toInt() and 0xFF
 
                 } else {
                     // nothing left to read, end of stream

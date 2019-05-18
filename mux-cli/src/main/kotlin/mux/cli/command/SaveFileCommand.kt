@@ -1,5 +1,8 @@
 package mux.cli.command
 
+import mux.lib.BitDepth
+import mux.lib.WavLEAudioFileDescriptor
+import mux.lib.file.WavFileWriter
 import mux.lib.stream.SampleStream
 import java.io.File
 import java.io.FileOutputStream
@@ -9,7 +12,7 @@ class SaveFileCommand(
         val start: Int?,
         val end: Int?
 ) : InScopeCommand("save", """
-            Saves samples into a file.
+            Saves samples into a wav file.
             Saves selection or the whole file depening on where it is invoked. The format of file is defined in current descriptor.
             Usage: save <path to file>
             """
@@ -25,8 +28,11 @@ class SaveFileCommand(
                 samples
             }
 
-//            val writer = samples.descriptor.getWriter(FileOutputStream(file))
-//            writer.write(sampleStream)
-            TODO()
+            val writer = WavFileWriter(WavLEAudioFileDescriptor(
+                    sampleStream.sampleRate,
+                    BitDepth.BIT_16,
+                    1
+            ), FileOutputStream(file))
+            writer.write(sampleStream)
             "Saved [$start, $end] to `$file`"
         })
