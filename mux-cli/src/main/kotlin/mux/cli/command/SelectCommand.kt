@@ -1,9 +1,9 @@
 package mux.cli.command
 
-import mux.cli.scope.AudioFileScope
+import mux.cli.scope.AudioStreamScope
 import mux.cli.scope.AudioFileSelectRangeScope
 
-class SelectCommand(parentScope: AudioFileScope) : NewScopeCommand(
+class SelectCommand(parentScope: AudioStreamScope) : NewScopeCommand(
         "select",
         """
                             Selects the range of the file.

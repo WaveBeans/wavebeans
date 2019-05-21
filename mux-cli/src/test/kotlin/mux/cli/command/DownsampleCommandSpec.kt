@@ -1,13 +1,12 @@
 package mux.cli.command
 
 import assertk.assertThat
-import assertk.assertions.isCloseTo
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
-import mux.cli.scope.AudioFileScope
+import mux.cli.Session
+import mux.cli.scope.AudioStreamScope
 import mux.lib.BitDepth
 import mux.lib.io.ByteArrayLittleEndianAudioInput
-import mux.lib.io.SineGeneratedInput
 import mux.lib.stream.AudioSampleStream
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
@@ -22,14 +21,14 @@ object DownsampleCommandSpec : Spek({
                 ),
                 50.0f
         )
-        val gen = DownsampleCommand(sampleStream)
+        val gen = DownsampleCommand(Session(), sampleStream)
 
         describe("rate 2") {
             val scope = gen.newScope("2")
 
-            it("should be AudioFileScope with 50 samples") {
-                assertThat(scope).isInstanceOf(AudioFileScope::class)
-                val audioFileScope = scope as AudioFileScope
+            it("should be AudioStreamScope with 50 samples") {
+                assertThat(scope).isInstanceOf(AudioStreamScope::class)
+                val audioFileScope = scope as AudioStreamScope
                 assertThat(audioFileScope.samples().samplesCount()).isEqualTo(50)
                 assertThat(audioFileScope.samples().sampleRate).isEqualTo(25.0f)
             }

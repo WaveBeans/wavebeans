@@ -1,6 +1,9 @@
 package mux.cli.command
 
+import mux.cli.Session
+import mux.cli.scope.AudioStreamScope
 import mux.cli.scope.Scope
+import mux.lib.stream.SampleStream
 
 interface Command {
     fun name(): String
@@ -8,7 +11,7 @@ interface Command {
     fun description(): String
 }
 
-open class NewScopeCommand(
+abstract class NewScopeCommand(
         val name: String,
         val description: String,
         val scopeCreator: (String?) -> Scope
@@ -21,7 +24,7 @@ open class NewScopeCommand(
     fun newScope(args: String?) = scopeCreator(args)
 }
 
-open class InScopeCommand(
+abstract class InScopeCommand(
         val name: String,
         val description: String,
         val scopeModifier: (Scope, String?) -> String?
@@ -33,6 +36,22 @@ open class InScopeCommand(
 
     fun run(caller: Scope, args: String?): String? = scopeModifier(caller, args)
 }
+
+abstract class AbstractNewSamplesScopeCommand(
+        val session: Session,
+        name: String,
+        description: String,
+        val samplesCreator: (String?) -> Pair<String, SampleStream>
+
+) : NewScopeCommand(
+        name,
+        description,
+        { input ->
+            val (streamName, sampleStream) = samplesCreator(input)
+            session.registerSampleStream(streamName, sampleStream)
+            AudioStreamScope(session, streamName, sampleStream)
+        }
+)
 
 abstract class CommandException(message: String) : Exception(message)
 

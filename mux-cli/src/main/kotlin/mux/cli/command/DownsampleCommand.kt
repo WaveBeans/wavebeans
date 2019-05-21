@@ -1,9 +1,11 @@
 package mux.cli.command
 
-import mux.cli.scope.AudioFileScope
+import mux.cli.Session
+import mux.cli.scope.AudioStreamScope
 import mux.lib.stream.SampleStream
 
 class DownsampleCommand(
+        val session: Session,
         val samples: SampleStream
 ) : NewScopeCommand("downSample", """
             Down sampling the current file.
@@ -17,5 +19,5 @@ class DownsampleCommand(
                     ?: throw ArgumentWrongException("You need to define ratio in integer format, i.e. 2")
 
 
-            AudioFileScope("downsampled", samples.downSample(ratio))
+            AudioStreamScope(session, "downsampled", samples.downSample(ratio))
         })

@@ -1,6 +1,6 @@
 package mux.cli.command
 
-import mux.cli.scope.AudioFileScope
+import mux.cli.Session
 import mux.lib.stream.AudioSampleStream
 import mux.lib.stream.SampleStream
 import mux.lib.io.SineGeneratedInput
@@ -19,7 +19,8 @@ private val generatorDesc = Generator.values()
         }
 
 
-class GenCommand : NewScopeCommand(
+class GenCommand(session: Session) : AbstractNewSamplesScopeCommand(
+        session,
         "gen",
         """
             Generates sines of specified frequency.
@@ -52,7 +53,7 @@ class GenCommand : NewScopeCommand(
                     ?: throw ArgumentWrongException("Length should be float number")
 
             val stream = type.streamBuilder().build(length, sampleRate, bitDepth, parameters)
-            AudioFileScope(type.type, stream)
+            Pair(type.type, stream)
         })
 
 
@@ -96,7 +97,7 @@ class SineGeneratedStreamBuilder : GeneratedStreamBuilder {
                 ?: throw ArgumentMissingException("amplitude should be specified")
         return AudioSampleStream(
                 SineGeneratedInput(sampleRate, frequency, amplitude, length),
-            sampleRate
+                sampleRate
         )
     }
 }

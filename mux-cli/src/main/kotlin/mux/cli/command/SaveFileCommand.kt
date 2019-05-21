@@ -1,5 +1,6 @@
 package mux.cli.command
 
+import mux.cli.Session
 import mux.lib.BitDepth
 import mux.lib.WavLEAudioFileDescriptor
 import mux.lib.file.WavFileWriter
@@ -8,7 +9,8 @@ import java.io.File
 import java.io.FileOutputStream
 
 class SaveFileCommand(
-        val samples: SampleStream,
+        val session: Session,
+        val streamName: String?,
         val start: Int?,
         val end: Int?
 ) : InScopeCommand("save", """
@@ -21,6 +23,8 @@ class SaveFileCommand(
 
             val file = File(args ?: throw ArgumentMissingException("You should specify path to file"))
             file.createNewFile()
+
+            val samples = session.streamByName(streamName) ?: TODO("merge all streams")
 
             val sampleStream = if (start != null || end != null) {
                 samples.rangeProjection(start ?: 0, end ?: samples.samplesCount() - 1)

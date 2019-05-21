@@ -2,7 +2,8 @@ package mux.cli.command
 
 import assertk.assertThat
 import assertk.assertions.*
-import mux.cli.scope.AudioFileScope
+import mux.cli.Session
+import mux.cli.scope.AudioStreamScope
 import mux.lib.BitDepth
 import mux.lib.io.ByteArrayLittleEndianAudioInput
 import mux.lib.io.SineGeneratedInput
@@ -20,7 +21,7 @@ object InfoCommandSpec : Spek({
                 ),
                 50.0f
         )
-        val scope = AudioFileScope("test-file.wav", sampleStream)
+        val scope = AudioStreamScope(Session(), "test-file.wav", sampleStream)
         val gen = InfoCommand(sampleStream)
 
         describe("During run generates info output") {
@@ -43,7 +44,7 @@ object InfoCommandSpec : Spek({
                 ),
                 50.0f
         )
-        val scope = AudioFileScope("test-file.wav", sampleStream)
+        val scope = AudioStreamScope(Session(), "test-file.wav", sampleStream)
         val gen = InfoCommand(sampleStream.downSample(2))
 
         describe("During run generates info output") {
@@ -70,7 +71,7 @@ object InfoCommandSpec : Spek({
                 ),
                 50.0f
         )
-        val scope = AudioFileScope("test-file.wav", sampleStream)
+        val scope = AudioStreamScope(Session(),"test-file.wav", sampleStream)
         val gen = InfoCommand(sampleStream)
 
         describe("During run generates info output") {

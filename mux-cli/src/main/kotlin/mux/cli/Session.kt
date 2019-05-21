@@ -1,37 +1,17 @@
 package mux.cli
 
-import mux.lib.AudioFileDescriptor
+import mux.cli.command.ArgumentWrongException
 import mux.lib.stream.SampleStream
-import mux.lib.file.WavFileReader
-import java.io.File
-import java.io.FileInputStream
 
 class Session {
 
-    private var hasAudioFile = false
+    private val scopes = HashMap<String, SampleStream>()
 
-    private lateinit var descriptor: AudioFileDescriptor
-
-    private lateinit var samples: SampleStream
-
-    fun openAudioFile(filepath: String) {
-        val f = File(filepath)
-        if (!f.exists()) {
-            throw IllegalStateException("`$filepath` is not found.")
-        }
-        val (d, ss) = WavFileReader(FileInputStream(f)).read()
-        samples = ss
-        descriptor = d
-        hasAudioFile = true
+    fun registerSampleStream(streamName: String, samples: SampleStream) {
+        if (scopes.containsKey(streamName)) throw ArgumentWrongException("$streamName is already exists. Drop it first")
+        scopes[streamName] = samples
     }
 
-    fun samples(): SampleStream {
-        if (!hasAudioFile) throw IllegalStateException("You should open file first")
-        return samples
-    }
+    fun streamByName(streamName: String?): SampleStream? = scopes[streamName]
 
-    fun descriptor(): AudioFileDescriptor {
-        if (!hasAudioFile) throw IllegalStateException("You should open file first")
-        return descriptor
-    }
 }

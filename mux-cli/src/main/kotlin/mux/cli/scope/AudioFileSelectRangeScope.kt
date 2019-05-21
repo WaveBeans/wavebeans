@@ -1,10 +1,9 @@
 package mux.cli.scope
 
 import mux.cli.command.Command
-import mux.cli.command.SaveFileCommand
 import mux.cli.command.Selection
 
-class AudioFileSelectRangeScope(val parent: AudioFileScope, val selection: Selection) : Scope {
+class AudioFileSelectRangeScope(val parent: AudioStreamScope, val selection: Selection) : Scope {
 
     override fun prompt(): String = "${parent.prompt()}[${selection.start}:${selection.end}]"
 

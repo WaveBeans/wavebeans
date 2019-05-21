@@ -15,8 +15,6 @@ class PlayCommand(
         val end: Int?
 ) : InScopeCommand("play", "Play the whole file from the beginning or selection if any.", { _, _ ->
 
-    TODO()
-
     val outputBitDepth = BitDepth.BIT_16
 
     val descriptor = WavLEAudioFileDescriptor(samples.sampleRate, outputBitDepth, 1)
@@ -25,10 +23,6 @@ class PlayCommand(
     val data = output.toByteArray()
     val s = start?.let { it * outputBitDepth.bytesPerSample } ?: 0
     val e = end?.let { it * outputBitDepth.bytesPerSample } ?: data.size
-    println(samples)
-    println(s)
-    println(e)
-    println(String(data))
 
     val clip = AudioSystem.getClip()!!
     clip.open(
