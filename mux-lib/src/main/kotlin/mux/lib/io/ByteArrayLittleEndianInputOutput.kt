@@ -7,10 +7,11 @@ import java.io.InputStream
 
 class ByteArrayLittleEndianAudioInput(val bitDepth: BitDepth, val buffer: ByteArray) : AudioInput {
 
-    override fun info(): Map<String, String> {
+    override fun info(namespace: String?): Map<String, String> {
+        val prefix = namespace?.let { "[$it] " } ?: ""
         return mapOf(
-                "Bit depth" to "${bitDepth.bits} bit",
-                "Size" to "${buffer.size} bytes"
+                "${prefix}Bit depth" to "${bitDepth.bits} bit",
+                "${prefix}Size" to "${buffer.size} bytes"
         )
     }
 

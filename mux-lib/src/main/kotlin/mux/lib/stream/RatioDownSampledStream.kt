@@ -8,11 +8,12 @@ class RatioDownSampledStream(
 
 ) : SampleStream(sourceStream.sampleRate / ratio) {
 
-    override fun info(): Map<String, String> {
-        return sourceStream.info().map { "[Source] " + it.key to it.value }.toMap() + mapOf(
-                "Sample rate" to "${sampleRate}Hz",
-                "Length" to "${length() / 1000.0f}s",
-                "Downsampling factor" to "$ratio"
+    override fun info(namespace: String?): Map<String, String> {
+        val prefix = namespace?.let { "[$it] " } ?: ""
+        return sourceStream.info("${prefix}Source") + mapOf(
+                "${prefix}Sample rate" to "${sampleRate}Hz",
+                "${prefix}Length" to "${length() / 1000.0f}s",
+                "${prefix}Downsampling factor" to "$ratio"
         )
     }
 

@@ -2,12 +2,16 @@ package mux.lib.stream
 
 import mux.lib.io.AudioInput
 
-class AudioSampleStream(val input: AudioInput, sampleRate: Float) : SampleStream(sampleRate) {
-    override fun info(): Map<String, String> {
+class AudioSampleStream(
+        val input: AudioInput,
+        sampleRate: Float
+) : SampleStream(sampleRate) {
+    override fun info(namespace: String?): Map<String, String> {
+        val prefix = namespace?.let { "[$it] " } ?: ""
         return mapOf(
-                "Sample rate" to "${sampleRate}Hz",
-                "Length" to "${length() / 1000.0f}s"
-        ) + input.info()
+                "${prefix}Sample rate" to "${sampleRate}Hz",
+                "${prefix}Length" to "${length() / 1000.0f}s"
+        ) + input.info(namespace)
     }
 
     override fun samplesCount(): Int = input.size()

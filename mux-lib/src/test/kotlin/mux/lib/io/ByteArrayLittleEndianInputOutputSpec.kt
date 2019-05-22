@@ -79,7 +79,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
 
                     override fun asSequence(): Sequence<Sample> = signal.asSequence().map { sampleOf(it.toByte()) }
 
-                    override fun info(): Map<String, String> = throw UnsupportedOperationException()
+                    override fun info(namespace: String?): Map<String, String> = throw UnsupportedOperationException()
 
                 },
                 44100.0f
@@ -100,7 +100,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
 
                     override fun asSequence(): Sequence<Sample> = signal.asSequence().map { sampleOf(it.toShort()) }
 
-                    override fun info(): Map<String, String> = throw UnsupportedOperationException()
+                    override fun info(namespace: String?): Map<String, String> = throw UnsupportedOperationException()
 
                 },
                 44100.0f
@@ -121,7 +121,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
 
                     override fun asSequence(): Sequence<Sample> = signal.asSequence().map { sampleOf(it) }
 
-                    override fun info(): Map<String, String> = throw UnsupportedOperationException()
+                    override fun info(namespace: String?): Map<String, String> = throw UnsupportedOperationException()
 
                 },
                 44100.0f

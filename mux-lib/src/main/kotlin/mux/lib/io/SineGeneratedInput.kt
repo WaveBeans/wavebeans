@@ -20,11 +20,12 @@ class SineGeneratedInput(
 
     private val samplesCount = (time * sampleRate).toInt()
 
-    override fun info(): Map<String, String> {
+    override fun info(namespace: String?): Map<String, String> {
+        val prefix = namespace?.let { "[$it] " } ?: ""
         return mapOf(
-                "Sinusoid amplitude" to "$amplitude",
-                "Sinusoid phase" to "$phase",
-                "Sinusoid frequency" to "${frequency}Hz"
+                "${prefix}Sinusoid amplitude" to "$amplitude",
+                "${prefix}Sinusoid phase" to "$phase",
+                "${prefix}Sinusoid frequency" to "${frequency}Hz"
         )
     }
 

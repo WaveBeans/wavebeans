@@ -56,7 +56,7 @@ object InfoCommandSpec : Spek({
             it("should output length in sec") { assertThat(info!!).contains("Length: 2.0s") }
             it("should output downsampling factor") { assertThat(info!!).contains("Downsampling factor: 2") }
             it("should output source sample rate") { assertThat(info!!).contains("[Source] Sample rate: 50.0Hz") }
-            it("should output source data size") { assertThat(info!!).contains("[Source] Size: 100 bytes") }
+            it("should output source data size") { assertThat(info!!).contains("Size: 100 bytes") }
             it("should output source bit depth") { assertThat(info!!).contains("[Source] Bit depth: 8 bit") }
         }
     }
