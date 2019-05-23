@@ -24,7 +24,7 @@ class SaveFileCommand(
             val file = File(args ?: throw ArgumentMissingException("You should specify path to file"))
             file.createNewFile()
 
-            val samples = session.streamByName(streamName) ?: TODO("merge all streams")
+            val samples = streamName?.let { session.streamByName(it) } ?: TODO("merge all streams")
 
             val sampleStream = if (start != null || end != null) {
                 samples.rangeProjection(start ?: 0, end ?: samples.samplesCount() - 1)

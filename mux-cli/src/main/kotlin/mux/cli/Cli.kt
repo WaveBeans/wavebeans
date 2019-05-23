@@ -31,7 +31,8 @@ class Cli(private val lineReader: LineReader, outputStream: OutputStream) : Runn
     override fun run() {
         val scopes = ArrayList<Scope>()
         scopes += RootScope(Session())
-        while (true) {
+
+        while (scopes.isNotEmpty()) {
             val currentScope = scopes.last()
             val readLine = lineReader.readLine(currentScope.prompt() + "> ") ?: ""
             val input = readLine.trim()
@@ -48,7 +49,7 @@ class Cli(private val lineReader: LineReader, outputStream: OutputStream) : Runn
                 }
                 cmdName.toLowerCase() == "exit" -> {
                     out.println("Bye!")
-                    return
+                    scopes.clear()
                 }
                 cmdName.toLowerCase() == "fin" -> scopes.removeAt(scopes.size - 1)
                 else -> {

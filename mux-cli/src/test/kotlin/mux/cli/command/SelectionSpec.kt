@@ -2,23 +2,21 @@ package mux.cli.command
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
-import mux.lib.BitDepth
-import mux.lib.WavLEAudioFileDescriptor
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 
 object SelectionSpec : Spek({
     describe("A wav audio file 44100Hz 16 bit 1 channel") {
-        val descriptor = WavLEAudioFileDescriptor(44100.0f, BitDepth.BIT_16, 1)
+        val sampleRate = 44100.0f
 
         describe("when selecting with input 0..1") {
             val selection = Selection.parse("0..1")
 
             it("should return 0 as starting sample") {
-                assertThat(selection.start.sampleIndex(descriptor)).isEqualTo(0)
+                assertThat(selection.start.sampleIndex(sampleRate)).isEqualTo(0)
             }
             it("should return 1 as end sample") {
-                assertThat(selection.end.sampleIndex(descriptor)).isEqualTo(1)
+                assertThat(selection.end.sampleIndex(sampleRate)).isEqualTo(1)
             }
         }
 
@@ -26,10 +24,10 @@ object SelectionSpec : Spek({
             val selection = Selection.parse("10..100")
 
             it("should return 10 as starting sample") {
-                assertThat(selection.start.sampleIndex(descriptor)).isEqualTo(10)
+                assertThat(selection.start.sampleIndex(sampleRate)).isEqualTo(10)
             }
             it("should return 100 as end sample") {
-                assertThat(selection.end.sampleIndex(descriptor)).isEqualTo(100)
+                assertThat(selection.end.sampleIndex(sampleRate)).isEqualTo(100)
             }
         }
 
@@ -37,10 +35,10 @@ object SelectionSpec : Spek({
             val selection = Selection.parse("1s..2s")
 
             it("should return valid starting sample") {
-                assertThat(selection.start.sampleIndex(descriptor)).isEqualTo(44100)
+                assertThat(selection.start.sampleIndex(sampleRate)).isEqualTo(44100)
             }
             it("should return valid end sample") {
-                assertThat(selection.end.sampleIndex(descriptor)).isEqualTo(44100 * 2)
+                assertThat(selection.end.sampleIndex(sampleRate)).isEqualTo(44100 * 2)
             }
         }
 
@@ -48,10 +46,10 @@ object SelectionSpec : Spek({
             val selection = Selection.parse("1.000s..2.000s")
 
             it("should return valid starting sample") {
-                assertThat(selection.start.sampleIndex(descriptor)).isEqualTo(44100)
+                assertThat(selection.start.sampleIndex(sampleRate)).isEqualTo(44100)
             }
             it("should return valid end sample") {
-                assertThat(selection.end.sampleIndex(descriptor)).isEqualTo(44100 * 2)
+                assertThat(selection.end.sampleIndex(sampleRate)).isEqualTo(44100 * 2)
             }
         }
 
@@ -59,10 +57,10 @@ object SelectionSpec : Spek({
             val selection = Selection.parse("0.001s..1.001s")
 
             it("should return valid starting sample") {
-                assertThat(selection.start.sampleIndex(descriptor)).isEqualTo(44)
+                assertThat(selection.start.sampleIndex(sampleRate)).isEqualTo(44)
             }
             it("should return valid end sample") {
-                assertThat(selection.end.sampleIndex(descriptor)).isEqualTo(44100 + 44)
+                assertThat(selection.end.sampleIndex(sampleRate)).isEqualTo(44100 + 44)
             }
         }
 
@@ -70,10 +68,10 @@ object SelectionSpec : Spek({
             val selection = Selection.parse("1ms..1001ms")
 
             it("should return valid starting sample") {
-                assertThat(selection.start.sampleIndex(descriptor)).isEqualTo(44)
+                assertThat(selection.start.sampleIndex(sampleRate)).isEqualTo(44)
             }
             it("should return valid end sample") {
-                assertThat(selection.end.sampleIndex(descriptor)).isEqualTo(44100 + 44)
+                assertThat(selection.end.sampleIndex(sampleRate)).isEqualTo(44100 + 44)
             }
         }
     }

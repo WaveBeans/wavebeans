@@ -12,6 +12,6 @@ class Session {
         scopes[streamName] = samples
     }
 
-    fun streamByName(streamName: String?): SampleStream? = scopes[streamName]
+    fun streamByName(streamName: String): SampleStream? = scopes[streamName]
 
 }

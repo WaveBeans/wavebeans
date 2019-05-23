@@ -39,12 +39,12 @@ data class Selection(val start: SelectionValue, val end: SelectionValue) {
 }
 
 interface SelectionValue {
-    fun sampleIndex(descriptor: AudioFileDescriptor): Int
+    fun sampleIndex(sampleRate: Float): Int
 }
 
 /** Selection base on sample index. */
 data class SampleSelectionValue(val value: Int) : SelectionValue {
-    override fun sampleIndex(descriptor: AudioFileDescriptor): Int = value
+    override fun sampleIndex(sampleRate: Float): Int = value
 
     override fun toString(): String {
         return "$value"
@@ -53,15 +53,15 @@ data class SampleSelectionValue(val value: Int) : SelectionValue {
 
 /** Time based selection. Value is in milliseconds. */
 data class TimeSelectionValue(val value: Long) : SelectionValue {
-    override fun sampleIndex(descriptor: AudioFileDescriptor): Int {
-        val samplesPerMs = descriptor.sampleRate / 1000.0f
+    override fun sampleIndex(sampleRate: Float): Int {
+        val samplesPerMs = sampleRate / 1000.0f
         return (value * samplesPerMs).toInt()
     }
 
     override fun toString(): String {
         val ms = value % 1000
         val s = value / 1000
-        return "${s}.${ms.toString().padStart(3, '0')}s"
+        return "$s.${ms.toString().padStart(3, '0')}s"
     }
 
 }
