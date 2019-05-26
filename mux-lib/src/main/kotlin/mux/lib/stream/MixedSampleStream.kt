@@ -6,7 +6,7 @@ class MixedSampleStream(
         val mixInPosition: Int,
         val startIndex: Int = 0,
         val endIndex: Int? = null
-) : SampleStream(sourceStream.sampleRate) {
+) : SampleStream {
 
     init {
         if (mixInPosition < 0) throw SampleStreamException("Position can't be negative")
@@ -25,15 +25,15 @@ class MixedSampleStream(
         return (endIndex?.let { it + 1 } ?: initialLength) - startIndex
     }
 
-    override fun asSequence(): Sequence<Sample> {
+    override fun asSequence(sampleRate: Float): Sequence<Sample> {
         // note: streams should be aligned by length as zip() uses the shortest one
-        val alignedSourceStream = sourceStream.asSequence()
+        val alignedSourceStream = sourceStream.asSequence(sampleRate)
                 // extend the stream to fit all samples if it's shorter
                 .plus((0 until samplesCount() - sourceStream.samplesCount()).asSequence().map { ZeroSample })
         val alignedMixInStream =
                 // shift the stream right
                 ((0 until mixInPosition).asSequence().map { ZeroSample })
-                        .plus(mixInStream.asSequence())
+                        .plus(mixInStream.asSequence(sampleRate))
                         // extend the mixing stream to be not shorter than resulting stream
                         .plus((0 until (samplesCount() - mixInStream.samplesCount())).asSequence().map { ZeroSample })
         val length = (endIndex?.let { it + 1 } ?: samplesCount()) - startIndex

@@ -18,6 +18,8 @@ class SineGeneratedInput(
         val phase: Double = 0.0
 ) : AudioInput {
 
+    override fun length(): Long = (time * 1000.0).toLong()
+
     private val samplesCount = (time * sampleRate).toInt()
 
     override fun info(namespace: String?): Map<String, String> {
@@ -40,11 +42,11 @@ class SineGeneratedInput(
         return SineGeneratedInput(sampleRate, frequency, amplitude, newLength.toDouble(), phase + periodsToSkip * 2 * Math.PI)
     }
 
-    override fun asSequence(): Sequence<Sample> {
+    override fun asSequence(sampleRate: Float): Sequence<Sample> {
         return object : Iterator<Sample> {
 
             private var x = 0.0
-            private val delta = 1.0 / sampleRate
+            private val delta = 1.0 / sampleRate // sinusoid automatically resamples to output sample rate
 
             override fun hasNext(): Boolean = x < time
 

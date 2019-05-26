@@ -5,7 +5,9 @@ import mux.lib.stream.*
 import java.io.BufferedInputStream
 import java.io.InputStream
 
-class ByteArrayLittleEndianAudioInput(val bitDepth: BitDepth, val buffer: ByteArray) : AudioInput {
+class ByteArrayLittleEndianAudioInput(val sampleRate: Float, val bitDepth: BitDepth, val buffer: ByteArray) : AudioInput {
+
+    override fun length(): Long = (buffer.size.toDouble() / bitDepth.bytesPerSample / (sampleRate / 1000.0)).toLong()
 
     override fun info(namespace: String?): Map<String, String> {
         val prefix = namespace?.let { "[$it] " } ?: ""
@@ -18,32 +20,35 @@ class ByteArrayLittleEndianAudioInput(val bitDepth: BitDepth, val buffer: ByteAr
     override fun size(): Int = buffer.size / (bitDepth.bytesPerSample)
 
     override fun subInput(skip: Int, length: Int): AudioInput =
-            ByteArrayLittleEndianAudioInput(bitDepth, buffer.copyOfRange(skip, skip + length))
+            ByteArrayLittleEndianAudioInput(sampleRate, bitDepth, buffer.copyOfRange(skip, skip + length))
 
-    override fun asSequence(): Sequence<Sample> = buffer.iterator().asSequence()
-            .windowed(bitDepth.bytesPerSample, bitDepth.bytesPerSample) { bytes ->
-                when (bitDepth) {
-                    BitDepth.BIT_8 -> sampleOf(bytes[0])
-                    BitDepth.BIT_16 -> sampleOf(
-                            bytes.foldIndexed(0) { index, acc, v ->
-                                acc or (v.toInt() and 0xFF shl index * 8)
-                            }.toShort()
-                    )
-                    BitDepth.BIT_24, BitDepth.BIT_32 -> sampleOf(
-                            bytes.foldIndexed(0) { index, acc, v ->
-                                acc or (v.toInt() and 0xFF shl index * 8)
-                            }
-                    )
-                    BitDepth.BIT_64 -> sampleOf(
-                            bytes.foldIndexed(0L) { index, acc, v ->
-                                acc or (v.toLong() and 0xFF shl index * 8)
-                            }
-                    )
+    override fun asSequence(sampleRate: Float): Sequence<Sample> {
+        if (sampleRate != this.sampleRate) throw UnsupportedOperationException("Can't resample from ${this.sampleRate} to $sampleRate")
+        return buffer.iterator().asSequence()
+                .windowed(bitDepth.bytesPerSample, bitDepth.bytesPerSample) { bytes ->
+                    when (bitDepth) {
+                        BitDepth.BIT_8 -> sampleOf(bytes[0])
+                        BitDepth.BIT_16 -> sampleOf(
+                                bytes.foldIndexed(0) { index, acc, v ->
+                                    acc or (v.toInt() and 0xFF shl index * 8)
+                                }.toShort()
+                        )
+                        BitDepth.BIT_24, BitDepth.BIT_32 -> sampleOf(
+                                bytes.foldIndexed(0) { index, acc, v ->
+                                    acc or (v.toInt() and 0xFF shl index * 8)
+                                }
+                        )
+                        BitDepth.BIT_64 -> sampleOf(
+                                bytes.foldIndexed(0L) { index, acc, v ->
+                                    acc or (v.toLong() and 0xFF shl index * 8)
+                                }
+                        )
+                    }
                 }
-            }
+    }
 }
 
-class ByteArrayLittleEndianAudioOutput(val bitDepth: BitDepth, val sampleStream: SampleStream) : AudioOutput {
+class ByteArrayLittleEndianAudioOutput(val sampleRate: Float, val bitDepth: BitDepth, val sampleStream: SampleStream) : AudioOutput {
 
     override fun toByteArray(): ByteArray {
         val buf = ByteArray(dataSize())
@@ -59,7 +64,7 @@ class ByteArrayLittleEndianAudioOutput(val bitDepth: BitDepth, val sampleStream:
         return object : InputStream() {
 
             private val samplesToCache = 128 // TODO it doesn't seem required at all? However most likely depends on underlying sample stream.
-            private val iterator = sampleStream.asSequence().iterator()
+            private val iterator = sampleStream.asSequence(sampleRate).iterator()
             private val buf: ByteArray = ByteArray(bitDepth.bytesPerSample * samplesToCache)
             private var bufSize = 0
             private var bufIndex = Int.MAX_VALUE

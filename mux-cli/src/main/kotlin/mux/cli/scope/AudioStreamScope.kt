@@ -20,9 +20,8 @@ class AudioStreamScope(
     override fun commands(): Set<Command> {
         return setOf(
                 InfoCommand(samples),
-                PlayCommand(samples, null, null),
+                PlayCommand(session, samples, null, null),
                 SaveFileCommand(session, streamName, null, null),
-                DownsampleCommand(session, samples),
                 SelectCommand(this),
                 MixStreamCommand(session, streamName)
         )

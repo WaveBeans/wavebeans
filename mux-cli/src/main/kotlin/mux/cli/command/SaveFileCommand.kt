@@ -21,6 +21,9 @@ class SaveFileCommand(
         .trimIndent(),
         { _, args ->
 
+            val outputBitDepth = session.outputDescriptor.bitDepth
+            val outputSampleRate = session.outputDescriptor.sampleRate
+
             val file = File(args ?: throw ArgumentMissingException("You should specify path to file"))
             file.createNewFile()
 
@@ -33,8 +36,8 @@ class SaveFileCommand(
             }
 
             val writer = WavFileWriter(WavLEAudioFileDescriptor(
-                    sampleStream.sampleRate,
-                    BitDepth.BIT_16,
+                    outputSampleRate,
+                    outputBitDepth,
                     1
             ), FileOutputStream(file))
             writer.write(sampleStream)

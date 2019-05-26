@@ -1,24 +1,25 @@
 package mux.cli.command
 
+import mux.cli.Session
 import mux.lib.BitDepth
 import mux.lib.WavLEAudioFileDescriptor
 import mux.lib.io.ByteArrayLittleEndianAudioOutput
 import mux.lib.stream.SampleStream
-import java.lang.Math.max
-import java.lang.Math.min
 import javax.sound.sampled.AudioSystem
 
 
 class PlayCommand(
+        val session: Session,
         val samples: SampleStream,
         val start: Int?,
         val end: Int?
 ) : InScopeCommand("play", "Play the whole file from the beginning or selection if any.", { _, _ ->
 
-    val outputBitDepth = BitDepth.BIT_16
+    val outputBitDepth = session.outputDescriptor.bitDepth
+    val outputSampleRate = session.outputDescriptor.sampleRate
 
-    val descriptor = WavLEAudioFileDescriptor(samples.sampleRate, outputBitDepth, 1)
-    val output = ByteArrayLittleEndianAudioOutput(outputBitDepth, samples)
+    val descriptor = WavLEAudioFileDescriptor(outputSampleRate, outputBitDepth, 1)
+    val output = ByteArrayLittleEndianAudioOutput(outputSampleRate, outputBitDepth, samples)
 
     val data = output.toByteArray()
     val s = start?.let { it * outputBitDepth.bytesPerSample } ?: 0

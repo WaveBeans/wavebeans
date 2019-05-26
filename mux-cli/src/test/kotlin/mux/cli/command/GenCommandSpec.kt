@@ -20,8 +20,8 @@ object GenCommandSpec : Spek({
 
             it("should be AudioStreamScope with 5 samples") {
                 assertThat(scope).isInstanceOf(AudioStreamScope::class)
-                val expected = generator.asSequence().toList()
-                val actual = (scope as AudioStreamScope).samples().asSequence().toList()
+                val expected = generator.asSequence(50.0f).toList()
+                val actual = (scope as AudioStreamScope).samples().asSequence(50.0f).toList()
                 actual.forEachIndexed { idx, v ->
                     assertThat(v, "expectedList=$expected actualList=$actual @ $idx").isCloseTo(expected[idx], 0.000001)
                 }

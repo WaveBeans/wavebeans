@@ -28,7 +28,10 @@ class MixStreamCommand(session: Session, val sourceStreamName: String) : Abstrac
             val mixedStream = sourceStream.mixStream(
                     position,
                     selection
-                            ?.let { stream.rangeProjection(it.start.sampleIndex(stream.sampleRate), it.end.sampleIndex(stream.sampleRate)) }
+                            ?.let {
+                                val sampleRate = session.outputDescriptor.sampleRate
+                                stream.rangeProjection(it.start.sampleIndex(sampleRate), it.end.sampleIndex(sampleRate))
+                            }
                             ?: stream
             )
 

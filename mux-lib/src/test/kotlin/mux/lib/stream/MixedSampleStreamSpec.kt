@@ -8,27 +8,28 @@ import mux.lib.io.ByteArrayLittleEndianAudioInput
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 
-private fun SampleStream.asByteList(): List<Int> = this.asSequence().map { it.asByte().toInt() and 0xFF }.toList()
+private fun SampleStream.asByteList(): List<Int> = this.asSequence(50.0f).map { it.asByte().toInt() and 0xFF }.toList()
 
 object MixedSampleStreamSpec : Spek({
 
     describe("Source stream 50 samples length") {
         val sourceSampleStream = AudioSampleStream(
                 ByteArrayLittleEndianAudioInput(
+                        50.0f,
                         BitDepth.BIT_8,
                         ByteArray(50) { (it and 0xFF).toByte() }
-                ),
-                50.0f
+                )
         )
 
         describe("Mixing in stream of 50 samples") {
 
             val sampleStream = AudioSampleStream(
                     ByteArrayLittleEndianAudioInput(
+                            50.0f,
                             BitDepth.BIT_8,
                             ByteArray(50) { ((it + 50) and 0xFF).toByte() }
-                    ),
-                    50.0f)
+                    )
+            )
 
             describe("On 0 position") {
                 val mixed = sourceSampleStream.mixStream(0, sampleStream)
@@ -136,10 +137,11 @@ object MixedSampleStreamSpec : Spek({
 
             val sampleStream = AudioSampleStream(
                     ByteArrayLittleEndianAudioInput(
+                            50.0f,
                             BitDepth.BIT_8,
                             ByteArray(10) { ((it + 50) and 0xFF).toByte() }
-                    ),
-                    50.0f)
+                    )
+            )
 
             describe("On 0 position") {
                 val mixed = sourceSampleStream.mixStream(0, sampleStream)
@@ -175,10 +177,11 @@ object MixedSampleStreamSpec : Spek({
 
             val sampleStream = AudioSampleStream(
                     ByteArrayLittleEndianAudioInput(
+                            50.0f,
                             BitDepth.BIT_8,
                             ByteArray(100) { ((it + 50) and 0xFF).toByte() }
-                    ),
-                    50.0f)
+                    )
+            )
 
             describe("On 0 position") {
                 val mixed = sourceSampleStream.mixStream(0, sampleStream)

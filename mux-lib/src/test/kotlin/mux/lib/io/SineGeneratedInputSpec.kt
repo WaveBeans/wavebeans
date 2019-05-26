@@ -18,7 +18,7 @@ object SineGeneratedInputSpec : Spek({
         )
 
         describe("generates sequence") {
-            val seq = generator.asSequence().toList()
+            val seq = generator.asSequence(50.0f).toList()
 
             it("should be 5 samples array") {
                 val expected = arrayOf(0.54030231, -0.63332387, -0.93171798, 0.05749049, 0.96724906)

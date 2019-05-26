@@ -96,8 +96,7 @@ class SineGeneratedStreamBuilder : GeneratedStreamBuilder {
                 ?.also { if (it < 0) throw ArgumentWrongException("amplitude should be greater than 0") }
                 ?: throw ArgumentMissingException("amplitude should be specified")
         return AudioSampleStream(
-                SineGeneratedInput(sampleRate, frequency, amplitude, length),
-                sampleRate
+                SineGeneratedInput(sampleRate, frequency, amplitude, length)
         )
     }
 }

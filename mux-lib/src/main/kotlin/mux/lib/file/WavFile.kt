@@ -153,14 +153,15 @@ class WavFileReader(
         /*val subChunk2ID =*/ readConstantInt("data", dis, DATA)
         val dataSize = readLittleEndianInt("dataSize", dis)
 
-        val bd = BitDepth.of(bitDepth)
-        val descriptor = WavLEAudioFileDescriptor(sampleRate.toFloat(), bd, numberOfChannels)
+        val bitDepthAsEnum = BitDepth.of(bitDepth)
+        val sampleRateAsFloat = sampleRate.toFloat()
+        val descriptor = WavLEAudioFileDescriptor(sampleRateAsFloat, bitDepthAsEnum, numberOfChannels)
 
         if (descriptor.numberOfChannels == 1) {
             val bb = ByteArray(dataSize)
             val c = source.read(bb)
             if (c != dataSize) TODO("handle stream reading better")
-            return Pair(descriptor, AudioSampleStream(ByteArrayLittleEndianAudioInput(bd, bb), descriptor.sampleRate))
+            return Pair(descriptor, AudioSampleStream(ByteArrayLittleEndianAudioInput(sampleRateAsFloat,bitDepthAsEnum, bb)))
         } else {
             TODO("implement non-mono wav files")
         }
@@ -214,7 +215,7 @@ class WavFileWriter(
     }
 
     override fun write(sampleStream: SampleStream) {
-        val audioStream = ByteArrayLittleEndianAudioOutput(descriptor.bitDepth, sampleStream)
+        val audioStream = ByteArrayLittleEndianAudioOutput(descriptor.sampleRate, descriptor.bitDepth, sampleStream)
         /** Create sub chunk 1 content*/
         val sc1Content = ByteArrayOutputStream()
         val sc1ContentStream = DataOutputStream(sc1Content)

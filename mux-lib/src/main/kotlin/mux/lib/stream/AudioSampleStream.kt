@@ -3,25 +3,20 @@ package mux.lib.stream
 import mux.lib.io.AudioInput
 
 class AudioSampleStream(
-        val input: AudioInput,
-        sampleRate: Float
-) : SampleStream(sampleRate) {
+        val input: AudioInput
+) : SampleStream {
     override fun info(namespace: String?): Map<String, String> {
-        val prefix = namespace?.let { "[$it] " } ?: ""
-        return mapOf(
-                "${prefix}Sample rate" to "${sampleRate}Hz",
-                "${prefix}Length" to "${length() / 1000.0f}s"
-        ) + input.info(namespace)
+        return input.info(namespace)
     }
 
     override fun samplesCount(): Int = input.size()
 
-    override fun asSequence(): Sequence<Sample> = input.asSequence()
+    override fun asSequence(sampleRate: Float): Sequence<Sample> = input.asSequence(sampleRate)
 
     override fun rangeProjection(sampleStartIdx: Int, sampleEndIdx: Int): SampleStream {
         val s = Math.max(sampleStartIdx, 0)
         val e = Math.min(sampleEndIdx, input.size())
 
-        return AudioSampleStream(input.subInput(s, e - s), sampleRate)
+        return AudioSampleStream(input.subInput(s, e - s))
     }
 }

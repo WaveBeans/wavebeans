@@ -17,8 +17,8 @@ object MixStreamCommandSpec : Spek({
 
         val command = {
             val session = Session()
-            session.registerSampleStream("stream1", AudioSampleStream(SineGeneratedInput(44100.0f, 440.0, 0.5, 0.5), 44100.0f))
-            session.registerSampleStream("stream2", AudioSampleStream(SineGeneratedInput(44100.0f, 880.0, 0.3, 1.0), 44100.0f))
+            session.registerSampleStream("stream1", AudioSampleStream(SineGeneratedInput(44100.0f, 440.0, 0.5, 0.5)))
+            session.registerSampleStream("stream2", AudioSampleStream(SineGeneratedInput(44100.0f, 880.0, 0.3, 1.0)))
             MixStreamCommand(session, "stream1")
         }
 
@@ -27,14 +27,14 @@ object MixStreamCommandSpec : Spek({
 
             it("scope should be ${AudioStreamScope::class}") { assertThat(scope).isInstanceOf(AudioStreamScope::class) }
             val a = scope as AudioStreamScope
-            it("length of the stream should be 1s") { assertThat(a.samples().length()).isEqualTo(1000) }
+            it("length of the stream should be 1s") { assertThat(a.samples().samplesCount()).isEqualTo(44100 * 1) }
         }
 
         describe("Mixing stream 2 with 0.5s shift") {
             val scope = command().newScope("stream2 22050")
 
             val a = scope as AudioStreamScope
-            it("length of the stream should be 1.5s") { assertThat(a.samples().length()).isEqualTo(1500) }
+            it("length of the stream should be 1.5s") { assertThat(a.samples().samplesCount()).isEqualTo((44100 * 1.5).toInt()) }
         }
 
 
@@ -42,21 +42,21 @@ object MixStreamCommandSpec : Spek({
             val scope = command().newScope("stream2 88200")
 
             val a = scope as AudioStreamScope
-            it("length of the stream should be 3.0s") { assertThat(a.samples().length()).isEqualTo(3000) }
+            it("length of the stream should be 3.0s") { assertThat(a.samples().samplesCount()).isEqualTo(44100 * 3) }
         }
 
         describe("Mixing 0.5s of stream 2 with no shift") {
             val scope = command().newScope("stream2 0 0s..0.500s")
 
             val a = scope as AudioStreamScope
-            it("length of the stream should be 0.5s") { assertThat(a.samples().length()).isEqualTo(500) }
+            it("length of the stream should be 0.5s") { assertThat(a.samples().samplesCount()).isEqualTo((44100 * 0.5).toInt()) }
         }
 
         describe("Mixing 0.5s of stream 2 with 0.5s shift") {
             val scope = command().newScope("stream2 22050 0s..0.500s")
 
             val a = scope as AudioStreamScope
-            it("length of the stream should be 1.0s") { assertThat(a.samples().length()).isEqualTo(1000) }
+            it("length of the stream should be 1.0s") { assertThat(a.samples().samplesCount()).isEqualTo(44100) }
         }
 
     }
