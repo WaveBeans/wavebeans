@@ -5,14 +5,15 @@ import assertk.assertions.*
 import assertk.catch
 import mux.lib.BitDepth
 import mux.lib.io.ByteArrayLittleEndianAudioInput
+import mux.lib.listOfBytesAsInts
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
-
-private fun SampleStream.asByteList(): List<Int> = this.asSequence(50.0f).map { it.asByte().toInt() and 0xFF }.toList()
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeUnit.*
 
 object MixedSampleStreamSpec : Spek({
 
-    describe("Source stream 50 samples length") {
+    describe("Source stream 50 samples length of 50 Hz of 8 bit (1 sec)") {
         val sourceSampleStream = AudioSampleStream(
                 ByteArrayLittleEndianAudioInput(
                         50.0f,
@@ -40,52 +41,64 @@ object MixedSampleStreamSpec : Spek({
 
                 it("should be 50 samples length") { assertThat(mixed.samplesCount()).isEqualTo(50) }
                 it("should be array of values in range [50, 148] step 2") {
-                    assertThat(mixed.asByteList()).isEqualTo(
+                    assertThat(mixed.listOfBytesAsInts(50.0f)).isEqualTo(
                             (50..148 step 2).toList()
                     )
                 }
 
-                describe("Getting sub-range [0,10)") {
-                    val sub = mixed.rangeProjection(0, 9)
+                describe("Getting projection of 0..200ms") {
+                    val sub = mixed.rangeProjection(0, 200, MILLISECONDS)
 
                     it("should be 10 sample length") { assertThat(sub.samplesCount()).isEqualTo(10) }
-                    it("should be samples: [100,110)") {
-                        assertThat(sub.asByteList()).isEqualTo(
+                    it("should be samples: [50,68] step") {
+                        assertThat(sub.listOfBytesAsInts(50.0f)).isEqualTo(
                                 (50..68 step 2).toList()
                         )
                     }
                 }
 
-                describe("Getting sub-range [0,110]") {
-                    val e = catch { mixed.rangeProjection(0, 110) }
+                describe("Getting projection of -200..200ms") {
+                    val sub = mixed.rangeProjection(-200, 200, MILLISECONDS)
 
-                    it("should throw an exception") { assertThat(e).isNotNull() }
-                    it("should be the instance of ${SampleStreamException::class}") { assertThat(e!!).isInstanceOf(SampleStreamException::class) }
-                    it("should have message pointing out the reason") { assertThat(e!!).hasMessage("End sample index is out of range") }
+                    it("should be 10 sample length") { assertThat(sub.samplesCount()).isEqualTo(10) }
+                    it("should be samples: [50,68] step") {
+                        assertThat(sub.listOfBytesAsInts(50.0f)).isEqualTo(
+                                (50..68 step 2).toList()
+                        )
+                    }
                 }
 
-                describe("Getting sub-range [100,110]") {
-                    val e = catch { mixed.rangeProjection(100, 110) }
+                describe("Getting projection of 200..400ms") {
+                    val sub = mixed.rangeProjection(200, 400, MILLISECONDS)
 
-                    it("should throw an exception") { assertThat(e).isNotNull() }
-                    it("should be the instance of ${SampleStreamException::class}") { assertThat(e!!).isInstanceOf(SampleStreamException::class) }
-                    it("should have message pointing out the reason") { assertThat(e!!).hasMessage("Start sample index is out of range") }
+                    it("should be 10 sample length") { assertThat(sub.samplesCount()).isEqualTo(10) }
+                    it("should be samples: [70,88] step 2") {
+                        assertThat(sub.listOfBytesAsInts(50.0f)).isEqualTo(
+                                (70..88 step 2).toList()
+                        )
+                    }
                 }
 
-                describe("Getting sub-range [-1,-10]") {
-                    val e = catch { mixed.rangeProjection(-1, 110) }
+                describe("Getting projection of 800..1000ms") {
+                    val sub = mixed.rangeProjection(800, 1000, MILLISECONDS)
 
-                    it("should throw an exception") { assertThat(e).isNotNull() }
-                    it("should be the instance of ${SampleStreamException::class}") { assertThat(e!!).isInstanceOf(SampleStreamException::class) }
-                    it("should have message pointing out the reason") { assertThat(e!!).hasMessage("Start sample index is out of range") }
+                    it("should be 10 sample length") { assertThat(sub.samplesCount()).isEqualTo(10) }
+                    it("should be samples: [130,148] step 2") {
+                        assertThat(sub.listOfBytesAsInts(50.0f)).isEqualTo(
+                                (130..148 step 2).toList()
+                        )
+                    }
                 }
 
-                describe("Getting sub-range [10,-2]") {
-                    val e = catch { mixed.rangeProjection(10, -2) }
+                describe("Getting projection of 800..1200ms") {
+                    val sub = mixed.rangeProjection(800, 1200, MILLISECONDS)
 
-                    it("should throw an exception") { assertThat(e).isNotNull() }
-                    it("should be the instance of ${SampleStreamException::class}") { assertThat(e!!).isInstanceOf(SampleStreamException::class) }
-                    it("should have message pointing out the reason") { assertThat(e!!).hasMessage("End sample index should be greater than start sample index") }
+                    it("should be 10 sample length") { assertThat(sub.samplesCount()).isEqualTo(10) }
+                    it("should be samples: [130,148] step 2") {
+                        assertThat(sub.listOfBytesAsInts(50.0f)).isEqualTo(
+                                (130..148 step 2).toList()
+                        )
+                    }
                 }
             }
 
@@ -94,7 +107,7 @@ object MixedSampleStreamSpec : Spek({
 
                 it("should be 60 samples length") { assertThat(mixed.samplesCount()).isEqualTo(60) }
                 it("should be array of values: [0, 10) + [60, 138] step 2 + [90, 100)") {
-                    assertThat(mixed.asByteList()).isEqualTo(
+                    assertThat(mixed.listOfBytesAsInts(50.0f)).isEqualTo(
                             (0 until 10).toList() + (60..138 step 2).toList() + (90 until 100).toList()
                     )
                 }
@@ -105,7 +118,7 @@ object MixedSampleStreamSpec : Spek({
 
                 it("should be 100 samples length") { assertThat(mixed.samplesCount()).isEqualTo(100) }
                 it("should be array of values: [0, 50) + [50, 100)  ") {
-                    assertThat(mixed.asByteList()).isEqualTo(
+                    assertThat(mixed.listOfBytesAsInts(50.0f)).isEqualTo(
                             ((0 until 50) + (50 until 100)).toList()
                     )
                 }
@@ -116,7 +129,7 @@ object MixedSampleStreamSpec : Spek({
 
                 it("should be 110 samples length") { assertThat(mixed.samplesCount()).isEqualTo(110) }
                 it("should be array of values: [0, 50) + 0.repeat(10) + [50, 100)  ") {
-                    assertThat(mixed.asByteList()).isEqualTo(
+                    assertThat(mixed.listOfBytesAsInts(50.0f)).isEqualTo(
                             (0 until 50).toList() + (0 until 10).map { 0 }.toList() + (50 until 100).toList()
                     )
                 }
@@ -152,7 +165,7 @@ object MixedSampleStreamSpec : Spek({
 
                 it("should be 50 samples length") { assertThat(mixed.samplesCount()).isEqualTo(50) }
                 it("should be array of values  [50, 68] step 2 + [10, 50)") {
-                    assertThat(mixed.asByteList()).isEqualTo(
+                    assertThat(mixed.listOfBytesAsInts(50.0f)).isEqualTo(
                             ((50..68 step 2) + (10 until 50)).toList()
                     )
                 }
@@ -164,7 +177,7 @@ object MixedSampleStreamSpec : Spek({
 
                 it("should be 50 samples length") { assertThat(mixed.samplesCount()).isEqualTo(50) }
                 it("should be array of values  [0, 10) + [60, 78) step 2 + [20, 50)") {
-                    assertThat(mixed.asByteList()).isEqualTo(
+                    assertThat(mixed.listOfBytesAsInts(50.0f)).isEqualTo(
                             ((0 until 10) + (60..78 step 2) + (20 until 50)).toList()
                     )
                 }
@@ -192,7 +205,7 @@ object MixedSampleStreamSpec : Spek({
 
                 it("should be 50 samples length") { assertThat(mixed.samplesCount()).isEqualTo(100) }
                 it("should be array of values  [50, 148] step 2 + [50, 100)") {
-                    assertThat(mixed.asByteList()).isEqualTo(
+                    assertThat(mixed.listOfBytesAsInts(50.0f)).isEqualTo(
                             ((50..148 step 2) + (100 until 150)).toList()
                     )
                 }
@@ -204,7 +217,7 @@ object MixedSampleStreamSpec : Spek({
 
                 it("should be 50 samples length") { assertThat(mixed.samplesCount()).isEqualTo(110) }
                 it("should be array of values  [0, 10) + [60, 138] step 2 + [90, 150)") {
-                    assertThat(mixed.asByteList()).isEqualTo(
+                    assertThat(mixed.listOfBytesAsInts(50.0f)).isEqualTo(
                             ((0 until 10) + (60..138 step 2) + (90 until 150)).toList()
                     )
                 }

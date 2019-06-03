@@ -1,8 +1,10 @@
 package mux.lib.io
 
 import mux.lib.file.Informable
+import mux.lib.file.TimeRangeProjectable
 import mux.lib.stream.Sample
 import java.io.InputStream
+import java.util.concurrent.TimeUnit
 
 interface AudioOutput {
     fun toByteArray(): ByteArray
@@ -13,10 +15,13 @@ interface AudioOutput {
 
 }
 
-interface AudioInput : Informable {
+interface AudioInput : Informable, TimeRangeProjectable<AudioInput> {
 
     /** Amount of samples available */
     fun size(): Int
+
+    /** The length of the input in provided time unit. */
+    fun length(timeUnit: TimeUnit): Long
 
     /**
      * Return the input that is subrange of current input. If the input is read into a memory or just it defines
@@ -25,7 +30,8 @@ interface AudioInput : Informable {
      * @param skip number of samples to skip from the beginning. O if do not skip.
      * @param length number of samples to read.
      **/
-    fun subInput(skip: Int, length: Int): AudioInput
+//    @Deprecated("to get rid of it")
+//    fun subInput(skip: Int, length: Int): AudioInput
 
     /**
      *  Gets the input as a sequence of samples.
@@ -35,7 +41,4 @@ interface AudioInput : Informable {
      *  @throws UnsupportedOperationException if input doesn't support resampling
      **/
     fun asSequence(sampleRate: Float): Sequence<Sample>
-
-    /** Length of the input in milliseconds. */
-    fun length(): Long
 }

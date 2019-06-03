@@ -1,8 +1,13 @@
 package mux.lib.io
 
 import mux.lib.stream.Sample
+import mux.lib.stream.SampleStreamException
 import mux.lib.stream.sampleOf
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeUnit.*
 import kotlin.math.cos
+import kotlin.math.max
+import kotlin.math.min
 
 
 class SineGeneratedInput(
@@ -12,13 +17,12 @@ class SineGeneratedInput(
         val frequency: Double,
         /** Amplitude of the sinusoid. 0.0 < a <= 1.0 */
         val amplitude: Double,
-        /** Number of samples to generate. */
+        /** Number of seconds to generate. */
         val time: Double,
-        /** Phase of the sinusoid in radians. */
-        val phase: Double = 0.0
+        /** time offset. */
+        val timeOffset: Double = 0.0
 ) : AudioInput {
-
-    override fun length(): Long = (time * 1000.0).toLong()
+    override fun length(timeUnit: TimeUnit): Long = timeUnit.convert((time * 1000.0).toLong(), MILLISECONDS)
 
     private val samplesCount = (time * sampleRate).toInt()
 
@@ -26,7 +30,8 @@ class SineGeneratedInput(
         val prefix = namespace?.let { "[$it] " } ?: ""
         return mapOf(
                 "${prefix}Sinusoid amplitude" to "$amplitude",
-                "${prefix}Sinusoid phase" to "$phase",
+                "${prefix}Sinusoid length" to "${time}sec",
+                "${prefix}Sinusoid offset" to "${timeOffset}sec",
                 "${prefix}Sinusoid frequency" to "${frequency}Hz"
         )
     }
@@ -35,31 +40,32 @@ class SineGeneratedInput(
         return samplesCount
     }
 
-    override fun subInput(skip: Int, length: Int): AudioInput {
-        val newLength = length / sampleRate
-        val samplesInPeriod = sampleRate / frequency
-        val periodsToSkip = skip / samplesInPeriod
-        return SineGeneratedInput(sampleRate, frequency, amplitude, newLength.toDouble(), phase + periodsToSkip * 2 * Math.PI)
+    override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): AudioInput {
+        if (end != null && end <= start) throw SampleStreamException("End=[$end] should be greater than start=[$start]")
+        val s = max(timeUnit.toNanos(start) / 1_000_000_000.0, 0.0)
+        val e = end?.let { min(timeUnit.toNanos(end) / 1_000_000_000.0, time) } ?: time
+        val newLength = e - s
+        return SineGeneratedInput(sampleRate, frequency, amplitude, newLength, s + timeOffset)
     }
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> {
         return object : Iterator<Sample> {
 
-            private var x = 0.0
+            private var x = timeOffset
             private val delta = 1.0 / sampleRate // sinusoid automatically resamples to output sample rate
 
-            override fun hasNext(): Boolean = x < time
+            override fun hasNext(): Boolean = x < time + timeOffset
 
             override fun next(): Sample {
                 if (!hasNext()) NoSuchElementException("")
-                val r = sampleOf(sin(x))
+                val r = sampleOf(sineOf(x))
                 x += delta
                 return r
             }
         }.asSequence()
     }
 
-    private fun sin(x: Double): Double =
-            amplitude * cos(x * 2 * Math.PI * frequency + phase)
+    private fun sineOf(x: Double): Double =
+            amplitude * cos(x * 2 * Math.PI * frequency)
 
 }

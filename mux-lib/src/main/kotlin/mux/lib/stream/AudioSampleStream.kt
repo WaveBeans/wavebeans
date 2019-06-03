@@ -1,6 +1,7 @@
 package mux.lib.stream
 
 import mux.lib.io.AudioInput
+import java.util.concurrent.TimeUnit
 
 class AudioSampleStream(
         val input: AudioInput
@@ -13,10 +14,6 @@ class AudioSampleStream(
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> = input.asSequence(sampleRate)
 
-    override fun rangeProjection(sampleStartIdx: Int, sampleEndIdx: Int): SampleStream {
-        val s = Math.max(sampleStartIdx, 0)
-        val e = Math.min(sampleEndIdx, input.size())
-
-        return AudioSampleStream(input.subInput(s, e - s))
-    }
+    override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): SampleStream =
+            AudioSampleStream(input.rangeProjection(start, end, timeUnit))
 }

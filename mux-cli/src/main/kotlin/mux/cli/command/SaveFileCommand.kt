@@ -30,7 +30,8 @@ class SaveFileCommand(
             val samples = streamName?.let { session.streamByName(it) } ?: TODO("merge all streams")
 
             val sampleStream = if (start != null || end != null) {
-                samples.rangeProjection(start ?: 0, end ?: samples.samplesCount() - 1)
+//                samples.rangeProjection(start ?: 0, end ?: samples.samplesCount() - 1)
+                TODO()
             } else {
                 samples
             }

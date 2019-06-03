@@ -1,13 +1,23 @@
 package mux.lib.io
 
-import mux.lib.BitDepth
+import mux.lib.*
 import mux.lib.stream.*
 import java.io.BufferedInputStream
 import java.io.InputStream
+import java.util.Collections.min
+import java.util.concurrent.TimeUnit
+import kotlin.math.max
+import kotlin.math.min
 
 class ByteArrayLittleEndianAudioInput(val sampleRate: Float, val bitDepth: BitDepth, val buffer: ByteArray) : AudioInput {
 
-    override fun length(): Long = (buffer.size.toDouble() / bitDepth.bytesPerSample / (sampleRate / 1000.0)).toLong()
+    override fun length(timeUnit: TimeUnit): Long = samplesCountToLength(size().toLong(), sampleRate, timeUnit)
+
+    override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): AudioInput {
+        val s = max(timeToSampleIndexFloor(start, timeUnit, sampleRate), 0).toInt()
+        val e = end?.let { min(timeToSampleIndexCeil(end, timeUnit, sampleRate).toInt(), size()) } ?: size()
+        return ByteArrayLittleEndianAudioInput(sampleRate, bitDepth, buffer.copyOfRange(s, e))
+    }
 
     override fun info(namespace: String?): Map<String, String> {
         val prefix = namespace?.let { "[$it] " } ?: ""
@@ -17,10 +27,7 @@ class ByteArrayLittleEndianAudioInput(val sampleRate: Float, val bitDepth: BitDe
         )
     }
 
-    override fun size(): Int = buffer.size / (bitDepth.bytesPerSample)
-
-    override fun subInput(skip: Int, length: Int): AudioInput =
-            ByteArrayLittleEndianAudioInput(sampleRate, bitDepth, buffer.copyOfRange(skip, skip + length))
+    override fun size(): Int = buffer.size / bitDepth.bytesPerSample
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> {
         if (sampleRate != this.sampleRate) throw UnsupportedOperationException("Can't resample from ${this.sampleRate} to $sampleRate")
