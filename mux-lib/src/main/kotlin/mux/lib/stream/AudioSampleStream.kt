@@ -6,6 +6,7 @@ import java.util.concurrent.TimeUnit
 class AudioSampleStream(
         val input: AudioInput
 ) : SampleStream {
+
     override fun info(namespace: String?): Map<String, String> {
         return input.info(namespace)
     }

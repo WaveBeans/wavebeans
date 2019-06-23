@@ -53,7 +53,7 @@ object InfoCommandSpec : Spek({
             it("should be non empty") { assertThat(info!!).isNotEqualTo("") }
             it("should output sinusoid frequency") { assertThat(info!!).contains("Sinusoid frequency: 10.0Hz") }
             it("should output sinusoid amplitude") { assertThat(info!!).contains("Sinusoid amplitude: 1.0") }
-            it("should output sinusoid phase") { assertThat(info!!).contains("Sinusoid phase: 0.0") }
+            it("should output sinusoid offset") { assertThat(info!!).contains("Sinusoid offset: 0.0sec") }
         }
     }
 

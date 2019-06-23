@@ -9,11 +9,16 @@ data class OutputDescriptor(
         val bitDepth: BitDepth
 )
 
-class Session {
+data class StreamDescriptor(
+        val name: String,
+        val stream: SampleStream
+)
+
+class Session(
+        val outputDescriptor: OutputDescriptor = OutputDescriptor(44100.0f, BitDepth.BIT_16)
+) {
 
     private val scopes = HashMap<String, SampleStream>()
-
-    val outputDescriptor = OutputDescriptor(44100.0f, BitDepth.BIT_16)
 
     fun registerSampleStream(streamName: String, samples: SampleStream) {
         if (scopes.containsKey(streamName)) throw ArgumentWrongException("$streamName is already exists. Drop it first")
@@ -22,6 +27,6 @@ class Session {
 
     fun streamByName(streamName: String): SampleStream? = scopes[streamName]
 
-
+    fun streamsSequence(): Sequence<StreamDescriptor> = scopes.asSequence().map { StreamDescriptor(it.key, it.value) }
 
 }

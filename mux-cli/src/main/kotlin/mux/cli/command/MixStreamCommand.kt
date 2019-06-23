@@ -5,6 +5,7 @@ import mux.cli.command.AbstractNewSamplesScopeCommand
 import mux.cli.command.ArgumentMissingException
 import mux.cli.command.ArgumentWrongException
 import mux.cli.command.Selection
+import java.util.concurrent.TimeUnit
 
 class MixStreamCommand(session: Session, val sourceStreamName: String) : AbstractNewSamplesScopeCommand(
         session,
@@ -19,7 +20,7 @@ class MixStreamCommand(session: Session, val sourceStreamName: String) : Abstrac
             val streamName = if (a.isNotEmpty()) a[0].trim() else throw ArgumentMissingException("stream name is missing")
             val position = if (a.size > 1) a[1].trim().toIntOrNull()
                     ?: throw ArgumentWrongException("position is an integer number") else 0
-            val selection = if (a.size > 2) Selection.parse(a[2]) else null
+            val selection = if (a.size > 2) Selection.parse(session.outputDescriptor.sampleRate, a[2]) else null
             val sourceStream = session.streamByName(sourceStreamName)
                     ?: throw ArgumentWrongException("Stream by name `$sourceStreamName` is not found")
             val stream = session.streamByName(streamName)
@@ -29,9 +30,8 @@ class MixStreamCommand(session: Session, val sourceStreamName: String) : Abstrac
                     position,
                     selection
                             ?.let {
-//                                val sampleRate = session.outputDescriptor.sampleRate
-//                                stream.rangeProjection(it.start.sampleIndex(sampleRate), it.end.sampleIndex(sampleRate))
-                                TODO()
+                                val tu = TimeUnit.NANOSECONDS
+                                stream.rangeProjection(it.start.time(tu), it.end.time(tu), tu)
                             }
                             ?: stream
             )

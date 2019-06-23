@@ -22,7 +22,7 @@ class AudioStreamScope(
                 InfoCommand(samples),
                 PlayCommand(session, samples, null, null),
                 SaveFileCommand(session, streamName, null, null),
-                SelectCommand(this),
+                SelectCommand(session,this),
                 MixStreamCommand(session, streamName)
         )
     }

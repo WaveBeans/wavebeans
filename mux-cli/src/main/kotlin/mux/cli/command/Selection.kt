@@ -1,10 +1,11 @@
 package mux.cli.command
 
-import mux.lib.AudioFileDescriptor
+import mux.lib.samplesCountToLength
+import java.util.concurrent.TimeUnit
 
 data class Selection(val start: SelectionValue, val end: SelectionValue) {
     companion object {
-        fun parse(input: String): Selection {
+        fun parse(sampleRate: Float, input: String): Selection {
             val (start, end) = input.trim()
                     .split("..", limit = 2)
                     .map { it.trim() }
@@ -24,7 +25,7 @@ data class Selection(val start: SelectionValue, val end: SelectionValue) {
                                         .toLong() * 1000)
                             }
                             v.matches(Regex("^\\d+$")) -> {
-                                SampleSelectionValue(v.toInt())
+                                SampleSelectionValue(sampleRate, v.toLong())
                             }
                             else -> throw SelectionParseException("`$v` is unsupported format")
                         }
@@ -39,12 +40,13 @@ data class Selection(val start: SelectionValue, val end: SelectionValue) {
 }
 
 interface SelectionValue {
-    fun sampleIndex(sampleRate: Float): Int
+    fun time(timeUnit: TimeUnit): Long
 }
 
 /** Selection base on sample index. */
-data class SampleSelectionValue(val value: Int) : SelectionValue {
-    override fun sampleIndex(sampleRate: Float): Int = value
+data class SampleSelectionValue(val sampleRate: Float, val value: Long) : SelectionValue {
+
+    override fun time(timeUnit: TimeUnit): Long = samplesCountToLength(value, sampleRate, timeUnit)
 
     override fun toString(): String {
         return "$value"
@@ -53,10 +55,8 @@ data class SampleSelectionValue(val value: Int) : SelectionValue {
 
 /** Time based selection. Value is in milliseconds. */
 data class TimeSelectionValue(val value: Long) : SelectionValue {
-    override fun sampleIndex(sampleRate: Float): Int {
-        val samplesPerMs = sampleRate / 1000.0f
-        return (value * samplesPerMs).toInt()
-    }
+
+    override fun time(timeUnit: TimeUnit): Long = timeUnit.convert(value, TimeUnit.MILLISECONDS)
 
     override fun toString(): String {
         val ms = value % 1000

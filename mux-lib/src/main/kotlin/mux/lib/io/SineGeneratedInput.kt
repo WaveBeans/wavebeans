@@ -22,7 +22,7 @@ class SineGeneratedInput(
         /** time offset. */
         val timeOffset: Double = 0.0
 ) : AudioInput {
-    override fun length(timeUnit: TimeUnit): Long = timeUnit.convert((time * 1000.0).toLong(), MILLISECONDS)
+    override fun length(timeUnit: TimeUnit): Long = timeUnit.convert((time * 1_000_000_000.0).toLong(), NANOSECONDS)
 
     private val samplesCount = (time * sampleRate).toInt()
 

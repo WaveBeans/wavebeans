@@ -1,9 +1,10 @@
 package mux.cli.command
 
+import mux.cli.Session
 import mux.cli.scope.AudioStreamScope
 import mux.cli.scope.AudioFileSelectRangeScope
 
-class SelectCommand(parentScope: AudioStreamScope) : NewScopeCommand(
+class SelectCommand(val session: Session, parentScope: AudioStreamScope) : NewScopeCommand(
         "select",
         """
                             Selects the range of the file.
@@ -22,7 +23,7 @@ class SelectCommand(parentScope: AudioStreamScope) : NewScopeCommand(
         { args ->
             if (args == null) throw ArgumentMissingException("you need to specify sample range")
             val selection = try {
-                Selection.parse(args)
+                Selection.parse(session.outputDescriptor.sampleRate, args)
             } catch (e: SelectionParseException) {
                 throw ArgumentWrongException(e.message ?: "")
             }

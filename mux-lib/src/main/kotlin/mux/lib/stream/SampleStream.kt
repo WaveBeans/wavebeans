@@ -1,7 +1,7 @@
 package mux.lib.stream
 
+import mux.lib.TimeRangeProjectable
 import mux.lib.file.Informable
-import mux.lib.file.TimeRangeProjectable
 import mux.lib.samplesCountToLength
 import java.util.concurrent.TimeUnit
 
