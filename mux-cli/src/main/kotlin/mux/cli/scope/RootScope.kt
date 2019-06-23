@@ -13,7 +13,8 @@ class RootScope(private val session: Session) : Scope {
         return setOf(
                 OpenFileCommand(session),
                 GenCommand(session),
-                SaveFileCommand(session, null, null, null)
+                SaveFileCommand(session, null, null, null),
+                ListStreamsCommand(session)
                 //TODO add global selection tool
         )
     }
