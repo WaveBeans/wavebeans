@@ -32,6 +32,25 @@ object AudioSampleStreamSpec : Spek({
 
     }
 
+    describe("Stream of 16 bit fs=50Hz as ByteArray LE input") {
+        val stream = AudioSampleStream(
+                ByteArrayLittleEndianAudioInput(50.0f, BitDepth.BIT_16, ByteArray(200) { it.toByte() })
+        )
+
+        itShouldHave("number of samples 100") { assertThat(stream.samplesCount()).isEqualTo(100) }
+        itShouldHave("Length should be 2000ms for sample rate 50Hz") { assertThat(stream.length(50.0f)).isEqualTo(2000L) }
+        itShouldHave("Length should be 1000ms for sample rate 100Hz") { assertThat(stream.length(100.0f)).isEqualTo(1000L) }
+
+        describe("Projected range 0.0s..1.0s") {
+            val projection = stream.rangeProjection(0, 1000, TimeUnit.MILLISECONDS)
+
+            itShouldHave("number of samples 50") { assertThat(projection.samplesCount()).isEqualTo(50) }
+            itShouldHave("Length should be 1000ms for sample rate 50Hz") { assertThat(projection.length(50.0f)).isEqualTo(1000L) }
+            itShouldHave("Length should be 500ms for sample rate 100Hz") { assertThat(projection.length(100.0f)).isEqualTo(500L) }
+        }
+
+    }
+
     describe("Stream of Sine input") {
         val stream = AudioSampleStream(
                 SineGeneratedInput(44100.0f, 440.0, 0.4, 2.0)

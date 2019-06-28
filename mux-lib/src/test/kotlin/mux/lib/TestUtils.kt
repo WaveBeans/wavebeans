@@ -7,6 +7,7 @@ import assertk.assertions.support.show
 import mux.lib.io.AudioInput
 import mux.lib.stream.SampleStream
 import mux.lib.stream.asByte
+import mux.lib.stream.asShort
 import org.spekframework.spek2.dsl.Skip
 import org.spekframework.spek2.dsl.TestBody
 import org.spekframework.spek2.style.specification.Suite
@@ -19,6 +20,11 @@ fun SampleStream.listOfBytesAsInts(sampleRate: Float): List<Int> =
 fun AudioInput.listOfBytesAsInts(sampleRate: Float): List<Int> =
         this.asSequence(sampleRate)
                 .map { it.asByte().toInt() and 0xFF }
+                .toList()
+
+fun AudioInput.listOfShortsAsInts(sampleRate: Float): List<Int> =
+        this.asSequence(sampleRate)
+                .map { it.asShort().toInt() and 0xFFFF }
                 .toList()
 
 

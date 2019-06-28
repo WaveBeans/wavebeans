@@ -36,7 +36,7 @@ class SineGeneratedInput(
         )
     }
 
-    override fun size(): Int {
+    override fun sampleCount(): Int {
         return samplesCount
     }
 

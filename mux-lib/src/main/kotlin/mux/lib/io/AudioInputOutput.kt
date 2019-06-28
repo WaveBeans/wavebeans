@@ -18,20 +18,10 @@ interface AudioOutput {
 interface AudioInput : Informable, TimeRangeProjectable<AudioInput> {
 
     /** Amount of samples available */
-    fun size(): Int
+    fun sampleCount(): Int
 
     /** The length of the input in provided time unit. */
     fun length(timeUnit: TimeUnit): Long
-
-    /**
-     * Return the input that is subrange of current input. If the input is read into a memory or just it defines
-     * the reader parameters depends on specific implementation.
-     *
-     * @param skip number of samples to skip from the beginning. O if do not skip.
-     * @param length number of samples to read.
-     **/
-//    @Deprecated("to get rid of it")
-//    fun subInput(skip: Int, length: Int): AudioInput
 
     /**
      *  Gets the input as a sequence of samples.

@@ -13,6 +13,8 @@ import org.spekframework.spek2.style.specification.describe
 
 object InfoCommandSpec : Spek({
 
+    fun newSession() = Session()
+
     describe("InfoCommand within scope of 8-bit 50.0 Hz audio stream with 100 samples") {
         val sampleStream = AudioSampleStream(
                 ByteArrayLittleEndianAudioInput(
@@ -21,8 +23,9 @@ object InfoCommandSpec : Spek({
                         ByteArray(100) { (it and 0xFF).toByte() }
                 )
         )
-        val scope = AudioStreamScope(Session(), "test-file.wav", sampleStream)
-        val gen = InfoCommand(sampleStream)
+        val session = newSession()
+        val scope = AudioStreamScope(session, "test-file.wav", sampleStream)
+        val gen = InfoCommand(session, sampleStream)
 
         describe("During run generates info output") {
             val info = gen.run(scope, "")
@@ -43,8 +46,9 @@ object InfoCommandSpec : Spek({
                         1.0
                 )
         )
-        val scope = AudioStreamScope(Session(),"test-file.wav", sampleStream)
-        val gen = InfoCommand(sampleStream)
+        val session = newSession()
+        val scope = AudioStreamScope(session, "test-file.wav", sampleStream)
+        val gen = InfoCommand(session, sampleStream)
 
         describe("During run generates info output") {
             val info = gen.run(scope, "")
@@ -58,3 +62,4 @@ object InfoCommandSpec : Spek({
     }
 
 })
+

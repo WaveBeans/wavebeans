@@ -12,9 +12,9 @@ interface Command {
 }
 
 abstract class NewScopeCommand(
-        val name: String,
-        val description: String,
-        val scopeCreator: (String?) -> Scope
+        private val name: String,
+        private val description: String,
+        private val scopeCreator: (String?) -> Scope
 ) : Command {
 
     override fun name(): String = name

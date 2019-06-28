@@ -7,11 +7,9 @@ class AudioSampleStream(
         val input: AudioInput
 ) : SampleStream {
 
-    override fun info(namespace: String?): Map<String, String> {
-        return input.info(namespace)
-    }
+    override fun info(namespace: String?): Map<String, String> = input.info(namespace)
 
-    override fun samplesCount(): Int = input.size()
+    override fun samplesCount(): Int = input.sampleCount()
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> = input.asSequence(sampleRate)
 

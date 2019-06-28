@@ -2,7 +2,7 @@ package mux.cli.command
 
 import mux.cli.Session
 import mux.cli.scope.AudioStreamScope
-import mux.cli.scope.AudioFileSelectRangeScope
+import mux.cli.scope.AudioSubStreamScope
 
 class SelectCommand(val session: Session, parentScope: AudioStreamScope) : NewScopeCommand(
         "select",
@@ -27,5 +27,11 @@ class SelectCommand(val session: Session, parentScope: AudioStreamScope) : NewSc
             } catch (e: SelectionParseException) {
                 throw ArgumentWrongException(e.message ?: "")
             }
-            AudioFileSelectRangeScope(parentScope, selection)
+            val subStreamName = parentScope.streamName + "<$selection>"
+            val newScope = AudioSubStreamScope(subStreamName, session, parentScope, selection)
+            session.registerSampleStream(
+                    subStreamName,
+                    newScope.samples
+            )
+            newScope
         })
