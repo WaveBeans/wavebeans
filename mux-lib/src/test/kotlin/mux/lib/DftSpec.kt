@@ -25,6 +25,10 @@ object DftSpec : Spek({
                 }
             }
         }
+
+        describe("fft") {
+            print(fft(x).map { it.string() })
+        }
     }
 
     describe("Given DFT=[1,1,1,1]") {

@@ -51,3 +51,26 @@ fun idft(x: List<Double>): Sequence<ComplexNumber> {
                         .fold(0.r) { a, v -> a + v } / n
             }
 }
+
+fun fft(x: List<Double>): List<ComplexNumber> {
+    val sines = (0 until x.size)
+            .map { k -> complexSine(k, x.size).toList() }
+            .toTypedArray()
+
+    fun fftImpl(x: List<Double>, n: IntRange): List<ComplexNumber> {
+        return if (n.count() == 1) {
+            listOf(x[n.first].i)
+        } else {
+            val xx1 = fftImpl(x.subList(n.first / 2, n.last / 2), n.first..n.last)
+            val xx2 = fftImpl(x.subList(n.first / 2, n.last / 2), n.first..n.last)
+            val xx = Array(n.last) { 0.i }.toMutableList()
+            n.map { k ->
+                val t = xx1[k]
+                xx[k] = t + sines[k][n.last] * xx2[k]
+                xx[k + n.last] = t - sines[k][n.last] * xx2[k]
+            }
+            xx
+        }
+    }
+    return fftImpl(x, 0..x.size - 1)
+}
