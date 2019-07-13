@@ -1,6 +1,7 @@
 package mux.lib
 
 import mux.lib.math.*
+import java.lang.IllegalStateException
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -23,8 +24,7 @@ fun reversedComplexSine(k: Int, n: Int): Sequence<ComplexNumber> {
             }
 }
 
-fun dft(x: List<Double>): Sequence<ComplexNumber> {
-    val n = x.count()
+fun dft(x: Sequence<ComplexNumber>, n: Int): Sequence<ComplexNumber> {
     val sines = (0 until n)
             .map { k -> complexSine(k, n) }
             .toTypedArray()
@@ -32,13 +32,13 @@ fun dft(x: List<Double>): Sequence<ComplexNumber> {
     return (0 until n).asSequence()
             .map { k ->
                 x.asSequence()
+                        .take(n)
                         .zip(sines[k])
                         .fold(0.r) { a, p -> a + p.first * p.second }
             }
 }
 
-fun idft(x: List<Double>): Sequence<ComplexNumber> {
-    val n = x.count()
+fun idft(x: Sequence<ComplexNumber>, n: Int): Sequence<ComplexNumber> {
     val sines = (0 until n)
             .map { k -> reversedComplexSine(k, n).toList() }
             .toTypedArray()
@@ -46,31 +46,60 @@ fun idft(x: List<Double>): Sequence<ComplexNumber> {
 
     return (0 until n).asSequence()
             .map { i ->
-                (0 until n)
-                        .map { k -> sines[k][i] * x[k] }
+                x.take(n)
+                        .mapIndexed { k, x -> sines[k][i] * x }
                         .fold(0.r) { a, v -> a + v } / n
             }
 }
 
-fun fft(x: List<Double>): List<ComplexNumber> {
-    val sines = (0 until x.size)
-            .map { k -> complexSine(k, x.size).toList() }
-            .toTypedArray()
+fun fft(x: Sequence<ComplexNumber>, n: Int): Sequence<ComplexNumber> {
+    val ii = x.iterator()
+    val xx = Array(n) {
+        if (ii.hasNext())
+            ii.next()
+        else
+            throw IllegalStateException("input sequence doesn't have enough elements, expected to be $n ")
+    }
 
-    fun fftImpl(x: List<Double>, n: IntRange): List<ComplexNumber> {
-        return if (n.count() == 1) {
-            listOf(x[n.first].i)
-        } else {
-            val xx1 = fftImpl(x.subList(n.first / 2, n.last / 2), n.first..n.last)
-            val xx2 = fftImpl(x.subList(n.first / 2, n.last / 2), n.first..n.last)
-            val xx = Array(n.last) { 0.i }.toMutableList()
-            n.map { k ->
-                val t = xx1[k]
-                xx[k] = t + sines[k][n.last] * xx2[k]
-                xx[k + n.last] = t - sines[k][n.last] * xx2[k]
-            }
-            xx
+    fun swap(a: Int, b: Int) {
+        val t = xx[a]
+        xx[a] = xx[b]
+        xx[b] = t
+    }
+
+    // reverse-binary indexing
+    var j = 0
+    for (i in 1 until n) {
+        var m = n / 2
+        while (m in 1..j) {
+            j -= m
+            m = m ushr 1
+        }
+        j += m
+        if (j > i) {
+            swap(j, i)
         }
     }
-    return fftImpl(x, 0..x.size - 1)
+
+    // Danielson-Lanzcos routine
+    var mmax = 2
+    while (n > mmax) {
+        val istep = mmax shl 1
+        val theta = -(2 * PI / mmax)
+        val wtemp = sin(theta / 2).r
+        val wp = -2 * wtemp * wtemp + sin(theta).i
+        var w = 1.r
+        for (m in 1..mmax step 2) {
+            for (i in m..n step istep) {
+                val j = i + mmax
+                val temp = w * xx[j / 2]
+                xx[j / 2] = xx[i / 2] - temp
+                xx[i / 2] += temp
+            }
+            w += w * wp
+        }
+        mmax = istep
+    }
+
+    return xx.asSequence()
 }
