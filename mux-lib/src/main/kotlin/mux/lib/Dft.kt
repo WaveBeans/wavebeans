@@ -1,7 +1,7 @@
 package mux.lib
 
 import mux.lib.math.*
-import java.lang.IllegalStateException
+import java.lang.IllegalArgumentException
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -53,6 +53,9 @@ fun idft(x: Sequence<ComplexNumber>, n: Int): Sequence<ComplexNumber> {
 }
 
 fun fft(x: Sequence<ComplexNumber>, n: Int): Sequence<ComplexNumber> {
+
+    if (n == 0 || n and (n - 1) != 0) throw IllegalArgumentException("N should be power of 2 but $n found")
+
     val ii = x.iterator()
     val xx = Array(n) {
         if (ii.hasNext())
@@ -81,24 +84,22 @@ fun fft(x: Sequence<ComplexNumber>, n: Int): Sequence<ComplexNumber> {
         }
     }
 
-    // Danielson-Lanzcos routine
-    var mmax = 2
-    while (n > mmax) {
-        val istep = mmax shl 1
-        val theta = -(2 * PI / mmax)
-        val wtemp = sin(theta / 2).r
-        val wp = -2 * wtemp * wtemp + sin(theta).i
-        var w = 1.r
-        for (m in 1..mmax step 2) {
-            for (i in m..n step istep) {
-                val j = i + mmax
-                val temp = w * xx[j / 2]
-                xx[j / 2] = xx[i / 2] - temp
-                xx[i / 2] += temp
+    // iterative fft
+    var m = 2
+    while (m <= n) {
+        val y = -2.0 * PI / m
+        val wm = cos(y) + sin(y).i
+        for (k in 0 until n step m) {
+            var w = 1.r
+            for (l in 0 until m / 2) {
+                val t = w * xx[k + l + m / 2]
+                val u = xx[k + l]
+                xx[k + l] = u + t
+                xx[k + l + m / 2] = u - t
+                w *= wm
             }
-            w += w * wp
         }
-        mmax = istep
+        m = m shl 1
     }
 
     return xx.asSequence()
