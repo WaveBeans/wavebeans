@@ -4,16 +4,50 @@ import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.sqrt
 
-typealias ComplexNumber = Array<Double>
+val CZERO = 0.r
+
+data class ComplexNumber(val re: Double, val im: Double) : Comparable<ComplexNumber> {
+
+    fun abs(): Double = sqrt(re * re + im * im)
+
+    fun phi(): Double = atan2(im, re)
+
+    override fun toString(): String {
+        val r = this.re.toString()
+        val i = if (this.im < 0) "-${abs(this.im)}" else "+${this.im}"
+        return "$r${i}i"
+    }
+
+    override fun compareTo(other: ComplexNumber): Int {
+        return when {
+            this.re - other.re > 1e-15 -> 1
+            this.re - other.re < -1e-15 -> -1
+            abs(this.re - other.re) < 1e-15 && this.im - other.im > 1e-15 -> 1
+            abs(this.re - other.re) < 1e-15 && this.im - other.im < -1e-15 -> -1
+            else -> 0
+        }
+
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as ComplexNumber
+
+        return this.compareTo(other) == 0
+    }
+
+    override fun hashCode(): Int {
+        var result = re.hashCode()
+        result = 31 * result + im.hashCode()
+        return result
+    }
+
+}
 
 @Suppress("NOTHING_TO_INLINE")
-inline fun complex(re: Double, im: Double): ComplexNumber = arrayOf(re, im)
-
-val ComplexNumber.re: Double
-    inline get() = this[0]
-
-val ComplexNumber.im: Double
-    inline get() = this[1]
+inline fun complex(re: Double, im: Double): ComplexNumber = ComplexNumber(re, im)
 
 val Number.r: ComplexNumber
     get() = complex(this.toDouble(), 0.0)
@@ -49,15 +83,4 @@ operator fun ComplexNumber.times(a: ComplexNumber): ComplexNumber =
                 re * a.re - im * a.im,
                 re * a.im + im * a.re
         )
-
-fun ComplexNumber.abs(): Double = sqrt(re * re + im * im)
-
-fun ComplexNumber.phi(): Double = atan2(im, re)
-
-fun ComplexNumber?.string(): String {
-    if (this == null) return "undefined"
-    val r = this.re.toString()
-    val i = if (this.im < 0) "+${abs(this.im)}" else "-${this.im}"
-    return "$r${i}j"
-}
 

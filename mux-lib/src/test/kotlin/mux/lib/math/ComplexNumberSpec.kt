@@ -3,6 +3,8 @@ package mux.lib.math
 import assertk.assertThat
 import assertk.assertions.isCloseTo
 import assertk.assertions.isEqualTo
+import assertk.assertions.isGreaterThan
+import assertk.assertions.isLessThan
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 
@@ -41,5 +43,22 @@ object ComplexNumberSpec : Spek({
         it("Define via `1.i - 1  `") { assertThat(1.i - 1).isEqualTo(complex(-1.0, 1.0)) }
         it("Define via `1.i + 1.r`") { assertThat(1.i + 1.r).isEqualTo(complex(1.0, 1.0)) }
         it("Define via `1.i - 1.r`") { assertThat(1.i - 1.r).isEqualTo(complex(-1.0, 1.0)) }
+        it("Define via `-3 - 2.i`") { assertThat(-3 - 2.i).isEqualTo(complex(-3.0, -2.0)) }
+    }
+
+    describe("comparing complex number") {
+        it("bigger positive (2+2.i) > smaller positive(1+1.i)") { assertThat(2 + 2.i).isGreaterThan(1 + 1.i) }
+        it("bigger positive (2+2.i) > the same negative(-2-2.i)") { assertThat(2 + 2.i).isGreaterThan(-2 - 2.i) }
+        it("bigger positive (2+2.i) > the bigger by absolute value negative(-3-3.i)") { assertThat(2 + 2.i).isGreaterThan(-3 - 3.i) }
+        it("bigger positive (2+2.i) > zero") { assertThat(2 + 2.i).isGreaterThan(CZERO) }
+        it("bigger positive (2+2.i) > smaller 1.i") { assertThat(2 + 2.i).isGreaterThan(1.i) }
+
+        it("smaller positive(1+1.i) < bigger positive (2+2.i)") { assertThat(1 + 1.i).isLessThan(2 + 2.i) }
+        it("the same negative(-2-2.i) < bigger positive (2+2.i)") { assertThat(-2 - 2.i).isLessThan(2 + 2.i) }
+        it("the bigger by absolute value negative(-3-3.i) < bigger positive (2+2.i)") { assertThat(-3 - 3.i).isLessThan(2 + 2.i) }
+        it("zero < bigger positive (2+2.i)") { assertThat(CZERO).isLessThan(2 + 2.i) }
+        it("smaller 1.i < bigger positive (2+2.i)") { assertThat(1.i).isLessThan(2 + 2.i) }
+
+        it("(2+2.i) == (2.0000000000000000000001+2.0000000000000000000001.i)") { assertThat(2 + 2.i).isEqualTo(2.0000000000000000000001 + 2.0000000000000000000001.i) }
     }
 })

@@ -3,11 +3,13 @@ package mux.lib
 import assertk.assertThat
 import assertk.assertions.hasMessage
 import assertk.assertions.isInstanceOf
-import assertk.assertions.isLessThan
 import assertk.assertions.isNotNull
 import assertk.catch
 import mux.lib.io.SineGeneratedInput
-import mux.lib.math.*
+import mux.lib.math.i
+import mux.lib.math.minus
+import mux.lib.math.plus
+import mux.lib.math.r
 import mux.lib.stream.AudioSampleStream
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
@@ -27,7 +29,7 @@ object DftSpec : Spek({
 
             it("should be as specific array") {
                 assertThat(dft.toList()).eachIndexed(4) { v, i ->
-                    v.transform { (it - expected[i]).abs() }.isLessThan(1e-14)
+                    v.isCloseTo(expected[i], 1e-14 + 1e-14.i)
                 }
             }
         }
@@ -37,7 +39,7 @@ object DftSpec : Spek({
 
             it("should be as specific array") {
                 assertThat(fft.toList()).eachIndexed(4) { v, i ->
-                    v.transform { (it - expected[i]).abs() }.isLessThan(1e-14)
+                    v.isCloseTo(expected[i], 1e-14 + 1e-14.i)
                 }
             }
         }
@@ -56,7 +58,7 @@ object DftSpec : Spek({
                         0 - 0.i
                 )
                 assertThat(idft.toList()).eachIndexed(4) { v, i ->
-                    v.transform { (it - expected[i]).abs() }.isLessThan(1e-14)
+                    v.isCloseTo(expected[i], 1e-14 + 1e-14.i)
                 }
             }
         }
@@ -77,7 +79,7 @@ object DftSpec : Spek({
 
             it("should be as specific array") {
                 assertThat(fft.toList()).eachIndexed(256) { v, i ->
-                    v.transform { (it - expected[i]).abs() }.isLessThan(1e-14)
+                    v.isCloseTo(expected[i], 1e-14 + 1e-14.i)
                 }
             }
         }
@@ -98,7 +100,7 @@ object DftSpec : Spek({
 
             it("should be as specific array") {
                 assertThat(fft.toList()).eachIndexed(256) { v, i ->
-                    v.transform { (it - expected[i]).abs() }.isLessThan(1e-14)
+                    v.isCloseTo(expected[i], 1e-14 + 1e-14.i)
                 }
             }
         }
@@ -130,7 +132,7 @@ object DftSpec : Spek({
 
             it("should be as specific array") {
                 assertThat(fft.toList()).eachIndexed(256) { v, i ->
-                    v.transform { (it - expected[i]).abs() }.isLessThan(1e-11)
+                    v.isCloseTo(expected[i], 1e-11 + 1e-11.i)
                 }
             }
         }
@@ -150,5 +152,104 @@ object DftSpec : Spek({
                 }
             }
         }
+    }
+
+    describe("FFT zero padding") {
+        describe("x with odd number of elements") {
+            val x = arrayOf(1.r, 2.r, 3.r, 4.r, 5.r).asSequence()
+            describe("padding by 8") {
+                val padded = x.zeropad(5, 8)
+                it("should be [3,4,5,0,0,0,1,2]") {
+                    val expected = arrayOf(3.r, 4.r, 5.r, 0.r, 0.r, 0.r, 1.r, 2.r)
+                    assertThat(padded.toList()).eachIndexed(8) { v, i ->
+                        v.isCloseTo(expected[i], 1e-14 + 1e-14.i)
+                    }
+                }
+            }
+
+            describe("padding by 16") {
+                val padded = x.zeropad(5, 16)
+                it("should be [3,4,5,0 x 11 times,1,2]") {
+                    val expected = arrayOf(3.r, 4.r, 5.r) + Array(11) { 0.r } + arrayOf(1.r, 2.r)
+                    assertThat(padded.toList()).eachIndexed(16) { v, i ->
+                        v.isCloseTo(expected[i], 1e-14 + 1e-14.i)
+                    }
+                }
+            }
+        }
+
+        describe("x with even number of elements") {
+            val x = arrayOf(1.r, 2.r, 3.r, 4.r).asSequence()
+            describe("padding by 8") {
+                val padded = x.zeropad(4, 8)
+                it("should be [3,4,0,0,0,0,1,2]") {
+                    val expected = arrayOf(3.r, 4.r, 0.r, 0.r, 0.r, 0.r, 1.r, 2.r)
+                    assertThat(padded.toList()).eachIndexed(8) { v, i ->
+                        v.isCloseTo(expected[i], 1e-14 + 1e-14.i)
+                    }
+                }
+            }
+
+            describe("padding by 16") {
+                val padded = x.zeropad(5, 16)
+                it("should be [3,4,0 x 12 times,1,2]") {
+                    val expected = arrayOf(3.r, 4.r) + Array(12) { 0.r } + arrayOf(1.r, 2.r)
+                    assertThat(padded.toList()).eachIndexed(16) { v, i ->
+                        v.isCloseTo(expected[i], 1e-14 + 1e-14.i)
+                    }
+                }
+            }
+        }
+
+        describe("x with not enough elements") {
+            val x = arrayOf(1.r, 2.r, 3.r, 4.r).asSequence()
+            describe("padding by 8") {
+                val padded = x.zeropad(5, 8)
+                it("should be [3,4,0,0,0,0,1,2]") {
+                    val expected = arrayOf(3.r, 4.r, 0.r, 0.r, 0.r, 0.r, 1.r, 2.r)
+                    assertThat(padded.toList()).eachIndexed(8) { v, i ->
+                        v.isCloseTo(expected[i], 1e-14 + 1e-14.i)
+                    }
+                }
+            }
+        }
+
+        describe("x with more elements then needed") {
+            val x = arrayOf(1.r, 2.r, 3.r, 4.r, 5.r, 6.r, 7.r).asSequence()
+            describe("padding by 8") {
+                val padded = x.zeropad(5, 8)
+                it("should be [3,4,5,0,0,0,1,2]") {
+                    val expected = arrayOf(3.r, 4.r, 5.r, 0.r, 0.r, 0.r, 1.r, 2.r)
+                    assertThat(padded.toList().take(8)).eachIndexed(8) { v, i ->
+                        v.isCloseTo(expected[i], 1e-14 + 1e-14.i)
+                    }
+                }
+            }
+        }
+    }
+
+    describe("FFT with zero padded sample") {
+        val x = (1..5).map { it.r }.asSequence()
+
+        describe("padding by 8") {
+            val fft = fft(x.zeropad(5, 8), 8)
+
+            it("should be as specific array") {
+                val expected = arrayOf(
+                        15 + 0.i,
+                        7.24264069 - 5.41421356.i,
+                        -3 - 2.i,
+                        -1.24264069 + 2.58578644.i,
+                        3 + 0.i,
+                        -1.24264069 - 2.58578644.i,
+                        -3 + 2.i,
+                        7.24264069 + 5.41421356.i
+                )
+                assertThat(fft.toList()).eachIndexed(expected.size) { v, i ->
+                    v.isCloseTo(expected[i], 1e-8 + 1e-8.i)
+                }
+            }
+        }
+
     }
 })

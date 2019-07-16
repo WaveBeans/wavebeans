@@ -3,6 +3,7 @@ package mux.lib
 import mux.lib.math.*
 import java.lang.IllegalArgumentException
 import kotlin.math.PI
+import kotlin.math.ceil
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -52,6 +53,10 @@ fun idft(x: Sequence<ComplexNumber>, n: Int): Sequence<ComplexNumber> {
             }
 }
 
+/**
+ * Reference FFT implementation.
+ * Based on https://en.wikipedia.org/wiki/Cooley%E2%80%93Tukey_FFT_algorithm#Data_reordering,_bit_reversal,_and_in-place_algorithms
+ */
 fun fft(x: Sequence<ComplexNumber>, n: Int): Sequence<ComplexNumber> {
 
     if (n == 0 || n and (n - 1) != 0) throw IllegalArgumentException("N should be power of 2 but $n found")
@@ -103,4 +108,19 @@ fun fft(x: Sequence<ComplexNumber>, n: Int): Sequence<ComplexNumber> {
     }
 
     return xx.asSequence()
+}
+
+fun Sequence<ComplexNumber>.zeropad(m: Int, n: Int): Sequence<ComplexNumber> {
+    val m1 = ceil(m / 2.0).toInt()
+    val m2 = m - m1
+    val r = n - m
+    return this.windowed(m, m, partialWindows = true) { l ->
+        val firstHalfToEnd = l.take(m2)
+        val rest = (0 until (m - l.size)).asSequence().map { CZERO }
+        l.asSequence().drop(m2)
+                .take(m1) // second half to the beginning
+                .plus((0 until r).asSequence().map { CZERO }) // zero padding
+                .plus(rest) // if not enough elements read (<m) the add some here
+                .plus(firstHalfToEnd)
+    }.flatMap { it.asSequence() }
 }
