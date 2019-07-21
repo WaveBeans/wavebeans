@@ -6,13 +6,19 @@ import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.catch
 import mux.lib.io.SineGeneratedInput
-import mux.lib.math.i
-import mux.lib.math.minus
-import mux.lib.math.plus
-import mux.lib.math.r
+import mux.lib.math.*
 import mux.lib.stream.AudioSampleStream
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
+import org.spekframework.spek2.style.specification.xdescribe
+import java.awt.Graphics
+import java.awt.Graphics2D
+import java.awt.image.BufferedImage
+import java.awt.image.RenderedImage
+import java.awt.image.renderable.RenderedImageFactory
+import java.io.File
+import javax.imageio.ImageIO
+import kotlin.math.log10
 
 object DftSpec : Spek({
     describe("Given signal as array of doubles [1,4]") {
@@ -251,5 +257,25 @@ object DftSpec : Spek({
             }
         }
 
+    }
+
+    xdescribe("Windows") {// just test point for now
+        val sine = SineGeneratedInput(
+                128.0f,
+                64.0,
+                0.5,
+                100.0
+        ).asSequence(44100.0f).map { it.r }
+
+        val fft = fft(
+                sine
+                        .hanningWindow(60001)
+                        .zeropad(60001, 65536)
+                , 65536)
+        File("test.csv").writeText(
+                fft
+                        .map { 20 * log10(it.abs()) }
+                        .joinToString(separator = "\n")
+        )
     }
 })
