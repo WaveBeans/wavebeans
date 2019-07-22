@@ -54,7 +54,7 @@ fun idft(x: Sequence<ComplexNumber>, n: Int): Sequence<ComplexNumber> {
  * Reference FFT implementation.
  * Based on https://en.wikipedia.org/wiki/Cooley%E2%80%93Tukey_FFT_algorithm#Data_reordering,_bit_reversal,_and_in-place_algorithms
  */
-fun fft(x: Sequence<ComplexNumber>, n: Int): Sequence<ComplexNumber> {
+fun fft(x: Sequence<ComplexNumber>, n: Int, inversed: Boolean = false): Sequence<ComplexNumber> {
 
     if (n == 0 || n and (n - 1) != 0) throw IllegalArgumentException("N should be power of 2 but $n found")
 
@@ -88,8 +88,9 @@ fun fft(x: Sequence<ComplexNumber>, n: Int): Sequence<ComplexNumber> {
 
     // iterative fft
     var m = 2
+    val c = (if (inversed) -2.0 else 2.0) * PI
     while (m <= n) {
-        val y = -2.0 * PI / m
+        val y = c / m
         val wm = cos(y) + sin(y).i
         for (k in 0 until n step m) {
             var w = 1.r
@@ -104,7 +105,10 @@ fun fft(x: Sequence<ComplexNumber>, n: Int): Sequence<ComplexNumber> {
         m = m shl 1
     }
 
-    return xx.asSequence()
+    return if (inversed)
+        xx.asSequence().map { it / n }
+    else
+        xx.asSequence()
 }
 
 fun Sequence<ComplexNumber>.zeropad(m: Int, n: Int): Sequence<ComplexNumber> {

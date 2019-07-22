@@ -6,8 +6,10 @@ import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.catch
 import mux.lib.io.SineGeneratedInput
+import mux.lib.io.SineSweepGeneratedInput
 import mux.lib.math.*
 import mux.lib.stream.AudioSampleStream
+import mux.lib.stream.SampleStream
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import org.spekframework.spek2.style.specification.xdescribe
@@ -259,7 +261,100 @@ object DftSpec : Spek({
 
     }
 
-    xdescribe("Windows") {// just test point for now
+    describe("IFFT") {
+        fun sine(freq: Double) = AudioSampleStream(SineGeneratedInput(
+                44100.0f,
+                freq,
+                0.5,
+                1.0
+        ))
+
+        val signals = mapOf(
+                "[1..4]" to { (1..4).map { it.r }.asSequence() },
+                "sine 64Hz @ 128Hz" to {
+                    SineGeneratedInput(
+                            128.0f,
+                            64.0,
+                            0.5,
+                            2.0
+                    ).asSequence(128.0f).map { it.r }
+                },
+                "sine 64Hz @ 1280Hz" to {
+                    SineGeneratedInput(
+                            1280.0f,
+                            64.0,
+                            0.5,
+                            2.0
+                    ).asSequence(1280.0f).map { it.r }.drop(128).take(512)
+                },
+                "sine 440Hz @ 44100Hz" to {
+                    sine(440.0).asSequence(44100.0f).map { it.r }.drop(1024).take(2048)
+                },
+                "sines 440Hz+880Hz @ 44100Hz" to {
+                    sine(440.0)
+                            .mixStream(0, sine(880.0))
+                            .asSequence(44100.0f).map { it.r }.drop(1024).take(2048)
+                },
+                "sines 440Hz+1200Hz @ 44100Hz" to {
+                    sine(440.0)
+                            .mixStream(0, sine(1200.0))
+                            .asSequence(44100.0f).map { it.r }.drop(1024).take(4096)
+                },
+                "sines 440Hz+1200Hz+30Hz+123Hz+456Hz @ 44100Hz" to {
+                    sine(440.0)
+                            .mixStream(0, sine(440.0))
+                            .mixStream(0, sine(30.0))
+                            .mixStream(0, sine(123.0))
+                            .mixStream(0, sine(456.0))
+                            .asSequence(44100.0f).map { it.r }.drop(1024).take(4096)
+                },
+                "sines [440..660]Hz @ 44100Hz" to {
+                    (440..660)
+                            .fold(sine(440.0) as SampleStream) { a, v -> a.mixStream(0, sine(v.toDouble())) }
+                            .asSequence(44100.0f).map { it.r }.drop(1024).take(4096)
+                },
+                "sweep sine from 64Hz to 1024Hz @ 4096Hz" to {
+                    SineSweepGeneratedInput(
+                            4096.0f,
+                            64.0,
+                            1024.0,
+                            0.5,
+                            2.0
+                    ).asSequence(4096.0f).map { it.r }
+                }
+        )
+
+        signals.forEach { signal ->
+            describe("Given signal ${signal.key}") {
+                println("Test case: ${signal.key}")
+                var s = System.currentTimeMillis()
+                val x = signal.value().toList().asSequence()
+                println("Generation time = ${System.currentTimeMillis() - s}ms")
+                val n = x.count()
+                s = System.currentTimeMillis()
+                val fft = fft(x, n)
+                println("FFT time = ${System.currentTimeMillis() - s}ms")
+
+                describe("Calculating inversed FFT") {
+                    s = System.currentTimeMillis()
+                    val ifft = fft(fft, n, inversed = true)
+                    println("IFFT time = ${System.currentTimeMillis() - s}ms")
+
+                    it("should be as source signal") {
+                        val expected = x.toList()
+                        assertThat(ifft.toList()).eachIndexed(expected.size) { v, i ->
+                            v.isCloseTo(expected[i], 1e-12 + 1e-12.i)
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+
+
+    xdescribe("Windows") {
+        // just test point for now
         val sine = SineGeneratedInput(
                 128.0f,
                 64.0,
