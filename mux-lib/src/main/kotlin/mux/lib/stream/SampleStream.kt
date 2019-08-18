@@ -15,10 +15,6 @@ interface SampleStream : Informable, TimeRangeProjectable<SampleStream> {
 
     fun asSequence(sampleRate: Float): Sequence<Sample>
 
-    fun mixStream(pos: Int, sampleStream: SampleStream): SampleStream {
-        return MixedSampleStream(this, sampleStream, pos)
-    }
-
     /**
      * The length of the stream with specified sample rate, the output units might be specified as parameter.
      * Effectively uses [samplesCount] and divides it by sample rate. Depending on [TimeUnit] may loose precision,

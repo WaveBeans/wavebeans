@@ -33,7 +33,7 @@ object MixedSampleStreamSpec : Spek({
             )
 
             describe("On 0 position") {
-                val mixed = sourceSampleStream.mixStream(0, sampleStream)
+                val mixed = sourceSampleStream + sampleStream
 
                 it("should be different instance from source stream") { assertThat(mixed).isNotSameAs(sourceSampleStream) }
                 it("should be different instance from mixing in stream") { assertThat(mixed).isNotSameAs(sampleStream) }
@@ -103,7 +103,7 @@ object MixedSampleStreamSpec : Spek({
             }
 
             describe("On 10th index (10 samples shift)") {
-                val mixed = sourceSampleStream.mixStream(10, sampleStream)
+                val mixed = sum(sourceSampleStream, sampleStream, 10)
 
                 it("should be 60 samples length") { assertThat(mixed.samplesCount()).isEqualTo(60) }
                 it("should be array of values: [0, 10) + [60, 138] step 2 + [90, 100)") {
@@ -114,7 +114,7 @@ object MixedSampleStreamSpec : Spek({
             }
 
             describe("On 50th position (50 samples shift)") {
-                val mixed = sourceSampleStream.mixStream(50, sampleStream)
+                val mixed = sum(sourceSampleStream, sampleStream, 50)
 
                 it("should be 100 samples length") { assertThat(mixed.samplesCount()).isEqualTo(100) }
                 it("should be array of values: [0, 50) + [50, 100)  ") {
@@ -125,7 +125,7 @@ object MixedSampleStreamSpec : Spek({
             }
 
             describe("On 60th position") {
-                val mixed = sourceSampleStream.mixStream(60, sampleStream)
+                val mixed = sum(sourceSampleStream, sampleStream, 60)
 
                 it("should be 110 samples length") { assertThat(mixed.samplesCount()).isEqualTo(110) }
                 it("should be array of values: [0, 50) + 0.repeat(10) + [50, 100)  ") {
@@ -135,12 +135,15 @@ object MixedSampleStreamSpec : Spek({
                 }
             }
 
-            describe("On negative position") {
-                val e = catch { sourceSampleStream.mixStream(-1, sampleStream) }
+            describe("On -1 position") {
+                val mixed = sum(sourceSampleStream, sampleStream, -1)
 
-                it("should throw an exception") { assertThat(e).isNotNull() }
-                it("should be the instance of ${SampleStreamException::class}") { assertThat(e!!).isInstanceOf(SampleStreamException::class) }
-                it("should have message pointing out the reason") { assertThat(e!!).hasMessage("Position can't be negative") }
+                it("should be 100 samples length") { assertThat(mixed.samplesCount()).isEqualTo(51) }
+                it("should be array of values: [50] + [51..147] step 2 + [49]  ") {
+                    assertThat(mixed.listOfBytesAsInts(50.0f)).isEqualTo(
+                            (listOf(50) + (51 .. 147 step 2) + listOf(49)).toList()
+                    )
+                }
             }
 
 
@@ -157,7 +160,7 @@ object MixedSampleStreamSpec : Spek({
             )
 
             describe("On 0 position") {
-                val mixed = sourceSampleStream.mixStream(0, sampleStream)
+                val mixed = sourceSampleStream + sampleStream
 
                 it("should be different instance from source stream") { assertThat(mixed).isNotSameAs(sourceSampleStream) }
                 it("should be different instance from mixing in stream") { assertThat(mixed).isNotSameAs(sampleStream) }
@@ -173,7 +176,7 @@ object MixedSampleStreamSpec : Spek({
             }
 
             describe("On 10th position (10 samples shift)") {
-                val mixed = sourceSampleStream.mixStream(10, sampleStream)
+                val mixed = sum(sourceSampleStream, sampleStream, 10)
 
                 it("should be 50 samples length") { assertThat(mixed.samplesCount()).isEqualTo(50) }
                 it("should be array of values  [0, 10) + [60, 78) step 2 + [20, 50)") {
@@ -197,7 +200,7 @@ object MixedSampleStreamSpec : Spek({
             )
 
             describe("On 0 position") {
-                val mixed = sourceSampleStream.mixStream(0, sampleStream)
+                val mixed = sourceSampleStream + sampleStream
 
                 it("should be different instance from source stream") { assertThat(mixed).isNotSameAs(sourceSampleStream) }
                 it("should be different instance from mixing in stream") { assertThat(mixed).isNotSameAs(sampleStream) }
@@ -213,7 +216,7 @@ object MixedSampleStreamSpec : Spek({
             }
 
             describe("On 10 position") {
-                val mixed = sourceSampleStream.mixStream(10, sampleStream)
+                val mixed = sum(sourceSampleStream, sampleStream, 10)
 
                 it("should be 50 samples length") { assertThat(mixed.samplesCount()).isEqualTo(110) }
                 it("should be array of values  [0, 10) + [60, 138] step 2 + [90, 150)") {

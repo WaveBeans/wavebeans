@@ -9,6 +9,7 @@ import mux.lib.BitDepth
 import mux.lib.io.ByteArrayLittleEndianAudioInput
 import mux.lib.io.SineGeneratedInput
 import mux.lib.stream.AudioSampleStream
+import mux.lib.stream.plus
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 
@@ -68,7 +69,7 @@ object ListStreamsCommandSpec : Spek({
                 ByteArray(100) { 0 }
         ))
         val samples2 = AudioSampleStream(SineGeneratedInput(50.0f, 20.0, 0.1, 1.0))
-        val mix = samples1.mixStream(0, samples2)
+        val mix = samples1 + samples2
         session.registerSampleStream("stream1", mix)
 
         describe("Listing all streams") {
@@ -76,9 +77,9 @@ object ListStreamsCommandSpec : Spek({
             val output = command.run(RootScope(session), null)
 
             it("should return 1 stream with name and description") {
-                assertThat(output).isEqualTo("[stream1] 2.00 sec ([Mix-in] Sinusoid amplitude=0.1, [Mix-in] Sinusoid " +
-                        "length=1.0sec, [Mix-in] Sinusoid offset=0.0sec, [Mix-in] Sinusoid frequency=20.0Hz, " +
-                        "[Source] Bit depth=8 bit, [Source] Size=100 bytes, Samples count=100, Mix In position=0)")
+                assertThat(output).isEqualTo("[stream1] 2.00 sec ([Merging] Sinusoid amplitude=0.1, [Merging] Sinusoid " +
+                        "length=1.0sec, [Merging] Sinusoid offset=0.0sec, [Merging] Sinusoid frequency=20.0Hz, " +
+                        "[Source] Bit depth=8 bit, [Source] Size=100 bytes, Samples count=100, Shift=0)")
             }
         }
     }

@@ -5,6 +5,7 @@ import mux.cli.command.AbstractNewSamplesScopeCommand
 import mux.cli.command.ArgumentMissingException
 import mux.cli.command.ArgumentWrongException
 import mux.cli.command.Selection
+import mux.lib.stream.sum
 import java.util.concurrent.TimeUnit
 
 class MixStreamCommand(session: Session, val sourceStreamName: String) : AbstractNewSamplesScopeCommand(
@@ -26,14 +27,16 @@ class MixStreamCommand(session: Session, val sourceStreamName: String) : Abstrac
             val stream = session.streamByName(streamName)
                     ?: throw ArgumentWrongException("Stream by name `$streamName` is not found")
 
-            val mixedStream = sourceStream.mixStream(
-                    position,
+            val mixedStream = sum(
+                    sourceStream,
                     selection
                             ?.let {
                                 val tu = TimeUnit.NANOSECONDS
                                 stream.rangeProjection(it.start.time(tu), it.end.time(tu), tu)
                             }
-                            ?: stream
+                            ?: stream,
+                    position
+
             )
 
             Pair("$sourceStreamName+$streamName", mixedStream)

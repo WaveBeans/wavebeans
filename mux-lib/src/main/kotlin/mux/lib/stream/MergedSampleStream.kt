@@ -17,7 +17,11 @@ class MergedSampleStream(
 ) : SampleStream {
 
     override fun info(namespace: String?): Map<String, String> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val prefix = namespace?.let { "[$it] " } ?: ""
+        return mergingStream.info("${prefix}Merging") + sourceStream.info("${prefix}Source") + mapOf(
+                "${prefix}Samples count" to samplesCount().toString(),
+                "${prefix}Shift" to shift.toString()
+        )
     }
 
     override fun samplesCount(): Int {

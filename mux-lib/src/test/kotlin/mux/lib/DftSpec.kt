@@ -10,6 +10,7 @@ import mux.lib.io.SineSweepGeneratedInput
 import mux.lib.math.*
 import mux.lib.stream.AudioSampleStream
 import mux.lib.stream.SampleStream
+import mux.lib.stream.plus
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import org.spekframework.spek2.style.specification.xdescribe
@@ -126,7 +127,7 @@ object DftSpec : Spek({
                 1.0,
                 2.0
         ))
-        val x = sine1.mixStream(0, sine2)
+        val x = (sine1 + sine2)
                 .asSequence(128.0f).map { it.r }
 
         describe("Calculating FFT") {
@@ -291,26 +292,20 @@ object DftSpec : Spek({
                     sine(440.0).asSequence(44100.0f).map { it.r }.drop(1024).take(2048)
                 },
                 "sines 440Hz+880Hz @ 44100Hz" to {
-                    sine(440.0)
-                            .mixStream(0, sine(880.0))
+                    (sine(440.0) + sine(880.0))
                             .asSequence(44100.0f).map { it.r }.drop(1024).take(2048)
                 },
                 "sines 440Hz+1200Hz @ 44100Hz" to {
-                    sine(440.0)
-                            .mixStream(0, sine(1200.0))
+                    (sine(440.0) + sine(1200.0))
                             .asSequence(44100.0f).map { it.r }.drop(1024).take(4096)
                 },
                 "sines 440Hz+1200Hz+30Hz+123Hz+456Hz @ 44100Hz" to {
-                    sine(440.0)
-                            .mixStream(0, sine(440.0))
-                            .mixStream(0, sine(30.0))
-                            .mixStream(0, sine(123.0))
-                            .mixStream(0, sine(456.0))
+                    (sine(440.0) + sine(440.0) + sine(30.0)+ sine(123.0) + sine(456.0))
                             .asSequence(44100.0f).map { it.r }.drop(1024).take(4096)
                 },
                 "sines [440..660]Hz @ 44100Hz" to {
                     (440..660)
-                            .fold(sine(440.0) as SampleStream) { a, v -> a.mixStream(0, sine(v.toDouble())) }
+                            .fold(sine(440.0) as SampleStream) { a, v -> a + sine(v.toDouble()) }
                             .asSequence(44100.0f).map { it.r }.drop(1024).take(4096)
                 },
                 "sweep sine from 64Hz to 1024Hz @ 4096Hz" to {
