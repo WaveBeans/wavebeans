@@ -1,8 +1,11 @@
 package mux.lib.io
 
+import mux.lib.BitDepth
 import mux.lib.TimeRangeProjectable
 import mux.lib.file.Informable
+import mux.lib.stream.AudioSampleStream
 import mux.lib.stream.Sample
+import mux.lib.stream.SampleStream
 import java.io.InputStream
 import java.util.concurrent.TimeUnit
 

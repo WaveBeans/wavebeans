@@ -2,6 +2,8 @@ package mux.lib
 
 import assertk.Assert
 import assertk.all
+import assertk.assertions.each
+import assertk.assertions.isCloseTo
 import assertk.assertions.isEqualTo
 import assertk.assertions.support.expected
 import assertk.assertions.support.show
@@ -39,6 +41,16 @@ fun <T> Assert<Iterable<T>>.eachIndexed(expectedSize: Int? = null, f: (Assert<T>
             f(assertThat(item, name = "${name ?: ""}${show(index, "[]")}"), index)
         }
     }
+}
+
+fun Assert<SampleStream>.isCloseTo(v: SampleStream, sampleRate: Float, delta: Double) = given { actual ->
+    val actualss = actual.asSequence(sampleRate).toList()
+    val vss = v.asSequence(sampleRate).toList()
+    if (actualss.size - vss.size != 0) expected("The size should be the same", vss.size, actualss.size)
+    val diff = actualss
+            .zip(vss)
+            .map { it.first - it.second }
+    assertThat(diff).each { it.isCloseTo(0.0, delta) }
 }
 
 /**
