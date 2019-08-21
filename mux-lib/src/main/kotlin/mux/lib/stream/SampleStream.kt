@@ -8,12 +8,10 @@ import mux.lib.io.SineGeneratedInput
 import mux.lib.samplesCountToLength
 import java.util.concurrent.TimeUnit
 
-interface SampleStream : Informable, TimeRangeProjectable<SampleStream> {
+interface SampleStream : Informable, MuxStream<Sample>, TimeRangeProjectable<SampleStream> {
 
     /** number of samples in the stream. */
     fun samplesCount(): Int
-
-    fun asSequence(sampleRate: Float): Sequence<Sample>
 
     /**
      * The length of the stream with specified sample rate, the output units might be specified as parameter.
@@ -25,6 +23,7 @@ interface SampleStream : Informable, TimeRangeProjectable<SampleStream> {
      */
     fun length(sampleRate: Float, timeUnit: TimeUnit = TimeUnit.MILLISECONDS): Long =
             samplesCountToLength(samplesCount().toLong(), sampleRate, timeUnit)
+
 }
 
 class SampleStreamException(message: String) : Exception(message)

@@ -1,9 +1,8 @@
 package mux.cli.command
 
 import mux.cli.Session
-import mux.lib.BitDepth
 import mux.lib.WavLEAudioFileDescriptor
-import mux.lib.io.ByteArrayLittleEndianAudioOutput
+import mux.lib.io.ByteArrayLittleEndianFixedOutput
 import mux.lib.stream.SampleStream
 import javax.sound.sampled.AudioSystem
 
@@ -19,7 +18,7 @@ class PlayCommand(
     val outputSampleRate = session.outputDescriptor.sampleRate
 
     val descriptor = WavLEAudioFileDescriptor(outputSampleRate, outputBitDepth, 1)
-    val output = ByteArrayLittleEndianAudioOutput(outputSampleRate, outputBitDepth, samples)
+    val output = ByteArrayLittleEndianFixedOutput(outputSampleRate, outputBitDepth, samples)
 
     val data = output.toByteArray()
     val s = start?.let { it * outputBitDepth.bytesPerSample } ?: 0

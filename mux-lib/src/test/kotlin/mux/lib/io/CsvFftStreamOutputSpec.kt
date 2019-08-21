@@ -1,0 +1,104 @@
+package mux.lib.io
+
+import assertk.assertThat
+import assertk.assertions.each
+import assertk.assertions.isEqualTo
+import assertk.assertions.isNotNull
+import mux.lib.RectangleWindow
+import mux.lib.stream.fft
+import mux.lib.stream.sampleStream
+import org.spekframework.spek2.Spek
+import org.spekframework.spek2.style.specification.describe
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import kotlin.streams.toList
+
+class CsvFftStreamOutputSpec : Spek({
+    describe("FFT of signal with sample rate 4 Hz to CSV") {
+        val sampleRate = 4.0f
+        val x = (1..4)
+                .sampleStream(sampleRate)
+                .fft(2, RectangleWindow(4))
+
+        val expectedFrequencies = listOf(0.0, 1.0)
+        val expectedTimes = listOf(0.0, 500.0)
+
+        describe("Generating magnitude") {
+            BufferedReader(InputStreamReader(CsvFftStreamOutput(sampleRate, x, true).getInputStream())).use { reader ->
+                val lines = reader.lines().toList()
+
+                it("should have 3 lines") { assertThat(lines.size).isEqualTo(3) }
+
+                it("Header should have frequencies in 2+ columns") {
+                    assertThat(lines[0].split(",").drop(1).map { it.toDouble() }).isEqualTo(expectedFrequencies)
+                }
+
+                it("2+ lines, 2+ columns should have double values of FFT") {
+                    assertThat(
+                            lines.drop(1)
+                                    .map { l ->
+                                        l.split(",")
+                                                .drop(1)
+                                                .map { it.toDoubleOrNull() }
+                                    }
+                                    .flatten()
+                    ).each { it.isNotNull() }
+                }
+
+                it("2+ lines, 1st column should have time in ms") {
+                    assertThat(
+                            lines.drop(1)
+                                    .map { l ->
+                                        l.split(",")
+                                                .take(1)
+                                                .map { it.toDouble() }
+                                    }
+                                    .flatten()
+                                    .sorted()
+                    ).isEqualTo(expectedTimes)
+                }
+
+            }
+        }
+
+        describe("Generating phase") {
+            BufferedReader(InputStreamReader(CsvFftStreamOutput(sampleRate, x, false).getInputStream())).use { reader ->
+                val lines = reader.lines().toList()
+
+                it("should have 3 lines") { assertThat(lines.size).isEqualTo(3) }
+
+                it("Header should have frequencies in 2+ columns") {
+                    assertThat(lines[0].split(",").drop(1).map { it.toDouble() }).isEqualTo(expectedFrequencies)
+                }
+
+                it("2+ lines, 2+ columns should have double values of FFT") {
+                    assertThat(
+                            lines.drop(1)
+                                    .map { l ->
+                                        l.split(",")
+                                                .drop(1)
+                                                .map { it.toDoubleOrNull() }
+                                    }
+                                    .flatten()
+                    ).each { it.isNotNull() }
+                }
+
+                it("2+ lines, 1st column should have time in ms") {
+                    assertThat(
+                            lines.drop(1)
+                                    .map { l ->
+                                        l.split(",")
+                                                .take(1)
+                                                .map { it.toDouble() }
+                                    }
+                                    .flatten()
+                                    .sorted()
+                    ).isEqualTo(expectedTimes)
+                }
+
+            }
+        }
+
+
+    }
+})

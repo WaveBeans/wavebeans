@@ -32,7 +32,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
         }
 
         describe("output based on that input") {
-            val output = ByteArrayLittleEndianAudioOutput(
+            val output = ByteArrayLittleEndianFixedOutput(
                     sampleRate,
                     BitDepth.BIT_8,
                     AudioSampleStream(input)
@@ -127,7 +127,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
         }
 
         describe("output based on that input") {
-            val output = ByteArrayLittleEndianAudioOutput(
+            val output = ByteArrayLittleEndianFixedOutput(
                     sampleRate,
                     BitDepth.BIT_16,
                     AudioSampleStream(input)
@@ -161,7 +161,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
 
     describe("Output of ByteArray LE, sequence of -100:100, encoding to 8 bit ") {
         val signal = (-100 until 100).toList()
-        val output = ByteArrayLittleEndianAudioOutput(sampleRate, BitDepth.BIT_8, AudioSampleStream(
+        val output = ByteArrayLittleEndianFixedOutput(sampleRate, BitDepth.BIT_8, AudioSampleStream(
                 object : AudioInput {
                     override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): AudioInput =
                             throw UnsupportedOperationException()
@@ -184,7 +184,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
 
     describe("Output of ByteArray LE, sequence of -100:100, encoding to 16 bit ") {
         val signal = (-100 until 100).toList()
-        val output = ByteArrayLittleEndianAudioOutput(sampleRate, BitDepth.BIT_16, AudioSampleStream(
+        val output = ByteArrayLittleEndianFixedOutput(sampleRate, BitDepth.BIT_16, AudioSampleStream(
                 object : AudioInput {
                     override fun length(timeUnit: TimeUnit): Long = throw UnsupportedOperationException()
 
@@ -207,7 +207,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
 
     describe("Output of ByteArray LE, sequence of -100:100, encoding to 24 bit ") {
         val signal = (-100 until 100).toList()
-        val output = ByteArrayLittleEndianAudioOutput(sampleRate, BitDepth.BIT_24, AudioSampleStream(
+        val output = ByteArrayLittleEndianFixedOutput(sampleRate, BitDepth.BIT_24, AudioSampleStream(
                 object : AudioInput {
                     override fun length(timeUnit: TimeUnit): Long = throw UnsupportedOperationException()
 

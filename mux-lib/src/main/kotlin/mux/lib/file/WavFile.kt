@@ -4,7 +4,7 @@ import mux.lib.AudioFileDescriptor
 import mux.lib.BitDepth
 import mux.lib.WavLEAudioFileDescriptor
 import mux.lib.io.ByteArrayLittleEndianAudioInput
-import mux.lib.io.ByteArrayLittleEndianAudioOutput
+import mux.lib.io.ByteArrayLittleEndianFixedOutput
 import mux.lib.stream.AudioSampleStream
 import mux.lib.stream.SampleStream
 import java.io.*
@@ -215,7 +215,7 @@ class WavFileWriter(
     }
 
     override fun write(sampleStream: SampleStream) {
-        val audioStream = ByteArrayLittleEndianAudioOutput(descriptor.sampleRate, descriptor.bitDepth, sampleStream)
+        val audioStream = ByteArrayLittleEndianFixedOutput(descriptor.sampleRate, descriptor.bitDepth, sampleStream)
         /** Create sub chunk 1 content*/
         val sc1Content = ByteArrayOutputStream()
         val sc1ContentStream = DataOutputStream(sc1Content)

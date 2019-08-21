@@ -62,7 +62,7 @@ class ByteArrayLittleEndianAudioInput(val sampleRate: Float, val bitDepth: BitDe
     }
 }
 
-class ByteArrayLittleEndianAudioOutput(val sampleRate: Float, val bitDepth: BitDepth, val sampleStream: SampleStream) : AudioOutput {
+class ByteArrayLittleEndianFixedOutput(val sampleRate: Float, val bitDepth: BitDepth, val sampleStream: SampleStream) : FixedOutput {
 
     override fun toByteArray(): ByteArray {
         val buf = ByteArray(dataSize())

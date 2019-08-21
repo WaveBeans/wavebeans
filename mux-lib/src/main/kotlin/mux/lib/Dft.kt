@@ -131,7 +131,7 @@ fun Sequence<ComplexNumber>.hanningWindow(n: Int) = this
         .zip(HanningWindow(n).asSequence())
         .map { it.first * it.second }
 
-abstract class Window(protected val n: Int) {
+abstract class Window(val n: Int) {
 
     fun asSequence(): Sequence<Double> = (0 until n).asSequence().map { func(it) }
 
