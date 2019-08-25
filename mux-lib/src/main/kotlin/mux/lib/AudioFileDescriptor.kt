@@ -1,8 +1,5 @@
 package mux.lib
 
-import mux.lib.file.AudioFileWriter
-import mux.lib.file.WavFileWriter
-import java.io.OutputStream
 import javax.sound.sampled.AudioFormat
 
 enum class BitDepth(val bits: Int, val bytesPerSample: Int) {
@@ -22,8 +19,6 @@ open class AudioFileDescriptor(
         val bitDepth: BitDepth
 ) {
     open fun toAudioFormat(): AudioFormat = throw UnsupportedOperationException()
-
-    open fun getWriter(destination: OutputStream): AudioFileWriter<AudioFileDescriptor> = throw UnsupportedOperationException()
 
     open fun copy(
             sampleRate: Float = this.sampleRate,
@@ -75,10 +70,6 @@ class WavLEAudioFileDescriptor(
 
     override fun copy(sampleRate: Float, bitDepth: BitDepth): AudioFileDescriptor =
             WavLEAudioFileDescriptor(sampleRate, bitDepth, numberOfChannels)
-
-    override fun getWriter(destination: OutputStream): AudioFileWriter<AudioFileDescriptor> {
-        return WavFileWriter(this, destination)
-    }
 
     override fun toAudioFormat(): AudioFormat {
         return AudioFormat(

@@ -1,27 +1,36 @@
 package mux.lib.io
 
-import mux.lib.stream.FftStream
+import mux.lib.samplesCountToLength
+import mux.lib.stream.SampleStream
 import java.io.InputStream
 import java.net.URI
 import java.nio.charset.Charset
 import java.util.concurrent.TimeUnit
 
-fun FftStream.magnitudeToCsv(uri: String, encoding: Charset = Charset.forName("UTF-8")): StreamOutput {
-    return CsvFftStreamOutput(URI(uri), this, true, encoding)
+fun SampleStream.toCsv(uri: String, timeUnit: TimeUnit = TimeUnit.MILLISECONDS, encoding: Charset = Charset.forName("UTF-8")): StreamOutput {
+    return CsvSampleStreamOutput(URI(uri), timeUnit, this, encoding)
 }
 
-fun FftStream.phaseToCsv(uri: String, encoding: Charset = Charset.forName("UTF-8")): StreamOutput {
-    return CsvFftStreamOutput(URI(uri), this, false, encoding)
+fun TimeUnit.abbreviation(): String {
+    return when(this) {
+        TimeUnit.NANOSECONDS -> "ns"
+        TimeUnit.MICROSECONDS -> "us"
+        TimeUnit.MILLISECONDS -> "ms"
+        TimeUnit.SECONDS -> "s"
+        TimeUnit.MINUTES -> "m"
+        TimeUnit.HOURS -> "h"
+        TimeUnit.DAYS -> "d"
+    }
 }
 
-class CsvFftStreamOutput(
+class CsvSampleStreamOutput(
         uri: URI,
-        stream: FftStream,
-        val isMagnitude: Boolean,
+        val outputTimeUnit: TimeUnit,
+        stream: SampleStream,
         val encoding: Charset = Charset.forName("UTF-8")
-) : FileStreamOutput<FftStream>(stream, uri) {
+) : FileStreamOutput<SampleStream>(stream, uri) {
 
-    override fun header(dataSize: Int): ByteArray? = null
+    override fun header(dataSize: Int): ByteArray? = "time ${outputTimeUnit.abbreviation()}, value\n".toByteArray(encoding)
 
     override fun footer(dataSize: Int): ByteArray? = null
 
@@ -40,20 +49,13 @@ class CsvFftStreamOutput(
 
                     if (!iterator.hasNext()) return -1
 
-                    val fftSample = iterator.next()
+                    val sample = iterator.next()
 
-                    val seq = if (isMagnitude)
-                        fftSample.magnitude.map { it.toString() }
-                    else
-                        fftSample.phase.map { it.toString() }
+                    val time = (start?.let { outputTimeUnit.convert(it, timeUnit) } ?: 0) +
+                            samplesCountToLength(row.toLong(), sampleRate, outputTimeUnit)
 
-                    var b = (sequenceOf(fftSample.time / 10e+6) + seq)
-                            .joinToString(",") + "\n"
+                    val b = "$time,$sample\n"
 
-                    if (row == 0) {
-                        b = (sequenceOf("time ms \\ freq hz") + fftSample.frequency.map { it.toString() }).joinToString(",") +
-                                "\n$b"
-                    }
                     buffer = b.toByteArray(encoding)
                     bufferPointer = 0
                     row++

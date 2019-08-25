@@ -1,6 +1,7 @@
 package mux.lib.stream
 
 import mux.lib.BitDepth
+import mux.lib.Sample
 import mux.lib.TimeRangeProjectable
 import mux.lib.file.Informable
 import mux.lib.io.ByteArrayLittleEndianAudioInput

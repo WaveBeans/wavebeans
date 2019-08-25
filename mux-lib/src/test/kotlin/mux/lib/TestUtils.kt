@@ -12,8 +12,6 @@ import mux.lib.math.ComplexNumber
 import mux.lib.math.minus
 import mux.lib.math.plus
 import mux.lib.stream.SampleStream
-import mux.lib.stream.asByte
-import mux.lib.stream.asShort
 import org.spekframework.spek2.dsl.Skip
 import org.spekframework.spek2.dsl.TestBody
 import org.spekframework.spek2.style.specification.Suite

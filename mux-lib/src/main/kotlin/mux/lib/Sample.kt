@@ -1,4 +1,4 @@
-package mux.lib.stream
+package mux.lib
 
 import kotlin.math.round
 

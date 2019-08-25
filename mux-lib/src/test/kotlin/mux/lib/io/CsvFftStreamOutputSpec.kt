@@ -5,13 +5,17 @@ import assertk.assertions.each
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import mux.lib.RectangleWindow
+import mux.lib.stream.FftStream
 import mux.lib.stream.fft
 import mux.lib.stream.sampleStream
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.io.BufferedReader
+import java.io.File
+import java.io.FileInputStream
 import java.io.InputStreamReader
 import kotlin.streams.toList
+
 
 class CsvFftStreamOutputSpec : Spek({
     describe("FFT of signal with sample rate 4 Hz to CSV") {
@@ -24,7 +28,12 @@ class CsvFftStreamOutputSpec : Spek({
         val expectedTimes = listOf(0.0, 500.0)
 
         describe("Generating magnitude") {
-            BufferedReader(InputStreamReader(CsvFftStreamOutput(sampleRate, x, true).getInputStream())).use { reader ->
+            val file = File.createTempFile("test_", ".mux.tmp")
+            val csvOutput = CsvFftStreamOutput(file.toURI(), x, true)
+            csvOutput.write(sampleRate)
+            csvOutput.close()
+
+            BufferedReader(InputStreamReader(FileInputStream(file))).use { reader ->
                 val lines = reader.lines().toList()
 
                 it("should have 3 lines") { assertThat(lines.size).isEqualTo(3) }
@@ -62,7 +71,12 @@ class CsvFftStreamOutputSpec : Spek({
         }
 
         describe("Generating phase") {
-            BufferedReader(InputStreamReader(CsvFftStreamOutput(sampleRate, x, false).getInputStream())).use { reader ->
+            val file = File.createTempFile("test_", ".mux.tmp")
+            val csvOutput = CsvFftStreamOutput(file.toURI(), x, true)
+            csvOutput.write(sampleRate)
+            csvOutput.close()
+
+            BufferedReader(InputStreamReader(FileInputStream(file))).use { reader ->
                 val lines = reader.lines().toList()
 
                 it("should have 3 lines") { assertThat(lines.size).isEqualTo(3) }

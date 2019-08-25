@@ -3,20 +3,8 @@ package mux.lib.io
 import mux.lib.TimeRangeProjectable
 import mux.lib.file.Informable
 import mux.lib.stream.MuxStream
-import mux.lib.stream.Sample
-import java.io.InputStream
+import mux.lib.Sample
 import java.util.concurrent.TimeUnit
-
-interface StreamOutput {
-    fun getInputStream(): InputStream
-}
-
-interface FixedOutput : StreamOutput {
-    fun toByteArray(): ByteArray
-
-    fun dataSize(): Int
-
-}
 
 interface AudioInput : Informable, MuxStream<Sample>, TimeRangeProjectable<AudioInput> {
 

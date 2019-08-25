@@ -1,5 +1,6 @@
 package mux.lib.stream
 
+import mux.lib.Sample
 import mux.lib.io.AudioInput
 import java.util.concurrent.TimeUnit
 

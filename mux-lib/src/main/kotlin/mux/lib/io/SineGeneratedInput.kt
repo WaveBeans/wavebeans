@@ -1,8 +1,8 @@
 package mux.lib.io
 
-import mux.lib.stream.Sample
+import mux.lib.Sample
 import mux.lib.stream.SampleStreamException
-import mux.lib.stream.sampleOf
+import mux.lib.sampleOf
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.*
 import kotlin.math.cos

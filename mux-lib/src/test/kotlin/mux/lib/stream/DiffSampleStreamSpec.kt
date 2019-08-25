@@ -2,6 +2,7 @@ package mux.lib.stream
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import mux.lib.asByte
 import mux.lib.isCloseTo
 import mux.lib.listOfBytesAsInts
 import org.spekframework.spek2.Spek

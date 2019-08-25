@@ -1,5 +1,6 @@
 package mux.lib.stream
 
+import mux.lib.Sample
 import mux.lib.timeToSampleIndexCeil
 import mux.lib.timeToSampleIndexFloor
 import java.util.concurrent.TimeUnit

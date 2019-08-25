@@ -1,5 +1,8 @@
 package mux.lib.stream
 
+import mux.lib.Sample
+import mux.lib.ZeroSample
+
 @Suppress("NOTHING_TO_INLINE")
 inline fun Sequence<Sample>.zeroPadLeft(count: Int): Sequence<Sample> = zeroPadding(count).plus(this)
 

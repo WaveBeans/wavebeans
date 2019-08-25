@@ -1,13 +1,13 @@
 package mux.lib.file
 
-import mux.lib.stream.SampleStream
 import java.io.OutputStream
 
 
-abstract class AudioFileWriter<A>(
-        protected val destination: OutputStream
-) {
-    abstract fun write(sampleStream: SampleStream)
+interface AudioFileWriter<A> {
+
+    val destination: OutputStream
+
+    fun write()
 }
 
 class AudioFileWriterException(message: String, cause: Exception?) : Exception(message, cause) {
