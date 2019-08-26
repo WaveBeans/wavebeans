@@ -47,7 +47,8 @@ class ByteArrayLittleEndianAudioInput(val sampleRate: Float, val bitDepth: BitDe
                         BitDepth.BIT_24, BitDepth.BIT_32 -> sampleOf(
                                 bytes.foldIndexed(0) { index, acc, v ->
                                     acc or (v.toInt() and 0xFF shl index * 8)
-                                }
+                                },
+                                as24bit = bitDepth == BitDepth.BIT_24
                         )
                         BitDepth.BIT_64 -> sampleOf(
                                 bytes.foldIndexed(0L) { index, acc, v ->

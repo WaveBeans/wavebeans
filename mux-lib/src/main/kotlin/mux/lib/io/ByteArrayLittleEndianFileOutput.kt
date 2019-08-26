@@ -25,7 +25,7 @@ abstract class ByteArrayLittleEndianFileOutput(
             private val iterator =
                     (if (start != null || end != null) stream.rangeProjection(start ?: 0, end, timeUnit) else stream)
                             .asSequence(sampleRate).iterator()
-            private val buf: ByteArray = ByteArray(bitDepth.bytesPerSample * samplesToCache)
+            private val buf: IntArray = IntArray(bitDepth.bytesPerSample * samplesToCache)
             private var bufSize = 0
             private var bufIndex = Int.MAX_VALUE
 
@@ -38,32 +38,40 @@ abstract class ByteArrayLittleEndianFileOutput(
                     while (iterator.hasNext() && samplesRead < samplesToCache) {
                         val sample = iterator.next()
 
-                        val bytesAsLong = when (bitDepth) {
-                            BitDepth.BIT_8 -> -sample.asByte().toLong()
-                            BitDepth.BIT_16 -> sample.asShort().toLong()
-                            BitDepth.BIT_24, BitDepth.BIT_32 -> sample.asInt().toLong()
-                            BitDepth.BIT_64 -> sample.asLong()
+                        if (bitDepth != BitDepth.BIT_8) {
+                            val bytesAsLong = when (bitDepth) {
+                                BitDepth.BIT_16 -> sample.asShort().toLong()
+                                BitDepth.BIT_24 -> sample.as24BitInt().toLong()
+                                BitDepth.BIT_32 -> sample.asInt().toLong()
+                                BitDepth.BIT_64 -> sample.asLong()
+                                BitDepth.BIT_8 -> throw UnsupportedOperationException("Unreachable branch")
+                            }
+
+                            (0 until bitDepth.bytesPerSample)
+                                    .map { i ->
+                                        ((bytesAsLong shr i * 8) and 0xFF).toByte()
+                                    }
+                                    .forEachIndexed { i: Int, v: Byte ->
+                                        buf[samplesRead * bitDepth.bytesPerSample + i] = v.toInt() and 0xFF
+                                        bufSize++
+                                    }
+                        } else {
+                            // 8 bit is kept as unsigned. https://en.wikipedia.org/wiki/WAV#Description
+                            // Follow this for explanation why it's done this way
+                            // https://en.wikipedia.org/wiki/Two's_complement#Converting_from_two.27s-complement_representation
+                            val asUByte = sample.asByte().asUnsignedByte()
+                            buf[samplesRead * bitDepth.bytesPerSample] = asUByte
+                            bufSize++
                         }
 
-                        (0 until bitDepth.bytesPerSample)
-                                .map { i -> ((bytesAsLong shr i * 8) and 0xFF).toByte() }
-                                .forEachIndexed { i: Int, v: Byte ->
-                                    buf[samplesRead * bitDepth.bytesPerSample + i] = v
-                                    bufSize++
-                                }
                         samplesRead++
                     }
                     bufIndex = 1
 
-                    buf[0].toInt() and 0xFF
-
+                    buf[0]
                 } else if (bufIndex < bufSize) {
                     // there is something in buffer -- return it
-                    val r = buf[bufIndex]
-                    bufIndex++
-
-                    r.toInt() and 0xFF
-
+                    buf[bufIndex++]
                 } else {
                     // nothing left to read, end of stream
                     -1
