@@ -30,7 +30,7 @@ class SaveFileCommand(
 //                samples
 //            }
 
-//            val writer = WavLittleEndianFileOutput(WavLEAudioFileDescriptor(
+//            val writer = WavFileOutput(WavLEAudioFileDescriptor(
 //                    outputSampleRate,
 //                    outputBitDepth,
 //                    1

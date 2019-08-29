@@ -11,8 +11,6 @@ import kotlin.math.min
 
 
 class SineGeneratedInput(
-        /** Sample rate in Hz for generated sinusoid. */
-        val sampleRate: Float,
         /** Frequency of the sinusoid. */
         val frequency: Double,
         /** Amplitude of the sinusoid. 0.0 < a <= 1.0 */
@@ -21,31 +19,14 @@ class SineGeneratedInput(
         val time: Double,
         /** time offset. */
         val timeOffset: Double = 0.0
-) : AudioInput {
-    override fun length(timeUnit: TimeUnit): Long = timeUnit.convert((time * 1_000_000_000.0).toLong(), NANOSECONDS)
+) : StreamInput {
 
-    private val samplesCount = (time * sampleRate).toInt()
-
-    override fun info(namespace: String?): Map<String, String> {
-        val prefix = namespace?.let { "[$it] " } ?: ""
-        return mapOf(
-                "${prefix}Sinusoid amplitude" to "$amplitude",
-                "${prefix}Sinusoid length" to "${time}sec",
-                "${prefix}Sinusoid offset" to "${timeOffset}sec",
-                "${prefix}Sinusoid frequency" to "${frequency}Hz"
-        )
-    }
-
-    override fun sampleCount(): Int {
-        return samplesCount
-    }
-
-    override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): AudioInput {
+    override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): StreamInput {
         if (end != null && end <= start) throw SampleStreamException("End=[$end] should be greater than start=[$start]")
         val s = max(timeUnit.toNanos(start) / 1_000_000_000.0, 0.0)
         val e = end?.let { min(timeUnit.toNanos(end) / 1_000_000_000.0, time) } ?: time
         val newLength = e - s
-        return SineGeneratedInput(sampleRate, frequency, amplitude, newLength, s + timeOffset)
+        return SineGeneratedInput(frequency, amplitude, newLength, s + timeOffset)
     }
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> {

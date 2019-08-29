@@ -15,8 +15,8 @@ object GenCommandSpec : Spek({
         val gen = GenCommand(Session())
 
         describe("Sine generator: 0.1 fs=50.0 d=16 f=10 a=1.0") {
-            val generator = SineGeneratedInput(50.0f, 10.0, 1.0, 0.1)
-            val scope = gen.newScope("sine 0.1 fs=50.0 d=16 f=10 a=1.0")
+            val generator = SineGeneratedInput(10.0, 1.0, 0.1)
+            val scope = gen.newScope("sine 0.1 d=16 f=10 a=1.0")
 
             it("should be AudioStreamScope with 5 samples") {
                 assertThat(scope).isInstanceOf(AudioStreamScope::class)

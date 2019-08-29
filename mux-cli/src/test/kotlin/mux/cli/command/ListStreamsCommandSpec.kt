@@ -6,10 +6,10 @@ import mux.cli.OutputDescriptor
 import mux.cli.Session
 import mux.cli.scope.RootScope
 import mux.lib.BitDepth
-import mux.lib.io.ByteArrayLittleEndianAudioInput
-import mux.lib.io.SineGeneratedInput
-import mux.lib.stream.AudioSampleStream
+import mux.lib.io.ByteArrayLittleEndianInput
+import mux.lib.stream.FiniteSampleStream
 import mux.lib.stream.plus
+import mux.lib.stream.sine
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 
@@ -29,8 +29,8 @@ object ListStreamsCommandSpec : Spek({
 
     describe("Generated sinusoid as the only one stream in the session") {
         val session = newSession()
-        val input = SineGeneratedInput(50.0f, 20.0, 0.1, 1.0)
-        session.registerSampleStream("stream1", AudioSampleStream(input))
+        val input = 20.sine(0.1, amplitude = 0.1)
+        session.registerSampleStream("stream1", input)
 
         describe("Listing all streams") {
             val command = ListStreamsCommand(session)
@@ -44,12 +44,12 @@ object ListStreamsCommandSpec : Spek({
 
     describe("Byte array sourced 8bit as the only one stream in the session") {
         val session = newSession()
-        val input = ByteArrayLittleEndianAudioInput(
+        val input = ByteArrayLittleEndianInput(
                 50.0f,
                 BitDepth.BIT_8,
                 ByteArray(100) { 0 }
         )
-        session.registerSampleStream("stream1", AudioSampleStream(input))
+        session.registerSampleStream("stream1", FiniteSampleStream(input))
 
         describe("Listing all streams") {
             val command = ListStreamsCommand(session)
@@ -63,12 +63,12 @@ object ListStreamsCommandSpec : Spek({
 
     describe("Mixed as the only one stream in the session") {
         val session = newSession()
-        val samples1 = AudioSampleStream(ByteArrayLittleEndianAudioInput(
+        val samples1 = FiniteSampleStream(ByteArrayLittleEndianInput(
                 50.0f,
                 BitDepth.BIT_8,
                 ByteArray(100) { 0 }
         ))
-        val samples2 = AudioSampleStream(SineGeneratedInput(50.0f, 20.0, 0.1, 1.0))
+        val samples2 = 20.sine(0.1, amplitude = 0.1, timeOffset = 1.0)
         val mix = samples1 + samples2
         session.registerSampleStream("stream1", mix)
 
@@ -86,18 +86,18 @@ object ListStreamsCommandSpec : Spek({
 
     describe("Byte array sourced 16bit and 32 bit as streams in the session") {
         val session = newSession()
-        val input1 = ByteArrayLittleEndianAudioInput(
+        val input1 = ByteArrayLittleEndianInput(
                 50.0f,
                 BitDepth.BIT_16,
                 ByteArray(100) { 0 }
         )
-        session.registerSampleStream("stream1", AudioSampleStream(input1))
-        val input2 = ByteArrayLittleEndianAudioInput(
+        session.registerSampleStream("stream1", FiniteSampleStream(input1))
+        val input2 = ByteArrayLittleEndianInput(
                 50.0f,
                 BitDepth.BIT_32,
                 ByteArray(100) { 0 }
         )
-        session.registerSampleStream("stream2", AudioSampleStream(input2))
+        session.registerSampleStream("stream2", FiniteSampleStream(input2))
 
         describe("Listing all streams") {
             val command = ListStreamsCommand(session)

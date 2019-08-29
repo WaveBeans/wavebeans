@@ -9,8 +9,6 @@ import kotlin.math.cos
 
 
 class SineSweepGeneratedInput(
-        /** Sample rate in Hz for generated sinusoid. */
-        val sampleRate: Float,
         /** Start frequency of the sinusoid sweep. */
         val startFrequency: Double,
         /** End frequency of the sinusoid sweep. */
@@ -24,27 +22,9 @@ class SineSweepGeneratedInput(
         /** Frequency will be changed by this value evenly. Make sure sample rate allowes this. It shouldn't be less than (1 / sample rate) */
         val sweepDelta: Double = 0.1
 
-) : AudioInput {
-    override fun length(timeUnit: TimeUnit): Long = timeUnit.convert((time * 1_000_000_000.0).toLong(), NANOSECONDS)
+) : StreamInput {
 
-    private val samplesCount = (time * sampleRate).toInt()
-
-    override fun info(namespace: String?): Map<String, String> {
-        val prefix = namespace?.let { "[$it] " } ?: ""
-        return mapOf(
-                "${prefix}Sinusoid amplitude" to "$amplitude",
-                "${prefix}Sinusoid length" to "${time}sec",
-                "${prefix}Sinusoid offset" to "${timeOffset}sec",
-                "${prefix}Sinusoid start frequency" to "${startFrequency}Hz",
-                "${prefix}Sinusoid end frequency" to "${endFrequency}Hz"
-        )
-    }
-
-    override fun sampleCount(): Int {
-        return samplesCount
-    }
-
-    override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): AudioInput {
+    override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): StreamInput {
         TODO()
 //        if (end != null && end <= start) throw SampleStreamException("End=[$end] should be greater than start=[$start]")
 //        val s = max(timeUnit.toNanos(start) / 1_000_000_000.0, 0.0)

@@ -5,9 +5,7 @@ import assertk.assertions.each
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import mux.lib.RectangleWindow
-import mux.lib.stream.FftStream
 import mux.lib.stream.fft
-import mux.lib.stream.sampleStream
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.io.BufferedReader

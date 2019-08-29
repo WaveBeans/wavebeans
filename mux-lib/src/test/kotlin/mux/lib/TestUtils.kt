@@ -7,27 +7,24 @@ import assertk.assertions.isCloseTo
 import assertk.assertions.isEqualTo
 import assertk.assertions.support.expected
 import assertk.assertions.support.show
-import mux.lib.io.AudioInput
 import mux.lib.math.ComplexNumber
 import mux.lib.math.minus
 import mux.lib.math.plus
+import mux.lib.stream.MuxStream
 import mux.lib.stream.SampleStream
 import org.spekframework.spek2.dsl.Skip
 import org.spekframework.spek2.dsl.TestBody
 import org.spekframework.spek2.style.specification.Suite
 
-fun SampleStream.listOfBytesAsInts(sampleRate: Float): List<Int> =
+fun MuxStream<Sample>.listOfBytesAsInts(sampleRate: Float, samplesToRead: Int = Int.MAX_VALUE): List<Int> =
         this.asSequence(sampleRate)
+                .take(samplesToRead)
                 .map { it.asByte().toInt() and 0xFF }
                 .toList()
 
-fun AudioInput.listOfBytesAsInts(sampleRate: Float): List<Int> =
+fun MuxStream<Sample>.listOfShortsAsInts(sampleRate: Float, samplesToRead: Int = Int.MAX_VALUE): List<Int> =
         this.asSequence(sampleRate)
-                .map { it.asByte().toInt() and 0xFF }
-                .toList()
-
-fun AudioInput.listOfShortsAsInts(sampleRate: Float): List<Int> =
-        this.asSequence(sampleRate)
+                .take(samplesToRead)
                 .map { it.asShort().toInt() and 0xFFFF }
                 .toList()
 

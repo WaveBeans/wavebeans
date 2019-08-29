@@ -8,19 +8,14 @@ import assertk.catch
 import mux.lib.io.SineGeneratedInput
 import mux.lib.io.SineSweepGeneratedInput
 import mux.lib.math.*
-import mux.lib.stream.AudioSampleStream
+import mux.lib.stream.FiniteSampleStream
 import mux.lib.stream.SampleStream
 import mux.lib.stream.plus
+import mux.lib.stream.sine
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import org.spekframework.spek2.style.specification.xdescribe
-import java.awt.Graphics
-import java.awt.Graphics2D
-import java.awt.image.BufferedImage
-import java.awt.image.RenderedImage
-import java.awt.image.renderable.RenderedImageFactory
 import java.io.File
-import javax.imageio.ImageIO
 import kotlin.math.log10
 
 object DftSpec : Spek({
@@ -75,7 +70,6 @@ object DftSpec : Spek({
 
     describe("Given sinusoid 64Hz, sample rate 128Hz, 2seconds") {
         val sine = SineGeneratedInput(
-                128.0f,
                 64.0,
                 1.0,
                 2.0
@@ -96,7 +90,6 @@ object DftSpec : Spek({
 
     describe("Given sinusoid 64Hz, sample rate 128Hz, 2seconds, amplitude=0.5") {
         val sine = SineGeneratedInput(
-                128.0f,
                 64.0,
                 0.5,
                 2.0
@@ -116,17 +109,8 @@ object DftSpec : Spek({
     }
 
     describe("Given sinusoids 32 and 64Hz, sample rate 128Hz, 2seconds") {
-        val sine1 = AudioSampleStream(SineGeneratedInput(
-                128.0f,
-                32.0,
-                1.0,
-                2.0))
-        val sine2 = AudioSampleStream(SineGeneratedInput(
-                128.0f,
-                64.0,
-                1.0,
-                2.0
-        ))
+        val sine1 = 32.sine(2)
+        val sine2 = 64.sine(2)
         val x = (sine1 + sine2)
                 .asSequence(128.0f).map { it.r }
 
@@ -263,30 +247,15 @@ object DftSpec : Spek({
     }
 
     describe("IFFT") {
-        fun sine(freq: Double) = AudioSampleStream(SineGeneratedInput(
-                44100.0f,
-                freq,
-                0.5,
-                1.0
-        ))
+        fun sine(freq: Double) = freq.sine(0.5, timeOffset = 1.0)
 
         val signals = mapOf(
                 "[1..4]" to { (1..4).map { it.r }.asSequence() },
                 "sine 64Hz @ 128Hz" to {
-                    SineGeneratedInput(
-                            128.0f,
-                            64.0,
-                            0.5,
-                            2.0
-                    ).asSequence(128.0f).map { it.r }
+                    64.sine(0.5).asSequence(128.0f).map { it.r }
                 },
                 "sine 64Hz @ 1280Hz" to {
-                    SineGeneratedInput(
-                            1280.0f,
-                            64.0,
-                            0.5,
-                            2.0
-                    ).asSequence(1280.0f).map { it.r }.drop(128).take(512)
+                    64.sine(0.5).asSequence(1280.0f).map { it.r }.drop(128).take(512)
                 },
                 "sine 440Hz @ 44100Hz" to {
                     sine(440.0).asSequence(44100.0f).map { it.r }.drop(1024).take(2048)
@@ -300,7 +269,7 @@ object DftSpec : Spek({
                             .asSequence(44100.0f).map { it.r }.drop(1024).take(4096)
                 },
                 "sines 440Hz+1200Hz+30Hz+123Hz+456Hz @ 44100Hz" to {
-                    (sine(440.0) + sine(440.0) + sine(30.0)+ sine(123.0) + sine(456.0))
+                    (sine(440.0) + sine(440.0) + sine(30.0) + sine(123.0) + sine(456.0))
                             .asSequence(44100.0f).map { it.r }.drop(1024).take(4096)
                 },
                 "sines [440..660]Hz @ 44100Hz" to {
@@ -310,7 +279,6 @@ object DftSpec : Spek({
                 },
                 "sweep sine from 64Hz to 1024Hz @ 4096Hz" to {
                     SineSweepGeneratedInput(
-                            4096.0f,
                             64.0,
                             1024.0,
                             0.5,
@@ -351,7 +319,6 @@ object DftSpec : Spek({
     xdescribe("Windows") {
         // just test point for now
         val sine = SineGeneratedInput(
-                128.0f,
                 64.0,
                 0.5,
                 100.0

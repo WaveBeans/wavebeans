@@ -1,9 +1,9 @@
 package mux.cli.command
 
 import mux.cli.Session
-import mux.lib.stream.AudioSampleStream
-import mux.lib.stream.SampleStream
 import mux.lib.io.SineGeneratedInput
+import mux.lib.stream.SampleStream
+import mux.lib.stream.sampleStream
 import java.util.*
 
 enum class Generator(val type: String, val streamBuilder: () -> GeneratedStreamBuilder) {
@@ -24,7 +24,7 @@ class GenCommand(session: Session) : AbstractNewSamplesScopeCommand(
         "gen",
         """
             Generates sines of specified frequency.
-            Usage: gen <generator type> <samplesCount in seconds, i.e. 1.0> [fs|sampleRate=sample rate, default 44100.0]
+            Usage: gen <generator type> <samplesCount in seconds, i.e. 1.0>
                    [d|depth=bit depth (8, 16, 24 or 32), default 16 bit] [generator parameters pairs like `parameter=value`...]
 
            Types of generators:
@@ -44,7 +44,6 @@ class GenCommand(session: Session) : AbstractNewSamplesScopeCommand(
                         .map { it.split("=", limit = 2) }
                         .forEach { parameters[it[0]] = if (it.size > 1) it[1] else "" }
             }
-            val sampleRate = (parameters["fs"] ?: parameters["sampleRate"])?.toFloatOrNull() ?: 44100.0f
             val bitDepth = (parameters["d"] ?: parameters["depth"])?.toIntOrNull() ?: 16
 
             if (options.size < 2) throw ArgumentMissingException("Length should be specified")
@@ -52,7 +51,7 @@ class GenCommand(session: Session) : AbstractNewSamplesScopeCommand(
                     ?.also { if (it <= 0) throw ArgumentWrongException("Length should be more than zero") }
                     ?: throw ArgumentWrongException("Length should be float number")
 
-            val stream = type.streamBuilder().build(length, sampleRate, bitDepth, parameters)
+            val stream = type.streamBuilder().build(length, bitDepth, parameters)
             Pair(type.type, stream)
         })
 
@@ -67,7 +66,7 @@ interface GeneratedStreamBuilder {
 
     fun getSchema(): List<ParameterSchema>
 
-    fun build(length: Double, sampleRate: Float, bitDepth: Int, input: Map<String, String>): SampleStream
+    fun build(length: Double, bitDepth: Int, input: Map<String, String>): SampleStream
 }
 
 class SineGeneratedStreamBuilder : GeneratedStreamBuilder {
@@ -86,7 +85,7 @@ class SineGeneratedStreamBuilder : GeneratedStreamBuilder {
         )
     }
 
-    override fun build(length: Double, sampleRate: Float, bitDepth: Int, input: Map<String, String>): SampleStream {
+    override fun build(length: Double, bitDepth: Int, input: Map<String, String>): SampleStream {
         val frequency = (input["f"] ?: input["frequency"])
                 ?.toDoubleOrNull()
                 ?.also { if (it < 0) throw ArgumentWrongException("frequency should be greater than 0") }
@@ -95,8 +94,6 @@ class SineGeneratedStreamBuilder : GeneratedStreamBuilder {
                 ?.toDoubleOrNull()
                 ?.also { if (it < 0) throw ArgumentWrongException("amplitude should be greater than 0") }
                 ?: throw ArgumentMissingException("amplitude should be specified")
-        return AudioSampleStream(
-                SineGeneratedInput(sampleRate, frequency, amplitude, length)
-        )
+        return SineGeneratedInput(frequency, amplitude, length).sampleStream()
     }
 }

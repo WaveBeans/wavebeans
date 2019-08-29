@@ -1,10 +1,7 @@
 package mux.cli.command
 
 import mux.cli.Session
-import mux.lib.WavLEAudioFileDescriptor
-import mux.lib.io.ByteArrayLittleEndianFileOutput
 import mux.lib.stream.SampleStream
-import javax.sound.sampled.AudioSystem
 
 
 class PlayCommand(

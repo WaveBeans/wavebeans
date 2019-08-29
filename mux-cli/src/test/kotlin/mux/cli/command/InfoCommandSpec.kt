@@ -1,13 +1,15 @@
 package mux.cli.command
 
 import assertk.assertThat
-import assertk.assertions.*
+import assertk.assertions.contains
+import assertk.assertions.isNotEqualTo
+import assertk.assertions.isNotNull
 import mux.cli.Session
 import mux.cli.scope.AudioStreamScope
 import mux.lib.BitDepth
-import mux.lib.io.ByteArrayLittleEndianAudioInput
-import mux.lib.io.SineGeneratedInput
-import mux.lib.stream.AudioSampleStream
+import mux.lib.io.ByteArrayLittleEndianInput
+import mux.lib.stream.FiniteSampleStream
+import mux.lib.stream.sine
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 
@@ -16,8 +18,8 @@ object InfoCommandSpec : Spek({
     fun newSession() = Session()
 
     describe("InfoCommand within scope of 8-bit 50.0 Hz audio stream with 100 samples") {
-        val sampleStream = AudioSampleStream(
-                ByteArrayLittleEndianAudioInput(
+        val sampleStream = FiniteSampleStream(
+                ByteArrayLittleEndianInput(
                         50.0f,
                         BitDepth.BIT_8,
                         ByteArray(100) { (it and 0xFF).toByte() }
@@ -38,14 +40,7 @@ object InfoCommandSpec : Spek({
     }
 
     describe("InfoCommand within scope of generated sine") {
-        val sampleStream = AudioSampleStream(
-                SineGeneratedInput(
-                        50.0f,
-                        10.0,
-                        1.0,
-                        1.0
-                )
-        )
+        val sampleStream = 10.sine(1)
         val session = newSession()
         val scope = AudioStreamScope(session, "test-file.wav", sampleStream)
         val gen = InfoCommand(session, sampleStream)

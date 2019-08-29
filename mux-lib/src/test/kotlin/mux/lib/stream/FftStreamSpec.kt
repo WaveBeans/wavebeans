@@ -10,7 +10,7 @@ import kotlin.math.PI
 
 class FftStreamSpec : Spek({
     describe("Given sinusoid 32Hz, sample rate 128Hz, 2seconds, amplitude=0.5") {
-        val sine = 32.sine(2, 128.0f, 0.5)
+        val sine = 32.sine(2, 0.5)
 
         describe("Calculating FFT") {
             val fft = sine.fft(256, RectangleWindow(256))
@@ -43,7 +43,7 @@ class FftStreamSpec : Spek({
     }
 
     describe("Given sinusoid 440Hz, sample rate 44100Hz, 0.5 seconds, amplitude=0.5") {
-        val sine = 440.sine(0.05, 44100.0f, 0.5)
+        val sine = 440.sine(0.05, 0.5)
 
         describe("Calculating FFT") {
             val fft = sine.fft(1024, RectangleWindow(1024))

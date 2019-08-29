@@ -3,7 +3,9 @@ package mux.lib.io
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import mux.lib.*
-import mux.lib.stream.*
+import mux.lib.stream.FiniteSampleStream
+import mux.lib.stream.SampleStream
+import mux.lib.stream.sine
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.net.URI
@@ -25,7 +27,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
     val sampleRate = 50.0f
     val buffer = ByteArray(100) { (it and 0xFF).toByte() }
     describe("Wav LE input, sample rate = 50.0Hz, bit depth = 8, mono") {
-        val input = ByteArrayLittleEndianAudioInput(
+        val input = ByteArrayLittleEndianInput(
                 sampleRate,
                 BitDepth.BIT_8,
                 buffer
@@ -40,7 +42,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
 
         describe("output based on that input") {
             val output = ByteArrayFileOutputMock(
-                    AudioSampleStream(input),
+                    FiniteSampleStream(input),
                     BitDepth.BIT_8
             )
 
@@ -52,10 +54,10 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
         describe("Projected range 0.0s..1.0s") {
             val projection = input.rangeProjection(0, 1000, MILLISECONDS)
 
-            itShouldHave("number of samples 50") { assertThat(projection.sampleCount()).isEqualTo(50) }
+            itShouldHave("number of samples 50") { assertThat(projection.samplesCount()).isEqualTo(50) }
             itShouldHave("Length should be 1000ms for sample rate 50Hz") { assertThat(projection.length(MILLISECONDS)).isEqualTo(1000L) }
             itShouldHave("Samples should be [0,50)") {
-                assertThat(projection.listOfBytesAsInts(50.0f)).isEqualTo(
+                assertThat(projection.listOfBytesAsInts(50.0f, 50)).isEqualTo(
                         (0 until 50).toList()
                 )
             }
@@ -64,7 +66,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
         describe("Projected range 0.5s..1.0s") {
             val projection = input.rangeProjection(500, 1000, MILLISECONDS)
 
-            itShouldHave("number of samples 25") { assertThat(projection.sampleCount()).isEqualTo(25) }
+            itShouldHave("number of samples 25") { assertThat(projection.samplesCount()).isEqualTo(25) }
             itShouldHave("length 500ms for sample rate 50Hz") { assertThat(projection.length(MILLISECONDS)).isEqualTo(500L) }
             itShouldHave("samples with values [25,50)") {
                 assertThat(projection.listOfBytesAsInts(50.0f)).isEqualTo(
@@ -76,7 +78,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
         describe("Projected range 0.1s..0.2s") {
             val projection = input.rangeProjection(100, 200, MILLISECONDS)
 
-            itShouldHave("number of samples 5") { assertThat(projection.sampleCount()).isEqualTo(5) }
+            itShouldHave("number of samples 5") { assertThat(projection.samplesCount()).isEqualTo(5) }
             itShouldHave("length 100ms for sample rate 50Hz") { assertThat(projection.length(MILLISECONDS)).isEqualTo(100L) }
             itShouldHave("samples with values [5,10)") {
                 assertThat(projection.listOfBytesAsInts(50.0f)).isEqualTo(
@@ -88,7 +90,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
         describe("Projected range 1.5s..2.5s") {
             val projection = input.rangeProjection(1500, 2500, MILLISECONDS)
 
-            itShouldHave("number of samples 25") { assertThat(projection.sampleCount()).isEqualTo(25) }
+            itShouldHave("number of samples 25") { assertThat(projection.samplesCount()).isEqualTo(25) }
             itShouldHave("length 500ms for sample rate 50Hz") { assertThat(projection.length(MILLISECONDS)).isEqualTo(500L) }
             itShouldHave("samples with values [75,100)") {
                 assertThat(projection.listOfBytesAsInts(50.0f)).isEqualTo(
@@ -100,7 +102,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
         describe("Projected range -1.5s..2.5s") {
             val projection = input.rangeProjection(-1500, 2500, MILLISECONDS)
 
-            itShouldHave("number of samples 100") { assertThat(projection.sampleCount()).isEqualTo(100) }
+            itShouldHave("number of samples 100") { assertThat(projection.samplesCount()).isEqualTo(100) }
             itShouldHave("length 2000ms for sample rate 50Hz") { assertThat(projection.length(MILLISECONDS)).isEqualTo(2000L) }
             itShouldHave("samples with values [0,100)") {
                 assertThat(projection.listOfBytesAsInts(50.0f)).isEqualTo(
@@ -112,13 +114,13 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
 
     describe("Wav LE input, sample rate = 50.0Hz, bit depth = 16, mono") {
         val buffer16 = ByteArray(200) { (it and 0xFF).toByte() }
-        val input = ByteArrayLittleEndianAudioInput(
+        val input = ByteArrayLittleEndianInput(
                 sampleRate,
                 BitDepth.BIT_16,
                 buffer16
         )
 
-        itShouldHave("number of samples 100") { assertThat(input.sampleCount()).isEqualTo(100) }
+        itShouldHave("number of samples 100") { assertThat(input.samplesCount()).isEqualTo(100) }
         itShouldHave("length 2000ms") { assertThat(input.length(MILLISECONDS)).isEqualTo(2000L) }
 
         describe("samples with samples made of byte range [0,200)") {
@@ -131,7 +133,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
 
         describe("output based on that input") {
             val output = ByteArrayFileOutputMock(
-                    AudioSampleStream(input),
+                    FiniteSampleStream(input),
                     BitDepth.BIT_16
             )
 
@@ -143,7 +145,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
         describe("Projected range 1.0s..2.0s") {
             val projection = input.rangeProjection(1000, 2000, MILLISECONDS)
 
-            itShouldHave("number of samples 25") { assertThat(projection.sampleCount()).isEqualTo(50) }
+            itShouldHave("number of samples 25") { assertThat(projection.samplesCount()).isEqualTo(50) }
             itShouldHave("length 1000ms for sample rate 50Hz") { assertThat(projection.length(MILLISECONDS)).isEqualTo(1000L) }
             itShouldHave("samples with samples made of byte range [100,200)") {
                 assertThat(projection.listOfShortsAsInts(50.0f)).isEqualTo(
@@ -164,18 +166,16 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
 
     describe("Output of ByteArray LE, sequence of -100:100, encoding to 16 bit ") {
         val signal = (-100 until 100).toList()
-        val output = ByteArrayFileOutputMock(AudioSampleStream(
-                object : AudioInput {
+        val output = ByteArrayFileOutputMock(FiniteSampleStream(
+                object : FiniteInput {
                     override fun length(timeUnit: TimeUnit): Long = throw UnsupportedOperationException()
 
-                    override fun sampleCount(): Int = signal.size
+                    override fun samplesCount(): Int = signal.size
 
-                    override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): AudioInput =
+                    override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): FiniteInput =
                             throw UnsupportedOperationException()
 
                     override fun asSequence(sampleRate: Float): Sequence<Sample> = signal.asSequence().map { sampleOf(it.toShort()) }
-
-                    override fun info(namespace: String?): Map<String, String> = throw UnsupportedOperationException()
 
                 }
         ), BitDepth.BIT_16)
@@ -187,18 +187,16 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
 
     describe("Output of ByteArray LE, sequence of -100:100, encoding to 24 bit ") {
         val signal = (-100 until 100).toList()
-        val output = ByteArrayFileOutputMock(AudioSampleStream(
-                object : AudioInput {
+        val output = ByteArrayFileOutputMock(FiniteSampleStream(
+                object : FiniteInput {
                     override fun length(timeUnit: TimeUnit): Long = throw UnsupportedOperationException()
 
-                    override fun sampleCount(): Int = signal.size
+                    override fun samplesCount(): Int = signal.size
 
-                    override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): AudioInput =
+                    override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): FiniteInput =
                             throw UnsupportedOperationException()
 
                     override fun asSequence(sampleRate: Float): Sequence<Sample> = signal.asSequence().map { sampleOf(it, true) }
-
-                    override fun info(namespace: String?): Map<String, String> = throw UnsupportedOperationException()
 
                 }
         ), BitDepth.BIT_24)
@@ -213,8 +211,8 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
     }
 
     describe("Output of ByteArray LE, sine 32 hz, encoding to 8 bit ") {
-        val signal = 32.sine(.01, 44100.0f, 0.5).input
-        val output = ByteArrayFileOutputMock(AudioSampleStream(signal), BitDepth.BIT_8)
+        val signal = 32.sine(.01, 0.5)
+        val output = ByteArrayFileOutputMock(signal, BitDepth.BIT_8)
 
         it("output should be correspond to input signal") {
             assertThat(output.getInputStream(44100.0f).readBytes().map { it.asUnsignedByte() })

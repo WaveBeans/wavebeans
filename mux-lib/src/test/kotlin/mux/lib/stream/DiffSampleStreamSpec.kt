@@ -3,11 +3,13 @@ package mux.lib.stream
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import mux.lib.asByte
+import mux.lib.io.sampleStream
 import mux.lib.isCloseTo
 import mux.lib.listOfBytesAsInts
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
-import java.util.concurrent.TimeUnit.*
+import java.util.concurrent.TimeUnit.MILLISECONDS
+import java.util.concurrent.TimeUnit.SECONDS
 
 private fun Number.repeat(times: Int): List<Number> = (1..times).map { this }
 
@@ -122,11 +124,11 @@ class DiffSampleStreamSpec : Spek({
 
     describe("sine(440)+sine(1000)-sine(440)") {
         val sineSampleRate = 44100.0f
-        val r = 440.sine(1, sineSampleRate) +
-                1000.sine(1, sineSampleRate) -
-                440.sine(1, sineSampleRate)
+        val r = 440.sine(1) +
+                1000.sine(1) -
+                440.sine(1)
         it("should be sine(1000)") {
-            assertThat(r).isCloseTo(1000.sine(1, sineSampleRate), sineSampleRate, 1e-14)
+            assertThat(r).isCloseTo(1000.sine(1), sineSampleRate, 1e-14)
 
         }
     }
@@ -172,7 +174,6 @@ class DiffSampleStreamSpec : Spek({
                     i1,
                     -25
             )
-            it("should have length 2.5s overall") { assertThat(s.length(50.0f)).isEqualTo(2500L) }
             val diff = s
                     .rangeProjection(2000, 2500, MILLISECONDS)
                     .listOfBytesAsInts(50.0f)

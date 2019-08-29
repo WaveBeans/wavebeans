@@ -1,7 +1,6 @@
 package mux.lib.io
 
 import mux.lib.BitDepth
-import mux.lib.file.*
 import mux.lib.stream.SampleStream
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
@@ -9,23 +8,27 @@ import java.net.URI
 
 
 fun SampleStream.toMono8bitWav(uri: String): StreamOutput {
-    return WavLittleEndianFileOutput(URI(uri), this, BitDepth.BIT_8, 1)
+    return WavFileOutput(URI(uri), this, BitDepth.BIT_8, 1)
 }
 
 fun SampleStream.toMono16bitWav(uri: String): StreamOutput {
-    return WavLittleEndianFileOutput(URI(uri), this, BitDepth.BIT_16, 1)
+    return WavFileOutput(URI(uri), this, BitDepth.BIT_16, 1)
 }
 
 fun SampleStream.toMono24bitWav(uri: String): StreamOutput {
-    return WavLittleEndianFileOutput(URI(uri), this, BitDepth.BIT_24, 1)
+    return WavFileOutput(URI(uri), this, BitDepth.BIT_24, 1)
 }
 
 fun SampleStream.toMono32bitWav(uri: String): StreamOutput {
-    return WavLittleEndianFileOutput(URI(uri), this, BitDepth.BIT_32, 1)
+    return WavFileOutput(URI(uri), this, BitDepth.BIT_32, 1)
 }
 
 
-class WavLittleEndianFileOutput(
+class WavFileWriterException(message: String, cause: Exception?) : Exception(message, cause) {
+    constructor(message: String) : this(message, null)
+}
+
+class WavFileOutput(
         uri: URI,
         stream: SampleStream,
         bitDepth: BitDepth,
@@ -56,7 +59,7 @@ class WavLittleEndianFileOutput(
 
         val dos = DataOutputStream(destination)
         /** Chunk */
-        writeConstantInt("RIFF", dos, RIFF)
+        writeConstantInt("RIFF", dos, RIFF) // TODO consider writing RIFX -- Big Endian format
         val chunkSize = 4 + (8 + subChunk1.size) + (8 + dataSize)
         writeLittleEndianInt("chunkSize", dos, chunkSize)
         /** Sub Chunk 1 */
@@ -75,7 +78,7 @@ class WavLittleEndianFileOutput(
         try {
             d.writeInt(v)
         } catch (e: Exception) {
-            throw AudioFileWriterException("Can't write `$v` for `$target`.", e)
+            throw WavFileWriterException("Can't write `$v` for `$target`.", e)
         }
     }
 
@@ -83,7 +86,7 @@ class WavLittleEndianFileOutput(
         try {
             d.writeShort(v.toInt())
         } catch (e: Exception) {
-            throw AudioFileWriterException("Can't write `$v` for `$target`.", e)
+            throw WavFileWriterException("Can't write `$v` for `$target`.", e)
         }
     }
 
@@ -94,7 +97,7 @@ class WavLittleEndianFileOutput(
                     .toByteArray()
             d.write(b)
         } catch (e: Exception) {
-            throw AudioFileWriterException("Can't write `$v` for $target.", e)
+            throw WavFileWriterException("Can't write `$v` for $target.", e)
         }
 
     }
@@ -106,7 +109,7 @@ class WavLittleEndianFileOutput(
                     .toByteArray()
             d.write(b)
         } catch (e: Exception) {
-            throw AudioFileWriterException("Can't write `$v` for $target", e)
+            throw WavFileWriterException("Can't write `$v` for $target", e)
         }
 
     }
