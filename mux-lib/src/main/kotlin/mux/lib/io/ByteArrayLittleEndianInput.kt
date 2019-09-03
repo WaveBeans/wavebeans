@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.math.max
 import kotlin.math.min
 
-class ByteArrayLittleEndianEncoder(val sampleRate: Float, val bitDepth: BitDepth) {
+class ByteArrayLittleEndianDecoder(val sampleRate: Float, val bitDepth: BitDepth) {
 
     fun sequence(sampleRate: Float, buffer: ByteArray): Sequence<Sample> {
         if (sampleRate != this.sampleRate) throw UnsupportedOperationException("Can't resample from ${this.sampleRate} to $sampleRate")
@@ -56,6 +56,6 @@ class ByteArrayLittleEndianInput(val sampleRate: Float, val bitDepth: BitDepth, 
     }
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> =
-            ByteArrayLittleEndianEncoder(this.sampleRate, this.bitDepth).sequence(sampleRate, this.buffer)
+            ByteArrayLittleEndianDecoder(this.sampleRate, this.bitDepth).sequence(sampleRate, this.buffer)
 
 }
