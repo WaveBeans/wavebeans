@@ -69,5 +69,5 @@ fun Iterable<Int>.stream(sampleRate: Float, bitDepth: BitDepth = BitDepth.BIT_8)
                     BitDepth.BIT_64 -> TODO()
                 }
             }.toList().toByteArray())
-    ).sampleStreamWithZeroFilling()
+    ).sampleStream(ZeroFilling())
 }

@@ -9,7 +9,8 @@ import mux.cli.scope.AudioStreamScope
 import mux.lib.BitDepth
 import mux.lib.io.ByteArrayLittleEndianInput
 import mux.lib.stream.FiniteInputSampleStream
-import mux.lib.stream.sampleStreamWithZeroFilling
+import mux.lib.stream.ZeroFilling
+import mux.lib.stream.sampleStream
 import mux.lib.stream.sine
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.xdescribe
@@ -25,7 +26,7 @@ object InfoCommandSpec : Spek({
                         BitDepth.BIT_8,
                         ByteArray(100) { (it and 0xFF).toByte() }
                 )
-        ).sampleStreamWithZeroFilling()
+        ).sampleStream(ZeroFilling())
 
         val session = newSession()
         val scope = AudioStreamScope(session, "test-file.wav", sampleStream)

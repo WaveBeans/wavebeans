@@ -6,10 +6,19 @@ import mux.lib.timeToSampleIndexCeil
 import mux.lib.timeToSampleIndexFloor
 import java.util.concurrent.TimeUnit
 
-// TODO define different iterating strategies
-fun FiniteSampleStream.sampleStreamWithZeroFilling(): SampleStream = ZeroFillingFiniteSampleStream(this)
+interface FiniteToStream {
+    fun convert(finiteSampleStream: FiniteSampleStream): SampleStream
+}
 
-class ZeroFillingFiniteSampleStream(
+fun FiniteSampleStream.sampleStream(converter: FiniteToStream): SampleStream = converter.convert(this)
+
+class ZeroFilling : FiniteToStream {
+    override fun convert(finiteSampleStream: FiniteSampleStream): SampleStream {
+        return ZeroFillingFiniteSampleStream(finiteSampleStream)
+    }
+}
+
+private class ZeroFillingFiniteSampleStream(
         val finiteSampleStream: FiniteSampleStream,
         val start: Long = 0,
         val end: Long? = null,

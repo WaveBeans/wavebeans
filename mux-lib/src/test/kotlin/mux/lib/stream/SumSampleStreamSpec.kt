@@ -19,7 +19,7 @@ object SumSampleStreamSpec : Spek({
                         BitDepth.BIT_8,
                         ByteArray(50) { (it and 0xFF).toByte() }
                 )
-        ).sampleStreamWithZeroFilling()
+        ).sampleStream(ZeroFilling())
 
         describe("Mixing in stream of 50 samples") {
 
@@ -29,7 +29,7 @@ object SumSampleStreamSpec : Spek({
                             BitDepth.BIT_8,
                             ByteArray(50) { ((it + 50) and 0xFF).toByte() }
                     )
-            ).sampleStreamWithZeroFilling()
+            ).sampleStream(ZeroFilling())
 
             describe("On 0 position") {
                 val mixed = sourceSampleStream + sampleStream
@@ -145,7 +145,7 @@ object SumSampleStreamSpec : Spek({
                             BitDepth.BIT_8,
                             ByteArray(10) { ((it + 50) and 0xFF).toByte() }
                     )
-            ).sampleStreamWithZeroFilling()
+            ).sampleStream(ZeroFilling())
 
             describe("On 0 position") {
                 val mixed = sourceSampleStream + sampleStream
@@ -180,7 +180,7 @@ object SumSampleStreamSpec : Spek({
                             BitDepth.BIT_8,
                             ByteArray(100) { ((it + 50) and 0xFF).toByte() }
                     )
-            ).sampleStreamWithZeroFilling()
+            ).sampleStream(ZeroFilling())
 
             describe("On 0 position") {
                 val mixed = sourceSampleStream + sampleStream

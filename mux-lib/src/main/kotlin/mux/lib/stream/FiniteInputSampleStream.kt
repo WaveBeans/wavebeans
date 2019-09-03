@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit
 
 fun FiniteInput.finiteSampleStream(): FiniteSampleStream = FiniteInputSampleStream(this)
 
-fun FiniteInput.sampleStreamWithZeroFilling(): SampleStream = ZeroFillingFiniteSampleStream(this.finiteSampleStream())
+fun FiniteInput.sampleStream(converter: FiniteToStream): SampleStream = this.finiteSampleStream().sampleStream(converter)
 
 class FiniteInputSampleStream(
         val input: FiniteInput
