@@ -1,25 +1,9 @@
 package mux.lib.io
 
 import mux.lib.*
-import mux.lib.stream.FiniteSampleStream
-import mux.lib.stream.SampleStream
 import java.util.concurrent.TimeUnit
 import kotlin.math.max
 import kotlin.math.min
-
-fun Iterable<Int>.sampleStream(sampleRate: Float, bitDepth: BitDepth = BitDepth.BIT_8): SampleStream {
-    return FiniteSampleStream(
-            ByteArrayLittleEndianInput(sampleRate, bitDepth, this.map {
-                when (bitDepth) {
-                    BitDepth.BIT_8 -> it.toByte()
-                    BitDepth.BIT_16 -> TODO()
-                    BitDepth.BIT_24 -> TODO()
-                    BitDepth.BIT_32 -> TODO()
-                    BitDepth.BIT_64 -> TODO()
-                }
-            }.toList().toByteArray())
-    )
-}
 
 class ByteArrayLittleEndianEncoder(val sampleRate: Float, val bitDepth: BitDepth) {
 

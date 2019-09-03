@@ -7,11 +7,11 @@ import assertk.assertions.isCloseTo
 import assertk.assertions.isEqualTo
 import assertk.assertions.support.expected
 import assertk.assertions.support.show
+import mux.lib.io.ByteArrayLittleEndianInput
 import mux.lib.math.ComplexNumber
 import mux.lib.math.minus
 import mux.lib.math.plus
-import mux.lib.stream.MuxStream
-import mux.lib.stream.SampleStream
+import mux.lib.stream.*
 import org.spekframework.spek2.dsl.Skip
 import org.spekframework.spek2.dsl.TestBody
 import org.spekframework.spek2.style.specification.Suite
@@ -38,9 +38,9 @@ fun <T> Assert<Iterable<T>>.eachIndexed(expectedSize: Int? = null, f: (Assert<T>
     }
 }
 
-fun Assert<SampleStream>.isCloseTo(v: SampleStream, sampleRate: Float, delta: Double) = given { actual ->
-    val actualss = actual.asSequence(sampleRate).toList()
-    val vss = v.asSequence(sampleRate).toList()
+fun Assert<SampleStream>.isCloseTo(v: SampleStream, sampleRate: Float, samplesToCompare: Int, delta: Double) = given { actual ->
+    val actualss = actual.asSequence(sampleRate).take(samplesToCompare).toList()
+    val vss = v.asSequence(sampleRate).take(samplesToCompare).toList()
     if (actualss.size - vss.size != 0) expected("The size should be the same", vss.size, actualss.size)
     val diff = actualss
             .zip(vss)
@@ -57,3 +57,17 @@ fun Assert<ComplexNumber>.isCloseTo(value: ComplexNumber, delta: ComplexNumber) 
 }
 
 fun Suite.itShouldHave(what: String, body: TestBody.() -> Unit) = this.it("should have $what", skip = Skip.No, body = body)
+
+fun Iterable<Int>.stream(sampleRate: Float, bitDepth: BitDepth = BitDepth.BIT_8): SampleStream {
+    return FiniteInputStream(
+            ByteArrayLittleEndianInput(sampleRate, bitDepth, this.map {
+                when (bitDepth) {
+                    BitDepth.BIT_8 -> it.toByte()
+                    BitDepth.BIT_16 -> TODO()
+                    BitDepth.BIT_24 -> TODO()
+                    BitDepth.BIT_32 -> TODO()
+                    BitDepth.BIT_64 -> TODO()
+                }
+            }.toList().toByteArray())
+    ).sampleStream()
+}

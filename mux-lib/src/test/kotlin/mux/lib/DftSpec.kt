@@ -8,8 +8,6 @@ import assertk.catch
 import mux.lib.io.SineGeneratedInput
 import mux.lib.io.SineSweepGeneratedInput
 import mux.lib.math.*
-import mux.lib.stream.FiniteSampleStream
-import mux.lib.stream.SampleStream
 import mux.lib.stream.plus
 import mux.lib.stream.sine
 import org.spekframework.spek2.Spek
@@ -73,7 +71,7 @@ object DftSpec : Spek({
                 64.0,
                 1.0,
                 2.0
-        ).asSequence(128.0f).map { it.r }
+        ).asSequence(128.0f).map { it.r }.take(256)
 
         describe("Calculating FFT") {
             val fft = fft(sine, 256)
@@ -93,7 +91,7 @@ object DftSpec : Spek({
                 64.0,
                 0.5,
                 2.0
-        ).asSequence(128.0f).map { it.r }
+        ).asSequence(128.0f).map { it.r }.take(256)
 
         describe("Calculating FFT") {
             val fft = fft(sine, 256)
@@ -109,10 +107,10 @@ object DftSpec : Spek({
     }
 
     describe("Given sinusoids 32 and 64Hz, sample rate 128Hz, 2seconds") {
-        val sine1 = 32.sine(2)
-        val sine2 = 64.sine(2)
+        val sine1 = 32.sine()
+        val sine2 = 64.sine()
         val x = (sine1 + sine2)
-                .asSequence(128.0f).map { it.r }
+                .asSequence(128.0f).take(256).map { it.r }.take(256)
 
         describe("Calculating FFT") {
             val fft = fft(x, 256)
@@ -252,10 +250,10 @@ object DftSpec : Spek({
         val signals = mapOf(
                 "[1..4]" to { (1..4).map { it.r }.asSequence() },
                 "sine 64Hz @ 128Hz" to {
-                    64.sine(0.5).asSequence(128.0f).map { it.r }
+                    64.sine().asSequence(128.0f).map { it.r }.take(64)
                 },
                 "sine 64Hz @ 1280Hz" to {
-                    64.sine(0.5).asSequence(1280.0f).map { it.r }.drop(128).take(512)
+                    64.sine().asSequence(1280.0f).map { it.r }.drop(128).take(512)
                 },
                 "sine 440Hz @ 44100Hz" to {
                     sine(440.0).asSequence(44100.0f).map { it.r }.drop(1024).take(2048)
@@ -274,7 +272,7 @@ object DftSpec : Spek({
                 },
                 "sines [440..660]Hz @ 44100Hz" to {
                     (440..660)
-                            .fold(sine(440.0) as SampleStream) { a, v -> a + sine(v.toDouble()) }
+                            .fold(sine(440.0)) { a, v -> a + sine(v.toDouble()) }
                             .asSequence(44100.0f).map { it.r }.drop(1024).take(4096)
                 },
                 "sweep sine from 64Hz to 1024Hz @ 4096Hz" to {

@@ -10,11 +10,14 @@ import kotlin.math.PI
 
 class FftStreamSpec : Spek({
     describe("Given sinusoid 32Hz, sample rate 128Hz, 2seconds, amplitude=0.5") {
-        val sine = 32.sine(2, 0.5)
+        val sine = 32.sine(0.5)
 
         describe("Calculating FFT") {
             val fft = sine.fft(256, RectangleWindow(256))
-                    .asSequence(128.0f).toList()
+                    .trim(2000)
+                    .asSequence(128.0f)
+                    .take(1)
+                    .toList()
 
 
             it("fft stream length should be 1") { assertThat(fft.size).isEqualTo(1) }
@@ -43,10 +46,12 @@ class FftStreamSpec : Spek({
     }
 
     describe("Given sinusoid 440Hz, sample rate 44100Hz, 0.5 seconds, amplitude=0.5") {
-        val sine = 440.sine(0.05, 0.5)
+        val sine = 440.sine(0.5)
 
         describe("Calculating FFT") {
-            val fft = sine.fft(1024, RectangleWindow(1024))
+            val fft = sine
+                    .fft(1024, RectangleWindow(1024))
+                    .trim(500)
                     .asSequence(44100.0f)
 
             describe("The sample of fft stream") {

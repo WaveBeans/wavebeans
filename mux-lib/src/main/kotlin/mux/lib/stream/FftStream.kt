@@ -1,10 +1,8 @@
 package mux.lib.stream
 
-import mux.lib.Sample
 import mux.lib.TimeRangeProjectable
 import mux.lib.Window
-import mux.lib.math.ComplexNumber
-import mux.lib.math.r
+import java.util.concurrent.TimeUnit
 
 fun SampleStream.fft(m: Int, window: Window): FftStream {
     return WindowFftStream(this, m, window)
@@ -18,8 +16,14 @@ data class FftSample(
         val frequency: Sequence<Double>
 )
 
-interface FftStream : MuxStream<FftSample>, TimeRangeProjectable<FftStream>
+interface FftStream : MuxStream<FftSample>, TimeRangeProjectable<FftStream> {
 
-fun Sequence<Sample>.asComplex(): Sequence<ComplexNumber> = this.map { it.r }
+    /***
+     * Estimate number of FFT samples will be produced based on source samples count.
+     *
+     * @param samplesCount source sample count to base estimation on.
+     */
+    fun estimateFftSamplesCount(samplesCount: Long): Long
+}
 
 

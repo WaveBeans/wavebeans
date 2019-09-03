@@ -5,7 +5,9 @@ import assertk.assertions.each
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import mux.lib.RectangleWindow
+import mux.lib.stream
 import mux.lib.stream.fft
+import mux.lib.stream.trim
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.io.BufferedReader
@@ -19,8 +21,9 @@ class CsvFftStreamOutputSpec : Spek({
     describe("FFT of signal with sample rate 4 Hz to CSV") {
         val sampleRate = 4.0f
         val x = (1..4)
-                .sampleStream(sampleRate)
+                .stream(sampleRate)
                 .fft(2, RectangleWindow(4))
+                .trim(1000)
 
         val expectedFrequencies = listOf(0.0, 1.0)
         val expectedTimes = listOf(0.0, 500.0)

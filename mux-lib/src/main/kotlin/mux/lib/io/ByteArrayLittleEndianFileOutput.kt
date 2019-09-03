@@ -1,16 +1,16 @@
 package mux.lib.io
 
 import mux.lib.*
-import mux.lib.stream.*
+import mux.lib.stream.FiniteStream
 import java.io.InputStream
 import java.net.URI
 import java.util.concurrent.TimeUnit
 
 abstract class ByteArrayLittleEndianFileOutput(
         uri: URI,
-        sampleStream: SampleStream,
+        val sampleStream: FiniteStream,
         val bitDepth: BitDepth
-) : FileStreamOutput<SampleStream>(sampleStream, uri) {
+) : FileStreamOutput<FiniteStream>(sampleStream, uri) {
 
     private var sampleRate: Float? = null
 
@@ -23,8 +23,9 @@ abstract class ByteArrayLittleEndianFileOutput(
 
             private val samplesToCache = 128 // TODO it doesn't seem required at all? However most likely depends on underlying sample stream.
             private val iterator =
-                    (if (start != null || end != null) stream.rangeProjection(start ?: 0, end, timeUnit) else stream)
-                            .asSequence(sampleRate).iterator()
+                    (if (start != null || end != null) sampleStream.rangeProjection(start ?: 0, end, timeUnit) else sampleStream)
+                            .asSequence(sampleRate)
+                            .iterator()
             private val buf: IntArray = IntArray(bitDepth.bytesPerSample * samplesToCache)
             private var bufSize = 0
             private var bufIndex = Int.MAX_VALUE

@@ -1,25 +1,25 @@
 package mux.lib.io
 
-import mux.lib.stream.FftStream
+import mux.lib.stream.FiniteFftStream
 import java.io.InputStream
 import java.net.URI
 import java.nio.charset.Charset
 import java.util.concurrent.TimeUnit
 
-fun FftStream.magnitudeToCsv(uri: String, encoding: Charset = Charset.forName("UTF-8")): StreamOutput {
+fun FiniteFftStream.magnitudeToCsv(uri: String, encoding: Charset = Charset.forName("UTF-8")): StreamOutput {
     return CsvFftStreamOutput(URI(uri), this, true, encoding)
 }
 
-fun FftStream.phaseToCsv(uri: String, encoding: Charset = Charset.forName("UTF-8")): StreamOutput {
+fun FiniteFftStream.phaseToCsv(uri: String, encoding: Charset = Charset.forName("UTF-8")): StreamOutput {
     return CsvFftStreamOutput(URI(uri), this, false, encoding)
 }
 
 class CsvFftStreamOutput(
         uri: URI,
-        stream: FftStream,
+        stream: FiniteFftStream,
         val isMagnitude: Boolean,
         val encoding: Charset = Charset.forName("UTF-8")
-) : FileStreamOutput<FftStream>(stream, uri) {
+) : FileStreamOutput<FiniteFftStream>(stream, uri) {
 
     override fun header(dataSize: Int): ByteArray? = null
 

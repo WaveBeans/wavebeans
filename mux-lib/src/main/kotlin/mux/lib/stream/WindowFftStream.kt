@@ -2,6 +2,7 @@ package mux.lib.stream
 
 import mux.lib.Window
 import mux.lib.fft
+import mux.lib.math.r
 import mux.lib.math.times
 import mux.lib.zeropad
 import java.util.concurrent.TimeUnit
@@ -18,9 +19,12 @@ class WindowFftStream(
 
 ) : FftStream {
 
+    override fun estimateFftSamplesCount(samplesCount: Long): Long = samplesCount / m
+
+
     override fun asSequence(sampleRate: Float): Sequence<FftSample> {
         return sampleStream.asSequence(sampleRate)
-                .asComplex()
+                .map { it.r }
                 .windowed(m, m, true)
                 .mapIndexed { idx, fftWindow ->
                     val n = window.n
@@ -49,5 +53,6 @@ class WindowFftStream(
     override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): FftStream {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
+
 
 }

@@ -3,9 +3,10 @@ package mux.lib.io
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import mux.lib.*
-import mux.lib.stream.FiniteSampleStream
-import mux.lib.stream.SampleStream
+import mux.lib.stream.FiniteInputStream
+import mux.lib.stream.FiniteStream
 import mux.lib.stream.sine
+import mux.lib.stream.trim
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.net.URI
@@ -13,7 +14,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.MILLISECONDS
 
 private class ByteArrayFileOutputMock(
-        stream: SampleStream,
+        stream: FiniteStream,
         bitDepth: BitDepth
 ) : ByteArrayLittleEndianFileOutput(URI.create("file:///dev/null"), stream, bitDepth) {
     override fun header(dataSize: Int): ByteArray? = throw UnsupportedOperationException()
@@ -42,7 +43,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
 
         describe("output based on that input") {
             val output = ByteArrayFileOutputMock(
-                    FiniteSampleStream(input),
+                    FiniteInputStream(input),
                     BitDepth.BIT_8
             )
 
@@ -133,7 +134,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
 
         describe("output based on that input") {
             val output = ByteArrayFileOutputMock(
-                    FiniteSampleStream(input),
+                    FiniteInputStream(input),
                     BitDepth.BIT_16
             )
 
@@ -166,11 +167,11 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
 
     describe("Output of ByteArray LE, sequence of -100:100, encoding to 16 bit ") {
         val signal = (-100 until 100).toList()
-        val output = ByteArrayFileOutputMock(FiniteSampleStream(
+        val output = ByteArrayFileOutputMock(FiniteInputStream(
                 object : FiniteInput {
-                    override fun length(timeUnit: TimeUnit): Long = throw UnsupportedOperationException()
+                    override fun length(timeUnit: TimeUnit): Long = Long.MAX_VALUE
 
-                    override fun samplesCount(): Int = signal.size
+                    override fun samplesCount(): Int =  throw UnsupportedOperationException()
 
                     override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): FiniteInput =
                             throw UnsupportedOperationException()
@@ -187,11 +188,11 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
 
     describe("Output of ByteArray LE, sequence of -100:100, encoding to 24 bit ") {
         val signal = (-100 until 100).toList()
-        val output = ByteArrayFileOutputMock(FiniteSampleStream(
+        val output = ByteArrayFileOutputMock(FiniteInputStream(
                 object : FiniteInput {
-                    override fun length(timeUnit: TimeUnit): Long = throw UnsupportedOperationException()
+                    override fun length(timeUnit: TimeUnit): Long = Long.MAX_VALUE
 
-                    override fun samplesCount(): Int = signal.size
+                    override fun samplesCount(): Int = throw UnsupportedOperationException()
 
                     override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): FiniteInput =
                             throw UnsupportedOperationException()
@@ -211,7 +212,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
     }
 
     describe("Output of ByteArray LE, sine 32 hz, encoding to 8 bit ") {
-        val signal = 32.sine(.01, 0.5)
+        val signal = 32.sine(.01, 0.5).trim(1000)
         val output = ByteArrayFileOutputMock(signal, BitDepth.BIT_8)
 
         it("output should be correspond to input signal") {
