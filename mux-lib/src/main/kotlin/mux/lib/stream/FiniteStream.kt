@@ -1,10 +1,10 @@
 package mux.lib.stream
 
+import mux.lib.MuxStream
 import mux.lib.Sample
-import mux.lib.TimeRangeProjectable
 import java.util.concurrent.TimeUnit
 
-interface FiniteStream : MuxStream<Sample>, TimeRangeProjectable<FiniteStream> {
+interface FiniteStream : MuxStream<Sample, FiniteStream> {
 
     fun length(timeUnit: TimeUnit = TimeUnit.MILLISECONDS): Long
 

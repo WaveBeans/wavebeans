@@ -1,11 +1,10 @@
 package mux.lib.io
 
+import mux.lib.MuxStream
 import mux.lib.Sample
-import mux.lib.TimeRangeProjectable
-import mux.lib.stream.MuxStream
 import java.util.concurrent.TimeUnit
 
-interface FiniteInput: MuxStream<Sample>, TimeRangeProjectable<FiniteInput> {
+interface FiniteInput: MuxStream<Sample, FiniteInput> {
 
     /** Amount of samples available */
     fun samplesCount(): Int

@@ -9,6 +9,10 @@ import java.util.concurrent.TimeUnit
 import kotlin.math.PI
 import kotlin.math.log10
 
+fun SampleStream.fft(m: Int, window: Window): FftStream {
+    return WindowFftStream(this, m, window)
+}
+
 class WindowFftStream(
         val sampleStream: SampleStream,
         val m: Int,

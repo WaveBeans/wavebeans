@@ -16,13 +16,13 @@ import org.spekframework.spek2.dsl.Skip
 import org.spekframework.spek2.dsl.TestBody
 import org.spekframework.spek2.style.specification.Suite
 
-fun MuxStream<Sample>.listOfBytesAsInts(sampleRate: Float, samplesToRead: Int = Int.MAX_VALUE): List<Int> =
+fun MuxStream<Sample, *>.listOfBytesAsInts(sampleRate: Float, samplesToRead: Int = Int.MAX_VALUE): List<Int> =
         this.asSequence(sampleRate)
                 .take(samplesToRead)
                 .map { it.asByte().toInt() and 0xFF }
                 .toList()
 
-fun MuxStream<Sample>.listOfShortsAsInts(sampleRate: Float, samplesToRead: Int = Int.MAX_VALUE): List<Int> =
+fun MuxStream<Sample, *>.listOfShortsAsInts(sampleRate: Float, samplesToRead: Int = Int.MAX_VALUE): List<Int> =
         this.asSequence(sampleRate)
                 .take(samplesToRead)
                 .map { it.asShort().toInt() and 0xFFFF }

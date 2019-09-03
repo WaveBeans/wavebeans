@@ -1,12 +1,6 @@
 package mux.lib.stream
 
-import mux.lib.TimeRangeProjectable
-import mux.lib.Window
-import java.util.concurrent.TimeUnit
-
-fun SampleStream.fft(m: Int, window: Window): FftStream {
-    return WindowFftStream(this, m, window)
-}
+import mux.lib.MuxStream
 
 data class FftSample(
         val time: Long,
@@ -16,7 +10,7 @@ data class FftSample(
         val frequency: Sequence<Double>
 )
 
-interface FftStream : MuxStream<FftSample>, TimeRangeProjectable<FftStream> {
+interface FftStream : MuxStream<FftSample, FftStream> {
 
     /***
      * Estimate number of FFT samples will be produced based on source samples count.
