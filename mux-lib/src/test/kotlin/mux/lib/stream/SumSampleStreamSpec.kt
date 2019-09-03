@@ -13,23 +13,23 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
 object SumSampleStreamSpec : Spek({
 
     describe("Source stream 50 samples length of 50 Hz of 8 bit (1 sec)") {
-        val sourceSampleStream = FiniteInputStream(
+        val sourceSampleStream = FiniteInputSampleStream(
                 ByteArrayLittleEndianInput(
                         50.0f,
                         BitDepth.BIT_8,
                         ByteArray(50) { (it and 0xFF).toByte() }
                 )
-        ).sampleStream()
+        ).sampleStreamWithZeroFilling()
 
         describe("Mixing in stream of 50 samples") {
 
-            val sampleStream = FiniteInputStream(
+            val sampleStream = FiniteInputSampleStream(
                     ByteArrayLittleEndianInput(
                             50.0f,
                             BitDepth.BIT_8,
                             ByteArray(50) { ((it + 50) and 0xFF).toByte() }
                     )
-            ).sampleStream()
+            ).sampleStreamWithZeroFilling()
 
             describe("On 0 position") {
                 val mixed = sourceSampleStream + sampleStream
@@ -139,13 +139,13 @@ object SumSampleStreamSpec : Spek({
 
         describe("Mixing in stream of 10 samples") {
 
-            val sampleStream = FiniteInputStream(
+            val sampleStream = FiniteInputSampleStream(
                     ByteArrayLittleEndianInput(
                             50.0f,
                             BitDepth.BIT_8,
                             ByteArray(10) { ((it + 50) and 0xFF).toByte() }
                     )
-            ).sampleStream()
+            ).sampleStreamWithZeroFilling()
 
             describe("On 0 position") {
                 val mixed = sourceSampleStream + sampleStream
@@ -174,13 +174,13 @@ object SumSampleStreamSpec : Spek({
 
         describe("Mixing in stream of 100 samples") {
 
-            val sampleStream = FiniteInputStream(
+            val sampleStream = FiniteInputSampleStream(
                     ByteArrayLittleEndianInput(
                             50.0f,
                             BitDepth.BIT_8,
                             ByteArray(100) { ((it + 50) and 0xFF).toByte() }
                     )
-            ).sampleStream()
+            ).sampleStreamWithZeroFilling()
 
             describe("On 0 position") {
                 val mixed = sourceSampleStream + sampleStream

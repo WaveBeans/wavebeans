@@ -59,7 +59,7 @@ fun Assert<ComplexNumber>.isCloseTo(value: ComplexNumber, delta: ComplexNumber) 
 fun Suite.itShouldHave(what: String, body: TestBody.() -> Unit) = this.it("should have $what", skip = Skip.No, body = body)
 
 fun Iterable<Int>.stream(sampleRate: Float, bitDepth: BitDepth = BitDepth.BIT_8): SampleStream {
-    return FiniteInputStream(
+    return FiniteInputSampleStream(
             ByteArrayLittleEndianInput(sampleRate, bitDepth, this.map {
                 when (bitDepth) {
                     BitDepth.BIT_8 -> it.toByte()
@@ -69,5 +69,5 @@ fun Iterable<Int>.stream(sampleRate: Float, bitDepth: BitDepth = BitDepth.BIT_8)
                     BitDepth.BIT_64 -> TODO()
                 }
             }.toList().toByteArray())
-    ).sampleStream()
+    ).sampleStreamWithZeroFilling()
 }

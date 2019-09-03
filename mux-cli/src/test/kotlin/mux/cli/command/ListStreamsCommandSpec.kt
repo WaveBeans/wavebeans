@@ -7,9 +7,9 @@ import mux.cli.Session
 import mux.cli.scope.RootScope
 import mux.lib.BitDepth
 import mux.lib.io.ByteArrayLittleEndianInput
-import mux.lib.stream.FiniteInputStream
+import mux.lib.stream.FiniteInputSampleStream
 import mux.lib.stream.plus
-import mux.lib.stream.sampleStream
+import mux.lib.stream.sampleStreamWithZeroFilling
 import mux.lib.stream.sine
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.xdescribe
@@ -50,7 +50,7 @@ object ListStreamsCommandSpec : Spek({
                 BitDepth.BIT_8,
                 ByteArray(100) { 0 }
         )
-        session.registerSampleStream("stream1", FiniteInputStream(input).sampleStream())
+        session.registerSampleStream("stream1", FiniteInputSampleStream(input).sampleStreamWithZeroFilling())
 
         describe("Listing all streams") {
             val command = ListStreamsCommand(session)
@@ -64,11 +64,11 @@ object ListStreamsCommandSpec : Spek({
 
     xdescribe("Mixed as the only one stream in the session") {
         val session = newSession()
-        val samples1 = FiniteInputStream(ByteArrayLittleEndianInput(
+        val samples1 = FiniteInputSampleStream(ByteArrayLittleEndianInput(
                 50.0f,
                 BitDepth.BIT_8,
                 ByteArray(100) { 0 }
-        )).sampleStream()
+        )).sampleStreamWithZeroFilling()
         val samples2 = 20.sine(amplitude = 0.1, timeOffset = 1.0)
         val mix = samples1 + samples2
         session.registerSampleStream("stream1", mix)
@@ -92,13 +92,13 @@ object ListStreamsCommandSpec : Spek({
                 BitDepth.BIT_16,
                 ByteArray(100) { 0 }
         )
-        session.registerSampleStream("stream1", FiniteInputStream(input1).sampleStream())
+        session.registerSampleStream("stream1", FiniteInputSampleStream(input1).sampleStreamWithZeroFilling())
         val input2 = ByteArrayLittleEndianInput(
                 50.0f,
                 BitDepth.BIT_32,
                 ByteArray(100) { 0 }
         )
-        session.registerSampleStream("stream2", FiniteInputStream(input2).sampleStream())
+        session.registerSampleStream("stream2", FiniteInputSampleStream(input2).sampleStreamWithZeroFilling())
 
         describe("Listing all streams") {
             val command = ListStreamsCommand(session)

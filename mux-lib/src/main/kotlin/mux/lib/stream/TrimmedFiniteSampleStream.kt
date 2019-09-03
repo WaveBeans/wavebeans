@@ -4,21 +4,21 @@ import mux.lib.Sample
 import mux.lib.timeToSampleIndexFloor
 import java.util.concurrent.TimeUnit
 
-fun SampleStream.trim(length: Long, timeUnit: TimeUnit = TimeUnit.MILLISECONDS): FiniteStream = TrimmedFiniteStream(this, length, timeUnit)
+fun SampleStream.trim(length: Long, timeUnit: TimeUnit = TimeUnit.MILLISECONDS): FiniteSampleStream = TrimmedFiniteSampleStream(this, length, timeUnit)
 
-class TrimmedFiniteStream(
+class TrimmedFiniteSampleStream(
         val sampleStream: SampleStream,
         val length: Long,
         val timeUnit: TimeUnit
-) : FiniteStream {
+) : FiniteSampleStream {
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> =
             sampleStream
                     .asSequence(sampleRate)
                     .take(timeToSampleIndexFloor(this.length(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS, sampleRate).toInt())
 
-    override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): TrimmedFiniteStream =
-            TrimmedFiniteStream(
+    override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): TrimmedFiniteSampleStream =
+            TrimmedFiniteSampleStream(
                     sampleStream.rangeProjection(start, end, timeUnit),
                     end?.minus(start) ?: (this.timeUnit.convert(length, timeUnit) - start),
                     timeUnit

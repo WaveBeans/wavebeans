@@ -3,8 +3,8 @@ package mux.lib.io
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import mux.lib.*
-import mux.lib.stream.FiniteInputStream
-import mux.lib.stream.FiniteStream
+import mux.lib.stream.FiniteInputSampleStream
+import mux.lib.stream.FiniteSampleStream
 import mux.lib.stream.sine
 import mux.lib.stream.trim
 import org.spekframework.spek2.Spek
@@ -14,9 +14,9 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.MILLISECONDS
 
 private class ByteArrayFileOutputMock(
-        stream: FiniteStream,
+        finiteSampleStream: FiniteSampleStream,
         bitDepth: BitDepth
-) : ByteArrayLittleEndianFileOutput(URI.create("file:///dev/null"), stream, bitDepth) {
+) : ByteArrayLittleEndianFileOutput(URI.create("file:///dev/null"), finiteSampleStream, bitDepth) {
     override fun header(dataSize: Int): ByteArray? = throw UnsupportedOperationException()
 
     override fun footer(dataSize: Int): ByteArray? = throw UnsupportedOperationException()
@@ -43,7 +43,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
 
         describe("output based on that input") {
             val output = ByteArrayFileOutputMock(
-                    FiniteInputStream(input),
+                    FiniteInputSampleStream(input),
                     BitDepth.BIT_8
             )
 
@@ -134,7 +134,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
 
         describe("output based on that input") {
             val output = ByteArrayFileOutputMock(
-                    FiniteInputStream(input),
+                    FiniteInputSampleStream(input),
                     BitDepth.BIT_16
             )
 
@@ -167,7 +167,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
 
     describe("Output of ByteArray LE, sequence of -100:100, encoding to 16 bit ") {
         val signal = (-100 until 100).toList()
-        val output = ByteArrayFileOutputMock(FiniteInputStream(
+        val output = ByteArrayFileOutputMock(FiniteInputSampleStream(
                 object : FiniteInput {
                     override fun length(timeUnit: TimeUnit): Long = Long.MAX_VALUE
 
@@ -188,7 +188,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
 
     describe("Output of ByteArray LE, sequence of -100:100, encoding to 24 bit ") {
         val signal = (-100 until 100).toList()
-        val output = ByteArrayFileOutputMock(FiniteInputStream(
+        val output = ByteArrayFileOutputMock(FiniteInputSampleStream(
                 object : FiniteInput {
                     override fun length(timeUnit: TimeUnit): Long = Long.MAX_VALUE
 

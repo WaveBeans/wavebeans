@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit
 
 object FiniteSampleStreamSpec : Spek({
     describe("Stream of 8 bit fs=50Hz as ByteArray LE input") {
-        val stream = FiniteInputStream(
+        val stream = FiniteInputSampleStream(
                 ByteArrayLittleEndianInput(50.0f, BitDepth.BIT_8, ByteArray(100) { it.toByte() })
         )
 
@@ -26,7 +26,7 @@ object FiniteSampleStreamSpec : Spek({
     }
 
     describe("Stream of 16 bit fs=50Hz as ByteArray LE input") {
-        val stream = FiniteInputStream(
+        val stream = FiniteInputSampleStream(
                 ByteArrayLittleEndianInput(50.0f, BitDepth.BIT_16, ByteArray(200) { it.toByte() })
         )
 

@@ -1,25 +1,25 @@
 package mux.lib.io
 
 import mux.lib.BitDepth
-import mux.lib.stream.FiniteStream
+import mux.lib.stream.FiniteSampleStream
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 import java.net.URI
 
 
-fun FiniteStream.toMono8bitWav(uri: String): StreamOutput {
+fun FiniteSampleStream.toMono8bitWav(uri: String): StreamOutput {
     return WavFileOutput(URI(uri), this, BitDepth.BIT_8, 1)
 }
 
-fun FiniteStream.toMono16bitWav(uri: String): StreamOutput {
+fun FiniteSampleStream.toMono16bitWav(uri: String): StreamOutput {
     return WavFileOutput(URI(uri), this, BitDepth.BIT_16, 1)
 }
 
-fun FiniteStream.toMono24bitWav(uri: String): StreamOutput {
+fun FiniteSampleStream.toMono24bitWav(uri: String): StreamOutput {
     return WavFileOutput(URI(uri), this, BitDepth.BIT_24, 1)
 }
 
-fun FiniteStream.toMono32bitWav(uri: String): StreamOutput {
+fun FiniteSampleStream.toMono32bitWav(uri: String): StreamOutput {
     return WavFileOutput(URI(uri), this, BitDepth.BIT_32, 1)
 }
 
@@ -30,10 +30,10 @@ class WavFileWriterException(message: String, cause: Exception?) : Exception(mes
 
 class WavFileOutput(
         uri: URI,
-        stream: FiniteStream,
+        finiteSampleStream: FiniteSampleStream,
         bitDepth: BitDepth,
         private val numberOfChannels: Int
-) : ByteArrayLittleEndianFileOutput(uri, stream, bitDepth) {
+) : ByteArrayLittleEndianFileOutput(uri, finiteSampleStream, bitDepth) {
 
     override fun header(dataSize: Int): ByteArray? {
         val destination = ByteArrayOutputStream()
