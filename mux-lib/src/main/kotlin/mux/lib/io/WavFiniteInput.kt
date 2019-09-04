@@ -1,6 +1,9 @@
 package mux.lib.io
 
 import mux.lib.*
+import mux.lib.stream.FiniteToStream
+import mux.lib.stream.SampleStream
+import mux.lib.stream.sampleStream
 import java.io.*
 import java.net.URI
 import java.util.concurrent.TimeUnit
@@ -8,6 +11,8 @@ import kotlin.math.max
 import kotlin.math.min
 
 fun wave(uri: String): FiniteInput = WavFiniteInput(URI(uri))
+
+fun wave(uri: String, converter: FiniteToStream): SampleStream = wave(uri).sampleStream(converter)
 
 class WavFiniteInput(
         val uri: URI,
