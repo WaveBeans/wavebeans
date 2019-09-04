@@ -6,12 +6,6 @@ import mux.lib.timeToSampleIndexCeil
 import mux.lib.timeToSampleIndexFloor
 import java.util.concurrent.TimeUnit
 
-interface FiniteToStream {
-    fun convert(finiteSampleStream: FiniteSampleStream): SampleStream
-}
-
-fun FiniteSampleStream.sampleStream(converter: FiniteToStream): SampleStream = converter.convert(this)
-
 class ZeroFilling : FiniteToStream {
     override fun convert(finiteSampleStream: FiniteSampleStream): SampleStream {
         return ZeroFillingFiniteSampleStream(finiteSampleStream)
