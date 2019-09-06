@@ -1,9 +1,6 @@
 package mux.lib.stream
 
-import mux.lib.Sample
-import mux.lib.ZeroSample
-import mux.lib.timeToSampleIndexCeil
-import mux.lib.timeToSampleIndexFloor
+import mux.lib.*
 import java.util.concurrent.TimeUnit
 
 class ZeroFilling : FiniteToStream {
@@ -18,6 +15,8 @@ private class ZeroFillingFiniteSampleStream(
         val end: Long? = null,
         val timeUnit: TimeUnit = TimeUnit.MILLISECONDS
 ) : SampleStream {
+
+    override fun mux(): MuxNode = MuxSingleInputNode(Mux("ZeroFilling"), finiteSampleStream.mux())
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> {
         return object : Iterator<Sample> {

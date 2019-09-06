@@ -1,6 +1,9 @@
 package mux.lib.io
 
 import mux.lib.BitDepth
+import mux.lib.Mux
+import mux.lib.MuxNode
+import mux.lib.MuxSingleInputNode
 import mux.lib.stream.FiniteSampleStream
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
@@ -34,6 +37,8 @@ class WavFileOutput(
         bitDepth: BitDepth,
         private val numberOfChannels: Int
 ) : ByteArrayLittleEndianFileOutput(uri, finiteSampleStream, bitDepth) {
+
+    override fun mux(): MuxNode = MuxSingleInputNode(Mux("WavOutput(uri=$uri)"), finiteSampleStream.mux())
 
     override fun header(dataSize: Int): ByteArray? {
         val destination = ByteArrayOutputStream()

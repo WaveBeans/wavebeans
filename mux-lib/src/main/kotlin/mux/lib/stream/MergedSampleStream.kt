@@ -18,6 +18,8 @@ class MergedSampleStream(
         val timeUnit: TimeUnit = TimeUnit.MILLISECONDS
 ) : SampleStream {
 
+    override fun mux(): MuxNode = MuxMultiInputNode(Mux("MergedSampleStream"), listOf(sourceStream.mux(), mergingStream.mux()))
+
     override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): SampleStream {
         return MergedSampleStream(
                 sourceStream,

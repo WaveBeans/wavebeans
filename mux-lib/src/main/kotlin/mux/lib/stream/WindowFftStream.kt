@@ -1,10 +1,8 @@
 package mux.lib.stream
 
-import mux.lib.Window
-import mux.lib.fft
+import mux.lib.*
 import mux.lib.math.r
 import mux.lib.math.times
-import mux.lib.zeropad
 import java.util.concurrent.TimeUnit
 import kotlin.math.PI
 import kotlin.math.log10
@@ -23,8 +21,9 @@ class WindowFftStream(
 
 ) : FftStream {
 
-    override fun estimateFftSamplesCount(samplesCount: Long): Long = samplesCount / m
+    override fun mux(): MuxNode = MuxSingleInputNode(Mux("WindowFftStream(m=$m,window=$window)"), sampleStream.mux())
 
+    override fun estimateFftSamplesCount(samplesCount: Long): Long = samplesCount / m
 
     override fun asSequence(sampleRate: Float): Sequence<FftSample> {
         return sampleStream.asSequence(sampleRate)

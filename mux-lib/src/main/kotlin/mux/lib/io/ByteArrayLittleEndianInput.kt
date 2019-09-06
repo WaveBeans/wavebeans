@@ -36,6 +36,8 @@ class ByteArrayLittleEndianDecoder(val sampleRate: Float, val bitDepth: BitDepth
 
 class ByteArrayLittleEndianInput(val sampleRate: Float, val bitDepth: BitDepth, val buffer: ByteArray) : FiniteInput {
 
+    override fun mux(): MuxNode = MuxInputNode(Mux("ByteArrayLittleEndianInput"))
+
     override fun length(timeUnit: TimeUnit): Long = samplesCountToLength(samplesCount().toLong(), sampleRate, timeUnit)
 
     override fun samplesCount(): Int = buffer.size / bitDepth.bytesPerSample

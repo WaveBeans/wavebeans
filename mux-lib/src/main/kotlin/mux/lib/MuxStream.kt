@@ -24,4 +24,5 @@ interface MuxStream<T, S> {
      */
     fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): S
 
+    fun mux(): MuxNode
 }

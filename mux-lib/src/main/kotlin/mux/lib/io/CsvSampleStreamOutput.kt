@@ -1,8 +1,10 @@
 package mux.lib.io
 
+import mux.lib.Mux
+import mux.lib.MuxNode
+import mux.lib.MuxSingleInputNode
 import mux.lib.samplesCountToLength
 import mux.lib.stream.FiniteSampleStream
-import mux.lib.stream.SampleStream
 import java.io.InputStream
 import java.net.URI
 import java.nio.charset.Charset
@@ -13,7 +15,7 @@ fun FiniteSampleStream.toCsv(uri: String, timeUnit: TimeUnit = TimeUnit.MILLISEC
 }
 
 fun TimeUnit.abbreviation(): String {
-    return when(this) {
+    return when (this) {
         TimeUnit.NANOSECONDS -> "ns"
         TimeUnit.MICROSECONDS -> "us"
         TimeUnit.MILLISECONDS -> "ms"
@@ -30,6 +32,8 @@ class CsvSampleStreamOutput(
         stream: FiniteSampleStream,
         val encoding: Charset = Charset.forName("UTF-8")
 ) : FileStreamOutput<FiniteSampleStream>(stream, uri) {
+
+    override fun mux(): MuxNode = MuxSingleInputNode(Mux("CsvSampleStreamOutput(uri=$uri)"), stream.mux())
 
     override fun header(dataSize: Int): ByteArray? = "time ${outputTimeUnit.abbreviation()}, value\n".toByteArray(encoding)
 

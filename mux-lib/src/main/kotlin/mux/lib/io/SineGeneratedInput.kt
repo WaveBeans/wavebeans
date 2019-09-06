@@ -1,9 +1,7 @@
 package mux.lib.io
 
-import mux.lib.Sample
-import mux.lib.ZeroSample
+import mux.lib.*
 import mux.lib.stream.SampleStreamException
-import mux.lib.sampleOf
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.*
 import kotlin.math.cos
@@ -21,6 +19,7 @@ class SineGeneratedInput private constructor(
         /** Length of the sinusoid, when you read after that moment stream will just return zeros. */
         val time: Double? = null
 ) : StreamInput {
+    override fun mux(): MuxNode = MuxInputNode(Mux("SineInput(freq=$frequency)"))
 
     constructor(frequency: Double, amplitude: Double, timeOffset: Double = 0.0) : this(frequency, amplitude, timeOffset, null)
 

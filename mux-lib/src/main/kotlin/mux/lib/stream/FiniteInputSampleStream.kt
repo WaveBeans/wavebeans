@@ -1,5 +1,8 @@
 package mux.lib.stream
 
+import mux.lib.Mux
+import mux.lib.MuxNode
+import mux.lib.MuxSingleInputNode
 import mux.lib.Sample
 import mux.lib.io.FiniteInput
 import java.util.concurrent.TimeUnit
@@ -11,6 +14,8 @@ fun FiniteInput.sampleStream(converter: FiniteToStream): SampleStream = this.fin
 class FiniteInputSampleStream(
         val input: FiniteInput
 ) : FiniteSampleStream {
+
+    override fun mux(): MuxNode = MuxSingleInputNode(Mux("FiniteInputSampleStream"), input.mux())
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> = input.asSequence(sampleRate)
 

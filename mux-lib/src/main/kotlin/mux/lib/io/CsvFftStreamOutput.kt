@@ -1,5 +1,8 @@
 package mux.lib.io
 
+import mux.lib.Mux
+import mux.lib.MuxNode
+import mux.lib.MuxSingleInputNode
 import mux.lib.stream.FiniteFftStream
 import java.io.InputStream
 import java.net.URI
@@ -20,6 +23,8 @@ class CsvFftStreamOutput(
         val isMagnitude: Boolean,
         val encoding: Charset = Charset.forName("UTF-8")
 ) : FileStreamOutput<FiniteFftStream>(stream, uri) {
+
+    override fun mux(): MuxNode = MuxSingleInputNode(Mux("CsvFftStreamOutput(uri=$uri)"), stream.mux())
 
     override fun header(dataSize: Int): ByteArray? = null
 
