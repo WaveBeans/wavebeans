@@ -23,7 +23,7 @@ private class ByteArrayFileOutputMock(
 
     override fun footer(dataSize: Int): ByteArray? = throw UnsupportedOperationException()
 
-    fun getInputStream(sampleRate: Float) = inputStream(sampleRate, null, null, MILLISECONDS)
+    fun getInputStream(sampleRate: Float) = inputStream(sampleRate)
 }
 
 object ByteArrayLittleEndianInputOutputSpec : Spek({

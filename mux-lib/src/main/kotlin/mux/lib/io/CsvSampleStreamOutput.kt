@@ -1,12 +1,10 @@
 package mux.lib.io
 
-import mux.lib.Mux
-import mux.lib.MuxNode
-import mux.lib.MuxSingleInputNode
-import mux.lib.samplesCountToLength
+import mux.lib.*
 import mux.lib.stream.FiniteSampleStream
 import java.io.InputStream
 import java.net.URI
+import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import java.util.concurrent.TimeUnit
 
@@ -31,7 +29,7 @@ class CsvSampleStreamOutput(
         val outputTimeUnit: TimeUnit,
         stream: FiniteSampleStream,
         val encoding: Charset = Charset.forName("UTF-8")
-) : FileStreamOutput<FiniteSampleStream>(stream, uri) {
+) : FileStreamOutput<Sample, FiniteSampleStream>(stream, uri) {
 
     override fun mux(): MuxNode = MuxSingleInputNode(Mux("CsvSampleStreamOutput(uri=$uri)"), stream.mux())
 
@@ -39,11 +37,10 @@ class CsvSampleStreamOutput(
 
     override fun footer(dataSize: Int): ByteArray? = null
 
-    override fun inputStream(sampleRate: Float, start: Long?, end: Long?, timeUnit: TimeUnit): InputStream {
+    override fun inputStream(sampleRate: Float): InputStream {
         return object : InputStream() {
 
-            private val iterator =
-                    (if (start != null || end != null) stream.rangeProjection(start ?: 0, end, timeUnit) else stream)
+            private val iterator = (stream)
                             .asSequence(sampleRate).iterator()
             private var buffer: ByteArray? = null
             private var row: Int = 0
@@ -56,8 +53,7 @@ class CsvSampleStreamOutput(
 
                     val sample = iterator.next()
 
-                    val time = (start?.let { outputTimeUnit.convert(it, timeUnit) } ?: 0) +
-                            samplesCountToLength(row.toLong(), sampleRate, outputTimeUnit)
+                    val time = samplesCountToLength(row.toLong(), sampleRate, outputTimeUnit)
 
                     val b = "$time,$sample\n"
 
@@ -71,4 +67,14 @@ class CsvSampleStreamOutput(
         }
     }
 
+    override fun serialize(offset: Long, sampleRate: Float, samples: List<Sample>): ByteArray {
+        return samples.asSequence()
+                .mapIndexed { idx, sample ->
+                    val time = samplesCountToLength(offset + idx, sampleRate, outputTimeUnit)
+                    "$time,$sample"
+                }
+                .joinToString(separator = "\n")
+                .toByteArray(encoding)
+
+    }
 }

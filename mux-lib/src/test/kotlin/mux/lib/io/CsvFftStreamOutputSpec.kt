@@ -30,9 +30,11 @@ class CsvFftStreamOutputSpec : Spek({
 
         describe("Generating magnitude") {
             val file = File.createTempFile("test_", ".mux.tmp")
-            val csvOutput = CsvFftStreamOutput(file.toURI(), x, true)
-            csvOutput.write(sampleRate)
-            csvOutput.close()
+            CsvFftStreamOutput(file.toURI(), x, true).use {csvOutput ->
+                csvOutput.writer(sampleRate).use {
+                    it.write(1000)
+                }
+            }
 
             BufferedReader(InputStreamReader(FileInputStream(file))).use { reader ->
                 val lines = reader.lines().toList()
@@ -73,9 +75,11 @@ class CsvFftStreamOutputSpec : Spek({
 
         describe("Generating phase") {
             val file = File.createTempFile("test_", ".mux.tmp")
-            val csvOutput = CsvFftStreamOutput(file.toURI(), x, true)
-            csvOutput.write(sampleRate)
-            csvOutput.close()
+            CsvFftStreamOutput(file.toURI(), x, false).use {csvOutput ->
+                csvOutput.writer(sampleRate).use {
+                    it.write(1000)
+                }
+            }
 
             BufferedReader(InputStreamReader(FileInputStream(file))).use { reader ->
                 val lines = reader.lines().toList()

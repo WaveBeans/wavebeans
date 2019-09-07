@@ -1,43 +1,60 @@
 package mux.lib.io
 
 import mux.lib.MuxStream
+import mux.lib.timeToSampleIndexFloor
 import java.io.*
 import java.net.URI
 import java.util.concurrent.TimeUnit
 
-abstract class FileStreamOutput<T : MuxStream<*, *>>(
+abstract class FileStreamOutput<S, T : MuxStream<S, *>>(
         val stream: T,
         val uri: URI
 ) : StreamOutput {
 
-    private val tmpFile = File.createTempFile("mux", ".tmp")!!
     private var writtenBytes: Int = 0
+    private val tmpFile = File.createTempFile("mux", ".tmp")
 
-    override fun write(sampleRate: Float, start: Long?, end: Long?, timeUnit: TimeUnit): Boolean {
-        var endOfStream = false
-        FileOutputStream(tmpFile).use { f ->
-            BufferedInputStream(inputStream(sampleRate, start, end, timeUnit)).use { i ->
-                val bufferSize = 16384
-                val buf = ByteArray(bufferSize)
-                do {
-                    val r = i.read(buf)
-                    if (r != -1) {
-                        f.write(buf, 0, r)
-                        writtenBytes += r
-                    } else {
-                        endOfStream = true
-                    }
-                } while (r != -1)
+    override fun writer(sampleRate: Float): Writer {
+
+        return object : Writer {
+
+            val fileOutputStream = FileOutputStream(tmpFile)
+            val sampleIterator = stream.asSequence(sampleRate).iterator()
+            var offset = 0L
+
+            override fun write(duration: Long, timeUnit: TimeUnit): Boolean {
+                val samplesCount = timeToSampleIndexFloor(duration, timeUnit, sampleRate).toInt()
+
+                val samples = (0..samplesCount).asSequence()
+                        .filter { sampleIterator.hasNext() }
+                        .map { sampleIterator.next() }
+                        .toList()
+
+                if (samples.isNotEmpty()) {
+                    val bytes = serialize(offset, sampleRate, samples)
+                    val r = bytes.size
+                    fileOutputStream.write(bytes, 0, r)
+                    writtenBytes += r
+                    offset += samples.count()
+                }
+
+                return samples.isNotEmpty()
             }
+
+            override fun close() {
+                fileOutputStream.close()
+            }
+
         }
-        return endOfStream
     }
 
     protected abstract fun header(dataSize: Int): ByteArray?
 
     protected abstract fun footer(dataSize: Int): ByteArray?
 
-    protected abstract fun inputStream(sampleRate: Float, start: Long?, end: Long?, timeUnit: TimeUnit): InputStream
+    protected abstract fun inputStream(sampleRate: Float): InputStream
+
+    protected abstract fun serialize(offset: Long, sampleRate: Float, samples: List<S>): ByteArray
 
     override fun close() {
         FileOutputStream(File(uri)).use { f ->

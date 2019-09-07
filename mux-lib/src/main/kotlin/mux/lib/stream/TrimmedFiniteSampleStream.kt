@@ -16,7 +16,7 @@ class TrimmedFiniteSampleStream(
     override fun asSequence(sampleRate: Float): Sequence<Sample> =
             sampleStream
                     .asSequence(sampleRate)
-                    .take(timeToSampleIndexFloor(this.length(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS, sampleRate).toInt())
+                    .take(timeToSampleIndexFloor(TimeUnit.NANOSECONDS.convert(length, timeUnit), TimeUnit.NANOSECONDS, sampleRate).toInt())
 
     override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): TrimmedFiniteSampleStream =
             TrimmedFiniteSampleStream(
@@ -25,6 +25,6 @@ class TrimmedFiniteSampleStream(
                     timeUnit
             )
 
-    override fun length(timeUnit: TimeUnit): Long = this.timeUnit.convert(length, timeUnit)
+    override fun length(timeUnit: TimeUnit): Long = timeUnit.convert(length, this.timeUnit)
 
 }
