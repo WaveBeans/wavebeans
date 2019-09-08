@@ -37,36 +37,6 @@ class CsvSampleStreamOutput(
 
     override fun footer(dataSize: Int): ByteArray? = null
 
-    override fun inputStream(sampleRate: Float): InputStream {
-        return object : InputStream() {
-
-            private val iterator = (stream)
-                            .asSequence(sampleRate).iterator()
-            private var buffer: ByteArray? = null
-            private var row: Int = 0
-            private var bufferPointer: Int = 0
-
-            override fun read(): Int {
-                if (buffer == null || bufferPointer >= buffer!!.size) {
-
-                    if (!iterator.hasNext()) return -1
-
-                    val sample = iterator.next()
-
-                    val time = samplesCountToLength(row.toLong(), sampleRate, outputTimeUnit)
-
-                    val b = "$time,$sample\n"
-
-                    buffer = b.toByteArray(encoding)
-                    bufferPointer = 0
-                    row++
-                }
-
-                return buffer!![bufferPointer++].toInt() and 0xFF
-            }
-        }
-    }
-
     override fun serialize(offset: Long, sampleRate: Float, samples: List<Sample>): ByteArray {
         return samples.asSequence()
                 .mapIndexed { idx, sample ->

@@ -23,7 +23,11 @@ private class ByteArrayFileOutputMock(
 
     override fun footer(dataSize: Int): ByteArray? = throw UnsupportedOperationException()
 
-    fun getInputStream(sampleRate: Float) = inputStream(sampleRate)
+    fun readBytes(sampleRate: Float): List<Byte> = finiteSampleStream.asSequence(sampleRate)
+            .mapIndexed { idx, sample -> serialize(idx.toLong(), sampleRate, listOf(sample)) }
+            .flatMap { it.asSequence() }
+            .toList()
+
 }
 
 object ByteArrayLittleEndianInputOutputSpec : Spek({
@@ -50,7 +54,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
             )
 
             it("should return byte array as input stream the same as initial buffer") {
-                assertThat(output.getInputStream(sampleRate).readBytes().map { it.asUnsignedByte() }).isEqualTo(buffer.map { it.toInt() and 0xFF })
+                assertThat(output.readBytes(sampleRate).map { it.asUnsignedByte() }).isEqualTo(buffer.map { it.toInt() and 0xFF })
             }
         }
 
@@ -141,7 +145,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
             )
 
             it("should return byte array as input stream the same as initial buffer") {
-                assertThat(output.getInputStream(sampleRate).readBytes()).isEqualTo(buffer16)
+                assertThat(output.readBytes(sampleRate).toByteArray()).isEqualTo(buffer16)
             }
         }
 
@@ -176,7 +180,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
 
                     override fun length(timeUnit: TimeUnit): Long = Long.MAX_VALUE
 
-                    override fun samplesCount(): Int =  throw UnsupportedOperationException()
+                    override fun samplesCount(): Int = throw UnsupportedOperationException()
 
                     override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): FiniteInput =
                             throw UnsupportedOperationException()
@@ -187,7 +191,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
         ), BitDepth.BIT_16)
 
         it("output should be equal to 16 byte array 0-0x0F") {
-            assertThat(output.getInputStream(sampleRate).readBytes().map { it.toInt() and 0xFF }).isEqualTo(signal.map { listOf(it and 0xFF, it and 0xFF00 shr 8) }.flatten())
+            assertThat(output.readBytes(sampleRate).map { it.toInt() and 0xFF }).isEqualTo(signal.map { listOf(it and 0xFF, it and 0xFF00 shr 8) }.flatten())
         }
     }
 
@@ -210,7 +214,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
         ), BitDepth.BIT_24)
 
         it("output should correspond to input signal") {
-            assertThat(output.getInputStream(sampleRate).readBytes().map { it.toInt() and 0xFF })
+            assertThat(output.readBytes(sampleRate).map { it.toInt() and 0xFF })
                     .isEqualTo(signal
                             .map { listOf(it and 0xFF, it and 0xFF00 shr 8, it and 0xFF0000 shr 16) }
                             .flatten()
@@ -223,7 +227,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
         val output = ByteArrayFileOutputMock(signal, BitDepth.BIT_8)
 
         it("output should be correspond to input signal") {
-            assertThat(output.getInputStream(44100.0f).readBytes().map { it.asUnsignedByte() })
+            assertThat(output.readBytes(44100.0f).map { it.asUnsignedByte() })
                     .isEqualTo(
                             signal.asSequence(44100.0f).map { it.asByte().toInt() and 0xFF }.toList()
                     )

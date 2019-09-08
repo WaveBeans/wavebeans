@@ -52,8 +52,6 @@ abstract class FileStreamOutput<S, T : MuxStream<S, *>>(
 
     protected abstract fun footer(dataSize: Int): ByteArray?
 
-    protected abstract fun inputStream(sampleRate: Float): InputStream
-
     protected abstract fun serialize(offset: Long, sampleRate: Float, samples: List<S>): ByteArray
 
     override fun close() {
