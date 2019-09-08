@@ -25,7 +25,7 @@ abstract class FileStreamOutput<S, T : MuxStream<S, *>>(
             override fun write(duration: Long, timeUnit: TimeUnit): Boolean {
                 val samplesCount = timeToSampleIndexFloor(duration, timeUnit, sampleRate).toInt()
 
-                val samples = (0..samplesCount).asSequence()
+                val samples = (0 until samplesCount).asSequence()
                         .filter { sampleIterator.hasNext() }
                         .map { sampleIterator.next() }
                         .toList()

@@ -1,9 +1,6 @@
 package mux.lib
 
 import mux.lib.io.StreamOutput
-import mux.lib.io.toMono8bitWav
-import mux.lib.stream.sine
-import mux.lib.stream.trim
 import java.lang.Thread.sleep
 import java.util.concurrent.TimeUnit
 

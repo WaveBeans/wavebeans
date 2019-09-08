@@ -41,10 +41,9 @@ class CsvSampleStreamOutput(
         return samples.asSequence()
                 .mapIndexed { idx, sample ->
                     val time = samplesCountToLength(offset + idx, sampleRate, outputTimeUnit)
-                    "$time,$sample"
+                    "$time,$sample\n"
                 }
-                .joinToString(separator = "\n")
+                .joinToString(separator = "")
                 .toByteArray(encoding)
-
     }
 }
