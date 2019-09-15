@@ -1,6 +1,9 @@
 package mux.lib.stream
 
 import mux.lib.*
+import mux.lib.Mux
+import mux.lib.MuxNode
+import mux.lib.SingleMuxNode
 import mux.lib.math.r
 import mux.lib.math.times
 import java.util.concurrent.TimeUnit
@@ -19,9 +22,9 @@ class WindowFftStream(
         val end: Long? = null,
         val timeUnit: TimeUnit = TimeUnit.MILLISECONDS
 
-) : FftStream {
+) : FftStream, AlterMuxNode<Sample, SampleStream, FftSample, FftStream> {
 
-    override fun mux(): MuxNode = MuxSingleInputNode(Mux("WindowFftStream(m=$m,window=$window)"), sampleStream.mux())
+    override val input: MuxNode<Sample, SampleStream> = sampleStream
 
     override fun estimateFftSamplesCount(samplesCount: Long): Long = samplesCount / m
 

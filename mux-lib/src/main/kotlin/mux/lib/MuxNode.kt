@@ -1,35 +1,54 @@
 package mux.lib
 
-data class Mux(
-        val desc: String
-)
+interface MuxNode<T : Any, S : Any> : Restorable<T, S> {
+    fun stream(): MuxStream<T, S> = TODO()
 
-abstract class MuxNode(
-        val mux: Mux
-) {
+    fun inputs(): List<MuxNode<*, *>>
 
-    override fun toString(): String {
-        return "$mux"
-    }
+    fun decorateInputs(inputs: List<MuxNode<*, *>>): MuxNode<*, *>
 }
 
-class MuxInputNode(mux: Mux) : MuxNode(mux) {
+interface SourceMuxNode<T : Any, S : Any> : MuxNode<T, S> {
 
-    override fun toString(): String {
-        return "MuxInputNode ${super.toString()}"
-    }
+    override fun inputs(): List<MuxNode<*, *>> = emptyList()
+
+    override fun decorateInputs(inputs: List<MuxNode<*, *>>): MuxNode<*, *> = throw UnsupportedOperationException("It has not inputs to decorate")
 }
 
-class MuxSingleInputNode(mux: Mux, val input: MuxNode) : MuxNode(mux) {
+interface SingleMuxNode<T : Any, S : Any> : MuxNode<T, S> {
 
-    override fun toString(): String {
-        return "MuxSingleInputNode[${super.toString()}]\n(input=$input) "
-    }
+    val input: MuxNode<T, S>
+
+    fun decorate(input: MuxNode<T, S>): MuxNode<T, S> = TODO()
+
+    override fun inputs(): List<MuxNode<*, *>> = listOf(input)
+
+    override fun decorateInputs(inputs: List<MuxNode<*, *>>): MuxNode<*, *> = decorate(inputs.first() as MuxNode<T, S>)
 }
 
-class MuxMultiInputNode(mux: Mux, val inputs: List<MuxNode>) : MuxNode(mux) {
+interface AlterMuxNode<IT : Any, IS : Any, OT : Any, OS : Any> : MuxNode<OT, OS> {
 
-    override fun toString(): String {
-        return "MuxMultiInputNode[${super.toString()}]\n(inputs=${inputs.joinToString("\n")}) "
-    }
+    val input: MuxNode<IT, IS>
+
+    fun decorate(input: MuxNode<IT, IS>): MuxNode<OT, OS> = TODO()
+
+    override fun inputs(): List<MuxNode<*, *>> = listOf(input)
+
+    override fun decorateInputs(inputs: List<MuxNode<*, *>>): MuxNode<*, *> = decorate(inputs.first() as MuxNode<IT, IS>)
+}
+
+interface MultiMuxNode<T : Any, S : Any> : MuxNode<T, S> {
+
+    val inputs: List<MuxNode<T, S>>
+
+    fun decorate(inputs: List<MuxNode<T, S>>): MuxNode<T, S> = TODO()
+
+    override fun inputs(): List<MuxNode<*, *>> = inputs
+
+    override fun decorateInputs(inputs: List<MuxNode<*, *>>): MuxNode<*, *> = decorate(inputs as List<MuxNode<T, S>>)
+}
+
+interface Restorable<T : Any, S : Any> {
+//    fun parameters(): MuxParams<T, S>
+
 }

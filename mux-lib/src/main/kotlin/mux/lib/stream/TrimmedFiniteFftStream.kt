@@ -1,9 +1,6 @@
 package mux.lib.stream
 
-import mux.lib.Mux
-import mux.lib.MuxNode
-import mux.lib.MuxSingleInputNode
-import mux.lib.timeToSampleIndexFloor
+import mux.lib.*
 import java.util.concurrent.TimeUnit
 
 fun FftStream.trim(length: Long, timeUnit: TimeUnit = TimeUnit.MILLISECONDS): FiniteFftStream = TrimmedFiniteFftStream(this, length, timeUnit)
@@ -12,9 +9,9 @@ class TrimmedFiniteFftStream(
         val fftStream: FftStream,
         val length: Long,
         val timeUnit: TimeUnit
-) : FiniteFftStream {
+) : FiniteFftStream, AlterMuxNode<FftSample, FftStream, FftSample, FiniteFftStream> {
 
-    override fun mux(): MuxNode = MuxSingleInputNode(Mux("TrimmedFiniteFftStream(len=$length)"), fftStream.mux())
+    override val input: MuxNode<FftSample, FftStream> = fftStream
 
     override fun asSequence(sampleRate: Float): Sequence<FftSample> =
             fftStream

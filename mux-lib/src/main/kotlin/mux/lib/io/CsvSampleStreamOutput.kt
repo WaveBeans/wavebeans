@@ -2,14 +2,16 @@ package mux.lib.io
 
 import mux.lib.*
 import mux.lib.stream.FiniteSampleStream
-import java.io.InputStream
 import java.net.URI
-import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import java.util.concurrent.TimeUnit
 
-fun FiniteSampleStream.toCsv(uri: String, timeUnit: TimeUnit = TimeUnit.MILLISECONDS, encoding: Charset = Charset.forName("UTF-8")): StreamOutput {
-    return CsvSampleStreamOutput(URI(uri), timeUnit, this, encoding)
+fun FiniteSampleStream.toCsv(
+        uri: String,
+        timeUnit: TimeUnit = TimeUnit.MILLISECONDS,
+        encoding: Charset = Charset.forName("UTF-8")
+): StreamOutput<Sample, FiniteSampleStream> {
+    return CsvSampleStreamOutput(URI(uri), this, timeUnit, encoding)
 }
 
 fun TimeUnit.abbreviation(): String {
@@ -26,12 +28,10 @@ fun TimeUnit.abbreviation(): String {
 
 class CsvSampleStreamOutput(
         uri: URI,
-        val outputTimeUnit: TimeUnit,
         stream: FiniteSampleStream,
+        val outputTimeUnit: TimeUnit,
         val encoding: Charset = Charset.forName("UTF-8")
 ) : FileStreamOutput<Sample, FiniteSampleStream>(stream, uri) {
-
-    override fun mux(): MuxNode = MuxSingleInputNode(Mux("CsvSampleStreamOutput(uri=$uri)"), stream.mux())
 
     override fun header(dataSize: Int): ByteArray? = "time ${outputTimeUnit.abbreviation()}, value\n".toByteArray(encoding)
 

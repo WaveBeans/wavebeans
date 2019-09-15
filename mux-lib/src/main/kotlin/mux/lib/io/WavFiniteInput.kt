@@ -19,8 +19,6 @@ class WavFiniteInput(
         private val content: Content? = null
 ) : FiniteInput {
 
-    override fun mux(): MuxNode = MuxInputNode(Mux("WavInput(uri=$uri)"))
-
     data class Content(
             val size: Int,
             val bitDepth: BitDepth,

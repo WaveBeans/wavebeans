@@ -1,18 +1,23 @@
 package mux.lib.io
 
+import mux.lib.MuxNode
 import mux.lib.MuxStream
 import mux.lib.timeToSampleIndexFloor
-import java.io.*
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.net.URI
 import java.util.concurrent.TimeUnit
 
-abstract class FileStreamOutput<S, T : MuxStream<S, *>>(
-        val stream: T,
+abstract class FileStreamOutput<T : Any, S : MuxStream<T, S>>(
+        val stream: S,
         val uri: URI
-) : StreamOutput {
+) : StreamOutput<T, S> {
 
     private var writtenBytes: Int = 0
     private val tmpFile = File.createTempFile("mux", ".tmp")
+
+    override fun input(): MuxNode<T, S> = stream
 
     override fun writer(sampleRate: Float): Writer {
 
@@ -52,7 +57,7 @@ abstract class FileStreamOutput<S, T : MuxStream<S, *>>(
 
     protected abstract fun footer(dataSize: Int): ByteArray?
 
-    protected abstract fun serialize(offset: Long, sampleRate: Float, samples: List<S>): ByteArray
+    protected abstract fun serialize(offset: Long, sampleRate: Float, samples: List<T>): ByteArray
 
     override fun close() {
         FileOutputStream(File(uri)).use { f ->

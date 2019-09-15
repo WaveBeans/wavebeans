@@ -1,8 +1,8 @@
 package mux.lib.io
 
-import mux.lib.*
+import mux.lib.Sample
+import mux.lib.sampleOf
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.TimeUnit.*
 import kotlin.math.abs
 import kotlin.math.cos
 
@@ -22,8 +22,6 @@ class SineSweepGeneratedInput(
         val sweepDelta: Double = 0.1
 
 ) : StreamInput {
-
-    override fun mux(): MuxNode = MuxInputNode(Mux("SineSweepInput(freq=$startFrequency-$endFrequency)"))
 
     override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): StreamInput {
         TODO()

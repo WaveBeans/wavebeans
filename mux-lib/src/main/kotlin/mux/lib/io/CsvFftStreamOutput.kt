@@ -1,21 +1,22 @@
 package mux.lib.io
 
-import mux.lib.Mux
-import mux.lib.MuxNode
-import mux.lib.MuxSingleInputNode
-import mux.lib.samplesCountToLength
 import mux.lib.stream.FftSample
 import mux.lib.stream.FiniteFftStream
-import java.io.InputStream
+import mux.lib.stream.FiniteSampleStream
 import java.net.URI
 import java.nio.charset.Charset
-import java.util.concurrent.TimeUnit
 
-fun FiniteFftStream.magnitudeToCsv(uri: String, encoding: Charset = Charset.forName("UTF-8")): StreamOutput {
+fun FiniteFftStream.magnitudeToCsv(
+        uri: String,
+        encoding: Charset = Charset.forName("UTF-8")
+): StreamOutput<FftSample, FiniteFftStream> {
     return CsvFftStreamOutput(URI(uri), this, true, encoding)
 }
 
-fun FiniteFftStream.phaseToCsv(uri: String, encoding: Charset = Charset.forName("UTF-8")): StreamOutput {
+fun FiniteFftStream.phaseToCsv(
+        uri: String,
+        encoding: Charset = Charset.forName("UTF-8")
+): StreamOutput<FftSample, FiniteFftStream> {
     return CsvFftStreamOutput(URI(uri), this, false, encoding)
 }
 
@@ -25,7 +26,6 @@ class CsvFftStreamOutput(
         val isMagnitude: Boolean,
         val encoding: Charset = Charset.forName("UTF-8")
 ) : FileStreamOutput<FftSample, FiniteFftStream>(stream, uri) {
-    override fun mux(): MuxNode = MuxSingleInputNode(Mux("CsvFftStreamOutput(uri=$uri)"), stream.mux())
 
     override fun header(dataSize: Int): ByteArray? = null
 

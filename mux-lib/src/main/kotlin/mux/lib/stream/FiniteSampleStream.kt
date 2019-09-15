@@ -7,5 +7,4 @@ import java.util.concurrent.TimeUnit
 interface FiniteSampleStream : MuxStream<Sample, FiniteSampleStream> {
 
     fun length(timeUnit: TimeUnit = TimeUnit.MILLISECONDS): Long
-
 }

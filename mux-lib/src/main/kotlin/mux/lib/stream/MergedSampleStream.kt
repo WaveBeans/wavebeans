@@ -1,6 +1,9 @@
 package mux.lib.stream
 
 import mux.lib.*
+import mux.lib.Mux
+import mux.lib.MultiMuxNode
+import mux.lib.MuxNode
 import java.util.concurrent.TimeUnit
 import kotlin.math.max
 
@@ -8,6 +11,7 @@ fun diff(x: SampleStream, y: SampleStream, shift: Int = 0) = MergedSampleStream(
 
 fun sum(x: SampleStream, y: SampleStream, shift: Int = 0) = MergedSampleStream(x, y, shift, { a, b -> a + b })
 
+// TODO that can merge any type of stream in generic way
 class MergedSampleStream(
         val sourceStream: SampleStream,
         val mergingStream: SampleStream,
@@ -16,9 +20,9 @@ class MergedSampleStream(
         val start: Long = 0,
         val end: Long? = null,
         val timeUnit: TimeUnit = TimeUnit.MILLISECONDS
-) : SampleStream {
+) : SampleStream, MultiMuxNode<Sample, SampleStream> {
 
-    override fun mux(): MuxNode = MuxMultiInputNode(Mux("MergedSampleStream"), listOf(sourceStream.mux(), mergingStream.mux()))
+    override val inputs: List<MuxNode<Sample, SampleStream>> = listOf(sourceStream, mergingStream)
 
     override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): SampleStream {
         return MergedSampleStream(

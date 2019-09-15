@@ -2,7 +2,7 @@ package mux.lib
 
 import java.util.concurrent.TimeUnit
 
-interface MuxStream<T, S> {
+interface MuxStream<T : Any, S : Any> : MuxNode<T, S> {
 
     /**
      *  Gets the input as a sequence of samples.
@@ -22,7 +22,5 @@ interface MuxStream<T, S> {
      *
      * @return the projection of specific time interval
      */
-    fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): S
-
-    fun mux(): MuxNode
+    fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit = TimeUnit.MILLISECONDS): S
 }
