@@ -2,10 +2,10 @@ package mux.lib
 
 import mux.lib.execution.MuxTuple
 import mux.lib.io.StreamOutput
+import mux.lib.io.sine
 import mux.lib.io.toCsv
 import mux.lib.stream.changeAmplitude
 import mux.lib.stream.plus
-import mux.lib.stream.sine
 import mux.lib.stream.trim
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
@@ -41,8 +41,8 @@ object MuxRuntimeSpec : Spek({
         }
 
         outputs.forEach {
-            println("OUT $it  input=${it.input()}")
-            iterateOverNodes(it.input())
+            println("OUT $it  input=${it.input}")
+            iterateOverNodes(it.input)
         }
 
         println("=============")
@@ -57,13 +57,17 @@ object MuxRuntimeSpec : Spek({
             }
         }
 
-        val tuples = outputs.map { tuples(it, it.input()) }.flatten()
+        val tuples = outputs.map { tuples(it, it.input) }.flatten()
 
         println(tuples.joinToString("\n\n"))
 
         tuples.map { Pair(it.base, it.base.writer(44100.0f)) }
                 .map { it.second.write(10000); it }
                 .map { it.first.close(); it.second.close() }
+
+
+//        val params = tuples.first().nodes.first().parameters()
+
 
 
 //        println("========================")

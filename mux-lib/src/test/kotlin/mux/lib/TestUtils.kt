@@ -8,6 +8,8 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.support.expected
 import assertk.assertions.support.show
 import mux.lib.io.ByteArrayLittleEndianInput
+import mux.lib.io.ByteArrayLittleEndianInputParams
+import mux.lib.io.FiniteInput
 import mux.lib.math.ComplexNumber
 import mux.lib.math.minus
 import mux.lib.math.plus
@@ -60,14 +62,17 @@ fun Suite.itShouldHave(what: String, body: TestBody.() -> Unit) = this.it("shoul
 
 fun Iterable<Int>.stream(sampleRate: Float, bitDepth: BitDepth = BitDepth.BIT_8): SampleStream {
     return FiniteInputSampleStream(
-            ByteArrayLittleEndianInput(sampleRate, bitDepth, this.map {
+            this.map {
                 when (bitDepth) {
-                    BitDepth.BIT_8 -> it.toByte()
-                    BitDepth.BIT_16 -> TODO()
+                    BitDepth.BIT_8 -> listOf(it.toByte())
+                    BitDepth.BIT_16 -> listOf((it shr 8) and 0xFF, it and 0xFF).map { i -> i.toByte() }
                     BitDepth.BIT_24 -> TODO()
                     BitDepth.BIT_32 -> TODO()
                     BitDepth.BIT_64 -> TODO()
                 }
-            }.toList().toByteArray())
+            }.flatten().toList().toByteArray().asInput(sampleRate, bitDepth)
     ).sampleStream(ZeroFilling())
 }
+
+fun ByteArray.asInput(sampleRate: Float, bitDepth: BitDepth = BitDepth.BIT_8): FiniteInput =
+        ByteArrayLittleEndianInput(ByteArrayLittleEndianInputParams(sampleRate, bitDepth, this))

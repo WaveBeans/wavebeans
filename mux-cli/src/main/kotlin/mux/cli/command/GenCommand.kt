@@ -2,6 +2,7 @@ package mux.cli.command
 
 import mux.cli.Session
 import mux.lib.io.SineGeneratedInput
+import mux.lib.io.SineGeneratedInputParams
 import mux.lib.stream.SampleStream
 import mux.lib.stream.sampleStream
 import java.util.*
@@ -94,6 +95,6 @@ class SineGeneratedStreamBuilder : GeneratedStreamBuilder {
                 ?.toDoubleOrNull()
                 ?.also { if (it < 0) throw ArgumentWrongException("amplitude should be greater than 0") }
                 ?: throw ArgumentMissingException("amplitude should be specified")
-        return SineGeneratedInput(frequency, amplitude, length).sampleStream()
+        return SineGeneratedInput(SineGeneratedInputParams(frequency, amplitude, length)).sampleStream()
     }
 }

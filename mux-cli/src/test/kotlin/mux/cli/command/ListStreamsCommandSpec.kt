@@ -7,7 +7,12 @@ import mux.cli.Session
 import mux.cli.scope.RootScope
 import mux.lib.BitDepth
 import mux.lib.io.ByteArrayLittleEndianInput
-import mux.lib.stream.*
+import mux.lib.io.ByteArrayLittleEndianInputParams
+import mux.lib.io.sine
+import mux.lib.stream.FiniteInputSampleStream
+import mux.lib.stream.ZeroFilling
+import mux.lib.stream.plus
+import mux.lib.stream.sampleStream
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.xdescribe
 
@@ -42,11 +47,11 @@ object ListStreamsCommandSpec : Spek({
 
     xdescribe("Byte array sourced 8bit as the only one stream in the session") {
         val session = newSession()
-        val input = ByteArrayLittleEndianInput(
+        val input = ByteArrayLittleEndianInput(ByteArrayLittleEndianInputParams(
                 50.0f,
                 BitDepth.BIT_8,
                 ByteArray(100) { 0 }
-        )
+        ))
         session.registerSampleStream("stream1", FiniteInputSampleStream(input).sampleStream(ZeroFilling()))
 
         describe("Listing all streams") {
@@ -61,11 +66,11 @@ object ListStreamsCommandSpec : Spek({
 
     xdescribe("Mixed as the only one stream in the session") {
         val session = newSession()
-        val samples1 = FiniteInputSampleStream(ByteArrayLittleEndianInput(
+        val samples1 = FiniteInputSampleStream(ByteArrayLittleEndianInput(ByteArrayLittleEndianInputParams(
                 50.0f,
                 BitDepth.BIT_8,
                 ByteArray(100) { 0 }
-        )).sampleStream(ZeroFilling())
+        ))).sampleStream(ZeroFilling())
         val samples2 = 20.sine(amplitude = 0.1, timeOffset = 1.0)
         val mix = samples1 + samples2
         session.registerSampleStream("stream1", mix)
@@ -84,17 +89,17 @@ object ListStreamsCommandSpec : Spek({
 
     xdescribe("Byte array sourced 16bit and 32 bit as streams in the session") {
         val session = newSession()
-        val input1 = ByteArrayLittleEndianInput(
+        val input1 = ByteArrayLittleEndianInput(ByteArrayLittleEndianInputParams(
                 50.0f,
                 BitDepth.BIT_16,
                 ByteArray(100) { 0 }
-        )
+        ))
         session.registerSampleStream("stream1", FiniteInputSampleStream(input1).sampleStream(ZeroFilling()))
-        val input2 = ByteArrayLittleEndianInput(
+        val input2 = ByteArrayLittleEndianInput(ByteArrayLittleEndianInputParams(
                 50.0f,
                 BitDepth.BIT_32,
                 ByteArray(100) { 0 }
-        )
+        ))
         session.registerSampleStream("stream2", FiniteInputSampleStream(input2).sampleStream(ZeroFilling()))
 
         describe("Listing all streams") {

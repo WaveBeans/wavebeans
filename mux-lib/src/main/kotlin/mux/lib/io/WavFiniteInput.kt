@@ -10,14 +10,20 @@ import java.util.concurrent.TimeUnit
 import kotlin.math.max
 import kotlin.math.min
 
-fun wave(uri: String): FiniteInput = WavFiniteInput(URI(uri))
+fun wave(uri: String): FiniteInput = WavFiniteInput(WavFiniteInputParams(URI(uri)))
 
 fun wave(uri: String, converter: FiniteToStream): SampleStream = wave(uri).sampleStream(converter)
 
+data class WavFiniteInputParams(
+        val uri: URI
+) : MuxParams
+
 class WavFiniteInput(
-        val uri: URI,
+        val params: WavFiniteInputParams,
         private val content: Content? = null
 ) : FiniteInput {
+
+    override val parameters: MuxParams = params
 
     data class Content(
             val size: Int,
@@ -50,7 +56,7 @@ class WavFiniteInput(
 
     private val cnt: Content by lazy {
         if (content == null) {
-            val (descriptor, buf) = WavFileReader(FileInputStream(File(uri))).read()
+            val (descriptor, buf) = WavFileReader(FileInputStream(File(params.uri))).read()
             Content(buf.size, descriptor.bitDepth, buf, descriptor.sampleRate)
         } else {
             content
@@ -67,7 +73,7 @@ class WavFiniteInput(
         val e = end?.let { min(timeToSampleIndexCeil(end, timeUnit, cnt.sampleRate).toInt(), samplesCount()) }
                 ?: samplesCount()
         return WavFiniteInput(
-                uri,
+                params,
                 cnt.copy( // TODO this should be done without copying of underlying buffer
                         buffer = cnt.buffer.copyOfRange(
                                 s * cnt.bitDepth.bytesPerSample,

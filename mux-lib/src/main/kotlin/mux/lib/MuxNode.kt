@@ -1,11 +1,18 @@
+@file:Suppress("UNCHECKED_CAST")
+
 package mux.lib
 
-interface MuxNode<T : Any, S : Any> : Restorable<T, S> {
-    fun stream(): MuxStream<T, S> = TODO()
+interface MuxNode<T : Any, S : Any> {
 
     fun inputs(): List<MuxNode<*, *>>
 
     fun decorateInputs(inputs: List<MuxNode<*, *>>): MuxNode<*, *>
+
+    val parameters: MuxParams
+
+    val type: String
+        get() = this::class.simpleName!!
+
 }
 
 interface SourceMuxNode<T : Any, S : Any> : MuxNode<T, S> {
@@ -48,7 +55,6 @@ interface MultiMuxNode<T : Any, S : Any> : MuxNode<T, S> {
     override fun decorateInputs(inputs: List<MuxNode<*, *>>): MuxNode<*, *> = decorate(inputs as List<MuxNode<T, S>>)
 }
 
-interface Restorable<T : Any, S : Any> {
-//    fun parameters(): MuxParams<T, S>
+interface MuxParams
 
-}
+object NoParams: MuxParams

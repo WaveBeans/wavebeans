@@ -4,8 +4,8 @@ import assertk.assertThat
 import assertk.assertions.each
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
-import mux.lib.RectangleWindow
 import mux.lib.stream
+import mux.lib.stream.RectangleWindow
 import mux.lib.stream.fft
 import mux.lib.stream.trim
 import org.spekframework.spek2.Spek
@@ -30,7 +30,7 @@ class CsvFftStreamOutputSpec : Spek({
 
         describe("Generating magnitude") {
             val file = File.createTempFile("test_", ".mux.tmp")
-            CsvFftStreamOutput(file.toURI(), x, true).use {csvOutput ->
+            CsvFftStreamOutput(x, CsvFftStreamOutputParams(file.toURI(), true)).use {csvOutput ->
                 csvOutput.writer(sampleRate).use {
                     it.write(1000)
                 }
@@ -75,7 +75,7 @@ class CsvFftStreamOutputSpec : Spek({
 
         describe("Generating phase") {
             val file = File.createTempFile("test_", ".mux.tmp")
-            CsvFftStreamOutput(file.toURI(), x, false).use {csvOutput ->
+            CsvFftStreamOutput(x, CsvFftStreamOutputParams(file.toURI(), false)).use {csvOutput ->
                 csvOutput.writer(sampleRate).use {
                     it.write(1000)
                 }

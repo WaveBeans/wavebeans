@@ -1,36 +1,39 @@
 package mux.lib.stream
 
 import mux.lib.*
-import mux.lib.Mux
-import mux.lib.MuxNode
-import mux.lib.SingleMuxNode
 import java.util.concurrent.TimeUnit
 
 class ZeroFilling : FiniteToStream {
     override fun convert(finiteSampleStream: FiniteSampleStream): SampleStream {
-        return ZeroFillingFiniteSampleStream(finiteSampleStream)
+        return ZeroFillingFiniteSampleStream(finiteSampleStream, ZeroFillingFiniteSampleStreamParams())
     }
 }
 
-private class ZeroFillingFiniteSampleStream(
-        val finiteSampleStream: FiniteSampleStream,
+data class ZeroFillingFiniteSampleStreamParams(
         val start: Long = 0,
         val end: Long? = null,
         val timeUnit: TimeUnit = TimeUnit.MILLISECONDS
+) : MuxParams
+
+private class ZeroFillingFiniteSampleStream(
+        val finiteSampleStream: FiniteSampleStream,
+        val params: ZeroFillingFiniteSampleStreamParams
 ) : SampleStream, AlterMuxNode<Sample, FiniteSampleStream, Sample, SampleStream> {
+
+    override val parameters: MuxParams = params
 
     override val input: MuxNode<Sample, FiniteSampleStream> = finiteSampleStream
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> {
         return object : Iterator<Sample> {
-            val s = timeToSampleIndexFloor(start, timeUnit, sampleRate)
+            val s = timeToSampleIndexFloor(params.start, params.timeUnit, sampleRate)
             val innerIterator = finiteSampleStream
                     .asSequence(sampleRate)
                     .drop(s.toInt())
                     .iterator()
 
-            var samplesLeft = end
-                    ?.let { timeToSampleIndexCeil(it, timeUnit, sampleRate) }
+            var samplesLeft = params.end
+                    ?.let { timeToSampleIndexCeil(it, params.timeUnit, sampleRate) }
                     ?.minus(s)
                     ?: Long.MAX_VALUE
 
@@ -47,7 +50,7 @@ private class ZeroFillingFiniteSampleStream(
     }
 
     override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): SampleStream {
-        return ZeroFillingFiniteSampleStream(finiteSampleStream, start, end, timeUnit)
+        return ZeroFillingFiniteSampleStream(finiteSampleStream, ZeroFillingFiniteSampleStreamParams(start, end, timeUnit))
     }
 
 }

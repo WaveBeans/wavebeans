@@ -3,13 +3,20 @@ package mux.lib.stream
 import mux.lib.*
 import java.util.concurrent.TimeUnit
 
-fun FftStream.trim(length: Long, timeUnit: TimeUnit = TimeUnit.MILLISECONDS): FiniteFftStream = TrimmedFiniteFftStream(this, length, timeUnit)
+fun FftStream.trim(length: Long, timeUnit: TimeUnit = TimeUnit.MILLISECONDS): FiniteFftStream =
+        TrimmedFiniteFftStream(this, TrimmedFiniteFftStreamParams(length, timeUnit))
+
+data class TrimmedFiniteFftStreamParams(
+        val length: Long,
+        val timeUnit: TimeUnit
+) : MuxParams
 
 class TrimmedFiniteFftStream(
         val fftStream: FftStream,
-        val length: Long,
-        val timeUnit: TimeUnit
+        val params: TrimmedFiniteFftStreamParams
 ) : FiniteFftStream, AlterMuxNode<FftSample, FftStream, FftSample, FiniteFftStream> {
+
+    override val parameters: MuxParams = params
 
     override val input: MuxNode<FftSample, FftStream> = fftStream
 
@@ -25,10 +32,11 @@ class TrimmedFiniteFftStream(
     override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): FiniteFftStream =
             TrimmedFiniteFftStream(
                     fftStream.rangeProjection(start, end, timeUnit),
-                    end?.minus(start) ?: (this.timeUnit.convert(length, timeUnit) - start),
-                    timeUnit
+                    params.copy(
+                            length = end?.minus(start) ?: (params.timeUnit.convert(params.length, timeUnit) - start)
+                    )
             )
 
-    override fun length(timeUnit: TimeUnit): Long = timeUnit.convert(length, this.timeUnit)
+    override fun length(timeUnit: TimeUnit): Long = timeUnit.convert(params.length, params.timeUnit)
 
 }

@@ -17,7 +17,7 @@ abstract class FileStreamOutput<T : Any, S : MuxStream<T, S>>(
     private var writtenBytes: Int = 0
     private val tmpFile = File.createTempFile("mux", ".tmp")
 
-    override fun input(): MuxNode<T, S> = stream
+    override val input: MuxNode<T, S> = stream
 
     override fun writer(sampleRate: Float): Writer {
 

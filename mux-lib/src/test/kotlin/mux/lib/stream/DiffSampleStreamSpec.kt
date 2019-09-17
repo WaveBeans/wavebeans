@@ -3,9 +3,10 @@ package mux.lib.stream
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import mux.lib.asByte
-import mux.lib.stream
+import mux.lib.io.sine
 import mux.lib.isCloseTo
 import mux.lib.listOfBytesAsInts
+import mux.lib.stream
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.util.concurrent.TimeUnit.MILLISECONDS

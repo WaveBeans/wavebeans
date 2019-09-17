@@ -1,26 +1,49 @@
 package mux.lib.stream
 
 import mux.lib.*
-import mux.lib.Mux
-import mux.lib.MultiMuxNode
-import mux.lib.MuxNode
 import java.util.concurrent.TimeUnit
 import kotlin.math.max
 
-fun diff(x: SampleStream, y: SampleStream, shift: Int = 0) = MergedSampleStream(x, y, shift, { a, b -> a - b })
+fun diff(x: SampleStream, y: SampleStream, shift: Int = 0) = MergedSampleStream(
+        x,
+        y,
+        MergedSampleStreamParams(shift, DiffOperation)
+)
 
-fun sum(x: SampleStream, y: SampleStream, shift: Int = 0) = MergedSampleStream(x, y, shift, { a, b -> a + b })
+fun sum(x: SampleStream, y: SampleStream, shift: Int = 0) = MergedSampleStream(
+        x,
+        y,
+        MergedSampleStreamParams(shift, SumOperation)
+)
+
+object SumOperation : MergedStreamOperation {
+    override fun apply(a: Sample, b: Sample): Sample = a + b
+}
+
+object DiffOperation : MergedStreamOperation {
+    override fun apply(a: Sample, b: Sample): Sample = a - b
+}
+
+interface MergedStreamOperation {
+    fun apply(a: Sample, b: Sample): Sample
+}
+
+data class MergedSampleStreamParams(
+        val shift: Int,
+        val operation: MergedStreamOperation,
+        val start: Long = 0,
+        val end: Long? = null,
+        val timeUnit: TimeUnit = TimeUnit.MILLISECONDS
+) : MuxParams
 
 // TODO that can merge any type of stream in generic way
 class MergedSampleStream(
         val sourceStream: SampleStream,
         val mergingStream: SampleStream,
-        val shift: Int,
-        val operation: (Sample, Sample) -> Sample,
-        val start: Long = 0,
-        val end: Long? = null,
-        val timeUnit: TimeUnit = TimeUnit.MILLISECONDS
+        val params: MergedSampleStreamParams
 ) : SampleStream, MultiMuxNode<Sample, SampleStream> {
+
+    override val parameters: MuxParams = params
 
     override val inputs: List<MuxNode<Sample, SampleStream>> = listOf(sourceStream, mergingStream)
 
@@ -28,51 +51,51 @@ class MergedSampleStream(
         return MergedSampleStream(
                 sourceStream,
                 mergingStream,
-                shift,
-                operation,
-                start + this.start,
-                end?.let { it + (this.end ?: 0) },
-                timeUnit
+                params.copy(
+                        start = start + params.start,
+                        end = end?.let { it + (params.end ?: 0) },
+                        timeUnit = timeUnit
+                )
         )
     }
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> {
-        val s = max(timeToSampleIndexFloor(start, timeUnit, sampleRate), 0L)
-        val e = end?.let { timeToSampleIndexCeil(it, timeUnit, sampleRate) }
+        val s = max(timeToSampleIndexFloor(params.start, params.timeUnit, sampleRate), 0L)
+        val e = params.end?.let { timeToSampleIndexCeil(it, params.timeUnit, sampleRate) }
         val l = e?.minus(s)
 
         var ss: Long
         var ms: Long
         var newShift: Long
-        if (shift < 0) {
-            ss = s + shift
+        if (params.shift < 0) {
+            ss = s + params.shift
             if (ss < 0) ss = 0
             ms = s
-            newShift = shift.toLong() + s
+            newShift = params.shift.toLong() + s
             if (newShift > 0) newShift = 0L
         } else {
             ss = s
-            ms = s - shift
+            ms = s - params.shift
             if (ms < 0) ms = 0
-            newShift = shift - s
+            newShift = params.shift - s
             if (newShift < 0) newShift = 0L
         }
 
         val sourceStreamIterator =
-                (if (start != 0L || end != null)
+                (if (params.start != 0L || params.end != null)
                     sourceStream.rangeProjection(
-                            samplesCountToLength(ss, sampleRate, timeUnit),
-                            l?.plus(ss)?.let { samplesCountToLength(it, sampleRate, timeUnit) },
-                            timeUnit
+                            samplesCountToLength(ss, sampleRate, params.timeUnit),
+                            l?.plus(ss)?.let { samplesCountToLength(it, sampleRate, params.timeUnit) },
+                            params.timeUnit
                     )
                 else sourceStream)
                         .asSequence(sampleRate).iterator()
         val mergingStreamIterator =
-                (if (start != 0L || end != null)
+                (if (params.start != 0L || params.end != null)
                     mergingStream.rangeProjection(
-                            samplesCountToLength(ms, sampleRate, timeUnit),
-                            l?.plus(ms)?.let { samplesCountToLength(it, sampleRate, timeUnit) },
-                            timeUnit
+                            samplesCountToLength(ms, sampleRate, params.timeUnit),
+                            l?.plus(ms)?.let { samplesCountToLength(it, sampleRate, params.timeUnit) },
+                            params.timeUnit
                     )
                 else mergingStream)
                         .asSequence(sampleRate).iterator()
@@ -98,7 +121,7 @@ class MergedSampleStream(
                                 if (mergingStreamIterator.hasNext()) mergingStreamIterator.next()
                                 else ZeroSample
 
-                        operation(sourceSample, mergingSample)
+                        params.operation.apply(sourceSample, mergingSample)
                     }
                     mergingStreamPos < newShift -> {
                         mergingStreamPos++
@@ -109,7 +132,7 @@ class MergedSampleStream(
                                 else ZeroSample
                         val mergingSample = ZeroSample
 
-                        operation(sourceSample, mergingSample)
+                        params.operation.apply(sourceSample, mergingSample)
                     }
                     else -> {
                         mergingStreamPos++
@@ -122,7 +145,7 @@ class MergedSampleStream(
                                 if (mergingStreamIterator.hasNext()) mergingStreamIterator.next()
                                 else ZeroSample
 
-                        operation(sourceSample, mergingSample)
+                        params.operation.apply(sourceSample, mergingSample)
                     }
                 }
             }

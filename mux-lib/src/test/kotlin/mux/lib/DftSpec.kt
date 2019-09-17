@@ -5,16 +5,15 @@ import assertk.assertions.hasMessage
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.catch
-import mux.lib.io.SineGeneratedInput
-import mux.lib.io.SineSweepGeneratedInput
-import mux.lib.math.*
+import mux.lib.io.sine
+import mux.lib.io.sineSweep
+import mux.lib.math.i
+import mux.lib.math.minus
+import mux.lib.math.plus
+import mux.lib.math.r
 import mux.lib.stream.plus
-import mux.lib.stream.sine
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
-import org.spekframework.spek2.style.specification.xdescribe
-import java.io.File
-import kotlin.math.log10
 
 object DftSpec : Spek({
     describe("Given signal as array of doubles [1,4]") {
@@ -67,11 +66,8 @@ object DftSpec : Spek({
     }
 
     describe("Given sinusoid 64Hz, sample rate 128Hz, 2seconds") {
-        val sine = SineGeneratedInput(
-                64.0,
-                1.0,
-                2.0
-        ).asSequence(128.0f).map { it.r }.take(256)
+        val sine = 64.sine(amplitude = 1.0, timeOffset = 2.0)
+                .asSequence(128.0f).map { it.r }.take(256)
 
         describe("Calculating FFT") {
             val fft = fft(sine, 256)
@@ -87,11 +83,8 @@ object DftSpec : Spek({
     }
 
     describe("Given sinusoid 64Hz, sample rate 128Hz, 2seconds, amplitude=0.5") {
-        val sine = SineGeneratedInput(
-                64.0,
-                0.5,
-                2.0
-        ).asSequence(128.0f).map { it.r }.take(256)
+        val sine = 64.sine(amplitude = 0.5, timeOffset = 2.0)
+                .asSequence(128.0f).map { it.r }.take(256)
 
         describe("Calculating FFT") {
             val fft = fft(sine, 256)
@@ -276,12 +269,8 @@ object DftSpec : Spek({
                             .asSequence(44100.0f).map { it.r }.drop(1024).take(4096)
                 },
                 "sweep sine from 64Hz to 1024Hz @ 4096Hz" to {
-                    SineSweepGeneratedInput(
-                            64.0,
-                            1024.0,
-                            0.5,
-                            2.0
-                    ).asSequence(4096.0f).map { it.r }
+                    (64..1024).sineSweep(0.5, 2.0)
+                            .asSequence(4096.0f).map { it.r }
                 }
         )
 
@@ -310,27 +299,5 @@ object DftSpec : Spek({
                 }
             }
         }
-
-    }
-
-
-    xdescribe("Windows") {
-        // just test point for now
-        val sine = SineGeneratedInput(
-                64.0,
-                0.5,
-                100.0
-        ).asSequence(44100.0f).map { it.r }
-
-        val fft = fft(
-                sine
-                        .hanningWindow(60001)
-                        .zeropad(60001, 65536)
-                , 65536)
-        File("test.csv").writeText(
-                fft
-                        .map { 20 * log10(it.abs()) }
-                        .joinToString(separator = "\n")
-        )
     }
 })

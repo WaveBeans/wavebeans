@@ -8,19 +8,19 @@ import java.net.URI
 
 
 fun FiniteSampleStream.toMono8bitWav(uri: String): StreamOutput<Sample, FiniteSampleStream> {
-    return WavFileOutput(URI(uri), this, BitDepth.BIT_8, 1)
+    return WavFileOutput(this, WavFileOutputParams(URI(uri), BitDepth.BIT_8, 1))
 }
 
 fun FiniteSampleStream.toMono16bitWav(uri: String): StreamOutput<Sample, FiniteSampleStream> {
-    return WavFileOutput(URI(uri), this, BitDepth.BIT_16, 1)
+    return WavFileOutput(this, WavFileOutputParams(URI(uri), BitDepth.BIT_16, 1))
 }
 
 fun FiniteSampleStream.toMono24bitWav(uri: String): StreamOutput<Sample, FiniteSampleStream> {
-    return WavFileOutput(URI(uri), this, BitDepth.BIT_24, 1)
+    return WavFileOutput(this, WavFileOutputParams(URI(uri), BitDepth.BIT_24, 1))
 }
 
 fun FiniteSampleStream.toMono32bitWav(uri: String): StreamOutput<Sample, FiniteSampleStream> {
-    return WavFileOutput(URI(uri), this, BitDepth.BIT_32, 1)
+    return WavFileOutput(this, WavFileOutputParams(URI(uri), BitDepth.BIT_32, 1))
 }
 
 
@@ -28,12 +28,18 @@ class WavFileWriterException(message: String, cause: Exception?) : Exception(mes
     constructor(message: String) : this(message, null)
 }
 
+data class WavFileOutputParams(
+        val uri: URI,
+        val bitDepth: BitDepth,
+        val numberOfChannels: Int
+) : MuxParams
+
 class WavFileOutput(
-        uri: URI,
         finiteSampleStream: FiniteSampleStream,
-        bitDepth: BitDepth,
-        private val numberOfChannels: Int
-) : ByteArrayLittleEndianFileOutput(uri, finiteSampleStream, bitDepth) {
+        val params: WavFileOutputParams
+) : ByteArrayLittleEndianFileOutput(params.uri, finiteSampleStream, params.bitDepth) {
+
+    override val parameters: MuxParams = params
 
     override fun header(dataSize: Int): ByteArray? {
         val destination = ByteArrayOutputStream()
@@ -41,10 +47,10 @@ class WavFileOutput(
         val sc1Content = ByteArrayOutputStream()
         val sc1ContentStream = DataOutputStream(sc1Content)
         writeConstantShort("PCM audio format", sc1ContentStream, PCM_FORMAT)
-        writeLittleEndianIntAsShort("numberOfChannels", sc1ContentStream, numberOfChannels)
+        writeLittleEndianIntAsShort("numberOfChannels", sc1ContentStream, params.numberOfChannels)
         writeLittleEndianInt("sampleRate", sc1ContentStream, sampleRate().toInt())
-        writeLittleEndianInt("byteRate", sc1ContentStream, sampleRate().toInt() * numberOfChannels * bitDepth.bytesPerSample)
-        writeLittleEndianIntAsShort("byteAlign", sc1ContentStream, numberOfChannels * bitDepth.bytesPerSample)
+        writeLittleEndianInt("byteRate", sc1ContentStream, sampleRate().toInt() * params.numberOfChannels * bitDepth.bytesPerSample)
+        writeLittleEndianIntAsShort("byteAlign", sc1ContentStream, params.numberOfChannels * bitDepth.bytesPerSample)
         writeLittleEndianIntAsShort("bitDepth", sc1ContentStream, bitDepth.bits)
         val sc1 = sc1Content.toByteArray()
 

@@ -6,6 +6,7 @@ import assertk.assertions.isInstanceOf
 import mux.cli.Session
 import mux.cli.scope.AudioStreamScope
 import mux.lib.io.SineGeneratedInput
+import mux.lib.io.sine
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import org.spekframework.spek2.style.specification.xdescribe
@@ -16,7 +17,7 @@ object GenCommandSpec : Spek({
         val gen = GenCommand(Session())
 
         describe("Sine generator: 0.1 fs=50.0 d=16 f=10 a=1.0") {
-            val generator = SineGeneratedInput(10.0, 1.0, 0.1)
+            val generator = 10.sine(1.0, 0.1)
             val scope = gen.newScope("sine 0.1 d=16 f=10 a=1.0")
 
             it("should be AudioStreamScope with 5 samples") {

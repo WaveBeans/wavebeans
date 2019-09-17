@@ -10,6 +10,8 @@ class InfiniteSampleStream(
         val streamInput: StreamInput
 ) : SampleStream, AlterMuxNode<Sample, StreamInput, Sample, SampleStream> {
 
+    override val parameters: MuxParams = NoParams
+
     override val input: MuxNode<Sample, StreamInput> = streamInput
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> = streamInput.asSequence(sampleRate)

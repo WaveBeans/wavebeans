@@ -3,10 +3,8 @@ package mux.lib.io
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import mux.lib.*
-import mux.lib.MuxNode
 import mux.lib.stream.FiniteInputSampleStream
 import mux.lib.stream.FiniteSampleStream
-import mux.lib.stream.sine
 import mux.lib.stream.trim
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
@@ -18,6 +16,10 @@ private class ByteArrayFileOutputMock(
         finiteSampleStream: FiniteSampleStream,
         bitDepth: BitDepth
 ) : ByteArrayLittleEndianFileOutput(URI.create("file:///dev/null"), finiteSampleStream, bitDepth) {
+
+    override val parameters: MuxParams
+        get() = throw UnsupportedOperationException()
+
     override fun header(dataSize: Int): ByteArray? = throw UnsupportedOperationException()
 
     override fun footer(dataSize: Int): ByteArray? = throw UnsupportedOperationException()
@@ -33,11 +35,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
     val sampleRate = 50.0f
     val buffer = ByteArray(100) { (it and 0xFF).toByte() }
     describe("Wav LE input, sample rate = 50.0Hz, bit depth = 8, mono") {
-        val input = ByteArrayLittleEndianInput(
-                sampleRate,
-                BitDepth.BIT_8,
-                buffer
-        )
+        val input = buffer.asInput(sampleRate)
 
         describe("samples are with values 0..100") {
             val samples = (0 until 100).map { sampleOf(it.toByte()) }
@@ -120,11 +118,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
 
     describe("Wav LE input, sample rate = 50.0Hz, bit depth = 16, mono") {
         val buffer16 = ByteArray(200) { (it and 0xFF).toByte() }
-        val input = ByteArrayLittleEndianInput(
-                sampleRate,
-                BitDepth.BIT_16,
-                buffer16
-        )
+        val input = buffer16.asInput(sampleRate, BitDepth.BIT_16)
 
         itShouldHave("number of samples 100") { assertThat(input.samplesCount()).isEqualTo(100) }
         itShouldHave("length 2000ms") { assertThat(input.length(MILLISECONDS)).isEqualTo(2000L) }
@@ -174,6 +168,8 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
         val signal = (-100 until 100).toList()
         val output = ByteArrayFileOutputMock(FiniteInputSampleStream(
                 object : FiniteInput {
+                    override val parameters: MuxParams
+                        get() = throw UnsupportedOperationException()
 
                     override fun length(timeUnit: TimeUnit): Long = Long.MAX_VALUE
 
@@ -196,6 +192,9 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
         val signal = (-100 until 100).toList()
         val output = ByteArrayFileOutputMock(FiniteInputSampleStream(
                 object : FiniteInput {
+                    override val parameters: MuxParams
+                        get() = throw UnsupportedOperationException()
+
                     override fun length(timeUnit: TimeUnit): Long = Long.MAX_VALUE
 
                     override fun samplesCount(): Int = throw UnsupportedOperationException()

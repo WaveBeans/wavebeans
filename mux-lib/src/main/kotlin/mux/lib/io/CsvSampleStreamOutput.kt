@@ -11,7 +11,7 @@ fun FiniteSampleStream.toCsv(
         timeUnit: TimeUnit = TimeUnit.MILLISECONDS,
         encoding: Charset = Charset.forName("UTF-8")
 ): StreamOutput<Sample, FiniteSampleStream> {
-    return CsvSampleStreamOutput(URI(uri), this, timeUnit, encoding)
+    return CsvSampleStreamOutput(this, CsvSampleStreamOutputParams(URI(uri), timeUnit, encoding))
 }
 
 fun TimeUnit.abbreviation(): String {
@@ -26,24 +26,30 @@ fun TimeUnit.abbreviation(): String {
     }
 }
 
-class CsvSampleStreamOutput(
-        uri: URI,
-        stream: FiniteSampleStream,
+data class CsvSampleStreamOutputParams(
+        val uri: URI,
         val outputTimeUnit: TimeUnit,
         val encoding: Charset = Charset.forName("UTF-8")
-) : FileStreamOutput<Sample, FiniteSampleStream>(stream, uri) {
+) : MuxParams
 
-    override fun header(dataSize: Int): ByteArray? = "time ${outputTimeUnit.abbreviation()}, value\n".toByteArray(encoding)
+class CsvSampleStreamOutput(
+        stream: FiniteSampleStream,
+        val params: CsvSampleStreamOutputParams
+) : FileStreamOutput<Sample, FiniteSampleStream>(stream, params.uri) {
+
+    override val parameters: MuxParams = params
+
+    override fun header(dataSize: Int): ByteArray? = "time ${params.outputTimeUnit.abbreviation()}, value\n".toByteArray(params.encoding)
 
     override fun footer(dataSize: Int): ByteArray? = null
 
     override fun serialize(offset: Long, sampleRate: Float, samples: List<Sample>): ByteArray {
         return samples.asSequence()
                 .mapIndexed { idx, sample ->
-                    val time = samplesCountToLength(offset + idx, sampleRate, outputTimeUnit)
+                    val time = samplesCountToLength(offset + idx, sampleRate, params.outputTimeUnit)
                     "$time,$sample\n"
                 }
                 .joinToString(separator = "")
-                .toByteArray(encoding)
+                .toByteArray(params.encoding)
     }
 }

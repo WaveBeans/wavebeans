@@ -5,7 +5,7 @@ import assertk.assertions.isInstanceOf
 import mux.cli.Session
 import mux.cli.scope.AudioStreamScope
 import mux.cli.scope.MixStreamCommand
-import mux.lib.stream.sine
+import mux.lib.io.sine
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.xdescribe
 

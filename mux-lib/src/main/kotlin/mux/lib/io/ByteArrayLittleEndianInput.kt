@@ -34,28 +34,32 @@ class ByteArrayLittleEndianDecoder(val sampleRate: Float, val bitDepth: BitDepth
     }
 }
 
-class ByteArrayLittleEndianInput(val sampleRate: Float, val bitDepth: BitDepth, val buffer: ByteArray) : FiniteInput {
+data class ByteArrayLittleEndianInputParams(val sampleRate: Float, val bitDepth: BitDepth, val buffer: ByteArray) : MuxParams
 
-    override fun length(timeUnit: TimeUnit): Long = samplesCountToLength(samplesCount().toLong(), sampleRate, timeUnit)
+class ByteArrayLittleEndianInput(val params: ByteArrayLittleEndianInputParams) : FiniteInput {
 
-    override fun samplesCount(): Int = buffer.size / bitDepth.bytesPerSample
+    override val parameters: MuxParams = params
+
+    override fun length(timeUnit: TimeUnit): Long = samplesCountToLength(samplesCount().toLong(), params.sampleRate, timeUnit)
+
+    override fun samplesCount(): Int = params.buffer.size / params.bitDepth.bytesPerSample
 
     override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): FiniteInput {
-        val s = max(timeToSampleIndexFloor(start, timeUnit, sampleRate), 0).toInt()
-        val e = end?.let { min(timeToSampleIndexCeil(end, timeUnit, sampleRate).toInt(), samplesCount()) }
+        val s = max(timeToSampleIndexFloor(start, timeUnit, params.sampleRate), 0).toInt()
+        val e = end?.let { min(timeToSampleIndexCeil(end, timeUnit, params.sampleRate).toInt(), samplesCount()) }
                 ?: samplesCount()
         return ByteArrayLittleEndianInput(
-                sampleRate,
-                bitDepth,
-                // TODO this should be done without copying of underlying buffer
-                buffer = buffer.copyOfRange(
-                        s * bitDepth.bytesPerSample,
-                        e * bitDepth.bytesPerSample
+                params.copy(
+                        // TODO this should be done without copying of underlying buffer
+                        buffer = params.buffer.copyOfRange(
+                                s * params.bitDepth.bytesPerSample,
+                                e * params.bitDepth.bytesPerSample
+                        )
                 )
         )
     }
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> =
-            ByteArrayLittleEndianDecoder(this.sampleRate, this.bitDepth).sequence(sampleRate, this.buffer)
+            ByteArrayLittleEndianDecoder(params.sampleRate, params.bitDepth).sequence(sampleRate, params.buffer)
 
 }

@@ -3,7 +3,6 @@ package mux.lib.io
 import assertk.assertThat
 import assertk.assertions.*
 import mux.lib.stream.minus
-import mux.lib.stream.sine
 import mux.lib.stream.trim
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
@@ -22,7 +21,7 @@ class CsvSampleStreamOutputSpec : Spek({
 
         describe("Writing to CSV with 100ms steps") {
             val file = File.createTempFile("test_", ".mux.tmp")
-            CsvSampleStreamOutput(file.toURI(), x, TimeUnit.MILLISECONDS).use { csvOutput ->
+            CsvSampleStreamOutput(x, CsvSampleStreamOutputParams(file.toURI(), TimeUnit.MILLISECONDS)).use { csvOutput ->
                 csvOutput.writer(sampleRate).use {
                     while (it.write(100, TimeUnit.MILLISECONDS)) {
                     }
@@ -75,7 +74,7 @@ class CsvSampleStreamOutputSpec : Spek({
 
         describe("Writing to CSV with 100ms steps") {
             val file = File.createTempFile("test_", ".mux.tmp")
-            CsvSampleStreamOutput(file.toURI(), x, TimeUnit.MILLISECONDS).use { csvOutput ->
+            CsvSampleStreamOutput(x, CsvSampleStreamOutputParams(file.toURI(), TimeUnit.MILLISECONDS)).use { csvOutput ->
                 csvOutput.writer(sampleRate).use {
                     while (it.write(100, TimeUnit.MILLISECONDS)) {
                     }

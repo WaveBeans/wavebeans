@@ -2,8 +2,8 @@ package mux.lib.stream
 
 import assertk.assertThat
 import assertk.assertions.*
-import mux.lib.RectangleWindow
 import mux.lib.eachIndexed
+import mux.lib.io.sine
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import kotlin.math.PI

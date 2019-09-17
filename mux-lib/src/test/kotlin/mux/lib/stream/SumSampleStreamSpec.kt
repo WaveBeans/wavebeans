@@ -6,6 +6,7 @@ import assertk.assertions.isNotSameAs
 import mux.lib.BitDepth
 import mux.lib.io.ByteArrayLittleEndianInput
 import mux.lib.listOfBytesAsInts
+import mux.lib.stream
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.util.concurrent.TimeUnit.MILLISECONDS
@@ -13,23 +14,11 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
 object SumSampleStreamSpec : Spek({
 
     describe("Source stream 50 samples length of 50 Hz of 8 bit (1 sec)") {
-        val sourceSampleStream = FiniteInputSampleStream(
-                ByteArrayLittleEndianInput(
-                        50.0f,
-                        BitDepth.BIT_8,
-                        ByteArray(50) { (it and 0xFF).toByte() }
-                )
-        ).sampleStream(ZeroFilling())
+        val sourceSampleStream = (0..49).stream(50.0f)
 
         describe("Mixing in stream of 50 samples") {
 
-            val sampleStream = FiniteInputSampleStream(
-                    ByteArrayLittleEndianInput(
-                            50.0f,
-                            BitDepth.BIT_8,
-                            ByteArray(50) { ((it + 50) and 0xFF).toByte() }
-                    )
-            ).sampleStream(ZeroFilling())
+            val sampleStream = (50..99).stream(50.0f)
 
             describe("On 0 position") {
                 val mixed = sourceSampleStream + sampleStream
@@ -139,13 +128,7 @@ object SumSampleStreamSpec : Spek({
 
         describe("Mixing in stream of 10 samples") {
 
-            val sampleStream = FiniteInputSampleStream(
-                    ByteArrayLittleEndianInput(
-                            50.0f,
-                            BitDepth.BIT_8,
-                            ByteArray(10) { ((it + 50) and 0xFF).toByte() }
-                    )
-            ).sampleStream(ZeroFilling())
+            val sampleStream = (50..59).stream(50.0f)
 
             describe("On 0 position") {
                 val mixed = sourceSampleStream + sampleStream
@@ -174,13 +157,7 @@ object SumSampleStreamSpec : Spek({
 
         describe("Mixing in stream of 100 samples") {
 
-            val sampleStream = FiniteInputSampleStream(
-                    ByteArrayLittleEndianInput(
-                            50.0f,
-                            BitDepth.BIT_8,
-                            ByteArray(100) { ((it + 50) and 0xFF).toByte() }
-                    )
-            ).sampleStream(ZeroFilling())
+            val sampleStream = (50..149).stream(50.0f)
 
             describe("On 0 position") {
                 val mixed = sourceSampleStream + sampleStream

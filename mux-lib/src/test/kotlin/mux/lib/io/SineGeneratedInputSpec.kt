@@ -9,8 +9,7 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
 
 object SineGeneratedInputSpec : Spek({
     describe("Sinusoid of A=1.0, f=10.0, phi=1.0, fs=50.0 and t=0.1") {
-        val generator = SineGeneratedInput(
-                10.0,
+        val generator = 10.sine(
                 1.0,
                 1.0 / 10.0 / (Math.PI * 2.0) // 1.0 radians phase
         )

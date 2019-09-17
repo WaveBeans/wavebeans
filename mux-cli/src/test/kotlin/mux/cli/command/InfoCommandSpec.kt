@@ -8,10 +8,11 @@ import mux.cli.Session
 import mux.cli.scope.AudioStreamScope
 import mux.lib.BitDepth
 import mux.lib.io.ByteArrayLittleEndianInput
+import mux.lib.io.ByteArrayLittleEndianInputParams
+import mux.lib.io.sine
 import mux.lib.stream.FiniteInputSampleStream
 import mux.lib.stream.ZeroFilling
 import mux.lib.stream.sampleStream
-import mux.lib.stream.sine
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.xdescribe
 
@@ -21,11 +22,11 @@ object InfoCommandSpec : Spek({
 
     xdescribe("InfoCommand within scope of 8-bit 50.0 Hz audio stream with 100 samples") {
         val sampleStream = FiniteInputSampleStream(
-                ByteArrayLittleEndianInput(
+                ByteArrayLittleEndianInput(ByteArrayLittleEndianInputParams(
                         50.0f,
                         BitDepth.BIT_8,
                         ByteArray(100) { (it and 0xFF).toByte() }
-                )
+                ))
         ).sampleStream(ZeroFilling())
 
         val session = newSession()

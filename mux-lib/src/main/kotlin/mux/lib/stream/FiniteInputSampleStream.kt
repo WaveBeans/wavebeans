@@ -12,6 +12,8 @@ class FiniteInputSampleStream(
         val finiteInput: FiniteInput
 ) : FiniteSampleStream, AlterMuxNode<Sample, FiniteInput, Sample, FiniteSampleStream> {
 
+    override val parameters: MuxParams = NoParams
+
     override val input: MuxNode<Sample, FiniteInput> = finiteInput
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> = finiteInput.asSequence(sampleRate)

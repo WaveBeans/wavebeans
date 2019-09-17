@@ -1,6 +1,7 @@
 package mux.lib
 
 import mux.lib.math.*
+import mux.lib.stream.HanningWindow
 import java.lang.IllegalArgumentException
 import kotlin.math.*
 
@@ -124,39 +125,4 @@ fun Sequence<ComplexNumber>.zeropad(m: Int, n: Int): Sequence<ComplexNumber> {
                 .plus(rest) // if not enough elements read (<m) the add some here
                 .plus(firstHalfToEnd)
     }.flatMap { it.asSequence() }
-}
-
-
-fun Sequence<ComplexNumber>.hanningWindow(n: Int) = this
-        .zip(HanningWindow(n).asSequence())
-        .map { it.first * it.second }
-
-abstract class Window(val n: Int) {
-
-    fun asSequence(): Sequence<Double> = (0 until n).asSequence().map { func(it) }
-
-    protected abstract fun func(i: Int): Double
-}
-
-class RectangleWindow(n: Int) : Window(n) {
-    override fun func(i: Int): Double = 1.0
-}
-
-class TriangularWindow(n: Int) : Window(n) {
-
-    private val halfN = n / 2
-
-    override fun func(i: Int): Double = 1.0 - abs((i - halfN) / halfN)
-}
-
-class SineWindow(n: Int) : Window(n) {
-    override fun func(i: Int): Double = sin(PI * i / n)
-}
-
-class HanningWindow(n: Int) : Window(n) {
-    override fun func(i: Int): Double {
-        val sinX = sin(PI * i / n)
-        return sinX * sinX
-    }
-
 }

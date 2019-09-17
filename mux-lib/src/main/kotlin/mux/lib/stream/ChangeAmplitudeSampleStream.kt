@@ -1,25 +1,32 @@
 package mux.lib.stream
 
 import mux.lib.MuxNode
+import mux.lib.MuxParams
 import mux.lib.SingleMuxNode
 import mux.lib.Sample
 import java.util.concurrent.TimeUnit
 
 fun SampleStream.changeAmplitude(multiplier: Double): SampleStream =
-        ChangeAmplitudeSampleStream(this, multiplier)
+        ChangeAmplitudeSampleStream(this, ChangeAmplitudeSampleStreamParams(multiplier))
+
+data class ChangeAmplitudeSampleStreamParams(
+        val multiplier: Double
+) : MuxParams
 
 class ChangeAmplitudeSampleStream(
-        val sourceNode: SampleStream,
-        val multiplier: Double
+        val source: SampleStream,
+        val params: ChangeAmplitudeSampleStreamParams
 ) : SampleStream, SingleMuxNode<Sample, SampleStream> {
 
-    override val input: MuxNode<Sample, SampleStream> = sourceNode
+    override val parameters: MuxParams = params
+
+    override val input: MuxNode<Sample, SampleStream> = source
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> {
-        return sourceNode.asSequence(sampleRate).map { it * multiplier }
+        return source.asSequence(sampleRate).map { it * params.multiplier }
     }
 
     override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): SampleStream {
-        return ChangeAmplitudeSampleStream(sourceNode.rangeProjection(start, end, timeUnit), multiplier)
+        return ChangeAmplitudeSampleStream(source.rangeProjection(start, end, timeUnit), params)
     }
 }

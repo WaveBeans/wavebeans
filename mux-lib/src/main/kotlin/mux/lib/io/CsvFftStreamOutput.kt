@@ -1,8 +1,8 @@
 package mux.lib.io
 
+import mux.lib.MuxParams
 import mux.lib.stream.FftSample
 import mux.lib.stream.FiniteFftStream
-import mux.lib.stream.FiniteSampleStream
 import java.net.URI
 import java.nio.charset.Charset
 
@@ -10,22 +10,28 @@ fun FiniteFftStream.magnitudeToCsv(
         uri: String,
         encoding: Charset = Charset.forName("UTF-8")
 ): StreamOutput<FftSample, FiniteFftStream> {
-    return CsvFftStreamOutput(URI(uri), this, true, encoding)
+    return CsvFftStreamOutput(this, CsvFftStreamOutputParams(URI(uri), true, encoding))
 }
 
 fun FiniteFftStream.phaseToCsv(
         uri: String,
         encoding: Charset = Charset.forName("UTF-8")
 ): StreamOutput<FftSample, FiniteFftStream> {
-    return CsvFftStreamOutput(URI(uri), this, false, encoding)
+    return CsvFftStreamOutput(this, CsvFftStreamOutputParams(URI(uri), false, encoding))
 }
 
-class CsvFftStreamOutput(
-        uri: URI,
-        stream: FiniteFftStream,
+data class CsvFftStreamOutputParams(
+        val uri: URI,
         val isMagnitude: Boolean,
         val encoding: Charset = Charset.forName("UTF-8")
-) : FileStreamOutput<FftSample, FiniteFftStream>(stream, uri) {
+) : MuxParams
+
+class CsvFftStreamOutput(
+        stream: FiniteFftStream,
+        val params: CsvFftStreamOutputParams
+) : FileStreamOutput<FftSample, FiniteFftStream>(stream, params.uri) {
+
+    override val parameters: MuxParams = params
 
     override fun header(dataSize: Int): ByteArray? = null
 
@@ -34,7 +40,7 @@ class CsvFftStreamOutput(
     override fun serialize(offset: Long, sampleRate: Float, samples: List<FftSample>): ByteArray {
         return samples.asSequence()
                 .mapIndexed { idx, fftSample ->
-                    val seq = if (isMagnitude)
+                    val seq = if (params.isMagnitude)
                         fftSample.magnitude.map { it.toString() }
                     else
                         fftSample.phase.map { it.toString() }
@@ -51,7 +57,7 @@ class CsvFftStreamOutput(
                     b
                 }
                 .joinToString(separator = "\n")
-                .toByteArray(encoding)
+                .toByteArray(params.encoding)
     }
 
 
