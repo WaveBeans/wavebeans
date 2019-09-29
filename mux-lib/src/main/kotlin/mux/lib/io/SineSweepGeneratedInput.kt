@@ -30,7 +30,7 @@ data class SineSweepGeneratedInputParams(
         val timeOffset: Double = 0.0,
         /** Frequency will be changed by this value evenly. Make sure sample rate allowes this. It shouldn't be less than (1 / sample rate) */
         val sweepDelta: Double = 0.1
-) : MuxParams
+) : MuxParams()
 
 class SineSweepGeneratedInput(
         val params: SineSweepGeneratedInputParams

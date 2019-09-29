@@ -1,8 +1,14 @@
 package mux.lib.stream
 
+import kotlinx.serialization.*
+import kotlinx.serialization.internal.StringDescriptor
 import mux.lib.*
 import java.util.concurrent.TimeUnit
 import kotlin.math.max
+
+operator fun SampleStream.minus(d: SampleStream): SampleStream = diff(this, d)
+
+operator fun SampleStream.plus(d: SampleStream): SampleStream = sum(this, d)
 
 fun diff(x: SampleStream, y: SampleStream, shift: Int = 0) = MergedSampleStream(
         x,
@@ -16,6 +22,28 @@ fun sum(x: SampleStream, y: SampleStream, shift: Int = 0) = MergedSampleStream(
         MergedSampleStreamParams(shift, SumOperation)
 )
 
+@Serializer(forClass = MergedStreamOperation::class)
+object MergedStreamOperationSerializer {
+
+    override val descriptor: SerialDescriptor
+        get() = StringDescriptor.withName("mergeOperation")
+
+    override fun deserialize(decoder: Decoder): MergedStreamOperation =
+            when (val operation = decoder.decodeString()) {
+                "+" -> SumOperation
+                "-" -> DiffOperation
+                else -> throw UnsupportedOperationException("`$operation` is not supported")
+            }
+
+    override fun serialize(encoder: Encoder, obj: MergedStreamOperation) =
+            when (obj) {
+                is DiffOperation -> encoder.encodeString("-")
+                is SumOperation -> encoder.encodeString("+")
+                else -> throw UnsupportedOperationException("${obj::class} is not supported")
+            }
+
+}
+
 object SumOperation : MergedStreamOperation {
     override fun apply(a: Sample, b: Sample): Sample = a + b
 }
@@ -28,13 +56,14 @@ interface MergedStreamOperation {
     fun apply(a: Sample, b: Sample): Sample
 }
 
+@Serializable
 data class MergedSampleStreamParams(
         val shift: Int,
-        val operation: MergedStreamOperation,
+        @Serializable(with = MergedStreamOperationSerializer::class) val operation: MergedStreamOperation,
         val start: Long = 0,
         val end: Long? = null,
         val timeUnit: TimeUnit = TimeUnit.MILLISECONDS
-) : MuxParams
+) : MuxParams()
 
 // TODO that can merge any type of stream in generic way
 class MergedSampleStream(

@@ -1,5 +1,6 @@
 package mux.lib.io
 
+import kotlinx.serialization.Serializable
 import mux.lib.*
 import mux.lib.stream.FiniteSampleStream
 import java.net.URI
@@ -9,9 +10,9 @@ import java.util.concurrent.TimeUnit
 fun FiniteSampleStream.toCsv(
         uri: String,
         timeUnit: TimeUnit = TimeUnit.MILLISECONDS,
-        encoding: Charset = Charset.forName("UTF-8")
+        encoding: String = "UTF-8"
 ): StreamOutput<Sample, FiniteSampleStream> {
-    return CsvSampleStreamOutput(this, CsvSampleStreamOutputParams(URI(uri), timeUnit, encoding))
+    return CsvSampleStreamOutput(this, CsvSampleStreamOutputParams(uri, timeUnit, encoding))
 }
 
 fun TimeUnit.abbreviation(): String {
@@ -26,20 +27,27 @@ fun TimeUnit.abbreviation(): String {
     }
 }
 
+@Serializable
 data class CsvSampleStreamOutputParams(
-        val uri: URI,
+        val uri: String,
         val outputTimeUnit: TimeUnit,
-        val encoding: Charset = Charset.forName("UTF-8")
-) : MuxParams
+        val encoding: String = "UTF-8"
+) : MuxParams() {
+
+    // TODO come up with serializer
+    fun uri(): URI = URI(uri)
+
+    fun encoding(): Charset = Charset.forName(encoding)
+}
 
 class CsvSampleStreamOutput(
         stream: FiniteSampleStream,
         val params: CsvSampleStreamOutputParams
-) : FileStreamOutput<Sample, FiniteSampleStream>(stream, params.uri) {
+) : FileStreamOutput<Sample, FiniteSampleStream>(stream, params.uri()) {
 
     override val parameters: MuxParams = params
 
-    override fun header(dataSize: Int): ByteArray? = "time ${params.outputTimeUnit.abbreviation()}, value\n".toByteArray(params.encoding)
+    override fun header(dataSize: Int): ByteArray? = "time ${params.outputTimeUnit.abbreviation()}, value\n".toByteArray(params.encoding())
 
     override fun footer(dataSize: Int): ByteArray? = null
 
@@ -50,6 +58,6 @@ class CsvSampleStreamOutput(
                     "$time,$sample\n"
                 }
                 .joinToString(separator = "")
-                .toByteArray(params.encoding)
+                .toByteArray(params.encoding())
     }
 }

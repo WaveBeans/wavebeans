@@ -1,5 +1,6 @@
 package mux.lib.io
 
+import kotlinx.serialization.Serializable
 import mux.lib.MuxParams
 import mux.lib.Sample
 import mux.lib.ZeroSample
@@ -19,6 +20,7 @@ fun Number.sine(
     return SineGeneratedInput(SineGeneratedInputParams(this.toDouble(), amplitude, timeOffset)).sampleStream()
 }
 
+@Serializable
 data class SineGeneratedInputParams(
         /** Frequency of the sinusoid. */
         val frequency: Double,
@@ -28,7 +30,7 @@ data class SineGeneratedInputParams(
         val timeOffset: Double = 0.0,
         /** Length of the sinusoid, when you read after that moment stream will just return zeros. */
         val time: Double? = null
-) : MuxParams
+) : MuxParams()
 
 class SineGeneratedInput constructor(
         val params: SineGeneratedInputParams

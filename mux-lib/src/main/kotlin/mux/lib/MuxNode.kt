@@ -2,6 +2,8 @@
 
 package mux.lib
 
+import kotlinx.serialization.Serializable
+
 interface MuxNode<T : Any, S : Any> {
 
     fun inputs(): List<MuxNode<*, *>>
@@ -55,6 +57,8 @@ interface MultiMuxNode<T : Any, S : Any> : MuxNode<T, S> {
     override fun decorateInputs(inputs: List<MuxNode<*, *>>): MuxNode<*, *> = decorate(inputs as List<MuxNode<T, S>>)
 }
 
-interface MuxParams
+@Serializable
+open class MuxParams
 
-object NoParams: MuxParams
+@Serializable
+class NoParams : MuxParams()

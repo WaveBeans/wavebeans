@@ -6,6 +6,7 @@ import mux.cli.OutputDescriptor
 import mux.cli.Session
 import mux.cli.scope.RootScope
 import mux.lib.BitDepth
+import mux.lib.NoParams
 import mux.lib.io.ByteArrayLittleEndianInput
 import mux.lib.io.ByteArrayLittleEndianInputParams
 import mux.lib.io.sine
@@ -52,7 +53,7 @@ object ListStreamsCommandSpec : Spek({
                 BitDepth.BIT_8,
                 ByteArray(100) { 0 }
         ))
-        session.registerSampleStream("stream1", FiniteInputSampleStream(input).sampleStream(ZeroFilling()))
+        session.registerSampleStream("stream1", FiniteInputSampleStream(input, NoParams()).sampleStream(ZeroFilling()))
 
         describe("Listing all streams") {
             val command = ListStreamsCommand(session)
@@ -70,7 +71,7 @@ object ListStreamsCommandSpec : Spek({
                 50.0f,
                 BitDepth.BIT_8,
                 ByteArray(100) { 0 }
-        ))).sampleStream(ZeroFilling())
+        )), NoParams()).sampleStream(ZeroFilling())
         val samples2 = 20.sine(amplitude = 0.1, timeOffset = 1.0)
         val mix = samples1 + samples2
         session.registerSampleStream("stream1", mix)
@@ -94,13 +95,13 @@ object ListStreamsCommandSpec : Spek({
                 BitDepth.BIT_16,
                 ByteArray(100) { 0 }
         ))
-        session.registerSampleStream("stream1", FiniteInputSampleStream(input1).sampleStream(ZeroFilling()))
+        session.registerSampleStream("stream1", FiniteInputSampleStream(input1, NoParams()).sampleStream(ZeroFilling()))
         val input2 = ByteArrayLittleEndianInput(ByteArrayLittleEndianInputParams(
                 50.0f,
                 BitDepth.BIT_32,
                 ByteArray(100) { 0 }
         ))
-        session.registerSampleStream("stream2", FiniteInputSampleStream(input2).sampleStream(ZeroFilling()))
+        session.registerSampleStream("stream2", FiniteInputSampleStream(input2, NoParams()).sampleStream(ZeroFilling()))
 
         describe("Listing all streams") {
             val command = ListStreamsCommand(session)

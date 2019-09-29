@@ -1,15 +1,15 @@
 package mux.lib
 
+import kotlinx.serialization.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.modules.SerializersModule
 import mux.lib.execution.MuxTuple
-import mux.lib.io.StreamOutput
-import mux.lib.io.sine
-import mux.lib.io.toCsv
-import mux.lib.stream.changeAmplitude
-import mux.lib.stream.plus
-import mux.lib.stream.trim
+import mux.lib.io.*
+import mux.lib.stream.*
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 
+@ImplicitReflectionSerializer
 object MuxRuntimeSpec : Spek({
     describe("") {
         val outputs = ArrayList<StreamOutput<*, *>>()
@@ -33,41 +33,27 @@ object MuxRuntimeSpec : Spek({
         outputs += o1
         outputs += o2
 
-        fun iterateOverNodes(node: MuxNode<*, *>) {
 
-            val c = node.inputs().size
-            println("$node  inputs[$c]=${node.inputs()}")
-            node.inputs().forEach { iterateOverNodes(it) }
-        }
-
-        outputs.forEach {
-            println("OUT $it  input=${it.input}")
-            iterateOverNodes(it.input)
-        }
-
-        println("=============")
-
-        fun tuples(o: StreamOutput<*, *>, node: MuxNode<*, *>, prevNodes: List<MuxNode<*, *>> = emptyList()): List<MuxTuple> {
-            return if (node.inputs().isEmpty()) {
-                listOf(MuxTuple(o, prevNodes))
-            } else {
-                node.inputs()
-                        .map { tuples(o, it, prevNodes + it) }
-                        .flatten()
-            }
-        }
-
-        val tuples = outputs.map { tuples(it, it.input) }.flatten()
-
-        println(tuples.joinToString("\n\n"))
-
-        tuples.map { Pair(it.base, it.base.writer(44100.0f)) }
-                .map { it.second.write(10000); it }
-                .map { it.first.close(); it.second.close() }
-
-
+//        fun tuples(o: StreamOutput<*, *>, node: MuxNode<*, *>, prevNodes: List<MuxNode<*, *>> = emptyList()): List<MuxTuple> {
+//            return if (node.inputs().isEmpty()) {
+//                listOf(MuxTuple(o, prevNodes))
+//            } else {
+//                node.inputs()
+//                        .map { tuples(o, it, prevNodes + it) }
+//                        .flatten()
+//            }
+//        }
+//
+//        val tuples = outputs.map { tuples(it, it.input) }.flatten()
+//
+//        println(tuples.joinToString("\n\n"))
+//
+//        tuples.map { Pair(it.base, it.base.writer(44100.0f)) }
+//                .map { it.second.write(10000); it }
+//                .map { it.first.close(); it.second.close() }
+//
+//
 //        val params = tuples.first().nodes.first().parameters()
-
 
 
 //        println("========================")

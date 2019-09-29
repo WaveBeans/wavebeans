@@ -10,6 +10,7 @@ import mux.cli.Session
 import mux.cli.scope.AudioStreamScope
 import mux.cli.scope.AudioSubStreamScope
 import mux.lib.BitDepth
+import mux.lib.NoParams
 import mux.lib.io.ByteArrayLittleEndianInput
 import mux.lib.io.ByteArrayLittleEndianInputParams
 import mux.lib.stream.FiniteInputSampleStream
@@ -31,7 +32,7 @@ object SelectCommandSpec : Spek({
                                 outputDescriptor.bitDepth,
                                 ByteArray(100) { (it and 0xFF).toByte() }
                         ))
-                ).sampleStream(ZeroFilling())
+                        , NoParams()).sampleStream(ZeroFilling())
         )
         val command = SelectCommand(session, audioStreamScope)
         describe("Selecting new scope as 1s..2s") {
@@ -71,7 +72,7 @@ object SelectCommandSpec : Spek({
                                 outputDescriptor.bitDepth,
                                 ByteArray((outputDescriptor.sampleRate * 5).toInt()) { 0.toByte() }
                         ))
-                ).sampleStream(ZeroFilling())
+                        , NoParams()).sampleStream(ZeroFilling())
         )
         val command = SelectCommand(session, audioStreamScope)
         describe("Selecting new scope as 1s..2s") {

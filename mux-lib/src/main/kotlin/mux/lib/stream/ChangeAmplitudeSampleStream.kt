@@ -1,5 +1,6 @@
 package mux.lib.stream
 
+import kotlinx.serialization.Serializable
 import mux.lib.MuxNode
 import mux.lib.MuxParams
 import mux.lib.SingleMuxNode
@@ -9,9 +10,10 @@ import java.util.concurrent.TimeUnit
 fun SampleStream.changeAmplitude(multiplier: Double): SampleStream =
         ChangeAmplitudeSampleStream(this, ChangeAmplitudeSampleStreamParams(multiplier))
 
+@Serializable
 data class ChangeAmplitudeSampleStreamParams(
         val multiplier: Double
-) : MuxParams
+) : MuxParams()
 
 class ChangeAmplitudeSampleStream(
         val source: SampleStream,

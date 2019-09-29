@@ -1,6 +1,5 @@
 package mux.lib.io
 
-import mux.lib.MuxNode
 import mux.lib.SingleMuxNode
 import java.io.Closeable
 import java.util.concurrent.TimeUnit

@@ -16,7 +16,7 @@ fun wave(uri: String, converter: FiniteToStream): SampleStream = wave(uri).sampl
 
 data class WavFiniteInputParams(
         val uri: URI
-) : MuxParams
+) : MuxParams()
 
 class WavFiniteInput(
         val params: WavFiniteInputParams,

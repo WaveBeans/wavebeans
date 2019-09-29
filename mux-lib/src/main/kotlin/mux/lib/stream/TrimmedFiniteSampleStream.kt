@@ -1,18 +1,18 @@
 package mux.lib.stream
 
+import kotlinx.serialization.Serializable
 import mux.lib.*
-import mux.lib.Mux
 import mux.lib.MuxNode
-import mux.lib.SingleMuxNode
 import java.util.concurrent.TimeUnit
 
 fun SampleStream.trim(length: Long, timeUnit: TimeUnit = TimeUnit.MILLISECONDS): FiniteSampleStream =
         TrimmedFiniteSampleStream(this, TrimmedFiniteSampleStreamParams(length, timeUnit))
 
+@Serializable
 data class TrimmedFiniteSampleStreamParams(
         val length: Long,
         val timeUnit: TimeUnit
-) : MuxParams
+) : MuxParams()
 
 class TrimmedFiniteSampleStream(
         val sampleStream: SampleStream,

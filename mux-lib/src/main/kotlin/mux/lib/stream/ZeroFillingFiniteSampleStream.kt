@@ -1,5 +1,6 @@
 package mux.lib.stream
 
+import kotlinx.serialization.Serializable
 import mux.lib.*
 import java.util.concurrent.TimeUnit
 
@@ -9,11 +10,12 @@ class ZeroFilling : FiniteToStream {
     }
 }
 
+@Serializable
 data class ZeroFillingFiniteSampleStreamParams(
         val start: Long = 0,
         val end: Long? = null,
         val timeUnit: TimeUnit = TimeUnit.MILLISECONDS
-) : MuxParams
+) : MuxParams()
 
 private class ZeroFillingFiniteSampleStream(
         val finiteSampleStream: FiniteSampleStream,

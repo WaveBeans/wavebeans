@@ -24,7 +24,7 @@ data class CsvFftStreamOutputParams(
         val uri: URI,
         val isMagnitude: Boolean,
         val encoding: Charset = Charset.forName("UTF-8")
-) : MuxParams
+) : MuxParams()
 
 class CsvFftStreamOutput(
         stream: FiniteFftStream,

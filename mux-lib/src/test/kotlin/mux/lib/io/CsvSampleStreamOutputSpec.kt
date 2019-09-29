@@ -21,7 +21,7 @@ class CsvSampleStreamOutputSpec : Spek({
 
         describe("Writing to CSV with 100ms steps") {
             val file = File.createTempFile("test_", ".mux.tmp")
-            CsvSampleStreamOutput(x, CsvSampleStreamOutputParams(file.toURI(), TimeUnit.MILLISECONDS)).use { csvOutput ->
+            CsvSampleStreamOutput(x, CsvSampleStreamOutputParams(file.toURI().toString(), TimeUnit.MILLISECONDS)).use { csvOutput ->
                 csvOutput.writer(sampleRate).use {
                     while (it.write(100, TimeUnit.MILLISECONDS)) {
                     }
@@ -74,7 +74,7 @@ class CsvSampleStreamOutputSpec : Spek({
 
         describe("Writing to CSV with 100ms steps") {
             val file = File.createTempFile("test_", ".mux.tmp")
-            CsvSampleStreamOutput(x, CsvSampleStreamOutputParams(file.toURI(), TimeUnit.MILLISECONDS)).use { csvOutput ->
+            CsvSampleStreamOutput(x, CsvSampleStreamOutputParams(file.toURI().toString(), TimeUnit.MILLISECONDS)).use { csvOutput ->
                 csvOutput.writer(sampleRate).use {
                     while (it.write(100, TimeUnit.MILLISECONDS)) {
                     }

@@ -32,7 +32,7 @@ data class WavFileOutputParams(
         val uri: URI,
         val bitDepth: BitDepth,
         val numberOfChannels: Int
-) : MuxParams
+) : MuxParams()
 
 class WavFileOutput(
         finiteSampleStream: FiniteSampleStream,

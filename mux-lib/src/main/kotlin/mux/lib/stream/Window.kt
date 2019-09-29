@@ -1,9 +1,13 @@
 package mux.lib.stream
 
+import kotlinx.serialization.Polymorphic
+import kotlinx.serialization.Serializable
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.sin
 
+@Serializable
+@Polymorphic
 abstract class Window(val n: Int) {
 
     fun asSequence(): Sequence<Double> = (0 until n).asSequence().map { func(it) }

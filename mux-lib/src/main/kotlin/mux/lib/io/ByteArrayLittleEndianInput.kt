@@ -34,7 +34,7 @@ class ByteArrayLittleEndianDecoder(val sampleRate: Float, val bitDepth: BitDepth
     }
 }
 
-data class ByteArrayLittleEndianInputParams(val sampleRate: Float, val bitDepth: BitDepth, val buffer: ByteArray) : MuxParams
+data class ByteArrayLittleEndianInputParams(val sampleRate: Float, val bitDepth: BitDepth, val buffer: ByteArray) : MuxParams()
 
 class ByteArrayLittleEndianInput(val params: ByteArrayLittleEndianInputParams) : FiniteInput {
 

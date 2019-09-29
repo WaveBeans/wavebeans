@@ -7,6 +7,7 @@ import assertk.assertions.isNotNull
 import mux.cli.Session
 import mux.cli.scope.AudioStreamScope
 import mux.lib.BitDepth
+import mux.lib.NoParams
 import mux.lib.io.ByteArrayLittleEndianInput
 import mux.lib.io.ByteArrayLittleEndianInputParams
 import mux.lib.io.sine
@@ -26,7 +27,8 @@ object InfoCommandSpec : Spek({
                         50.0f,
                         BitDepth.BIT_8,
                         ByteArray(100) { (it and 0xFF).toByte() }
-                ))
+                )),
+                NoParams()
         ).sampleStream(ZeroFilling())
 
         val session = newSession()

@@ -1,15 +1,17 @@
 package mux.lib.stream
 
+import kotlinx.serialization.Serializable
 import mux.lib.*
 import java.util.concurrent.TimeUnit
 
 fun FftStream.trim(length: Long, timeUnit: TimeUnit = TimeUnit.MILLISECONDS): FiniteFftStream =
         TrimmedFiniteFftStream(this, TrimmedFiniteFftStreamParams(length, timeUnit))
 
+@Serializable
 data class TrimmedFiniteFftStreamParams(
         val length: Long,
         val timeUnit: TimeUnit
-) : MuxParams
+) : MuxParams()
 
 class TrimmedFiniteFftStream(
         val fftStream: FftStream,

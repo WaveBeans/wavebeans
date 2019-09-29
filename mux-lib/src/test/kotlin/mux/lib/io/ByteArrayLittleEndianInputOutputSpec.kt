@@ -46,7 +46,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
 
         describe("output based on that input") {
             val output = ByteArrayFileOutputMock(
-                    FiniteInputSampleStream(input),
+                    FiniteInputSampleStream(input, NoParams()),
                     BitDepth.BIT_8
             )
 
@@ -133,7 +133,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
 
         describe("output based on that input") {
             val output = ByteArrayFileOutputMock(
-                    FiniteInputSampleStream(input),
+                    FiniteInputSampleStream(input, NoParams()),
                     BitDepth.BIT_16
             )
 
@@ -180,7 +180,8 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
 
                     override fun asSequence(sampleRate: Float): Sequence<Sample> = signal.asSequence().map { sampleOf(it.toShort()) }
 
-                }
+                },
+                NoParams()
         ), BitDepth.BIT_16)
 
         it("output should be equal to 16 byte array 0-0x0F") {
@@ -204,7 +205,8 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
 
                     override fun asSequence(sampleRate: Float): Sequence<Sample> = signal.asSequence().map { sampleOf(it, true) }
 
-                }
+                },
+                NoParams()
         ), BitDepth.BIT_24)
 
         it("output should correspond to input signal") {
