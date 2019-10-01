@@ -5,7 +5,7 @@ import java.util.concurrent.ConcurrentHashMap
 data class PodInfo(
         val key: PodKey,
         val bushKey: BushKey,
-        val endpoint: AnyPodEndpoint
+        val pod: AnyPod
 )
 
 object PodDiscovery {
@@ -13,13 +13,13 @@ object PodDiscovery {
     private val bushes = ConcurrentHashMap<BushKey, Bush>()
     private val pods = ConcurrentHashMap<PodKey, PodInfo>()
 
-    fun bushFor(podEndpointKey: PodKey): Sequence<BushKey> {
-        return pods.asSequence().filter { it.value.key == podEndpointKey }.map { it.value.bushKey }
+    fun bushFor(podKey: PodKey): Sequence<BushKey> {
+        return pods.asSequence().filter { it.value.key == podKey }.map { it.value.bushKey }
     }
 
-    fun registerPod(bushKey: BushKey, podKey: PodKey, podEndpoint: AnyPodEndpoint) {
-        val value = pods.putIfAbsent(podKey, PodInfo(podKey, bushKey, podEndpoint))
-        check(value == null) { "Pod with key `$podKey` already has value `$value`" }
+    fun registerPod(bushKey: BushKey, podKey: PodKey, pod: AnyPod) {
+        val value = pods.putIfAbsent(podKey, PodInfo(podKey, bushKey, pod))
+        check(value == null) { "PodProxy with key `$podKey` already has value `$value`" }
     }
 
     fun registerBush(bushKey: BushKey, bush: Bush) {
@@ -29,6 +29,6 @@ object PodDiscovery {
 
     fun bush(bushKey: BushKey): Bush? = bushes[bushKey]
 
-    fun endpoints(): Sequence<PodInfo> = pods.values.asSequence()
+    fun pods(): Sequence<PodInfo> = pods.values.asSequence()
 
 }

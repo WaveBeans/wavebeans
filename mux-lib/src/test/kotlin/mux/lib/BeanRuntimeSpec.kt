@@ -46,7 +46,7 @@ object BeanRuntimeSpec : Spek({
 
         fun nodeClazz(ref: BeanRef): KClass<out Any> = Class.forName(ref.type).kotlin
 
-        val endpoints = mutableMapOf<Int, PodEndpoint<*, *>>()
+        val pods = mutableMapOf<Int, Pod<*, *>>()
         topology.refs.forEach { nodeRef ->
             val nodeClazz = nodeClazz(nodeRef)
             println(nodeClazz)
@@ -63,15 +63,15 @@ object BeanRuntimeSpec : Spek({
                     val links = nodeLinks.getValue(nodeRef.id).map { nodeById.getValue(it.to) }
                     require(links.size == 1) { "SingleBean or AlterBean $nodeRef should have only one link, but: $links" }
 
-                    val channel = PodRegistry.createPod(channelType, links[0].id)
+                    val channel = PodRegistry.createPodProxy(channelType, links[0].id)
 
-                    val endpoint = PodRegistry.createPodEndpoint(
+                    val pod = PodRegistry.createPod(
                             nodeClazz.supertypes.first { it.isSubtypeOf(typeOf<Bean<*, *>>()) },
                             constructor.call(channel, nodeRef.params) as Bean<*, *>
                     )
-                    println(endpoint)
+                    println(pod)
 
-                    endpoints[nodeRef.id] = endpoint
+                    pods[nodeRef.id] = pod
                 }
 
                 nodeClazz.isSubclassOf(SourceBean::class) -> {
@@ -80,13 +80,13 @@ object BeanRuntimeSpec : Spek({
                                 it.parameters[0].type.isSubtypeOf(typeOf<BeanParams>())
                     }
 
-                    val endpoint = PodRegistry.createPodEndpoint(
+                    val pod = PodRegistry.createPod(
                             nodeClazz.supertypes.first { it.isSubtypeOf(typeOf<Bean<*, *>>()) },
                             constructor.call(nodeRef.params) as Bean<*, *>
                     )
-                    println(endpoint)
+                    println(pod)
 
-                    endpoints[nodeRef.id] = endpoint
+                    pods[nodeRef.id] = pod
                 }
 
                 nodeClazz.isSubclassOf(MultiBean::class) -> {
@@ -103,16 +103,16 @@ object BeanRuntimeSpec : Spek({
                             .sortedBy { it.order }
                             .map { nodeById.getValue(it.from) }
                     require(links.size == 2) { "MergedSampleStream should have only 2 links: $links" }
-                    val channel1 = PodRegistry.createPod(channel1Type, links[0].id)
-                    val channel2 = PodRegistry.createPod(channel2Type, links[1].id)
+                    val channel1 = PodRegistry.createPodProxy(channel1Type, links[0].id)
+                    val channel2 = PodRegistry.createPodProxy(channel2Type, links[1].id)
 
-                    val endpoint = PodRegistry.createPodEndpoint(
+                    val pod = PodRegistry.createPod(
                             nodeClazz.supertypes.first { it.isSubtypeOf(typeOf<Bean<*, *>>()) },
                             constructor.call(channel1, channel2, nodeRef.params) as Bean<*, *>
                     )
-                    println(endpoint)
+                    println(pod)
 
-                    endpoints[nodeRef.id] = endpoint
+                    pods[nodeRef.id] = pod
 
                 }
             }
@@ -121,15 +121,15 @@ object BeanRuntimeSpec : Spek({
         }
 
         Bush().use { bush ->
-            endpoints.forEach { (t, u) ->
-                bush.addPodEndpoint(t, u)
+            pods.forEach { (t, u) ->
+                bush.addPod(t, u)
             }
             bush.start()
 
 
-            PodDiscovery.endpoints()
-                    .filter { it.endpoint is StreamOutput<*, *> }
-                    .map { it.endpoint as StreamOutput<*, *> }
+            PodDiscovery.pods()
+                    .filter { it.pod is StreamOutput<*, *> }
+                    .map { it.pod as StreamOutput<*, *> }
                     .map {
                         it.writer(44100.0f)
                     }

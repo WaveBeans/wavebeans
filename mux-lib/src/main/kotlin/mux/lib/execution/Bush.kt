@@ -7,9 +7,9 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 
-internal data class PodEndpointTask(
+internal data class PodTask(
         val taskId: Long,
-        val podEndpointKey: PodKey,
+        val podKey: PodKey,
         val request: String
 )
 
@@ -22,11 +22,11 @@ class Bush : Closeable {
         private val taskIdSeq = AtomicLong(0)
     }
 
-    private val podEndpoints = ConcurrentHashMap<PodKey, PodEndpoint<*, *>>()
+    private val pods = ConcurrentHashMap<PodKey, Pod<*, *>>()
 
     private val bushKey = idSeq.incrementAndGet()
 
-    private val queue = ConcurrentLinkedQueue<PodEndpointTask>()
+    private val queue = ConcurrentLinkedQueue<PodTask>()
     private val results = ConcurrentHashMap<Long, Result>()
 
     @ExperimentalStdlibApi
@@ -35,16 +35,16 @@ class Bush : Closeable {
             try {
                 val task = queue.poll()
                 if (task != null) {
-                    val podEndpoint = podEndpoints[task.podEndpointKey] ?: TODO("pod not on bush case")
+                    val pod = pods[task.podKey] ?: TODO("pod not on bush case")
 
                     val call = Call.parseRequest(task.request)
 
-                    val endpointMethod = podEndpoint::class.members
+                    val method = pod::class.members
                             .firstOrNull { it.name == call.method }
                             ?: throw IllegalStateException("Can't find method to call: $task")
-                    val params = endpointMethod.parameters.map { call.param(it.name!!, it.type) }.toTypedArray()
+                    val params = method.parameters.map { call.param(it.name!!, it.type) }.toTypedArray()
 
-                    results[task.taskId] = Result(podEndpoint.call(endpointMethod, params))
+                    results[task.taskId] = Result(pod.call(method, params))
 
                 }
                 sleep(1)
@@ -55,9 +55,9 @@ class Bush : Closeable {
         }
     }
 
-    fun addPodEndpoint(key: Int, endpoint: PodEndpoint<*, *>) {
-        podEndpoints[key] = endpoint
-        PodDiscovery.registerPod(bushKey, key, endpoint)
+    fun addPod(key: Int, pod: Pod<*, *>) {
+        pods[key] = pod
+        PodDiscovery.registerPod(bushKey, key, pod)
     }
 
     @ExperimentalStdlibApi
@@ -71,9 +71,9 @@ class Bush : Closeable {
         bushThread.interrupt()
     }
 
-    fun call(podEndpointKey: Int, request: String): ByteArray? {
+    fun call(podKey: PodKey, request: String): ByteArray? {
         val taskId = taskIdSeq.incrementAndGet()
-        queue.add(PodEndpointTask(taskId, podEndpointKey, request))
+        queue.add(PodTask(taskId, podKey, request))
         while (true) {
             val r = results[taskId]
             if (r != null) return r.byteArray
