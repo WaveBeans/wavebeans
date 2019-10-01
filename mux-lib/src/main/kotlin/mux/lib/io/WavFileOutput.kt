@@ -32,14 +32,14 @@ data class WavFileOutputParams(
         val uri: URI,
         val bitDepth: BitDepth,
         val numberOfChannels: Int
-) : MuxParams()
+) : BeanParams()
 
 class WavFileOutput(
         finiteSampleStream: FiniteSampleStream,
         val params: WavFileOutputParams
 ) : ByteArrayLittleEndianFileOutput(params.uri, finiteSampleStream, params.bitDepth) {
 
-    override val parameters: MuxParams = params
+    override val parameters: BeanParams = params
 
     override fun header(dataSize: Int): ByteArray? {
         val destination = ByteArrayOutputStream()

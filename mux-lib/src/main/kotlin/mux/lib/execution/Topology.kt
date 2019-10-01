@@ -2,49 +2,50 @@ package mux.lib.execution
 
 import kotlinx.serialization.PolymorphicSerializer
 import kotlinx.serialization.Serializable
-import mux.lib.MuxNode
-import mux.lib.MuxParams
+import mux.lib.Bean
+import mux.lib.BeanParams
 import mux.lib.io.StreamOutput
 
 @Serializable
-data class MuxNodeRef(
+data class BeanRef(
         val id: Int,
         val type: String,
-        @Serializable(with = PolymorphicSerializer::class) val params: MuxParams
+        @Serializable(with = PolymorphicSerializer::class) val params: BeanParams
 )
 
 @Serializable
-data class MuxNodeLink(
+data class BeanLink(
         val from: Int,
-        val to: Int
+        val to: Int,
+        val order: Int = 0
 )
 
 @Serializable
 data class Topology(
-        val refs: List<MuxNodeRef>,
-        val links: List<MuxNodeLink>
+        val refs: List<BeanRef>,
+        val links: List<BeanLink>
 ) {
     companion object {
 
         internal fun build(outputs: List<StreamOutput<*, *>>, idResolver: IdResolver): Topology {
-            val refs = mutableListOf<MuxNodeRef>()
-            val links = mutableListOf<MuxNodeLink>()
-            fun iterateOverNodes(node: MuxNode<*, *>, sourceNodeId: Int?) {
+            val refs = mutableListOf<BeanRef>()
+            val links = mutableListOf<BeanLink>()
+            fun iterateOverNodes(node: Bean<*, *>, sourceNodeId: Int?, order: Int) {
                 val id = idResolver.id(node)
 
-                refs += MuxNodeRef(id, node::class.qualifiedName!!, node.parameters)
+                refs += BeanRef(id, node::class.qualifiedName!!, node.parameters)
 
                 if (sourceNodeId != null)
-                    links += MuxNodeLink(sourceNodeId, id)
+                    links += BeanLink(sourceNodeId, id, order)
 
-                node.inputs().forEach { iterateOverNodes(it, id) }
+                node.inputs().forEachIndexed { idx, n -> iterateOverNodes(n, id, idx) }
             }
 
             outputs.forEach {
-                iterateOverNodes(it, null)
+                iterateOverNodes(it, null, 0)
             }
 
-            return Topology(refs, links)
+            return Topology(refs, links.distinct())
         }
     }
 }
@@ -52,15 +53,15 @@ data class Topology(
 fun List<StreamOutput<*, *>>.buildTopology(idResolver: IdResolver = IntSequenceIdResolver()): Topology = Topology.build(this, idResolver)
 
 interface IdResolver {
-    fun id(node: MuxNode<*, *>): Int
+    fun id(node: Bean<*, *>): Int
 }
 
 internal class IntSequenceIdResolver : IdResolver {
 
     private var idSeq = 0
-    private val nodesRef = mutableMapOf<Int, MuxNode<*, *>>()
+    private val nodesRef = mutableMapOf<Int, Bean<*, *>>()
 
-    override fun id(node: MuxNode<*, *>): Int {
+    override fun id(node: Bean<*, *>): Int {
         val id = nodesRef.entries.firstOrNull { it.value == node }?.key ?: ++idSeq
         nodesRef[id] = node
         return id

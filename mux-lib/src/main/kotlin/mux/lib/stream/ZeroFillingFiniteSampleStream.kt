@@ -15,16 +15,16 @@ data class ZeroFillingFiniteSampleStreamParams(
         val start: Long = 0,
         val end: Long? = null,
         val timeUnit: TimeUnit = TimeUnit.MILLISECONDS
-) : MuxParams()
+) : BeanParams()
 
 private class ZeroFillingFiniteSampleStream(
         val finiteSampleStream: FiniteSampleStream,
         val params: ZeroFillingFiniteSampleStreamParams
-) : SampleStream, AlterMuxNode<Sample, FiniteSampleStream, Sample, SampleStream> {
+) : SampleStream, AlterBean<Sample, FiniteSampleStream, Sample, SampleStream> {
 
-    override val parameters: MuxParams = params
+    override val parameters: BeanParams = params
 
-    override val input: MuxNode<Sample, FiniteSampleStream> = finiteSampleStream
+    override val input: Bean<Sample, FiniteSampleStream> = finiteSampleStream
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> {
         return object : Iterator<Sample> {

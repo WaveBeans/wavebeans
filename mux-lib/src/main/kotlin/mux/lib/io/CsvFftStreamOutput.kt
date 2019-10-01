@@ -1,6 +1,6 @@
 package mux.lib.io
 
-import mux.lib.MuxParams
+import mux.lib.BeanParams
 import mux.lib.stream.FftSample
 import mux.lib.stream.FiniteFftStream
 import java.net.URI
@@ -24,14 +24,14 @@ data class CsvFftStreamOutputParams(
         val uri: URI,
         val isMagnitude: Boolean,
         val encoding: Charset = Charset.forName("UTF-8")
-) : MuxParams()
+) : BeanParams()
 
 class CsvFftStreamOutput(
         stream: FiniteFftStream,
         val params: CsvFftStreamOutputParams
 ) : FileStreamOutput<FftSample, FiniteFftStream>(stream, params.uri) {
 
-    override val parameters: MuxParams = params
+    override val parameters: BeanParams = params
 
     override fun header(dataSize: Int): ByteArray? = null
 

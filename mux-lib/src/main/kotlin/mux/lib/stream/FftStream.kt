@@ -1,6 +1,6 @@
 package mux.lib.stream
 
-import mux.lib.MuxStream
+import mux.lib.BeanStream
 
 data class FftSample(
         val time: Long,
@@ -10,7 +10,7 @@ data class FftSample(
         val frequency: Sequence<Double>
 )
 
-interface FftStream : MuxStream<FftSample, FftStream> {
+interface FftStream : BeanStream<FftSample, FftStream> {
 
     /***
      * Estimate number of FFT samples will be produced based on source samples count.

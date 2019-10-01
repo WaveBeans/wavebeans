@@ -2,7 +2,7 @@ package mux.lib.stream
 
 import kotlinx.serialization.Serializable
 import mux.lib.*
-import mux.lib.MuxNode
+import mux.lib.Bean
 import java.util.concurrent.TimeUnit
 
 fun SampleStream.trim(length: Long, timeUnit: TimeUnit = TimeUnit.MILLISECONDS): FiniteSampleStream =
@@ -12,16 +12,16 @@ fun SampleStream.trim(length: Long, timeUnit: TimeUnit = TimeUnit.MILLISECONDS):
 data class TrimmedFiniteSampleStreamParams(
         val length: Long,
         val timeUnit: TimeUnit
-) : MuxParams()
+) : BeanParams()
 
 class TrimmedFiniteSampleStream(
         val sampleStream: SampleStream,
         val params: TrimmedFiniteSampleStreamParams
-) : FiniteSampleStream, AlterMuxNode<Sample, SampleStream, Sample, FiniteSampleStream> {
+) : FiniteSampleStream, AlterBean<Sample, SampleStream, Sample, FiniteSampleStream> {
 
-    override val parameters: MuxParams = params
+    override val parameters: BeanParams = params
 
-    override val input: MuxNode<Sample, SampleStream> = sampleStream
+    override val input: Bean<Sample, SampleStream> = sampleStream
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> =
             sampleStream

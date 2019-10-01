@@ -2,7 +2,7 @@ package mux.lib
 
 import java.util.concurrent.TimeUnit
 
-interface MuxStream<T : Any, S : Any> : MuxNode<T, S> {
+interface BeanStream<T : Any, S : Any> : Bean<T, S> {
 
     /**
      *  Gets the input as a sequence of samples.

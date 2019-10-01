@@ -1,7 +1,7 @@
 package mux.lib.io
 
-import mux.lib.MuxStream
+import mux.lib.BeanStream
 import mux.lib.Sample
-import mux.lib.SourceMuxNode
+import mux.lib.SourceBean
 
-interface StreamInput : MuxStream<Sample, StreamInput>, SourceMuxNode<Sample, StreamInput>
+interface StreamInput : BeanStream<Sample, StreamInput>, SourceBean<Sample, StreamInput>

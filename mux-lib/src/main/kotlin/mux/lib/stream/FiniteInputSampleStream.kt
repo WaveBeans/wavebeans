@@ -11,11 +11,11 @@ fun FiniteInput.sampleStream(converter: FiniteToStream): SampleStream = this.fin
 class FiniteInputSampleStream(
         val finiteInput: FiniteInput,
         val params: NoParams
-) : FiniteSampleStream, AlterMuxNode<Sample, FiniteInput, Sample, FiniteSampleStream> {
+) : FiniteSampleStream, AlterBean<Sample, FiniteInput, Sample, FiniteSampleStream> {
 
-    override val parameters: MuxParams = params
+    override val parameters: BeanParams = params
 
-    override val input: MuxNode<Sample, FiniteInput> = finiteInput
+    override val input: Bean<Sample, FiniteInput> = finiteInput
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> = finiteInput.asSequence(sampleRate)
 

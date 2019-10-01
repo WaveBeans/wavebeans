@@ -63,18 +63,18 @@ data class MergedSampleStreamParams(
         val start: Long = 0,
         val end: Long? = null,
         val timeUnit: TimeUnit = TimeUnit.MILLISECONDS
-) : MuxParams()
+) : BeanParams()
 
 // TODO that can merge any type of stream in generic way
 class MergedSampleStream(
         val sourceStream: SampleStream,
         val mergingStream: SampleStream,
         val params: MergedSampleStreamParams
-) : SampleStream, MultiMuxNode<Sample, SampleStream> {
+) : SampleStream, MultiBean<Sample, SampleStream> {
 
-    override val parameters: MuxParams = params
+    override val parameters: BeanParams = params
 
-    override val inputs: List<MuxNode<Sample, SampleStream>> = listOf(sourceStream, mergingStream)
+    override val inputs: List<Bean<Sample, SampleStream>> = listOf(sourceStream, mergingStream)
 
     override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): SampleStream {
         return MergedSampleStream(

@@ -9,11 +9,11 @@ fun StreamInput.sampleStream(): SampleStream = InfiniteSampleStream(this, NoPara
 class InfiniteSampleStream(
         val streamInput: StreamInput,
         val params: NoParams
-) : SampleStream, AlterMuxNode<Sample, StreamInput, Sample, SampleStream> {
+) : SampleStream, AlterBean<Sample, StreamInput, Sample, SampleStream> {
 
-    override val parameters: MuxParams = params
+    override val parameters: BeanParams = params
 
-    override val input: MuxNode<Sample, StreamInput> = streamInput
+    override val input: Bean<Sample, StreamInput> = streamInput
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> = streamInput.asSequence(sampleRate)
 

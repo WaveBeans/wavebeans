@@ -11,16 +11,16 @@ fun FftStream.trim(length: Long, timeUnit: TimeUnit = TimeUnit.MILLISECONDS): Fi
 data class TrimmedFiniteFftStreamParams(
         val length: Long,
         val timeUnit: TimeUnit
-) : MuxParams()
+) : BeanParams()
 
 class TrimmedFiniteFftStream(
         val fftStream: FftStream,
         val params: TrimmedFiniteFftStreamParams
-) : FiniteFftStream, AlterMuxNode<FftSample, FftStream, FftSample, FiniteFftStream> {
+) : FiniteFftStream, AlterBean<FftSample, FftStream, FftSample, FiniteFftStream> {
 
-    override val parameters: MuxParams = params
+    override val parameters: BeanParams = params
 
-    override val input: MuxNode<FftSample, FftStream> = fftStream
+    override val input: Bean<FftSample, FftStream> = fftStream
 
     override fun asSequence(sampleRate: Float): Sequence<FftSample> =
             fftStream

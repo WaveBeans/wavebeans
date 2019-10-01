@@ -17,7 +17,7 @@ private class ByteArrayFileOutputMock(
         bitDepth: BitDepth
 ) : ByteArrayLittleEndianFileOutput(URI.create("file:///dev/null"), finiteSampleStream, bitDepth) {
 
-    override val parameters: MuxParams
+    override val parameters: BeanParams
         get() = throw UnsupportedOperationException()
 
     override fun header(dataSize: Int): ByteArray? = throw UnsupportedOperationException()
@@ -168,7 +168,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
         val signal = (-100 until 100).toList()
         val output = ByteArrayFileOutputMock(FiniteInputSampleStream(
                 object : FiniteInput {
-                    override val parameters: MuxParams
+                    override val parameters: BeanParams
                         get() = throw UnsupportedOperationException()
 
                     override fun length(timeUnit: TimeUnit): Long = Long.MAX_VALUE
@@ -193,7 +193,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
         val signal = (-100 until 100).toList()
         val output = ByteArrayFileOutputMock(FiniteInputSampleStream(
                 object : FiniteInput {
-                    override val parameters: MuxParams
+                    override val parameters: BeanParams
                         get() = throw UnsupportedOperationException()
 
                     override fun length(timeUnit: TimeUnit): Long = Long.MAX_VALUE

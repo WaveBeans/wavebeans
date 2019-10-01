@@ -1,7 +1,7 @@
 package mux.lib.io
 
-import mux.lib.MuxNode
-import mux.lib.MuxStream
+import mux.lib.Bean
+import mux.lib.BeanStream
 import mux.lib.timeToSampleIndexFloor
 import java.io.File
 import java.io.FileInputStream
@@ -9,7 +9,7 @@ import java.io.FileOutputStream
 import java.net.URI
 import java.util.concurrent.TimeUnit
 
-abstract class FileStreamOutput<T : Any, S : MuxStream<T, S>>(
+abstract class FileStreamOutput<T : Any, S : BeanStream<T, S>>(
         val stream: S,
         val uri: URI
 ) : StreamOutput<T, S> {
@@ -17,7 +17,7 @@ abstract class FileStreamOutput<T : Any, S : MuxStream<T, S>>(
     private var writtenBytes: Int = 0
     private val tmpFile = File.createTempFile("mux", ".tmp")
 
-    override val input: MuxNode<T, S> = stream
+    override val input: Bean<T, S> = stream
 
     override fun writer(sampleRate: Float): Writer {
 

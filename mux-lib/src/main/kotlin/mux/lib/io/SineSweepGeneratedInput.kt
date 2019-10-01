@@ -1,6 +1,6 @@
 package mux.lib.io
 
-import mux.lib.MuxParams
+import mux.lib.BeanParams
 import mux.lib.Sample
 import mux.lib.sampleOf
 import java.util.concurrent.TimeUnit
@@ -30,13 +30,13 @@ data class SineSweepGeneratedInputParams(
         val timeOffset: Double = 0.0,
         /** Frequency will be changed by this value evenly. Make sure sample rate allowes this. It shouldn't be less than (1 / sample rate) */
         val sweepDelta: Double = 0.1
-) : MuxParams()
+) : BeanParams()
 
 class SineSweepGeneratedInput(
         val params: SineSweepGeneratedInputParams
 ) : StreamInput {
 
-    override val parameters: MuxParams = params
+    override val parameters: BeanParams = params
 
     override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): StreamInput {
         TODO()

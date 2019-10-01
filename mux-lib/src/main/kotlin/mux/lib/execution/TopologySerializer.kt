@@ -2,7 +2,7 @@ package mux.lib.execution
 
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
-import mux.lib.MuxParams
+import mux.lib.BeanParams
 import mux.lib.NoParams
 import mux.lib.io.CsvSampleStreamOutputParams
 import mux.lib.io.SineGeneratedInputParams
@@ -13,7 +13,7 @@ import mux.lib.stream.TrimmedFiniteSampleStreamParams
 object TopologySerializer {
 
     private val paramsModule = SerializersModule {
-        polymorphic(MuxParams::class) {
+        polymorphic(BeanParams::class) {
             ChangeAmplitudeSampleStreamParams::class with ChangeAmplitudeSampleStreamParams.serializer()
             SineGeneratedInputParams::class with SineGeneratedInputParams.serializer()
             NoParams::class with NoParams.serializer()

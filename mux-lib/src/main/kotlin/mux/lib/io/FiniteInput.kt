@@ -1,11 +1,11 @@
 package mux.lib.io
 
-import mux.lib.MuxStream
-import mux.lib.SourceMuxNode
+import mux.lib.BeanStream
+import mux.lib.SourceBean
 import mux.lib.Sample
 import java.util.concurrent.TimeUnit
 
-interface FiniteInput : MuxStream<Sample, FiniteInput>, SourceMuxNode<Sample, FiniteInput> {
+interface FiniteInput : BeanStream<Sample, FiniteInput>, SourceBean<Sample, FiniteInput> {
 
     /** Amount of samples available */
     fun samplesCount(): Int

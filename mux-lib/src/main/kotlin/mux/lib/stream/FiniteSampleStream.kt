@@ -1,10 +1,10 @@
 package mux.lib.stream
 
-import mux.lib.MuxStream
+import mux.lib.BeanStream
 import mux.lib.Sample
 import java.util.concurrent.TimeUnit
 
-interface FiniteSampleStream : MuxStream<Sample, FiniteSampleStream> {
+interface FiniteSampleStream : BeanStream<Sample, FiniteSampleStream> {
 
     fun length(timeUnit: TimeUnit = TimeUnit.MILLISECONDS): Long
 }

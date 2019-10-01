@@ -16,14 +16,14 @@ fun wave(uri: String, converter: FiniteToStream): SampleStream = wave(uri).sampl
 
 data class WavFiniteInputParams(
         val uri: URI
-) : MuxParams()
+) : BeanParams()
 
 class WavFiniteInput(
         val params: WavFiniteInputParams,
         private val content: Content? = null
 ) : FiniteInput {
 
-    override val parameters: MuxParams = params
+    override val parameters: BeanParams = params
 
     data class Content(
             val size: Int,

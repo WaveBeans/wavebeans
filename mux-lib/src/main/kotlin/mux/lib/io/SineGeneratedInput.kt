@@ -1,7 +1,7 @@
 package mux.lib.io
 
 import kotlinx.serialization.Serializable
-import mux.lib.MuxParams
+import mux.lib.BeanParams
 import mux.lib.Sample
 import mux.lib.ZeroSample
 import mux.lib.sampleOf
@@ -30,12 +30,12 @@ data class SineGeneratedInputParams(
         val timeOffset: Double = 0.0,
         /** Length of the sinusoid, when you read after that moment stream will just return zeros. */
         val time: Double? = null
-) : MuxParams()
+) : BeanParams()
 
 class SineGeneratedInput constructor(
         val params: SineGeneratedInputParams
 ) : StreamInput {
-    override val parameters: MuxParams = params
+    override val parameters: BeanParams = params
 
     override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): StreamInput {
         if (end != null && end <= start) throw SampleStreamException("End=[$end] should be greater than start=[$start]")

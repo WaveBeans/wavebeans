@@ -2,7 +2,7 @@ package mux.lib.stream
 
 import kotlinx.serialization.Serializable
 import mux.lib.*
-import mux.lib.MuxNode
+import mux.lib.Bean
 import mux.lib.math.r
 import mux.lib.math.times
 import java.util.concurrent.TimeUnit
@@ -18,16 +18,16 @@ data class WindowFftStreamParams(
         val start: Long = 0,
         val end: Long? = null,
         val timeUnit: TimeUnit = TimeUnit.MILLISECONDS
-) : MuxParams()
+) : BeanParams()
 
 class WindowFftStream(
         val sampleStream: SampleStream,
         val params: WindowFftStreamParams
-) : FftStream, AlterMuxNode<Sample, SampleStream, FftSample, FftStream> {
+) : FftStream, AlterBean<Sample, SampleStream, FftSample, FftStream> {
 
-    override val parameters: MuxParams = params
+    override val parameters: BeanParams = params
 
-    override val input: MuxNode<Sample, SampleStream> = sampleStream
+    override val input: Bean<Sample, SampleStream> = sampleStream
 
     override fun estimateFftSamplesCount(samplesCount: Long): Long = samplesCount / params.m
 

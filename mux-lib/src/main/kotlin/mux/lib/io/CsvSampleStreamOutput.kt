@@ -32,7 +32,7 @@ data class CsvSampleStreamOutputParams(
         val uri: String,
         val outputTimeUnit: TimeUnit,
         val encoding: String = "UTF-8"
-) : MuxParams() {
+) : BeanParams() {
 
     // TODO come up with serializer
     fun uri(): URI = URI(uri)
@@ -45,7 +45,7 @@ class CsvSampleStreamOutput(
         val params: CsvSampleStreamOutputParams
 ) : FileStreamOutput<Sample, FiniteSampleStream>(stream, params.uri()) {
 
-    override val parameters: MuxParams = params
+    override val parameters: BeanParams = params
 
     override fun header(dataSize: Int): ByteArray? = "time ${params.outputTimeUnit.abbreviation()}, value\n".toByteArray(params.encoding())
 
