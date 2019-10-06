@@ -39,8 +39,8 @@ object PodRegistry {
             podProxyRegistry[findRegisteredType(nodeType, podProxyRegistry.keys)]?.call(podKey)
                     ?: throw IllegalStateException("PodProxy for `$nodeType` is not found")
 
-    fun createPod(nodeType: KType, node: Bean<*, *>): Pod<*, *> =
-            podRegistry[findRegisteredType(nodeType, podRegistry.keys)]?.call(node)
+    fun createPod(nodeType: KType, podKey: PodKey, node: Bean<*, *>): Pod<*, *> =
+            podRegistry[findRegisteredType(nodeType, podRegistry.keys)]?.call(node, podKey)
                     ?: throw IllegalStateException("Pod for `$nodeType` is not found")
 
     private fun findRegisteredType(type: KType, registeredTypes: Set<KType>): KType? {

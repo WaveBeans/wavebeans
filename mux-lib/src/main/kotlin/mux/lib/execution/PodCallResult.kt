@@ -38,6 +38,8 @@ internal fun Sample.encodeBytes(): ByteArray = this.toBits().encodeBytes()
 
 fun PodCallResult.sample(): Sample = Double.fromBits(this.long())
 
+fun PodCallResult.nullableSample(): Sample? = ifNotNull { Double.fromBits(this.long()) }
+
 
 internal fun PodCallResult.throwIfError(): PodCallResult {
     if (this.exception != null) throw IllegalStateException("Got exception during call ${this.call}", this.exception)

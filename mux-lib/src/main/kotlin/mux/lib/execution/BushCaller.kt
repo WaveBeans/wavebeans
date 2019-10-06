@@ -11,7 +11,7 @@ class BushCaller(val bushKey: BushKey, val podKey: PodKey) {
         return if (bush != null /* && bush.locallyAccessible()*/)
             bush.call(podKey, request)
         else {
-            TODO("call bush bush remotely")
+            TODO("call bush remotely")
         }
     }
 }

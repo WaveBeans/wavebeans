@@ -7,7 +7,10 @@ import mux.lib.Sample
 import mux.lib.stream.FiniteSampleStream
 import java.util.concurrent.TimeUnit
 
-class FiniteSampleStreamPod(val bean: FiniteSampleStream) : FiniteSampleStream, StreamingPod<Sample, FiniteSampleStream>() {
+class FiniteSampleStreamPod(
+        val bean: FiniteSampleStream,
+        podKey: PodKey
+) : FiniteSampleStream, StreamingPod<Sample, FiniteSampleStream>(podKey) {
 
     override fun length(timeUnit: TimeUnit): Long {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
@@ -29,8 +32,8 @@ class FiniteSampleStreamPod(val bean: FiniteSampleStream) : FiniteSampleStream, 
 class FiniteSampleStreamPodProxy(podKey: PodKey) : AbstractStreamPodProxy<FiniteSampleStream>(podKey), FiniteSampleStream {
 
     override fun length(timeUnit: TimeUnit): Long {
-        val bush = PodDiscovery.bushFor(podKey)
-        val caller = BushCaller(bush, podKey)
+        val bush = PodDiscovery.bushFor(pointedTo)
+        val caller = BushCaller(bush, pointedTo)
 
         return caller.call("length?timeUnit=${timeUnit.name}").long()
     }

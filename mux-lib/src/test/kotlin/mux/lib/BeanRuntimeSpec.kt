@@ -9,7 +9,6 @@ import mux.lib.stream.plus
 import mux.lib.stream.trim
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
-import org.spekframework.spek2.style.specification.xdescribe
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.full.isSubtypeOf
@@ -31,13 +30,13 @@ object BeanRuntimeSpec : Spek({
         val o1 = p1
                 .trim(5000)
                 .toCsv("file:///users/asubb/tmp/o1.csv")
-//        val o2 = (p1 + p2)
-//                .trim(3000)
-//                .toCsv("file:///users/asubb/tmp/o2.csv")
+        val o2 = (p1 + p2)
+                .trim(3000)
+                .toCsv("file:///users/asubb/tmp/o2.csv")
 
 
         outputs += o1
-//        outputs += o2
+        outputs += o2
 
         val topology = outputs.buildTopology()
         println("Topology: $topology")
@@ -68,8 +67,10 @@ object BeanRuntimeSpec : Spek({
 
                     val pod = PodRegistry.createPod(
                             nodeClazz.supertypes.first { it.isSubtypeOf(typeOf<Bean<*, *>>()) },
+                            nodeRef.id,
                             constructor.call(podProxy, nodeRef.params) as Bean<*, *>
                     )
+                    println("#: " + nodeRef.id)
                     println("POD: " + pod)
                     println("POD INPUTS: " + pod.inputs())
                     println("POD INPUT INPUTS: " + pod.inputs().map { it.inputs() })
@@ -85,8 +86,10 @@ object BeanRuntimeSpec : Spek({
 
                     val pod = PodRegistry.createPod(
                             nodeClazz.supertypes.first { it.isSubtypeOf(typeOf<Bean<*, *>>()) },
+                            nodeRef.id,
                             constructor.call(nodeRef.params) as Bean<*, *>
                     )
+                    println("#: " + nodeRef.id)
                     println("POD: " + pod)
                     println("POD INPUTS: " + pod.inputs())
                     println("POD INPUT INPUTS: " + pod.inputs().map { it.inputs() })
@@ -106,15 +109,17 @@ object BeanRuntimeSpec : Spek({
                     val podProxyType2 = constructor.parameters[1].type
                     val links = nodeLinks.getValue(nodeRef.id)
                             .sortedBy { it.order }
-                            .map { nodeById.getValue(it.from) }
+                            .map { nodeById.getValue(it.to) }
                     require(links.size == 2) { "MergedSampleStream should have only 2 links: $links" }
                     val podProxy1 = PodRegistry.createPodProxy(podProxyType1, links[0].id)
                     val podProxy2 = PodRegistry.createPodProxy(podProxyType2, links[1].id)
 
                     val pod = PodRegistry.createPod(
                             nodeClazz.supertypes.first { it.isSubtypeOf(typeOf<Bean<*, *>>()) },
+                            nodeRef.id,
                             constructor.call(podProxy1, podProxy2, nodeRef.params) as Bean<*, *>
                     )
+                    println("#: " + nodeRef.id)
                     println("POD: " + pod)
                     println("POD INPUTS: " + pod.inputs())
                     println("POD INPUT INPUTS: " + pod.inputs().map { it.inputs() })
@@ -124,24 +129,25 @@ object BeanRuntimeSpec : Spek({
                 }
             }
             println("------")
-
         }
 
         Bush().use { bush ->
             pods.forEach { (t, u) ->
                 bush.addPod(t, u)
             }
-            bush.start()
-
 
             PodDiscovery.pods()
                     .filter { it.pod is StreamOutput<*, *> }
                     .map { it.pod as StreamOutput<*, *> }
-                    .map {
-                        it.writer(44100.0f)
-                    }
                     .forEach {
-                        it.write(1000)
+                        try {
+                            val w = it.writer(44100.0f)
+                            w.write(100)
+                            w.close()
+                            it.close()
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
                     }
         }
 

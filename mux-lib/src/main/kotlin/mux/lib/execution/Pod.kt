@@ -14,6 +14,8 @@ typealias AnyPod = Pod<*, *>
 
 interface Pod<T : Any, S : Any> : Bean<T, S> {
 
+    val podKey: PodKey
+
     @ExperimentalStdlibApi
     fun call(call: Call): PodCallResult {
         return try {
@@ -40,9 +42,12 @@ interface Pod<T : Any, S : Any> : Bean<T, S> {
     }
 }
 
-interface PodProxy<T : Any, S : Any> : Bean<T, S>
+interface PodProxy<T : Any, S : Any> : Bean<T, S> {
 
-abstract class StreamingPod<T : Any, S : Any> : Pod<T, S>, BeanStream<T, S> {
+    val pointedTo: PodKey
+}
+
+abstract class StreamingPod<T : Any, S : Any>(override val podKey: PodKey): Pod<T, S>, BeanStream<T, S> {
 
     companion object {
         private val idSeq = AtomicLong(0)
@@ -60,31 +65,40 @@ abstract class StreamingPod<T : Any, S : Any> : Pod<T, S>, BeanStream<T, S> {
         return key
     }
 
-    fun iteratorNext(iteratorKey: Long): T {
+    fun iteratorNext(iteratorKey: Long): T? {
         val i = iterators.getValue(iteratorKey).iterator
         if (i.hasNext())
             return i.next()
         else
             throw IllegalStateException("No elements left for iterator $iteratorKey")
     }
+
+    override fun toString(): String = "${this::class.simpleName}[$podKey]"
 }
 
-abstract class AbstractStreamPodProxy<S : Any>(val podKey: PodKey) : BeanStream<Sample, S>, PodProxy<Sample, S> {
+abstract class AbstractStreamPodProxy<S : Any>(override val pointedTo: PodKey) : BeanStream<Sample, S>, PodProxy<Sample, S> {
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> {
-        val bush = PodDiscovery.bushFor(podKey)
-        val caller = BushCaller(bush, podKey)
+        val bush = PodDiscovery.bushFor(pointedTo)
+        val caller = BushCaller(bush, pointedTo)
         val iteratorKey = caller.call("iteratorStart?sampleRate=$sampleRate").long()
 
         return object : Iterator<Sample> {
 
-            override fun hasNext(): Boolean = true
+            var sample = readSample()
+
+            override fun hasNext(): Boolean = sample != null
 
             override fun next(): Sample {
-                return caller.call("iteratorNext?iteratorKey=$iteratorKey").sample()
+                val oldSample = sample ?: throw NoSuchElementException("Pod $pointedTo has no samples")
+                sample = readSample()
+                return oldSample
             }
 
+            private fun readSample() = caller.call("iteratorNext?iteratorKey=$iteratorKey").nullableSample()
+
         }.asSequence()
+
 
     }
 
@@ -94,4 +108,6 @@ abstract class AbstractStreamPodProxy<S : Any>(val podKey: PodKey) : BeanStream<
 
     override val parameters: BeanParams
         get() = throw UnsupportedOperationException("That's not required for PodProxy")
+
+    override fun toString(): String = "${this::class.simpleName}->$pointedTo"
 }

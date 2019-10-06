@@ -31,6 +31,16 @@ object CallSpec : Spek({
         it("should convert int") {
             assertThat(Call.parseRequest("method?intParam=1").param("intParam", typeOf<Int>()))
                     .isEqualTo(1)
+        }
+
+        it("should convert long") {
+            assertThat(Call.parseRequest("method?param=1").param("param", typeOf<Long>()))
+                    .isEqualTo(1L)
+        }
+
+        it("should convert float") {
+            assertThat(Call.parseRequest("method?param=1").param("param", typeOf<Float>()))
+                    .isEqualTo(1.0f)
 
         }
     }

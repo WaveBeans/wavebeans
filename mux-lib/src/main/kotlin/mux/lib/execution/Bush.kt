@@ -3,10 +3,8 @@ package mux.lib.execution
 import java.io.Closeable
 import java.lang.Thread.sleep
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 
@@ -25,79 +23,47 @@ class Bush : Closeable {
         private val taskIdSeq = AtomicLong(0)
     }
 
-    private val pods = ConcurrentHashMap<PodKey, Pod<*, *>>()
+    private val workers = ConcurrentHashMap<PodKey, PodWorker>()
 
     private val bushKey = idSeq.incrementAndGet()
+            .also { PodDiscovery.registerBush(it, this) }
 
-    private val queue = ConcurrentLinkedQueue<PodTask>()
-    private val results = ConcurrentHashMap<Long, PodCallResult>()
-    private val isStarted = AtomicBoolean(false)
-
-    @ExperimentalStdlibApi
-    private val bushThread = Thread {
-        isStarted.set(true)
-        while (isStarted.get()) {
-            try {
-                val task = queue.poll()
-                if (task != null) {
-                    val start = System.nanoTime()
-                    println("Got task $task")
-                    try {
-                        val call = Call.parseRequest(task.request)
-                        try {
-                            val pod = pods[task.podKey] ?: TODO("pod not on bush case")
-
-                            val result = pod.call(call)
-                            results[task.taskId] = result
-
-                            println("For task $task returned $result in ${(System.nanoTime() - start) / 1_000_000.0}ms")
-                        } catch (e: Throwable) {
-                            results[task.taskId] = PodCallResult.wrap(call, e)
-                        }
-                    } catch (e: Throwable) {
-                        results[task.taskId] = PodCallResult.wrap(Call.empty, e)
-                    }
-                }
-                sleep(0)
-            } catch (e: InterruptedException) {
-                println("Got interrupted")
-                break
-            }
-        }
-    }
 
     fun addPod(key: Int, pod: Pod<*, *>) {
-        pods[key] = pod
-        PodDiscovery.registerPod(bushKey, key, pod)
-    }
+        val worker = PodWorker(pod)
 
-    @ExperimentalStdlibApi
-    fun start() {
-        println("started $bushKey")
-        PodDiscovery.registerBush(bushKey, this)
-        bushThread.start()
-        // wait until thread is started
-        while (!isStarted.get()) {
+        while (!worker.isStarted()) {
             sleep(0)
         }
+        println("Pod started $key")
+
+        workers[key] = worker
+        PodDiscovery.registerPod(bushKey, key, pod)
     }
 
     @ExperimentalStdlibApi
     override fun close() {
         PodDiscovery.unregisterBush(bushKey)
-        pods.keys.forEach { PodDiscovery.unregisterPod(bushKey, it) }
-        isStarted.set(false)
+        workers.forEach {
+            PodDiscovery.unregisterPod(bushKey, it.key)
+            it.value.close()
+
+        }
     }
 
     fun call(podKey: PodKey, request: String, timeout: Long = 1000L, timeUnit: TimeUnit = TimeUnit.MILLISECONDS): PodCallResult {
-        check(isStarted.get()) { "Bush is not started" }
+        val podWorker = workers[podKey] ?: TODO("pod not on the bush case")
+
+        check(podWorker.isStarted()) { "PodWorker is not started" }
 
         val start = System.nanoTime()
         val taskId = taskIdSeq.incrementAndGet()
-        queue.add(PodTask(taskId, podKey, request))
+        val task = PodTask(taskId, podKey, request)
+        println("Enqueued task $task")
+        podWorker.enqueue(task)
         val nanoTimeout = TimeUnit.NANOSECONDS.convert(timeout, timeUnit)
         while (true) {
-            val r = results[taskId]
+            val r = podWorker.result(taskId)
             if (r != null) {
                 println("Call to pod[$podKey] for `$request` took ${(System.nanoTime() - start) / 1_000_000.0}ms")
                 return r

@@ -13,8 +13,6 @@ import kotlin.random.Random
 
 val random = Random(1234)
 
-private
-
 @ExperimentalStdlibApi
 object BushSpec : Spek({
 
@@ -22,6 +20,9 @@ object BushSpec : Spek({
 
         val podKey = random.nextInt()
         val pod = object : Pod<Sample, SampleStream> {
+            override val podKey: PodKey
+                get() = throw UnsupportedOperationException()
+
             override fun inputs(): List<Bean<*, *>> = throw UnsupportedOperationException()
 
             override val parameters: BeanParams
@@ -39,7 +40,6 @@ object BushSpec : Spek({
 
         }
         val bush = Bush()
-                .also { it.start() }
                 .also { it.addPod(podKey, pod) }
 
         after {
@@ -69,7 +69,7 @@ object BushSpec : Spek({
                 prop("byteArray") { it.byteArray }.isNull()
                 prop("exception") { it.exception }
                         .isNotNull()
-                        .isInstanceOf(UnsupportedOperationException::class)
+                        .isInstanceOf(IllegalStateException::class)
                         .hasMessage("test message")
             }
 
@@ -101,7 +101,7 @@ object BushSpec : Spek({
                 prop("byteArray") { it.byteArray }.isNull()
                 prop("exception") { it.exception }
                         .isNotNull()
-                        .isInstanceOf(UnsupportedOperationException::class)
+                        .isInstanceOf(NotImplementedError::class)
                         .hasMessage("test message")
             }
 
