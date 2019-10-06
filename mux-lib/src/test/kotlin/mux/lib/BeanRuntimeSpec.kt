@@ -9,6 +9,7 @@ import mux.lib.stream.plus
 import mux.lib.stream.trim
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
+import org.spekframework.spek2.style.specification.xdescribe
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.full.isSubtypeOf
@@ -16,7 +17,7 @@ import kotlin.reflect.typeOf
 
 @ExperimentalStdlibApi
 object BeanRuntimeSpec : Spek({
-    describe("") {
+    describe("bean") {
         val outputs = ArrayList<StreamOutput<*, *>>()
 
 
@@ -30,13 +31,13 @@ object BeanRuntimeSpec : Spek({
         val o1 = p1
                 .trim(5000)
                 .toCsv("file:///users/asubb/tmp/o1.csv")
-        val o2 = (p1 + p2)
-                .trim(3000)
-                .toCsv("file:///users/asubb/tmp/o2.csv")
+//        val o2 = (p1 + p2)
+//                .trim(3000)
+//                .toCsv("file:///users/asubb/tmp/o2.csv")
 
 
         outputs += o1
-        outputs += o2
+//        outputs += o2
 
         val topology = outputs.buildTopology()
         println("Topology: $topology")
@@ -59,17 +60,19 @@ object BeanRuntimeSpec : Spek({
                                 it.parameters[1].type.isSubtypeOf(typeOf<BeanParams>())
                     }
 
-                    val channelType = constructor.parameters[0].type
+                    val podProxyType = constructor.parameters[0].type
                     val links = nodeLinks.getValue(nodeRef.id).map { nodeById.getValue(it.to) }
                     require(links.size == 1) { "SingleBean or AlterBean $nodeRef should have only one link, but: $links" }
 
-                    val channel = PodRegistry.createPodProxy(channelType, links[0].id)
+                    val podProxy = PodRegistry.createPodProxy(podProxyType, links[0].id)
 
                     val pod = PodRegistry.createPod(
                             nodeClazz.supertypes.first { it.isSubtypeOf(typeOf<Bean<*, *>>()) },
-                            constructor.call(channel, nodeRef.params) as Bean<*, *>
+                            constructor.call(podProxy, nodeRef.params) as Bean<*, *>
                     )
-                    println(pod)
+                    println("POD: " + pod)
+                    println("POD INPUTS: " + pod.inputs())
+                    println("POD INPUT INPUTS: " + pod.inputs().map { it.inputs() })
 
                     pods[nodeRef.id] = pod
                 }
@@ -84,7 +87,9 @@ object BeanRuntimeSpec : Spek({
                             nodeClazz.supertypes.first { it.isSubtypeOf(typeOf<Bean<*, *>>()) },
                             constructor.call(nodeRef.params) as Bean<*, *>
                     )
-                    println(pod)
+                    println("POD: " + pod)
+                    println("POD INPUTS: " + pod.inputs())
+                    println("POD INPUT INPUTS: " + pod.inputs().map { it.inputs() })
 
                     pods[nodeRef.id] = pod
                 }
@@ -97,20 +102,22 @@ object BeanRuntimeSpec : Spek({
                                 it.parameters[1].type.isSubtypeOf(typeOf<Bean<*, *>>()) &&
                                 it.parameters[2].type.isSubtypeOf(typeOf<BeanParams>())
                     }
-                    val channel1Type = constructor.parameters[0].type
-                    val channel2Type = constructor.parameters[1].type
+                    val podProxyType1 = constructor.parameters[0].type
+                    val podProxyType2 = constructor.parameters[1].type
                     val links = nodeLinks.getValue(nodeRef.id)
                             .sortedBy { it.order }
                             .map { nodeById.getValue(it.from) }
                     require(links.size == 2) { "MergedSampleStream should have only 2 links: $links" }
-                    val channel1 = PodRegistry.createPodProxy(channel1Type, links[0].id)
-                    val channel2 = PodRegistry.createPodProxy(channel2Type, links[1].id)
+                    val podProxy1 = PodRegistry.createPodProxy(podProxyType1, links[0].id)
+                    val podProxy2 = PodRegistry.createPodProxy(podProxyType2, links[1].id)
 
                     val pod = PodRegistry.createPod(
                             nodeClazz.supertypes.first { it.isSubtypeOf(typeOf<Bean<*, *>>()) },
-                            constructor.call(channel1, channel2, nodeRef.params) as Bean<*, *>
+                            constructor.call(podProxy1, podProxy2, nodeRef.params) as Bean<*, *>
                     )
-                    println(pod)
+                    println("POD: " + pod)
+                    println("POD INPUTS: " + pod.inputs())
+                    println("POD INPUT INPUTS: " + pod.inputs().map { it.inputs() })
 
                     pods[nodeRef.id] = pod
 

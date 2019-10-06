@@ -5,9 +5,12 @@ import kotlin.reflect.typeOf
 
 data class Call(
         val method: String,
-        private val params: Map<String, String>
+        val params: Map<String, String>
 ) {
     companion object {
+
+        val empty = Call("", emptyMap())
+
         fun parseRequest(request: String): Call {
             val split = request.split("?", limit = 2)
             val method = split[0]
@@ -25,7 +28,8 @@ data class Call(
     fun param(key: String, type: KType): Any? {
         return when (type) {
             typeOf<Int>() -> params[key]?.toInt()
-            else -> UnsupportedOperationException("$type is unsupported during call to `$method`")
+            typeOf<Float>() -> params[key]?.toFloat()
+            else -> throw UnsupportedOperationException("$type is unsupported during call to `$method`")
         }
     }
 }

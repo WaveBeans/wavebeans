@@ -48,7 +48,6 @@ object PodRegistry {
             return type
         // otherwise try to find an approximation
         return registeredTypes.firstOrNull {
-            println("$it : [$type] ? ${it.isSupertypeOf(type)}")
             it.isSupertypeOf(type)
         }
     }

@@ -15,7 +15,8 @@ abstract class FileStreamOutput<T : Any, S : BeanStream<T, S>>(
 ) : StreamOutput<T, S> {
 
     private var writtenBytes: Int = 0
-    private val tmpFile = File.createTempFile("mux", ".tmp")
+    private val tmpFile = File.createTempFile("file-stream-output-test", ".tmp")
+            .also { it.deleteOnExit() }
 
     override val input: Bean<T, S> = stream
 

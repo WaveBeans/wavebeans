@@ -2,103 +2,96 @@ package mux.lib.execution
 
 import mux.lib.Bean
 import mux.lib.BeanParams
+import mux.lib.BeanStream
 import mux.lib.Sample
-import mux.lib.io.StreamInput
-import mux.lib.io.StreamOutput
-import mux.lib.io.Writer
-import mux.lib.stream.FiniteSampleStream
-import mux.lib.stream.SampleStream
+import java.lang.reflect.InvocationTargetException
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
-import kotlin.reflect.KCallable
+import java.util.concurrent.atomic.AtomicLong
+
+typealias PodKey = Int
+typealias AnyPod = Pod<*, *>
 
 interface Pod<T : Any, S : Any> : Bean<T, S> {
-    fun call(method: KCallable<*>, params: Array<Any?>): ByteArray?
+
+    @ExperimentalStdlibApi
+    fun call(call: Call): PodCallResult {
+        return try {
+            val method = this::class.members
+                    .firstOrNull { it.name == call.method }
+                    ?: throw IllegalStateException("Can't find method to call: $call")
+            val params = method.parameters
+                    .drop(1) // drop self instance
+                    .map {
+                        call.param(
+                                key = it.name
+                                        ?: throw IllegalStateException("Parameter `$it` of method `$method` has no name"),
+                                type = it.type)
+                    }
+                    .toTypedArray()
+
+            val result = method.call(this, *params)
+            PodCallResult.wrap(call, result)
+        } catch (e: InvocationTargetException) {
+            PodCallResult.wrap(call, e.targetException)
+        } catch (e: Throwable) {
+            PodCallResult.wrap(call, e)
+        }
+    }
 }
 
-class FiniteSampleStreamPod(val node: FiniteSampleStream) : FiniteSampleStream, Pod<Sample, FiniteSampleStream> {
+interface PodProxy<T : Any, S : Any> : Bean<T, S>
 
-    override fun call(method: KCallable<*>, params: Array<Any?>): ByteArray? {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+abstract class StreamingPod<T : Any, S : Any> : Pod<T, S>, BeanStream<T, S> {
+
+    companion object {
+        private val idSeq = AtomicLong(0)
     }
 
-    override fun length(timeUnit: TimeUnit): Long {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    private class PodIterator<T>(
+            val iterator: Iterator<T>
+    )
+
+    private val iterators = ConcurrentHashMap<Long, PodIterator<T>>()
+
+    fun iteratorStart(sampleRate: Float): Long {
+        val key = idSeq.incrementAndGet()
+        iterators[key] = PodIterator(asSequence(sampleRate).iterator())
+        return key
     }
+
+    fun iteratorNext(iteratorKey: Long): T {
+        val i = iterators.getValue(iteratorKey).iterator
+        if (i.hasNext())
+            return i.next()
+        else
+            throw IllegalStateException("No elements left for iterator $iteratorKey")
+    }
+}
+
+abstract class AbstractStreamPodProxy<S : Any>(val podKey: PodKey) : BeanStream<Sample, S>, PodProxy<Sample, S> {
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val bush = PodDiscovery.bushFor(podKey)
+        val caller = BushCaller(bush, podKey)
+        val iteratorKey = caller.call("iteratorStart?sampleRate=$sampleRate").long()
+
+        return object : Iterator<Sample> {
+
+            override fun hasNext(): Boolean = true
+
+            override fun next(): Sample {
+                return caller.call("iteratorNext?iteratorKey=$iteratorKey").sample()
+            }
+
+        }.asSequence()
+
     }
 
-    override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): FiniteSampleStream {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): S = throw UnsupportedOperationException("That's not required for PodProxy")
 
-    override fun inputs(): List<Bean<*, *>> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    override fun inputs(): List<Bean<*, *>> = throw UnsupportedOperationException("That's not required for PodProxy")
 
     override val parameters: BeanParams
-        get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
-
+        get() = throw UnsupportedOperationException("That's not required for PodProxy")
 }
-
-class SampleStreamPod(val node: SampleStream) : SampleStream, Pod<Sample, SampleStream> {
-    override val parameters: BeanParams
-        get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
-
-    override fun call(method: KCallable<*>, params: Array<Any?>): ByteArray? {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun asSequence(sampleRate: Float): Sequence<Sample> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): SampleStream {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun inputs(): List<Bean<*, *>> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-
-}
-
-class SampleStreamOutputPod(val node: StreamOutput<*, *>) : StreamOutput<Sample, FiniteSampleStream>, Pod<Sample, FiniteSampleStream> {
-    override fun call(method: KCallable<*>, params: Array<Any?>): ByteArray? {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun writer(sampleRate: Float): Writer {
-        return node.writer(sampleRate)
-    }
-
-    override fun close() {
-        node.close()
-    }
-
-    override val parameters: BeanParams
-        get() = throw UnsupportedOperationException("PodProxy doesn't need it")
-
-    override val input: Bean<Sample, FiniteSampleStream>
-        get() = throw UnsupportedOperationException("PodProxy doesn't need it")
-}
-
-class StreamInputPod(val node: StreamInput) : StreamInput, Pod<Sample, StreamInput> {
-    override fun call(method: KCallable<*>, params: Array<Any?>): ByteArray? {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun asSequence(sampleRate: Float): Sequence<Sample> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): StreamInput {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override val parameters: BeanParams
-        get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
-}
-

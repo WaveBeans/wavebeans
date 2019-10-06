@@ -5,7 +5,7 @@ class BushCaller(val bushKey: BushKey, val podKey: PodKey) {
     /***
      * @param request HTTP-like request: methodName?param1=value&param2=value
      */
-    fun call(request: String): ByteArray? {
+    fun call(request: String): PodCallResult {
         val bush = PodDiscovery.bush(bushKey)
         // TODO that should be done over the network soon
         return if (bush != null /* && bush.locallyAccessible()*/)
