@@ -19,9 +19,8 @@ object PodDiscovery {
 
     fun registerPod(bushKey: BushKey, podKey: PodKey, pod: AnyPod) {
         val value = pods.putIfAbsent(podKey, PodInfo(podKey, bushKey, pod))
-        check(value == null) { "PodProxy with key `$podKey` already has value `$value`" }
+        check(value == null) { "Pod with key `$podKey` already has value `$value`" }
     }
-
     fun registerBush(bushKey: BushKey, bush: Bush) {
         val value = bushes.putIfAbsent(bushKey, bush)
         check(value == null) { "Bush with key `$bushKey` already has value `$value`" }
@@ -38,5 +37,4 @@ object PodDiscovery {
     fun unregisterPod(bushKey: BushKey, podKey: PodKey) {
         pods.remove(podKey)
     }
-
 }

@@ -136,19 +136,12 @@ object BeanRuntimeSpec : Spek({
                 bush.addPod(t, u)
             }
 
-            PodDiscovery.pods()
+            PodDiscovery.pods().asSequence()
                     .filter { it.pod is StreamOutput<*, *> }
                     .map { it.pod as StreamOutput<*, *> }
-                    .forEach {
-                        try {
-                            val w = it.writer(44100.0f)
-                            w.write(100)
-                            w.close()
-                            it.close()
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                        }
-                    }
+                    .map { Pair(it, it.writer(44100.0f)) }
+                    .map { it.second.write(100); it }
+                    .forEach { it.first.close(); it.second.close() }
         }
 
     }

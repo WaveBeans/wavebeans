@@ -5,9 +5,11 @@ import mux.lib.BeanParams
 import mux.lib.BeanStream
 import mux.lib.Sample
 import java.lang.reflect.InvocationTargetException
-import java.util.concurrent.ConcurrentHashMap
+import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
+import kotlin.NoSuchElementException
+import kotlin.math.max
 
 typealias PodKey = Int
 typealias AnyPod = Pod<*, *>
@@ -47,33 +49,59 @@ interface PodProxy<T : Any, S : Any> : Bean<T, S> {
     val pointedTo: PodKey
 }
 
-abstract class StreamingPod<T : Any, S : Any>(override val podKey: PodKey): Pod<T, S>, BeanStream<T, S> {
+// the class is not thread safe
+abstract class StreamingPod<T : Any, S : Any>(override val podKey: PodKey) : Pod<T, S>, BeanStream<T, S> {
 
     companion object {
         private val idSeq = AtomicLong(0)
     }
 
-    private class PodIterator<T>(
-            val iterator: Iterator<T>
-    )
+    private var iterator: Iterator<T>? = null
 
-    private val iterators = ConcurrentHashMap<Long, PodIterator<T>>()
+    private val offsets = HashMap<Long, Long>()
+    private val buffer = LinkedList<T>()
+    private var globalOffset = 0L
 
     fun iteratorStart(sampleRate: Float): Long {
         val key = idSeq.incrementAndGet()
-        iterators[key] = PodIterator(asSequence(sampleRate).iterator())
+        offsets[key] = globalOffset
+        if (iterator == null) // TODO handle different sample rate?
+            iterator = asSequence(sampleRate).iterator()
         return key
     }
 
     fun iteratorNext(iteratorKey: Long): T? {
-        val i = iterators.getValue(iteratorKey).iterator
-        if (i.hasNext())
-            return i.next()
-        else
-            throw IllegalStateException("No elements left for iterator $iteratorKey")
+        check(iterator != null) { "Pod wasn't initialized properly. Iterator not found. Call `start` first." }
+        val offset = offsets[iteratorKey]
+        check(offset != null) { "Iterator key $iteratorKey is unknown for the pod $this" }
+
+        val bufferPos = max(offset - globalOffset, 0L).toInt()
+
+        // if we'retrying to read out of buffer -- try to read from downstream iterator
+        while (bufferPos >= buffer.size) {
+            val element = if (iterator!!.hasNext())
+                iterator!!.next()
+            else
+                throw NoSuchElementException("No elements left for iterator $iteratorKey")
+            buffer.addLast(element)
+        }
+
+        // the element should be there
+        val element = buffer[bufferPos]
+        offsets[iteratorKey] = offset + 1
+
+        // if all iterators consumed data, push the global offset forward and drop the unneeded data from buffer
+        val newGlobalOffset = offsets.values.min() ?: 0
+        val currentGlobalOffset = globalOffset
+        repeat((newGlobalOffset - currentGlobalOffset).toInt()) {
+            buffer.removeFirst()
+        }
+        globalOffset = newGlobalOffset
+
+        return element
     }
 
-    override fun toString(): String = "${this::class.simpleName}[$podKey]"
+    override fun toString(): String = "[$podKey]${this::class.simpleName}"
 }
 
 abstract class AbstractStreamPodProxy<S : Any>(override val pointedTo: PodKey) : BeanStream<Sample, S>, PodProxy<Sample, S> {
@@ -109,5 +137,5 @@ abstract class AbstractStreamPodProxy<S : Any>(override val pointedTo: PodKey) :
     override val parameters: BeanParams
         get() = throw UnsupportedOperationException("That's not required for PodProxy")
 
-    override fun toString(): String = "${this::class.simpleName}->$pointedTo"
+    override fun toString(): String = "${this::class.simpleName}->[$pointedTo]"
 }

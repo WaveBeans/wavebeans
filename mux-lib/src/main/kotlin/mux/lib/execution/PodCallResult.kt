@@ -46,4 +46,6 @@ internal fun PodCallResult.throwIfError(): PodCallResult {
     return this
 }
 
-internal fun <T> PodCallResult.ifNotNull(function: () -> T): T? = this.byteArray?.let { function() }
+internal fun <T> PodCallResult.ifNotNull(function: () -> T): T? =
+        throwIfError()
+                .byteArray?.let { function() }
