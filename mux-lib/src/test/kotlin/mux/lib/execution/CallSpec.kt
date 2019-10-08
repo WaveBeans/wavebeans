@@ -4,7 +4,15 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
+import kotlin.reflect.KType
+import kotlin.reflect.full.starProjectedType
 import kotlin.reflect.typeOf
+
+
+@ExperimentalStdlibApi
+@Suppress("UNCHECKED_CAST")
+inline fun <reified T : Any> call(value: String): T =
+        Call.parseRequest("method?param=$value").param("param", typeOf<T>()) as T
 
 @ExperimentalStdlibApi
 object CallSpec : Spek({
@@ -28,20 +36,30 @@ object CallSpec : Spek({
     }
 
     describe("request params conversion") {
+
+
         it("should convert int") {
-            assertThat(Call.parseRequest("method?intParam=1").param("intParam", typeOf<Int>()))
-                    .isEqualTo(1)
+            assertThat(call<Int>("1")).isEqualTo(1)
         }
 
         it("should convert long") {
-            assertThat(Call.parseRequest("method?param=1").param("param", typeOf<Long>()))
-                    .isEqualTo(1L)
+            assertThat(call<Long>("1")).isEqualTo(1L)
         }
 
-        it("should convert float") {
-            assertThat(Call.parseRequest("method?param=1").param("param", typeOf<Float>()))
-                    .isEqualTo(1.0f)
+        describe("float type") {
+            it("should convert int-like") { assertThat(call<Float>("1")).isEqualTo(1.0f) }
+            it("should convert float-like 1.0f") { assertThat(call<Float>("1.0f")).isEqualTo(1.0f) }
+            it("should convert double-like 1.0") { assertThat(call<Float>("1.0")).isEqualTo(1.0f) }
+            it("should convert exponent notation 1e-0") { assertThat(call<Float>("1e-0")).isEqualTo(1.0f) }
+            it("should convert exponent notation 1e0") { assertThat(call<Float>("1e0")).isEqualTo(1.0f) }
+            it("should convert exponent notation 1e-12") { assertThat(call<Float>("1e-12")).isEqualTo(1e-12f) }
+        }
 
+        describe("boolean type") {
+            it("should convert true") { assertThat(call<Boolean>("true")).isEqualTo(true) }
+            it("should convert false") { assertThat(call<Boolean>("false")).isEqualTo(false) }
+            it("should convert True") { assertThat(call<Boolean>("True")).isEqualTo(true) }
+            it("should convert fAlse") { assertThat(call<Boolean>("fAlse")).isEqualTo(false) }
         }
     }
 })

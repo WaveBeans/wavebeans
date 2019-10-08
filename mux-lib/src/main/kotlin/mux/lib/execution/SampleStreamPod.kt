@@ -23,4 +23,4 @@ class SampleStreamPod(
     override fun inputs(): List<Bean<*, *>> = listOf(bean)
 }
 
-class SampleStreamPodProxy(podKey: PodKey) : SampleStream, AbstractStreamPodProxy<SampleStream>(podKey)
+class SampleStreamPodProxy(podKey: PodKey) : SampleStream, StreamingPodProxy<SampleStream>(podKey)

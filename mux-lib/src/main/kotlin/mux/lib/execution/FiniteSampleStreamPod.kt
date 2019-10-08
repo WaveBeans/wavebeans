@@ -29,11 +29,13 @@ class FiniteSampleStreamPod(
 }
 
 @ExperimentalStdlibApi
-class FiniteSampleStreamPodProxy(podKey: PodKey) : AbstractStreamPodProxy<FiniteSampleStream>(podKey), FiniteSampleStream {
+class FiniteSampleStreamPodProxy(
+        podKey: PodKey
+) : StreamingPodProxy<FiniteSampleStream>(podKey), FiniteSampleStream {
 
     override fun length(timeUnit: TimeUnit): Long {
-        val bush = PodDiscovery.bushFor(pointedTo)
-        val caller = BushCaller(bush, pointedTo)
+        val bush = podDiscovery.bushFor(pointedTo)
+        val caller = bushCallerRepository.create(bush, pointedTo)
 
         return caller.call("length?timeUnit=${timeUnit.name}").long()
     }

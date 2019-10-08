@@ -60,19 +60,13 @@ object StreamingPodSpec : Spek({
             val pod = newPod()
 
             val iteratorKey1 = pod.iteratorStart(0.0f)
-            val e = catch {
-                (1..101)
-                        .map { pod.iteratorNext(iteratorKey1)!! }
-                        .map { it.asInt() }
-            }
+            val e =
+                    (1..101)
+                            .map { pod.iteratorNext(iteratorKey1) }
+                            .map { it?.asInt() }
 
-            it("first should be the same as defined") {
-                assertThat(e)
-                        .isNotNull()
-                        .isInstanceOf(NoSuchElementException::class)
-                        .message()
-                        .isNotNull()
-                        .isNotEmpty()
+            it("should be the same as defined sequence + [null]") {
+                assertThat(e).isEqualTo(seq.plus(null as Int?))
             }
 
         }

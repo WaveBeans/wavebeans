@@ -30,6 +30,7 @@ data class Call(
             typeOf<Int>() -> params[key]?.toInt()
             typeOf<Float>() -> params[key]?.toFloat()
             typeOf<Long>() -> params[key]?.toLong()
+            typeOf<Boolean>() -> params[key]?.toBoolean()
             else -> throw UnsupportedOperationException("$type is unsupported during call to `$method`")
         }
     }

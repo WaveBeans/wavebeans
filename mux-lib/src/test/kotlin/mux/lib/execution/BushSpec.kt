@@ -21,7 +21,7 @@ object BushSpec : Spek({
         val podKey = random.nextInt()
         val pod = object : Pod<Sample, SampleStream> {
             override val podKey: PodKey
-                get() = throw UnsupportedOperationException()
+                get() = podKey
 
             override fun inputs(): List<Bean<*, *>> = throw UnsupportedOperationException()
 
@@ -40,7 +40,8 @@ object BushSpec : Spek({
 
         }
         val bush = Bush()
-                .also { it.addPod(podKey, pod) }
+                .also { it.addPod(pod) }
+                .also { it.start() }
 
         after {
             bush.close()

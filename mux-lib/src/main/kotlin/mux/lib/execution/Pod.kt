@@ -70,7 +70,7 @@ abstract class StreamingPod<T : Any, S : Any>(override val podKey: PodKey) : Pod
         return key
     }
 
-    fun iteratorNext(iteratorKey: Long): T? {
+    fun iteratorNext(iteratorKey: Long, pushOffset: Boolean = true): T? {
         check(iterator != null) { "Pod wasn't initialized properly. Iterator not found. Call `start` first." }
         val offset = offsets[iteratorKey]
         check(offset != null) { "Iterator key $iteratorKey is unknown for the pod $this" }
@@ -79,55 +79,71 @@ abstract class StreamingPod<T : Any, S : Any>(override val podKey: PodKey) : Pod
 
         // if we'retrying to read out of buffer -- try to read from downstream iterator
         while (bufferPos >= buffer.size) {
-            val element = if (iterator!!.hasNext())
-                iterator!!.next()
-            else
-                throw NoSuchElementException("No elements left for iterator $iteratorKey")
-            buffer.addLast(element)
+            if (iterator!!.hasNext()) {
+                val element = iterator!!.next()
+                buffer.addLast(element)
+            } else {
+                break
+            }
         }
 
-        // the element should be there
-        val element = buffer[bufferPos]
-        offsets[iteratorKey] = offset + 1
+        return if (bufferPos >= buffer.size) {
+            // if nothing to read from down stream iterator, then nothing to return
+            null
+        } else {
+            // otherwise the element should be there
+            val el = buffer[bufferPos]
+            offsets[iteratorKey] = offset + 1
 
-        // if all iterators consumed data, push the global offset forward and drop the unneeded data from buffer
-        val newGlobalOffset = offsets.values.min() ?: 0
-        val currentGlobalOffset = globalOffset
-        repeat((newGlobalOffset - currentGlobalOffset).toInt()) {
-            buffer.removeFirst()
+            // if all iterators consumed data, push the global offset forward and drop the unneeded data from buffer
+            if (pushOffset) {
+                val newGlobalOffset = offsets.values.min() ?: 0
+                val currentGlobalOffset = globalOffset
+                repeat((newGlobalOffset - currentGlobalOffset).toInt()) {
+                    buffer.removeFirst()
+                }
+                globalOffset = newGlobalOffset
+            }
+
+            el
         }
-        globalOffset = newGlobalOffset
-
-        return element
     }
 
     override fun toString(): String = "[$podKey]${this::class.simpleName}"
 }
 
-abstract class AbstractStreamPodProxy<S : Any>(override val pointedTo: PodKey) : BeanStream<Sample, S>, PodProxy<Sample, S> {
+abstract class StreamingPodProxy<S : Any>(
+        override val pointedTo: PodKey,
+        val podDiscovery: PodDiscovery = PodDiscovery.default,
+        val bushCallerRepository: BushCallerRepository = BushCallerRepository.default(podDiscovery)
+) : BeanStream<Sample, S>, PodProxy<Sample, S> {
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> {
-        val bush = PodDiscovery.bushFor(pointedTo)
-        val caller = BushCaller(bush, pointedTo)
+        val bush = podDiscovery.bushFor(pointedTo)
+        val caller = bushCallerRepository.create(bush, pointedTo)
         val iteratorKey = caller.call("iteratorStart?sampleRate=$sampleRate").long()
 
         return object : Iterator<Sample> {
 
-            var sample = readSample()
+            var sample: Sample? = null
+            var readFirstSample = false
 
-            override fun hasNext(): Boolean = sample != null
+            override fun hasNext(): Boolean {
+                if (sample == null && !readFirstSample) readSample()
+                return sample != null
+            }
 
             override fun next(): Sample {
                 val oldSample = sample ?: throw NoSuchElementException("Pod $pointedTo has no samples")
-                sample = readSample()
+                readSample()
                 return oldSample
             }
 
-            private fun readSample() = caller.call("iteratorNext?iteratorKey=$iteratorKey").nullableSample()
-
+            private fun readSample(pushOffset: Boolean = true) {
+                readFirstSample = true
+                sample = caller.call("iteratorNext?iteratorKey=$iteratorKey&pushOffset=$pushOffset").nullableSample()
+            }
         }.asSequence()
-
-
     }
 
     override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): S = throw UnsupportedOperationException("That's not required for PodProxy")

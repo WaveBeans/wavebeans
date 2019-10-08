@@ -16,7 +16,9 @@ internal data class PodTask(
         val request: String
 )
 
-class Bush : Closeable {
+class Bush(
+        val podDiscovery: PodDiscovery = PodDiscovery.default
+) : Closeable {
 
     companion object {
         private val idSeq = AtomicInteger(0)
@@ -26,35 +28,50 @@ class Bush : Closeable {
     private val workers = ConcurrentHashMap<PodKey, PodWorker>()
 
     private val bushKey = idSeq.incrementAndGet()
-            .also { PodDiscovery.registerBush(it, this) }
+            .also { podDiscovery.registerBush(it, this) }
 
-
-    fun addPod(key: Int, pod: Pod<*, *>) {
-        val worker = PodWorker(pod)
-
-        while (!worker.isStarted()) {
-            sleep(0)
-        }
-        println("Pod started $key")
-
-        workers[key] = worker
-        PodDiscovery.registerPod(bushKey, key, pod)
-    }
 
     @ExperimentalStdlibApi
-    override fun close() {
-        PodDiscovery.unregisterBush(bushKey)
-        workers.forEach {
-            PodDiscovery.unregisterPod(bushKey, it.key)
-            it.value.close()
+    fun start() {
+        workers.entries
+                // tick pods should start last, as they start calling other pods before they've started
+                .sortedBy { it.value.pod is TickPod }
+                .forEach { (podKey, worker) ->
+                    worker.start()
+                    while (!worker.isStarted()) {
+                        sleep(0)
+                    }
+                    println("Pod started [$podKey]${worker.pod}")
+                }
 
+    }
+
+    fun addPod(pod: AnyPod) {
+        val worker = PodWorker(pod)
+        workers[pod.podKey] = worker
+        podDiscovery.registerPod(bushKey, pod)
+    }
+
+    fun areTicksFinished(): Boolean {
+        return workers.entries
+                // tick pods should start last, as they start calling other pods before they've started
+                .filter { it.value.pod is TickPod }
+                .all { !it.value.isStarted() }
+    }
+
+
+    override fun close() {
+        podDiscovery.unregisterBush(bushKey)
+        workers.forEach {
+            podDiscovery.unregisterPod(bushKey, it.key)
+            it.value.close()
         }
     }
 
     fun call(podKey: PodKey, request: String, timeout: Long = 1000L, timeUnit: TimeUnit = TimeUnit.MILLISECONDS): PodCallResult {
         val podWorker = workers[podKey] ?: TODO("pod not on the bush case")
 
-        check(podWorker.isStarted()) { "PodWorker is not started" }
+        check(podWorker.isStarted()) { "PodWorker $podKey is not started. Can't do request `$request`" }
 
         val start = System.nanoTime()
         val taskId = taskIdSeq.incrementAndGet()

@@ -1,57 +1,31 @@
-package mux.lib
+package mux.lib.execution
 
-import mux.lib.execution.*
-import mux.lib.io.StreamOutput
-import mux.lib.io.sine
-import mux.lib.io.toCsv
-import mux.lib.stream.changeAmplitude
-import mux.lib.stream.plus
-import mux.lib.stream.trim
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
-import kotlin.reflect.KClass
+import mux.lib.*
 import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.typeOf
 
 @ExperimentalStdlibApi
-object BeanRuntimeSpec : Spek({
-    describe("bean") {
-        val outputs = ArrayList<StreamOutput<*, *>>()
+fun Topology.buildPods(): List<AnyPod> = PodBuilder(this).build()
 
+@ExperimentalStdlibApi
+class PodBuilder(private val topology: Topology) {
 
-        val i1 = 440.sine(0.5)
-        val i2 = 800.sine(0.0)
+    private val nodeById = topology.refs.map { it.id to it }.toMap()
 
-        val p1 = i1.changeAmplitude(1.7)
-        val p2 = i2.changeAmplitude(1.8)
-                .rangeProjection(0, 1000)
+    private val nodeLinks = topology.links.groupBy { it.from }
 
-        val o1 = p1
-                .trim(5000)
-                .toCsv("file:///users/asubb/tmp/o1.csv")
-        val o2 = (p1 + p2)
-                .trim(3000)
-                .toCsv("file:///users/asubb/tmp/o2.csv")
+    fun build(): List<AnyPod> {
+        val pods = mutableListOf<AnyPod>()
 
+        val createdPods = mutableSetOf<PodKey>()
+        for (nodeRef in topology.refs) {
+            val nodeClazz = Class.forName(nodeRef.type).kotlin
 
-        outputs += o1
-        outputs += o2
+            if (nodeRef.id in createdPods) continue // do not create pods with the same ID more than once.
+            createdPods += nodeRef.id
 
-        val topology = outputs.buildTopology()
-        println("Topology: $topology")
-
-        val nodeById = topology.refs.map { it.id to it }.toMap()
-        val nodeLinks = topology.links.groupBy { it.from }
-
-        fun nodeClazz(ref: BeanRef): KClass<out Any> = Class.forName(ref.type).kotlin
-
-        val pods = mutableMapOf<Int, Pod<*, *>>()
-        topology.refs.forEach { nodeRef ->
-            val nodeClazz = nodeClazz(nodeRef)
-            println(nodeClazz)
-            when {
-
+            val pod = when {
                 nodeClazz.isSubclassOf(SingleBean::class) || nodeClazz.isSubclassOf(AlterBean::class) -> {
                     val constructor = nodeClazz.constructors.first {
                         it.parameters.size == 2 &&
@@ -65,17 +39,11 @@ object BeanRuntimeSpec : Spek({
 
                     val podProxy = PodRegistry.createPodProxy(podProxyType, links[0].id)
 
-                    val pod = PodRegistry.createPod(
+                    PodRegistry.createPod(
                             nodeClazz.supertypes.first { it.isSubtypeOf(typeOf<Bean<*, *>>()) },
                             nodeRef.id,
                             constructor.call(podProxy, nodeRef.params) as Bean<*, *>
                     )
-                    println("#: " + nodeRef.id)
-                    println("POD: " + pod)
-                    println("POD INPUTS: " + pod.inputs())
-                    println("POD INPUT INPUTS: " + pod.inputs().map { it.inputs() })
-
-                    pods[nodeRef.id] = pod
                 }
 
                 nodeClazz.isSubclassOf(SourceBean::class) -> {
@@ -84,17 +52,11 @@ object BeanRuntimeSpec : Spek({
                                 it.parameters[0].type.isSubtypeOf(typeOf<BeanParams>())
                     }
 
-                    val pod = PodRegistry.createPod(
+                    PodRegistry.createPod(
                             nodeClazz.supertypes.first { it.isSubtypeOf(typeOf<Bean<*, *>>()) },
                             nodeRef.id,
                             constructor.call(nodeRef.params) as Bean<*, *>
                     )
-                    println("#: " + nodeRef.id)
-                    println("POD: " + pod)
-                    println("POD INPUTS: " + pod.inputs())
-                    println("POD INPUT INPUTS: " + pod.inputs().map { it.inputs() })
-
-                    pods[nodeRef.id] = pod
                 }
 
                 nodeClazz.isSubclassOf(MultiBean::class) -> {
@@ -114,35 +76,28 @@ object BeanRuntimeSpec : Spek({
                     val podProxy1 = PodRegistry.createPodProxy(podProxyType1, links[0].id)
                     val podProxy2 = PodRegistry.createPodProxy(podProxyType2, links[1].id)
 
-                    val pod = PodRegistry.createPod(
+                    PodRegistry.createPod(
                             nodeClazz.supertypes.first { it.isSubtypeOf(typeOf<Bean<*, *>>()) },
                             nodeRef.id,
                             constructor.call(podProxy1, podProxy2, nodeRef.params) as Bean<*, *>
                     )
-                    println("#: " + nodeRef.id)
-                    println("POD: " + pod)
-                    println("POD INPUTS: " + pod.inputs())
-                    println("POD INPUT INPUTS: " + pod.inputs().map { it.inputs() })
-
-                    pods[nodeRef.id] = pod
-
                 }
-            }
-            println("------")
-        }
 
-        Bush().use { bush ->
-            pods.forEach { (t, u) ->
-                bush.addPod(t, u)
+                else -> throw UnsupportedOperationException("Unsupported class $nodeClazz for decorating")
             }
 
-            PodDiscovery.pods().asSequence()
-                    .filter { it.pod is StreamOutput<*, *> }
-                    .map { it.pod as StreamOutput<*, *> }
-                    .map { Pair(it, it.writer(44100.0f)) }
-                    .map { it.second.write(100); it }
-                    .forEach { it.first.close(); it.second.close() }
+            println("""
+                NODE CLASS: $nodeClazz
+                #: ${nodeRef.id}
+                POD: $pod
+                POD INPUTS: ${pod.inputs()}
+                POD INPUT INPUTS: ${pod.inputs().map { it.inputs() }}
+                -----
+                """.trimIndent())
+
+            pods += pod
         }
 
+        return pods
     }
-})
+}

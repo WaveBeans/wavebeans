@@ -5,7 +5,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 
-class PodWorker(private val pod: Pod<*, *>) : Closeable {
+class PodWorker(val pod: Pod<*, *>) : Closeable {
     private val results = ConcurrentHashMap<Long, PodCallResult>()
 
     private val queue = ConcurrentLinkedQueue<PodTask>()
@@ -17,22 +17,29 @@ class PodWorker(private val pod: Pod<*, *>) : Closeable {
         isStarted.set(true)
         while (isStarted.get()) {
             try {
-                val task = queue.poll()
-                if (task != null) {
-                    val start = System.nanoTime()
-                    println("Got task $task")
-                    try {
-                        val call = Call.parseRequest(task.request)
+                if (pod is TickPod) {
+                    if (!pod.tick()) {
+                        println("Pod $pod has ended his work")
+                        break
+                    }
+                } else {
+                    val task = queue.poll()
+                    if (task != null) {
+                        val start = System.nanoTime()
+                        println("Got task $task")
                         try {
-                            val result = pod.call(call)
-                            results[task.taskId] = result
+                            val call = Call.parseRequest(task.request)
+                            try {
+                                val result = pod.call(call)
+                                results[task.taskId] = result
 
-                            println("For task $task returned $result in ${(System.nanoTime() - start) / 1_000_000.0}ms")
+                                println("For task $task returned $result in ${(System.nanoTime() - start) / 1_000_000.0}ms")
+                            } catch (e: Throwable) {
+                                results[task.taskId] = PodCallResult.wrap(call, e)
+                            }
                         } catch (e: Throwable) {
-                            results[task.taskId] = PodCallResult.wrap(call, e)
+                            results[task.taskId] = PodCallResult.wrap(Call.empty, e)
                         }
-                    } catch (e: Throwable) {
-                        results[task.taskId] = PodCallResult.wrap(Call.empty, e)
                     }
                 }
                 Thread.sleep(0)
@@ -41,11 +48,18 @@ class PodWorker(private val pod: Pod<*, *>) : Closeable {
                 break
             }
         }
-    }.also(Thread::start)
+        isStarted.set(false)
+    }
+
+    @ExperimentalStdlibApi
+    fun start() {
+        podThread.start()
+    }
 
     fun isStarted(): Boolean = isStarted.get()
 
     override fun close() {
+        if (pod is TickPod) pod.terminate()
         isStarted.set(false)
     }
 
