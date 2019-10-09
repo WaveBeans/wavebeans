@@ -45,6 +45,15 @@ object PodCallResultSpec : Spek({
             it("should have non empty byteArray") { assertThat(result.byteArray).isNull() }
             it("should have empty exception") { assertThat(result.exception).isNull() }
         }
+
+        describe("Wrapping list of samples") {
+            val sampleList = listOf(sampleOf(1), sampleOf(2))
+            val result = result(sampleList)
+
+            it("should have non empty byteArray") { assertThat(result.byteArray).isNotNull() }
+            it("should have empty exception") { assertThat(result.exception).isNull() }
+            it("should return valid value") { assertThat(result.sampleList()).isEqualTo(sampleList) }
+        }
     }
 
     describe("Wrapping errors") {

@@ -1,5 +1,6 @@
 package mux.lib.execution
 
+import java.util.concurrent.TimeUnit
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 
@@ -31,6 +32,7 @@ data class Call(
             typeOf<Float>() -> params[key]?.toFloat()
             typeOf<Long>() -> params[key]?.toLong()
             typeOf<Boolean>() -> params[key]?.toBoolean()
+            typeOf<TimeUnit>() -> params[key]?.let { TimeUnit.valueOf(it) }
             else -> throw UnsupportedOperationException("$type is unsupported during call to `$method`")
         }
     }

@@ -1,25 +1,22 @@
 package mux.lib.execution
 
+import assertk.all
 import assertk.assertThat
-import assertk.assertions.isEqualTo
-import assertk.assertions.isNotNull
-import assertk.assertions.isZero
+import assertk.assertions.*
 import assertk.catch
 import com.nhaarman.mockitokotlin2.mock
 import mux.lib.Sample
 import mux.lib.asInt
-import mux.lib.sampleOf
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
-import kotlin.random.Random
+import java.util.concurrent.TimeUnit
 
-val rnd = Random(1234)
-
+@ExperimentalStdlibApi
 class PodProxyTester(
-        val sequence: List<Sample>
+        val pointedTo: AnyPod,
+        val timeToReadAtOnce: Long = 100L,
+        val timeUnit: TimeUnit = TimeUnit.MILLISECONDS
 ) {
-    val pointedTo = rnd.nextInt()
-
     val podDiscovery: PodDiscovery = mock()
 
     var iteratorStartCounter: Int = 0
@@ -30,22 +27,18 @@ class PodProxyTester(
 
     val bushCaller = object : BushCaller {
 
-        var iterator: Iterator<Sample>? = null
-
         override fun call(request: String): PodCallResult {
             val call = Call.parseRequest(request)
-            return when (call.method) {
+            when (call.method) {
                 "iteratorStart" -> {
                     iteratorStartCounter++
-                    iterator = sequence.asSequence().iterator()
-                    PodCallResult.wrap(call, 1L)
                 }
                 "iteratorNext" -> {
                     iteratorNextCounter++
-                    PodCallResult.wrap(call, if (iterator!!.hasNext()) iterator!!.next() else null)
                 }
                 else -> throw UnsupportedOperationException()
             }
+            return pointedTo.call(call)
         }
     }
 
@@ -54,25 +47,97 @@ class PodProxyTester(
     }
 
     val podProxy = object : StreamingPodProxy<Sample>(
-            pointedTo = pointedTo,
+            pointedTo = pointedTo.podKey,
             bushCallerRepository = bushCallerRepository,
-            podDiscovery = podDiscovery
+            podDiscovery = podDiscovery,
+            timeToReadAtOnce = timeToReadAtOnce,
+            timeUnit = timeUnit
     ) {}
 }
 
 
+@UseExperimental(ExperimentalStdlibApi::class)
 object StreamingPodProxySpec : Spek({
 
     describe("Pod Proxy count amount of calls to Pod") {
-        val podProxyTester = PodProxyTester((1..10).map { sampleOf(it) })
+        val podProxyTester = PodProxyTester(
+                pointedTo = newTestPod((1..10).toList()),
+                timeToReadAtOnce = 100L
+        )
 
-        val seq = podProxyTester.podProxy.asSequence(0.0f)
+        val seq = podProxyTester.podProxy.asSequence(20.0f)
         it("should create a sequence") { assertThat(seq).isNotNull() }
         it("should call iteratorStart once") { assertThat(podProxyTester.iteratorStartCounter).isEqualTo(1) }
         val res = seq.take(10).map { it.asInt() }.toList()
         it("should read all samples") { assertThat(res).isEqualTo((1..10).toList()) }
-        it("should call iteratorNext [10 (read samples) + 1 (pre-read sample)] times") {
-            assertThat(podProxyTester.iteratorNextCounter).isEqualTo(11)
+        it("should call iteratorNext 5 times 500ms by 100ms step") {
+            assertThat(podProxyTester.iteratorNextCounter).isEqualTo(5)
         }
+    }
+
+    describe("Iterator testing") {
+        describe("data fits in one buffer") {
+            val seq = PodProxyTester(
+                    pointedTo = newTestPod((1..2).toList()),
+                    timeToReadAtOnce = 1000L
+            ).podProxy.asSequence(2.0f)
+            val iterator = seq.iterator()
+
+            it("should have value on 1st iteration") {
+                assertThat(iterator).all {
+                    prop("hasNext") { it.hasNext() }.isEqualTo(true)
+                    prop("next") { it.next().asInt() }.isEqualTo(1)
+                }
+            }
+            it("should have value on 2nd iteration") {
+                assertThat(iterator).all {
+                    prop("hasNext") { it.hasNext() }.isEqualTo(true)
+                    prop("next") { it.next().asInt() }.isEqualTo(2)
+                }
+            }
+            it("should not have value on 3rd iteration") {
+                assertThat(iterator)
+                        .prop("hasNext") { it.hasNext() }.isEqualTo(false)
+                assertThat(catch { iterator.next() })
+                        .isNotNull()
+                        .isInstanceOf(NoSuchElementException::class)
+                        .message()
+                        .isNotNull()
+                        .isNotEmpty()
+            }
+        }
+
+        describe("data doesn't fit in one buffer") {
+            val seq = PodProxyTester(
+                    pointedTo = newTestPod((1..2).toList()),
+                    timeToReadAtOnce = 1000L
+            ).podProxy.asSequence(1.0f)
+            val iterator = seq.iterator()
+
+            it("should have value on 1st iteration") {
+                assertThat(iterator).all {
+                    prop("hasNext") { it.hasNext() }.isEqualTo(true)
+                    prop("next") { it.next().asInt() }.isEqualTo(1)
+                }
+            }
+            it("should have value on 2nd iteration") {
+                assertThat(iterator).all {
+                    prop("hasNext") { it.hasNext() }.isEqualTo(true)
+                    prop("next") { it.next().asInt() }.isEqualTo(2)
+                }
+            }
+            it("should not have value on 3rd iteration") {
+                assertThat(iterator)
+                        .prop("hasNext") { it.hasNext() }.isEqualTo(false)
+                assertThat(catch { iterator.next() })
+                        .isNotNull()
+                        .isInstanceOf(NoSuchElementException::class)
+                        .message()
+                        .isNotNull()
+                        .isNotEmpty()
+            }
+        }
+
+
     }
 })

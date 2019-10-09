@@ -4,6 +4,8 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeUnit.*
 import kotlin.reflect.KType
 import kotlin.reflect.full.starProjectedType
 import kotlin.reflect.typeOf
@@ -60,6 +62,13 @@ object CallSpec : Spek({
             it("should convert false") { assertThat(call<Boolean>("false")).isEqualTo(false) }
             it("should convert True") { assertThat(call<Boolean>("True")).isEqualTo(true) }
             it("should convert fAlse") { assertThat(call<Boolean>("fAlse")).isEqualTo(false) }
+        }
+
+        describe("TimeUnit type") {
+            it("should convert MILLISECONDS") { assertThat(call<TimeUnit>("MILLISECONDS")).isEqualTo(MILLISECONDS) }
+            it("should convert SECONDS") { assertThat(call<TimeUnit>("SECONDS")).isEqualTo(SECONDS) }
+            it("should convert NANOSECONDS") { assertThat(call<TimeUnit>("NANOSECONDS")).isEqualTo(NANOSECONDS) }
+            it("should convert MICROSECONDS") { assertThat(call<TimeUnit>("MICROSECONDS")).isEqualTo(MICROSECONDS) }
         }
     }
 })

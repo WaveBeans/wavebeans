@@ -8,13 +8,6 @@ import mux.lib.io.StreamOutput
 import mux.lib.io.Writer
 import mux.lib.stream.FiniteSampleStream
 
-interface TickPod {
-
-    fun tick(): Boolean
-
-    fun terminate()
-}
-
 class SampleStreamOutputPod(
         val bean: StreamOutput<Sample, FiniteSampleStream>,
         override val podKey: PodKey
@@ -22,12 +15,11 @@ class SampleStreamOutputPod(
 
     // TODO that should be the part of configuration
     private val sampleRate = 44100.0f
-    private val durationForTick = 1L
+    private val durationForTick = 10L
 
     private val writer by lazy { bean.writer(sampleRate) }
 
     override fun tick(): Boolean {
-        println("Tick $podKey")
         return writer.write(durationForTick)
     }
 

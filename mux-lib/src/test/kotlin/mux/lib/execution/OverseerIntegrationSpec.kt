@@ -27,26 +27,39 @@ object OverseerIntegrationSpec : Spek({
                 .rangeProjection(0, 1000)
 
         val o1 = p1
-                .trim(10)
+                .trim(1000)
                 .toCsv("file://${f1.absolutePath}")
         val o2 = (p1 + p2)
-                .trim(10)
+                .trim(1000)
                 .toCsv("file://${f2.absolutePath}")
 
         val topology = listOf(o1, o2).buildTopology()
         println("Topology: $topology")
 
-        // there are tick pods on the topology, they'll pick up and start working
-        val time = measureTimeMillis {
-            Overseer()
+        val overseer = Overseer()
+
+        val timeToDeploy = measureTimeMillis {
+            overseer
                     .deployTopology(topology)
-                    .waitToFinish()
-                    .close()
+        }
+        val timeToProcess = measureTimeMillis {
+            overseer.waitToFinish()
+        }
+        val timeToFinalize = measureTimeMillis {
+            overseer.close()
         }
 
-        println("Took $time ms")
-
         it("should have the same output") { assertThat(f1.readText()).isEqualTo(f2.readText()) }
+
+        val localRunTime = measureTimeMillis {
+            listOf(o1, o2)
+                    .map { Pair(it, it.writer(44100.0f)) }
+                    .map { it.second.write(1000); it }
+                    .forEach { it.first.close(); it.second.close() }
+        }
+
+        println("Deploy took $timeToDeploy ms, processing took $timeToProcess ms, " +
+                "finalizing took $timeToFinalize ms, local run time is $localRunTime ms")
 
     }
 })
