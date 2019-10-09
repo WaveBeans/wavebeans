@@ -43,7 +43,6 @@ class Bush(
                     }
                     println("Pod started [$podKey]${worker.pod}")
                 }
-
     }
 
     fun addPod(pod: AnyPod) {
@@ -68,7 +67,7 @@ class Bush(
         }
     }
 
-    fun call(podKey: PodKey, request: String, timeout: Long = 1000L, timeUnit: TimeUnit = TimeUnit.MILLISECONDS): PodCallResult {
+    fun call(podKey: PodKey, request: String, timeout: Long = 10000L, timeUnit: TimeUnit = TimeUnit.MILLISECONDS): PodCallResult {
         val podWorker = workers[podKey] ?: TODO("pod not on the bush case")
 
         check(podWorker.isStarted()) { "PodWorker $podKey is not started. Can't do request `$request`" }
@@ -76,14 +75,20 @@ class Bush(
         val start = System.nanoTime()
         val taskId = taskIdSeq.incrementAndGet()
         val task = PodTask(taskId, podKey, request)
-        println("Enqueued task $task")
+//        println("Enqueued task $task")
         podWorker.enqueue(task)
+        var timeoutWarningFired = false
         val nanoTimeout = TimeUnit.NANOSECONDS.convert(timeout, timeUnit)
         while (true) {
             val r = podWorker.result(taskId)
             if (r != null) {
-                println("Call to pod[$podKey] for `$request` took ${(System.nanoTime() - start) / 1_000_000.0}ms")
+//                println("Call to pod[$podKey] for `$request` took ${(System.nanoTime() - start) / 1_000_000.0}ms")
                 return r
+            }
+            if (!timeoutWarningFired && start + nanoTimeout / 2 - System.nanoTime() <= 0) {
+                println("[WARNING] Long call to Pod [$podKey] for $request\n" +
+                        Thread.currentThread().stackTrace.joinToString(separator = "\n") { it.toString() })
+                timeoutWarningFired = true
             }
             if (start + nanoTimeout - System.nanoTime() <= 0)
                 throw TimeoutException("Unable to call Pod with key=$podKey, request=`$request` within $timeout $timeUnit")

@@ -5,11 +5,15 @@ import mux.lib.timeToSampleIndexFloor
 import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
+import kotlin.collections.ArrayList
 import kotlin.math.max
 import kotlin.math.min
 
 // the class is not thread safe
-abstract class StreamingPod<T : Any, S : Any>(override val podKey: PodKey) : Pod<T, S>, BeanStream<T, S> {
+abstract class StreamingPod<T : Any, S : Any>(
+        override val podKey: PodKey,
+        val unclaimedElementsCleanupThreshold: Int = 1024
+) : Pod<T, S>, BeanStream<T, S> {
 
     companion object {
         private val idSeq = AtomicLong(0)
@@ -23,7 +27,7 @@ abstract class StreamingPod<T : Any, S : Any>(override val podKey: PodKey) : Pod
     private var iterator: PodIterator<T>? = null
 
     private val offsets = HashMap<Long, Long>()
-    private val buffer = LinkedList<T>()
+    private var buffer = ArrayList<T>()
     private var globalOffset = 0L
 
     fun iteratorStart(sampleRate: Float): Long {
@@ -34,7 +38,7 @@ abstract class StreamingPod<T : Any, S : Any>(override val podKey: PodKey) : Pod
         return key
     }
 
-    fun iteratorNext(iteratorKey: Long, length: Long, timeUnit: TimeUnit, pushOffset: Boolean = true): List<T>? {
+    fun iteratorNext(iteratorKey: Long, length: Long, timeUnit: TimeUnit): List<T>? {
         val pi = iterator
         check(pi != null) { "Pod wasn't initialized properly. Iterator not found. Call `start` first." }
         val offset = offsets[iteratorKey]
@@ -47,7 +51,7 @@ abstract class StreamingPod<T : Any, S : Any>(override val podKey: PodKey) : Pod
         while (bufferPos + samplesCount >= buffer.size) {
             if (pi.iterator.hasNext()) {
                 val element = pi.iterator.next()
-                buffer.addLast(element)
+                buffer.add(element)
             } else {
                 break
             }
@@ -66,12 +70,11 @@ abstract class StreamingPod<T : Any, S : Any>(override val podKey: PodKey) : Pod
             offsets[iteratorKey] = offset + sampleToRead
 
             // if all iterators consumed data, push the global offset forward and drop the unneeded data from buffer
-            if (pushOffset) {
-                val newGlobalOffset = offsets.values.min() ?: 0
-                val currentGlobalOffset = globalOffset
-                repeat((newGlobalOffset - currentGlobalOffset).toInt()) {
-                    buffer.removeFirst()
-                }
+            val newGlobalOffset = offsets.values.min() ?: 0
+            val currentGlobalOffset = globalOffset
+            val unclaimedElements = (newGlobalOffset - currentGlobalOffset).toInt()
+            if (unclaimedElements >= unclaimedElementsCleanupThreshold) {
+                buffer = ArrayList(buffer.subList(unclaimedElements, buffer.size))
                 globalOffset = newGlobalOffset
             }
 

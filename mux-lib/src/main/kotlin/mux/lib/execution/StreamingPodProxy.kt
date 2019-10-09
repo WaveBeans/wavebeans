@@ -35,12 +35,11 @@ abstract class StreamingPodProxy<S : Any>(
                 return s[pointer++]
             }
 
-            private fun tryReadSamples(pushOffset: Boolean = true): List<Sample>? {
+            private fun tryReadSamples(): List<Sample>? {
                 if (samples == null || pointer >= samples?.size ?: 0) {
                     samples = caller.call(
                             "iteratorNext" +
                                     "?iteratorKey=$iteratorKey" +
-                                    "&pushOffset=$pushOffset" +
                                     "&length=$timeToReadAtOnce" +
                                     "&timeUnit=$timeUnit"
                     ).nullableSampleList()

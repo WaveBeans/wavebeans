@@ -13,9 +13,10 @@ class PodWorker(val pod: Pod<*, *>) : Closeable {
     private val isStarted = AtomicBoolean(false)
 
     @ExperimentalStdlibApi
-    private val podThread = Thread {
+    private val podThread = Thread({
         isStarted.set(true)
-        while (isStarted.get()) {
+        var i = 0
+        while (true) {
             try {
                 if (pod is TickPod) {
                     if (!pod.tick()) {
@@ -26,14 +27,14 @@ class PodWorker(val pod: Pod<*, *>) : Closeable {
                     val task = queue.poll()
                     if (task != null) {
                         val start = System.nanoTime()
-                        println("Got task $task")
+//                        println("Got task $task")
                         try {
                             val call = Call.parseRequest(task.request)
                             try {
                                 val result = pod.call(call)
                                 results[task.taskId] = result
 
-                                println("For task $task returned $result in ${(System.nanoTime() - start) / 1_000_000.0}ms")
+//                                println("For task $task returned $result in ${(System.nanoTime() - start) / 1_000_000.0}ms")
                             } catch (e: Throwable) {
                                 results[task.taskId] = PodCallResult.wrap(call, e)
                             }
@@ -42,14 +43,18 @@ class PodWorker(val pod: Pod<*, *>) : Closeable {
                         }
                     }
                 }
-                Thread.sleep(0)
+                if (i++ % 1000 == 0) {
+                    i = 0
+                    if (!isStarted.get()) break
+                }
+                Thread.sleep(1)
             } catch (e: InterruptedException) {
                 println("Got interrupted")
                 break
             }
         }
         isStarted.set(false)
-    }
+    }, pod.toString())
 
     @ExperimentalStdlibApi
     fun start() {

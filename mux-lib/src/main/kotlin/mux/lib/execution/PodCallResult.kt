@@ -56,25 +56,21 @@ internal fun Sample.encodeBytes(): ByteArray = this.toBits().encodeBytes()
 
 fun PodCallResult.sample(): Sample = Double.fromBits(this.long())
 
-internal fun <T : Any> encodeList(list: List<T>, elementEncoder: (ObjectOutputStream, T) -> Unit): ByteArray =
-        ByteArrayOutputStream().use { baos ->
-            ObjectOutputStream(baos).use { oos ->
-                oos.writeInt(list.size)
-                list.forEach {
-                    elementEncoder(oos, it)
-                }
-            }
-            baos.toByteArray()
-        }
+internal fun <T : Any> encodeList(list: List<T>, elementSize: Int, elementWriter: (ByteArray, Int, T) -> Unit): ByteArray {
+    val buf = ByteArray(4 + elementSize * list.size)
+    writeInt(list.size, buf, 0)
+    list.forEachIndexed { index, t ->
+        elementWriter(buf, 4 + index * elementSize, t)
+    }
+    return buf
+}
 
 
-internal fun encodeEmptyList(): ByteArray =
-        ByteArrayOutputStream().use { baos ->
-            ObjectOutputStream(baos).use { oos ->
-                oos.writeInt(0)
-            }
-            baos.toByteArray()
-        }
+internal fun encodeEmptyList(): ByteArray {
+    val buf = ByteArray(4)
+    writeInt(0, buf, 0)
+    return buf
+}
 
 
 internal fun List<*>.encodeBytes(): ByteArray =
@@ -83,23 +79,27 @@ internal fun List<*>.encodeBytes(): ByteArray =
         } else {
             val value = this.first()
             when (value) {
-                is Sample -> encodeList(this as List<Sample>) { oos, el -> oos.writeDouble(el) }
+                is Sample -> encodeList(this as List<Sample>, 8) { buf, at, el -> writeLong(el.toBits(), buf, at) }
                 else -> throw UnsupportedOperationException("${value!!::class}")
             }
         }
 
 
 fun PodCallResult.sampleList(): List<Sample> =
-        throwIfError().byteArray?.let { ba ->
-            ObjectInputStream(ByteArrayInputStream(ba)).use { ois ->
-                val elementsCount = ois.readInt()
-
-                (0 until elementsCount).map { ois.readDouble() }.toList()
+        throwIfError().byteArray?.let { buf ->
+            val size = readInt(buf, 0)
+            if (size > 0) {
+                val list = ArrayList<Sample>(size)
+                (0 until size).forEach {
+                    list.add(Double.fromBits(readLong(buf, 4 + it * 8)))
+                }
+                list
+            } else {
+                emptyList<Sample>()
             }
         } ?: throw IllegalStateException("Can't decode null", this.exception)
 
-fun PodCallResult.nullableSampleList(): List<Sample>? =
-        ifNotNull { this.sampleList() }
+fun PodCallResult.nullableSampleList(): List<Sample>? = ifNotNull { this.sampleList() }
 
 internal fun PodCallResult.throwIfError(): PodCallResult =
         if (this.exception != null) throw IllegalStateException("Got exception during call ${this.call}", this.exception)
@@ -109,4 +109,30 @@ internal fun PodCallResult.throwIfError(): PodCallResult =
 internal fun <T> PodCallResult.ifNotNull(function: () -> T): T? =
         throwIfError()
                 .byteArray?.let { function() }
+
+internal fun writeLong(value: Long, buf: ByteArray, at: Int) {
+    check(buf.size - at >= 8) { "Buffer is not enough to fit Long value (${buf.size - at} bytes left)" }
+    writeInt((value and 0xFFFFFFFF).toInt(), buf, at)
+    writeInt(((value ushr 32) and 0xFFFFFFFF).toInt(), buf, at + 4)
+}
+
+internal fun readLong(buf: ByteArray, from: Int): Long {
+    return readInt(buf, from).toLong() or
+            (readInt(buf, from + 4).toLong() shl 32)
+}
+
+internal fun writeInt(value: Int, buf: ByteArray, at: Int) {
+    check(buf.size - at >= 4) { "Buffer is not enough to fit Int value (${buf.size - at} bytes left)" }
+    buf[at + 0] = (value and 0xFF).toByte()
+    buf[at + 1] = (value ushr 8 and 0xFF).toByte()
+    buf[at + 2] = (value ushr 16 and 0xFF).toByte()
+    buf[at + 3] = (value ushr 24 and 0xFF).toByte()
+}
+
+internal fun readInt(buf: ByteArray, from: Int): Int {
+    return (buf[from + 0].toInt() and 0xFF) or
+            (buf[from + 1].toInt() and 0xFF shl 8) or
+            (buf[from + 2].toInt() and 0xFF shl 16) or
+            (buf[from + 3].toInt() and 0xFF shl 24)
+}
 

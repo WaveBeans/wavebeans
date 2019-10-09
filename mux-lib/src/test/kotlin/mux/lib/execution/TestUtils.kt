@@ -8,7 +8,7 @@ import mux.lib.stream.SampleStream
 import java.util.concurrent.TimeUnit
 
 fun newTestPod(seq: List<Int>): StreamingPod<Sample, SampleStream> {
-    return object : StreamingPod<Sample, SampleStream>(1) {
+    return object : StreamingPod<Sample, SampleStream>(1, unclaimedElementsCleanupThreshold = 0) {
         override fun inputs(): List<Bean<*, *>> = throw UnsupportedOperationException()
 
         override val parameters: BeanParams
