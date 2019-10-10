@@ -1,5 +1,6 @@
 package mux.lib.io
 
+import mux.lib.Bean
 import mux.lib.BeanParams
 import mux.lib.stream.FftSample
 import mux.lib.stream.FiniteFftStream
@@ -29,36 +30,43 @@ data class CsvFftStreamOutputParams(
 class CsvFftStreamOutput(
         stream: FiniteFftStream,
         val params: CsvFftStreamOutputParams
-) : FileStreamOutput<FftSample, FiniteFftStream>(stream, params.uri) {
+) : StreamOutput<FftSample, FiniteFftStream> {
+
+    override fun writer(sampleRate: Float): Writer {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override val input: Bean<FftSample, FiniteFftStream>
+        get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
 
     override val parameters: BeanParams = params
 
-    override fun header(dataSize: Int): ByteArray? = null
-
-    override fun footer(dataSize: Int): ByteArray? = null
-
-    override fun serialize(offset: Long, sampleRate: Float, samples: List<FftSample>): ByteArray {
-        return samples.asSequence()
-                .mapIndexed { idx, fftSample ->
-                    val seq = if (params.isMagnitude)
-                        fftSample.magnitude.map { it.toString() }
-                    else
-                        fftSample.phase.map { it.toString() }
-
-
-                    var b = (sequenceOf(fftSample.time / 10e+6) + seq)
-                            .joinToString(",")
-
-                    if (offset + idx == 0L) {
-                        b = (sequenceOf("time ms \\ freq hz") + fftSample.frequency.map { it.toString() }).joinToString(",") +
-                                "\n$b"
-                    }
-
-                    b
-                }
-                .joinToString(separator = "\n")
-                .toByteArray(params.encoding)
-    }
+//    override fun header(dataSize: Int): ByteArray? = null
+//
+//    override fun footer(dataSize: Int): ByteArray? = null
+//
+//    override fun serialize(offset: Long, sampleRate: Float, samples: List<FftSample>): ByteArray {
+//        return samples.asSequence()
+//                .mapIndexed { idx, fftSample ->
+//                    val seq = if (params.isMagnitude)
+//                        fftSample.magnitude.map { it.toString() }
+//                    else
+//                        fftSample.phase.map { it.toString() }
+//
+//
+//                    var b = (sequenceOf(fftSample.time / 10e+6) + seq)
+//                            .joinToString(",")
+//
+//                    if (offset + idx == 0L) {
+//                        b = (sequenceOf("time ms \\ freq hz") + fftSample.frequency.map { it.toString() }).joinToString(",") +
+//                                "\n$b"
+//                    }
+//
+//                    b
+//                }
+//                .joinToString(separator = "\n")
+//                .toByteArray(params.encoding)
+//    }
 
 
 

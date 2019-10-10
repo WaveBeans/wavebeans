@@ -10,20 +10,21 @@ import mux.lib.stream.trim
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.io.File
+import java.lang.Thread.sleep
 import kotlin.system.measureTimeMillis
 
 @ExperimentalStdlibApi
 object OverseerIntegrationSpec : Spek({
 
     describe("Two outputs with different paths but same content") {
-        val f1 = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
-        val f2 = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
+        val f1 = File.createTempFile("test", ".csv")//.also { it.deleteOnExit() }
+        val f2 = File.createTempFile("test", ".csv")//.also { it.deleteOnExit() }
 
         val i1 = 440.sine(0.5)
         val i2 = 800.sine(0.0)
 
-        val p1 = i1.changeAmplitude(1.7)
-        val p2 = i2.changeAmplitude(1.8)
+        val p1 = i1//.changeAmplitude(1.7)
+        val p2 = i2//.changeAmplitude(1.8)
                 .rangeProjection(0, 1000)
 
         val o1 = p1
@@ -39,23 +40,26 @@ object OverseerIntegrationSpec : Spek({
         val overseer = Overseer()
 
         val timeToDeploy = measureTimeMillis {
-//            overseer
-//                    .deployTopology(topology)
+            overseer.deployTopology(topology)
         }
         val timeToProcess = measureTimeMillis {
-//            overseer.waitToFinish()
+            overseer.waitToFinish()
         }
         val timeToFinalize = measureTimeMillis {
-//            overseer.close()
+            overseer.close()
         }
 
         it("should have the same output") { assertThat(f1.readText()).isEqualTo(f2.readText()) }
 
         val localRunTime = measureTimeMillis {
             listOf(o1, o2)
-                    .map { Pair(it, it.writer(44100.0f)) }
-                    .map { it.second.write(1000); it }
-                    .forEach { it.first.close(); it.second.close() }
+                    .map { it.writer(44100.0f) }
+                    .forEach {
+                        while (it.write()) {
+//                            sleep(0)
+                        }
+                        it.close()
+                    }
         }
 
         println("Deploy took $timeToDeploy ms, processing took $timeToProcess ms, " +

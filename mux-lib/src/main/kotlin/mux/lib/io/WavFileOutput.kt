@@ -41,44 +41,44 @@ class WavFileOutput(
 
     override val parameters: BeanParams = params
 
-    override fun header(dataSize: Int): ByteArray? {
-        val destination = ByteArrayOutputStream()
-        /** Create sub chunk 1 content*/
-        val sc1Content = ByteArrayOutputStream()
-        val sc1ContentStream = DataOutputStream(sc1Content)
-        writeConstantShort("PCM audio format", sc1ContentStream, PCM_FORMAT)
-        writeLittleEndianIntAsShort("numberOfChannels", sc1ContentStream, params.numberOfChannels)
-        writeLittleEndianInt("sampleRate", sc1ContentStream, sampleRate().toInt())
-        writeLittleEndianInt("byteRate", sc1ContentStream, sampleRate().toInt() * params.numberOfChannels * bitDepth.bytesPerSample)
-        writeLittleEndianIntAsShort("byteAlign", sc1ContentStream, params.numberOfChannels * bitDepth.bytesPerSample)
-        writeLittleEndianIntAsShort("bitDepth", sc1ContentStream, bitDepth.bits)
-        val sc1 = sc1Content.toByteArray()
-
-        /** Creating sub chunk. */
-        val subChunk1ByteArrayStream = ByteArrayOutputStream()
-        val chunk1Stream = DataOutputStream(subChunk1ByteArrayStream)
-        writeConstantInt("WAVE", chunk1Stream, WAVE)
-        writeConstantInt("fmt", chunk1Stream, FMT)
-        writeLittleEndianInt("subChunk1Size", chunk1Stream, sc1.size)
-        chunk1Stream.write(sc1)
-        val subChunk1 = subChunk1ByteArrayStream.toByteArray()
-
-        val dos = DataOutputStream(destination)
-        /** Chunk */
-        writeConstantInt("RIFF", dos, RIFF) // TODO consider writing RIFX -- Big Endian format
-        val chunkSize = 4 + (8 + subChunk1.size) + (8 + dataSize)
-        writeLittleEndianInt("chunkSize", dos, chunkSize)
-        /** Sub Chunk 1 */
-        dos.write(subChunk1)
-
-        /** Sub Chunk 2 */
-        writeConstantInt("Data", dos, DATA)
-        writeLittleEndianInt("dataSize", dos, dataSize)
-
-        return destination.toByteArray()
-    }
-
-    override fun footer(dataSize: Int): ByteArray? = null
+//    override fun header(dataSize: Int): ByteArray? {
+//        val destination = ByteArrayOutputStream()
+//        /** Create sub chunk 1 content*/
+//        val sc1Content = ByteArrayOutputStream()
+//        val sc1ContentStream = DataOutputStream(sc1Content)
+//        writeConstantShort("PCM audio format", sc1ContentStream, PCM_FORMAT)
+//        writeLittleEndianIntAsShort("numberOfChannels", sc1ContentStream, params.numberOfChannels)
+//        writeLittleEndianInt("sampleRate", sc1ContentStream, sampleRate().toInt())
+//        writeLittleEndianInt("byteRate", sc1ContentStream, sampleRate().toInt() * params.numberOfChannels * bitDepth.bytesPerSample)
+//        writeLittleEndianIntAsShort("byteAlign", sc1ContentStream, params.numberOfChannels * bitDepth.bytesPerSample)
+//        writeLittleEndianIntAsShort("bitDepth", sc1ContentStream, bitDepth.bits)
+//        val sc1 = sc1Content.toByteArray()
+//
+//        /** Creating sub chunk. */
+//        val subChunk1ByteArrayStream = ByteArrayOutputStream()
+//        val chunk1Stream = DataOutputStream(subChunk1ByteArrayStream)
+//        writeConstantInt("WAVE", chunk1Stream, WAVE)
+//        writeConstantInt("fmt", chunk1Stream, FMT)
+//        writeLittleEndianInt("subChunk1Size", chunk1Stream, sc1.size)
+//        chunk1Stream.write(sc1)
+//        val subChunk1 = subChunk1ByteArrayStream.toByteArray()
+//
+//        val dos = DataOutputStream(destination)
+//        /** Chunk */
+//        writeConstantInt("RIFF", dos, RIFF) // TODO consider writing RIFX -- Big Endian format
+//        val chunkSize = 4 + (8 + subChunk1.size) + (8 + dataSize)
+//        writeLittleEndianInt("chunkSize", dos, chunkSize)
+//        /** Sub Chunk 1 */
+//        dos.write(subChunk1)
+//
+//        /** Sub Chunk 2 */
+//        writeConstantInt("Data", dos, DATA)
+//        writeLittleEndianInt("dataSize", dos, dataSize)
+//
+//        return destination.toByteArray()
+//    }
+//
+//    override fun footer(dataSize: Int): ByteArray? = null
 
     protected fun writeConstantInt(target: String, d: DataOutputStream, v: Int) {
         try {

@@ -15,22 +15,18 @@ class SampleStreamOutputPod(
 
     // TODO that should be the part of configuration
     private val sampleRate = 44100.0f
-    private val durationForTick = 10L
 
     private val writer by lazy { bean.writer(sampleRate) }
 
     override fun tick(): Boolean {
-        return writer.write(durationForTick)
+        return writer.write()
     }
 
     override fun terminate() {
         writer.close()
-        bean.close()
     }
 
     override fun writer(sampleRate: Float): Writer = throw UnsupportedOperationException("Not required by pod")
-
-    override fun close() = throw UnsupportedOperationException("Not required by pod")
 
     override val parameters: BeanParams
         get() = NoParams()

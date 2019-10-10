@@ -25,7 +25,8 @@ object GenCommandSpec : Spek({
                 val expected = generator.asSequence(50.0f).toList()
                 val actual = (scope as AudioStreamScope).samples.asSequence(50.0f).toList()
                 actual.forEachIndexed { idx, v ->
-                    assertThat(v, "expectedList=$expected actualList=$actual @ $idx").isCloseTo(expected[idx], 0.000001)
+//                    assertThat(v, "expectedList=$expected actualList=$actual @ $idx").isCloseTo(expected[idx], 0.000001)
+                    TODO()
                 }
             }
         }

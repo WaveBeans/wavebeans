@@ -41,26 +41,33 @@ data class CsvSampleStreamOutputParams(
 }
 
 class CsvSampleStreamOutput(
-        stream: FiniteSampleStream,
+        val stream: FiniteSampleStream,
         val params: CsvSampleStreamOutputParams
-) : FileStreamOutput<SampleArray, FiniteSampleStream>(stream, params.uri()) {
+) : StreamOutput<SampleArray, FiniteSampleStream> {
+
+    override fun writer(sampleRate: Float): Writer {
+        var offset = 0L
+        return object : FileWriter<SampleArray, FiniteSampleStream>(URI(params.uri), stream, sampleRate) {
+            override fun header(dataSize: Int): ByteArray? = "time ${params.outputTimeUnit.abbreviation()}, value\n".toByteArray(params.encoding())
+
+            override fun footer(dataSize: Int): ByteArray? = null
+
+            override fun serialize(sampleRate: Float, samples: SampleArray): ByteArray {
+                return samples.asSequence()
+                        .mapIndexed { idx, sample ->
+                            val time = samplesCountToLength(offset++, sampleRate, params.outputTimeUnit)
+                            "$time,$sample\n"
+                        }
+                        .joinToString(separator = "")
+                        .toByteArray(params.encoding())
+            }
+
+        }
+    }
+
+    override val input: Bean<SampleArray, FiniteSampleStream>
+        get() = stream
 
     override val parameters: BeanParams = params
 
-    override fun header(dataSize: Int): ByteArray? = "time ${params.outputTimeUnit.abbreviation()}, value\n".toByteArray(params.encoding())
-
-    override fun footer(dataSize: Int): ByteArray? = null
-
-    override fun serialize(offset: Long, sampleRate: Float, sampleArrays: List<SampleArray>): ByteArray {
-        return sampleArrays.asSequence()
-                .mapIndexed { idx, samples ->
-                    samples.joinToString(separator = "\n") { sample ->
-                        val time = samplesCountToLength(offset + idx, sampleRate, params.outputTimeUnit)
-                        "$time,$sample\n"
-
-                    }
-                }
-                .joinToString(separator = "")
-                .toByteArray(params.encoding())
-    }
 }

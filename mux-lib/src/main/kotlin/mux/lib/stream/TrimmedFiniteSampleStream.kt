@@ -23,10 +23,28 @@ class TrimmedFiniteSampleStream(
 
     override val input: Bean<SampleArray, SampleStream> = sampleStream
 
-    override fun asSequence(sampleRate: Float): Sequence<SampleArray> =
-            sampleStream
-                    .asSequence(sampleRate)
-                    .take(timeToSampleIndexFloor(TimeUnit.NANOSECONDS.convert(params.length, params.timeUnit), TimeUnit.NANOSECONDS, sampleRate).toInt())
+    override fun asSequence(sampleRate: Float): Sequence<SampleArray> {
+        var samplesToTake = timeToSampleIndexFloor(TimeUnit.NANOSECONDS.convert(params.length, params.timeUnit), TimeUnit.NANOSECONDS, sampleRate)
+        val iterator = sampleStream.asSequence(sampleRate).iterator()
+
+        return object : Iterator<SampleArray> {
+
+            override fun hasNext(): Boolean =
+                    samplesToTake > 0 && iterator.hasNext()
+
+            override fun next(): SampleArray {
+                val a = iterator.next()
+                return if (samplesToTake < a.size) {
+                    samplesToTake = 0
+                    a.copyOf(samplesToTake.toInt())
+                } else {
+                    samplesToTake -= a.size
+                    a
+                }
+            }
+
+        }.asSequence()
+    }
 
     override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): TrimmedFiniteSampleStream =
             TrimmedFiniteSampleStream(

@@ -10,6 +10,8 @@ import java.io.BufferedReader
 import java.io.File
 import java.io.FileInputStream
 import java.io.InputStreamReader
+import java.lang.Thread.sleep
+import java.lang.Thread.sleep
 import java.util.concurrent.TimeUnit
 import kotlin.streams.toList
 
@@ -21,10 +23,9 @@ class CsvSampleStreamOutputSpec : Spek({
 
         describe("Writing to CSV with 100ms steps") {
             val file = File.createTempFile("test_", ".mux.tmp")
-            CsvSampleStreamOutput(x, CsvSampleStreamOutputParams(file.toURI().toString(), TimeUnit.MILLISECONDS)).use { csvOutput ->
-                csvOutput.writer(sampleRate).use {
-                    while (it.write(100, TimeUnit.MILLISECONDS)) {
-                    }
+            CsvSampleStreamOutput(x, CsvSampleStreamOutputParams(file.toURI().toString(), TimeUnit.MILLISECONDS)).writer(sampleRate).use { w ->
+                while (w.write()) {
+                    sleep(0)
                 }
             }
 
@@ -74,10 +75,9 @@ class CsvSampleStreamOutputSpec : Spek({
 
         describe("Writing to CSV with 100ms steps") {
             val file = File.createTempFile("test_", ".mux.tmp")
-            CsvSampleStreamOutput(x, CsvSampleStreamOutputParams(file.toURI().toString(), TimeUnit.MILLISECONDS)).use { csvOutput ->
-                csvOutput.writer(sampleRate).use {
-                    while (it.write(100, TimeUnit.MILLISECONDS)) {
-                    }
+            CsvSampleStreamOutput(x, CsvSampleStreamOutputParams(file.toURI().toString(), TimeUnit.MILLISECONDS)).writer(sampleRate).use { w ->
+                while (w.write()) {
+                    sleep(0)
                 }
             }
 

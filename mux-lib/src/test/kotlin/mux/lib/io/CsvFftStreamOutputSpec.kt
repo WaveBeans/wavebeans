@@ -14,6 +14,7 @@ import java.io.BufferedReader
 import java.io.File
 import java.io.FileInputStream
 import java.io.InputStreamReader
+import java.lang.Thread.sleep
 import kotlin.streams.toList
 
 
@@ -30,9 +31,9 @@ class CsvFftStreamOutputSpec : Spek({
 
         describe("Generating magnitude") {
             val file = File.createTempFile("test_", ".mux.tmp")
-            CsvFftStreamOutput(x, CsvFftStreamOutputParams(file.toURI(), true)).use {csvOutput ->
-                csvOutput.writer(sampleRate).use {
-                    it.write(1000)
+            CsvFftStreamOutput(x, CsvFftStreamOutputParams(file.toURI(), true)).writer(sampleRate).use { w ->
+                while (w.write()) {
+                    sleep(0)
                 }
             }
 
@@ -75,9 +76,9 @@ class CsvFftStreamOutputSpec : Spek({
 
         describe("Generating phase") {
             val file = File.createTempFile("test_", ".mux.tmp")
-            CsvFftStreamOutput(x, CsvFftStreamOutputParams(file.toURI(), false)).use {csvOutput ->
-                csvOutput.writer(sampleRate).use {
-                    it.write(1000)
+            CsvFftStreamOutput(x, CsvFftStreamOutputParams(file.toURI(), false)).writer(sampleRate).use { w ->
+                while (w.write()) {
+                    sleep(0)
                 }
             }
 

@@ -9,13 +9,20 @@ abstract class ByteArrayLittleEndianFileOutput(
         uri: URI,
         val finiteSampleStream: FiniteSampleStream,
         val bitDepth: BitDepth
-) : FileStreamOutput<SampleArray, FiniteSampleStream>(finiteSampleStream, uri) {
+) : StreamOutput<SampleArray, FiniteSampleStream> {
+
+    override val input: Bean<SampleArray, FiniteSampleStream>
+        get() = finiteSampleStream
 
     private var sampleRate: Float? = null
 
     protected fun sampleRate(): Float = sampleRate ?: throw IllegalStateException("Sample rate is not yet initialized")
 
-    override fun serialize(offset: Long, sampleRate: Float, samples: List<SampleArray>): ByteArray {
+    override fun writer(sampleRate: Float): Writer {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+//    override fun serialize(offset: Long, sampleRate: Float, samples: List<SampleArray>): ByteArray {
 //        this.sampleRate = sampleRate
 //
 //        val buf = ByteArray(samples.size * bitDepth.bytesPerSample)
@@ -49,6 +56,6 @@ abstract class ByteArrayLittleEndianFileOutput(
 //        }
 //
 //        return buf
-        TODO()
-    }
+//        TODO()
+//    }
 }
