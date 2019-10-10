@@ -1,10 +1,7 @@
 package mux.lib.io
 
 import kotlinx.serialization.Serializable
-import mux.lib.BeanParams
-import mux.lib.Sample
-import mux.lib.ZeroSample
-import mux.lib.sampleOf
+import mux.lib.*
 import mux.lib.stream.SampleStream
 import mux.lib.stream.SampleStreamException
 import mux.lib.stream.sampleStream
@@ -47,19 +44,24 @@ class SineGeneratedInput constructor(
             SineGeneratedInput(params.copy(timeOffset = s + params.timeOffset))
     }
 
-    override fun asSequence(sampleRate: Float): Sequence<Sample> {
-        return object : Iterator<Sample> {
+    override fun asSequence(sampleRate: Float): Sequence<SampleArray> {
+        return object : Iterator<SampleArray> {
 
             private var x = params.timeOffset
             private val delta = 1.0 / sampleRate // sinusoid automatically resamples to output sample rate
 
             override fun hasNext(): Boolean = true
 
-            override fun next(): Sample {
-                if (params.time != null && x >= params.time + params.timeOffset) return ZeroSample
-                val r = sampleOf(sineOf(x))
-                x += delta
-                return r
+            override fun next(): SampleArray {
+                return createSampleArray(512) {
+                    if (params.time != null && x >= params.time + params.timeOffset) {
+                        ZeroSample
+                    } else {
+                        val r = sampleOf(sineOf(x))
+                        x += delta
+                        r
+                    }
+                }
             }
         }.asSequence()
     }

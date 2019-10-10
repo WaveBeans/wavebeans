@@ -3,9 +3,10 @@ package mux.lib.io
 import mux.lib.BeanStream
 import mux.lib.SourceBean
 import mux.lib.Sample
+import mux.lib.SampleArray
 import java.util.concurrent.TimeUnit
 
-interface FiniteInput : BeanStream<Sample, FiniteInput>, SourceBean<Sample, FiniteInput> {
+interface FiniteInput : BeanStream<SampleArray, FiniteInput>, SourceBean<SampleArray, FiniteInput> {
 
     /** Amount of samples available */
     fun samplesCount(): Int

@@ -2,6 +2,7 @@ package mux.lib.execution
 
 import mux.lib.Bean
 import mux.lib.Sample
+import mux.lib.SampleArray
 import mux.lib.io.StreamInput
 import mux.lib.io.StreamOutput
 import mux.lib.stream.FiniteSampleStream
@@ -23,7 +24,7 @@ object PodRegistry {
         registerPodProxy(typeOf<StreamInput>(), StreamInputPodProxy::class.constructors.first())
         registerPod(typeOf<FiniteSampleStream>(), FiniteSampleStreamPod::class.constructors.first())
         registerPod(typeOf<SampleStream>(), SampleStreamPod::class.constructors.first())
-        registerPod(typeOf<StreamOutput<Sample, FiniteSampleStream>>(), SampleStreamOutputPod::class.constructors.first())
+        registerPod(typeOf<StreamOutput<SampleArray, FiniteSampleStream>>(), SampleStreamOutputPod::class.constructors.first())
         registerPod(typeOf<StreamInput>(), StreamInputPod::class.constructors.first())
     }
 

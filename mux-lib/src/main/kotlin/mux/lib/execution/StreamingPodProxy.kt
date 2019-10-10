@@ -1,9 +1,6 @@
 package mux.lib.execution
 
-import mux.lib.Bean
-import mux.lib.BeanParams
-import mux.lib.BeanStream
-import mux.lib.Sample
+import mux.lib.*
 import java.util.concurrent.TimeUnit
 
 abstract class StreamingPodProxy<S : Any>(
@@ -12,16 +9,16 @@ abstract class StreamingPodProxy<S : Any>(
         val bushCallerRepository: BushCallerRepository = BushCallerRepository.default(podDiscovery),
         val timeToReadAtOnce: Long = 500L,
         val timeUnit: TimeUnit = TimeUnit.MILLISECONDS
-) : BeanStream<Sample, S>, PodProxy<Sample, S> {
+) : BeanStream<SampleArray, S>, PodProxy<SampleArray, S> {
 
-    override fun asSequence(sampleRate: Float): Sequence<Sample> {
+    override fun asSequence(sampleRate: Float): Sequence<SampleArray> {
         val bush = podDiscovery.bushFor(pointedTo)
         val caller = bushCallerRepository.create(bush, pointedTo)
         val iteratorKey = caller.call("iteratorStart?sampleRate=$sampleRate").long()
 
-        return object : Iterator<Sample> {
+        return object : Iterator<SampleArray> {
 
-            var samples: List<Sample>? = null
+            var samples: List<SampleArray>? = null
             var pointer = 0
 
             override fun hasNext(): Boolean {
@@ -29,20 +26,20 @@ abstract class StreamingPodProxy<S : Any>(
                 return s != null && s.isNotEmpty() && pointer < s.size
             }
 
-            override fun next(): Sample {
+            override fun next(): SampleArray {
                 val s = tryReadSamples()
                         ?: throw NoSuchElementException("Pod $pointedTo has no more samples")
                 return s[pointer++]
             }
 
-            private fun tryReadSamples(): List<Sample>? {
+            private fun tryReadSamples(): List<SampleArray>? {
                 if (samples == null || pointer >= samples?.size ?: 0) {
                     samples = caller.call(
                             "iteratorNext" +
                                     "?iteratorKey=$iteratorKey" +
                                     "&length=$timeToReadAtOnce" +
                                     "&timeUnit=$timeUnit"
-                    ).nullableSampleList()
+                    ).sampleArrayList()
                     pointer = 0
                 }
                 return samples

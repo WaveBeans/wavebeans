@@ -65,7 +65,7 @@ object StreamingPodProxySpec : Spek({
                 timeToReadAtOnce = 100L
         )
 
-        val seq = podProxyTester.podProxy.asSequence(20.0f)
+        val seq = podProxyTester.podProxy.asSequence(20.0f).flatMap { it.asSequence() }
         it("should create a sequence") { assertThat(seq).isNotNull() }
         it("should call iteratorStart once") { assertThat(podProxyTester.iteratorStartCounter).isEqualTo(1) }
         val res = seq.take(10).map { it.asInt() }.toList()
@@ -80,7 +80,7 @@ object StreamingPodProxySpec : Spek({
             val seq = PodProxyTester(
                     pointedTo = newTestPod((1..2).toList()),
                     timeToReadAtOnce = 1000L
-            ).podProxy.asSequence(2.0f)
+            ).podProxy.asSequence(2.0f).flatMap { it.asSequence() }
             val iterator = seq.iterator()
 
             it("should have value on 1st iteration") {
@@ -111,7 +111,7 @@ object StreamingPodProxySpec : Spek({
             val seq = PodProxyTester(
                     pointedTo = newTestPod((1..2).toList()),
                     timeToReadAtOnce = 1000L
-            ).podProxy.asSequence(1.0f)
+            ).podProxy.asSequence(1.0f).flatMap { it.asSequence() }
             val iterator = seq.iterator()
 
             it("should have value on 1st iteration") {

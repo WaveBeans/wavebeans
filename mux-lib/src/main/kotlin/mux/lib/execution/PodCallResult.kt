@@ -1,6 +1,8 @@
 package mux.lib.execution
 
 import mux.lib.Sample
+import mux.lib.SampleArray
+import mux.lib.createSampleArray
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.ObjectInputStream
@@ -77,9 +79,24 @@ internal fun List<*>.encodeBytes(): ByteArray =
         if (isEmpty()) {
             encodeEmptyList()
         } else {
-            val value = this.first()
-            when (value) {
+            when (val value = this.first()) {
                 is Sample -> encodeList(this as List<Sample>, 8) { buf, at, el -> writeLong(el.toBits(), buf, at) }
+                is SampleArray -> {
+                    val elementSize = 4 + value.size * 8 // assuming sample array always have the same size throughout the whole set
+                    encodeList(
+                            this as List<SampleArray>,
+                            elementSize
+                    ) { buf, at, el ->
+                        check(el.size == value.size) { "Expected to have similar length throughout the whole list" }
+                        var pointer = at
+                        writeInt(el.size, buf, at)
+                        pointer += 4
+                        repeat(el.size) {
+                            writeLong(el[it].toBits(), buf, pointer)
+                            pointer += 8
+                        }
+                    }
+                }
                 else -> throw UnsupportedOperationException("${value!!::class}")
             }
         }
@@ -99,7 +116,30 @@ fun PodCallResult.sampleList(): List<Sample> =
             }
         } ?: throw IllegalStateException("Can't decode null", this.exception)
 
+fun PodCallResult.sampleArrayList(): List<SampleArray> =
+        throwIfError().byteArray?.let { buf ->
+            var pointer = 0
+            val size = readInt(buf, 0)
+            pointer += 4
+            if (size > 0) {
+                val list = ArrayList<SampleArray>(size)
+                repeat(size) {
+                    val arraySize = readInt(buf, pointer)
+                    pointer += 4
+                    list.add(createSampleArray(arraySize) {
+                        val v = Double.fromBits(readLong(buf, pointer))
+                        pointer += 8
+                        v
+                    })
+                }
+                list
+            } else {
+                emptyList<SampleArray>()
+            }
+        } ?: throw IllegalStateException("Can't decode null", this.exception)
+
 fun PodCallResult.nullableSampleList(): List<Sample>? = ifNotNull { this.sampleList() }
+fun PodCallResult.nullableSampleArrayList(): List<SampleArray>? = ifNotNull { this.sampleArrayList() }
 
 internal fun PodCallResult.throwIfError(): PodCallResult =
         if (this.exception != null) throw IllegalStateException("Got exception during call ${this.call}", this.exception)

@@ -59,7 +59,7 @@ class ByteArrayLittleEndianInput(val params: ByteArrayLittleEndianInputParams) :
         )
     }
 
-    override fun asSequence(sampleRate: Float): Sequence<Sample> =
-            ByteArrayLittleEndianDecoder(params.sampleRate, params.bitDepth).sequence(sampleRate, params.buffer)
+    override fun asSequence(sampleRate: Float): Sequence<SampleArray> = TODO()
+//            ByteArrayLittleEndianDecoder(params.sampleRate, params.bitDepth).sequence(sampleRate, params.buffer)
 
 }

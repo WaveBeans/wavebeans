@@ -11,7 +11,7 @@ fun FiniteSampleStream.toCsv(
         uri: String,
         timeUnit: TimeUnit = TimeUnit.MILLISECONDS,
         encoding: String = "UTF-8"
-): StreamOutput<Sample, FiniteSampleStream> {
+): StreamOutput<SampleArray, FiniteSampleStream> {
     return CsvSampleStreamOutput(this, CsvSampleStreamOutputParams(uri, timeUnit, encoding))
 }
 
@@ -43,7 +43,7 @@ data class CsvSampleStreamOutputParams(
 class CsvSampleStreamOutput(
         stream: FiniteSampleStream,
         val params: CsvSampleStreamOutputParams
-) : FileStreamOutput<Sample, FiniteSampleStream>(stream, params.uri()) {
+) : FileStreamOutput<SampleArray, FiniteSampleStream>(stream, params.uri()) {
 
     override val parameters: BeanParams = params
 
@@ -51,11 +51,14 @@ class CsvSampleStreamOutput(
 
     override fun footer(dataSize: Int): ByteArray? = null
 
-    override fun serialize(offset: Long, sampleRate: Float, samples: List<Sample>): ByteArray {
-        return samples.asSequence()
-                .mapIndexed { idx, sample ->
-                    val time = samplesCountToLength(offset + idx, sampleRate, params.outputTimeUnit)
-                    "$time,$sample\n"
+    override fun serialize(offset: Long, sampleRate: Float, sampleArrays: List<SampleArray>): ByteArray {
+        return sampleArrays.asSequence()
+                .mapIndexed { idx, samples ->
+                    samples.joinToString(separator = "\n") { sample ->
+                        val time = samplesCountToLength(offset + idx, sampleRate, params.outputTimeUnit)
+                        "$time,$sample\n"
+
+                    }
                 }
                 .joinToString(separator = "")
                 .toByteArray(params.encoding())

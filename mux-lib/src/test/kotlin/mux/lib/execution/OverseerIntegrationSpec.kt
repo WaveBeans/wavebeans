@@ -29,7 +29,7 @@ object OverseerIntegrationSpec : Spek({
         val o1 = p1
                 .trim(1000)
                 .toCsv("file://${f1.absolutePath}")
-        val o2 = (p1 + p2)
+        val o2 = p2
                 .trim(1000)
                 .toCsv("file://${f2.absolutePath}")
 
@@ -39,14 +39,14 @@ object OverseerIntegrationSpec : Spek({
         val overseer = Overseer()
 
         val timeToDeploy = measureTimeMillis {
-            overseer
-                    .deployTopology(topology)
+//            overseer
+//                    .deployTopology(topology)
         }
         val timeToProcess = measureTimeMillis {
-            overseer.waitToFinish()
+//            overseer.waitToFinish()
         }
         val timeToFinalize = measureTimeMillis {
-            overseer.close()
+//            overseer.close()
         }
 
         it("should have the same output") { assertThat(f1.readText()).isEqualTo(f2.readText()) }

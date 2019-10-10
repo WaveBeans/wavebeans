@@ -1,10 +1,7 @@
 package mux.lib.stream
 
 import kotlinx.serialization.Serializable
-import mux.lib.Bean
-import mux.lib.BeanParams
-import mux.lib.SingleBean
-import mux.lib.Sample
+import mux.lib.*
 import java.util.concurrent.TimeUnit
 
 fun SampleStream.changeAmplitude(multiplier: Double): SampleStream =
@@ -18,14 +15,15 @@ data class ChangeAmplitudeSampleStreamParams(
 class ChangeAmplitudeSampleStream(
         val source: SampleStream,
         val params: ChangeAmplitudeSampleStreamParams
-) : SampleStream, SingleBean<Sample, SampleStream> {
+) : SampleStream, SingleBean<SampleArray, SampleStream> {
 
     override val parameters: BeanParams = params
 
-    override val input: Bean<Sample, SampleStream> = source
+    override val input: Bean<SampleArray, SampleStream> = source
 
-    override fun asSequence(sampleRate: Float): Sequence<Sample> {
-        return source.asSequence(sampleRate).map { it * params.multiplier }
+    override fun asSequence(sampleRate: Float): Sequence<SampleArray> {
+        return source.asSequence(sampleRate)
+                .map { arr -> createSampleArray(arr.size) { it * params.multiplier } }
     }
 
     override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): SampleStream {

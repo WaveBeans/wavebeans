@@ -2,6 +2,7 @@ package mux.lib.io
 
 import assertk.assertThat
 import assertk.assertions.isCloseTo
+import mux.lib.createSampleArray
 import mux.lib.eachIndexed
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
@@ -22,7 +23,7 @@ object SineGeneratedInputSpec : Spek({
         val delta = 0.00001
 
         describe("generates sequence") {
-            val seq = generator.asSequence(50.0f).take(5).toList()
+            val seq = generator.asSequence(50.0f).flatMap { it.asSequence() }.take(5).toList()
 
             it("should be 5 samples array") {
                 val expected = arrayOf(sample0, sample1, sample2, sample3, sample4)
@@ -33,7 +34,7 @@ object SineGeneratedInputSpec : Spek({
         }
 
         describe("projects a range 0..20ms") {
-            val seq = generator.rangeProjection(0, 20, MILLISECONDS).asSequence(50.0f).take(1).toList()
+            val seq = generator.rangeProjection(0, 20, MILLISECONDS).asSequence(50.0f).flatMap { it.asSequence() }.take(1).toList()
 
             it("should be 1 sample array") {
                 val expected = arrayOf(sample0)
@@ -44,7 +45,7 @@ object SineGeneratedInputSpec : Spek({
         }
 
         describe("projects a range 0..100ms") {
-            val seq = generator.rangeProjection(0, 100, MILLISECONDS).asSequence(50.0f).take(5).toList()
+            val seq = generator.rangeProjection(0, 100, MILLISECONDS).asSequence(50.0f).flatMap { it.asSequence() }.take(5).toList()
 
             it("should be 5 sample array") {
                 val expected = arrayOf(sample0, sample1, sample2, sample3, sample4)
@@ -55,7 +56,7 @@ object SineGeneratedInputSpec : Spek({
         }
 
         describe("projects a range -20..20ms") {
-            val seq = generator.rangeProjection(-20, 20, MILLISECONDS).asSequence(50.0f).take(1).toList()
+            val seq = generator.rangeProjection(-20, 20, MILLISECONDS).asSequence(50.0f).flatMap { it.asSequence() }.take(1).toList()
 
             it("should be 1 sample array") {
                 val expected = arrayOf(sample0)
@@ -66,7 +67,7 @@ object SineGeneratedInputSpec : Spek({
         }
 
         describe("projects a range 20..40ms") {
-            val seq = generator.rangeProjection(20, 40, MILLISECONDS).asSequence(50.0f).take(1).toList()
+            val seq = generator.rangeProjection(20, 40, MILLISECONDS).asSequence(50.0f).flatMap { it.asSequence() }.take(1).toList()
 
             it("should be 1 sample array") {
                 val expected = arrayOf(sample1)
@@ -77,7 +78,7 @@ object SineGeneratedInputSpec : Spek({
         }
 
         describe("projects a range 80..120ms") {
-            val seq = generator.rangeProjection(80, 120, MILLISECONDS).asSequence(50.0f).take(1).toList()
+            val seq = generator.rangeProjection(80, 120, MILLISECONDS).asSequence(50.0f).flatMap { it.asSequence() }.take(1).toList()
 
             it("should be 1 sample array") {
                 val expected = arrayOf(sample4)

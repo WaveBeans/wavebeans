@@ -17,13 +17,13 @@ data class TrimmedFiniteSampleStreamParams(
 class TrimmedFiniteSampleStream(
         val sampleStream: SampleStream,
         val params: TrimmedFiniteSampleStreamParams
-) : FiniteSampleStream, AlterBean<Sample, SampleStream, Sample, FiniteSampleStream> {
+) : FiniteSampleStream, AlterBean<SampleArray, SampleStream, SampleArray, FiniteSampleStream> {
 
     override val parameters: BeanParams = params
 
-    override val input: Bean<Sample, SampleStream> = sampleStream
+    override val input: Bean<SampleArray, SampleStream> = sampleStream
 
-    override fun asSequence(sampleRate: Float): Sequence<Sample> =
+    override fun asSequence(sampleRate: Float): Sequence<SampleArray> =
             sampleStream
                     .asSequence(sampleRate)
                     .take(timeToSampleIndexFloor(TimeUnit.NANOSECONDS.convert(params.length, params.timeUnit), TimeUnit.NANOSECONDS, sampleRate).toInt())

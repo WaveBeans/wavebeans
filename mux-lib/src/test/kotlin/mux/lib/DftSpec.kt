@@ -67,7 +67,7 @@ object DftSpec : Spek({
 
     describe("Given sinusoid 64Hz, sample rate 128Hz, 2seconds") {
         val sine = 64.sine(amplitude = 1.0, timeOffset = 2.0)
-                .asSequence(128.0f).map { it.r }.take(256)
+                .asSequence(128.0f).flatMap { it.asSequence().map { it.r } }.take(256)
 
         describe("Calculating FFT") {
             val fft = fft(sine, 256)
@@ -84,7 +84,7 @@ object DftSpec : Spek({
 
     describe("Given sinusoid 64Hz, sample rate 128Hz, 2seconds, amplitude=0.5") {
         val sine = 64.sine(amplitude = 0.5, timeOffset = 2.0)
-                .asSequence(128.0f).map { it.r }.take(256)
+                .asSequence(128.0f).flatMap { it.asSequence().map { it.r } }.take(256)
 
         describe("Calculating FFT") {
             val fft = fft(sine, 256)
@@ -103,7 +103,7 @@ object DftSpec : Spek({
         val sine1 = 32.sine()
         val sine2 = 64.sine()
         val x = (sine1 + sine2)
-                .asSequence(128.0f).take(256).map { it.r }.take(256)
+                .asSequence(128.0f).flatMap { it.asSequence().map { it.r } }.take(256)
 
         describe("Calculating FFT") {
             val fft = fft(x, 256)
@@ -243,34 +243,34 @@ object DftSpec : Spek({
         val signals = mapOf(
                 "[1..4]" to { (1..4).map { it.r }.asSequence() },
                 "sine 64Hz @ 128Hz" to {
-                    64.sine().asSequence(128.0f).map { it.r }.take(64)
+                    64.sine().asSequence(128.0f).flatMap { it.asSequence().map { it.r } }.take(64)
                 },
                 "sine 64Hz @ 1280Hz" to {
-                    64.sine().asSequence(1280.0f).map { it.r }.drop(128).take(512)
+                    64.sine().asSequence(1280.0f).flatMap { it.asSequence().map { it.r } }.drop(128).take(512)
                 },
                 "sine 440Hz @ 44100Hz" to {
-                    sine(440.0).asSequence(44100.0f).map { it.r }.drop(1024).take(2048)
+                    sine(440.0).asSequence(44100.0f).flatMap { it.asSequence().map { it.r } }.drop(1024).take(2048)
                 },
                 "sines 440Hz+880Hz @ 44100Hz" to {
                     (sine(440.0) + sine(880.0))
-                            .asSequence(44100.0f).map { it.r }.drop(1024).take(2048)
+                            .asSequence(44100.0f).flatMap { it.asSequence().map { it.r } }.drop(1024).take(2048)
                 },
                 "sines 440Hz+1200Hz @ 44100Hz" to {
                     (sine(440.0) + sine(1200.0))
-                            .asSequence(44100.0f).map { it.r }.drop(1024).take(4096)
+                            .asSequence(44100.0f).flatMap { it.asSequence().map { it.r } }.drop(1024).take(4096)
                 },
                 "sines 440Hz+1200Hz+30Hz+123Hz+456Hz @ 44100Hz" to {
                     (sine(440.0) + sine(440.0) + sine(30.0) + sine(123.0) + sine(456.0))
-                            .asSequence(44100.0f).map { it.r }.drop(1024).take(4096)
+                            .asSequence(44100.0f).flatMap { it.asSequence().map { it.r } }.drop(1024).take(4096)
                 },
                 "sines [440..660]Hz @ 44100Hz" to {
                     (440..660)
                             .fold(sine(440.0)) { a, v -> a + sine(v.toDouble()) }
-                            .asSequence(44100.0f).map { it.r }.drop(1024).take(4096)
+                            .asSequence(44100.0f).flatMap { it.asSequence().map { it.r } }.drop(1024).take(4096)
                 },
                 "sweep sine from 64Hz to 1024Hz @ 4096Hz" to {
                     (64..1024).sineSweep(0.5, 2.0)
-                            .asSequence(4096.0f).map { it.r }
+                            .asSequence(4096.0f).flatMap { it.asSequence().map { it.r } }
                 }
         )
 

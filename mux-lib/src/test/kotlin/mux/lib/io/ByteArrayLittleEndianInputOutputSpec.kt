@@ -178,7 +178,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
                     override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): FiniteInput =
                             throw UnsupportedOperationException()
 
-                    override fun asSequence(sampleRate: Float): Sequence<Sample> = signal.asSequence().map { sampleOf(it.toShort()) }
+                    override fun asSequence(sampleRate: Float): Sequence<SampleArray> = signal.asSequence().map { createSampleArray(1) { sampleOf(it.toShort()) } }
 
                 },
                 NoParams()
@@ -203,7 +203,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
                     override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): FiniteInput =
                             throw UnsupportedOperationException()
 
-                    override fun asSequence(sampleRate: Float): Sequence<Sample> = signal.asSequence().map { sampleOf(it, true) }
+                    override fun asSequence(sampleRate: Float): Sequence<SampleArray> = signal.asSequence().map { createSampleArray(1) { sampleOf(it, true) } }
 
                 },
                 NoParams()
@@ -225,7 +225,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
         it("output should be correspond to input signal") {
             assertThat(output.readBytes(44100.0f).map { it.asUnsignedByte() })
                     .isEqualTo(
-                            signal.asSequence(44100.0f).map { it.asByte().toInt() and 0xFF }.toList()
+                            signal.asSequence(44100.0f).flatMap { it.asSequence() }.map { it.asByte().toInt() and 0xFF }.toList()
                     )
         }
     }
