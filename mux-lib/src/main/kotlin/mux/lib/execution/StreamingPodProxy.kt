@@ -7,7 +7,7 @@ abstract class StreamingPodProxy<S : Any>(
         override val pointedTo: PodKey,
         val podDiscovery: PodDiscovery = PodDiscovery.default,
         val bushCallerRepository: BushCallerRepository = BushCallerRepository.default(podDiscovery),
-        val timeToReadAtOnce: Long = 500L,
+        val timeToReadAtOnce: Int = 10,
         val timeUnit: TimeUnit = TimeUnit.MILLISECONDS
 ) : BeanStream<SampleArray, S>, PodProxy<SampleArray, S> {
 
@@ -37,9 +37,8 @@ abstract class StreamingPodProxy<S : Any>(
                     samples = caller.call(
                             "iteratorNext" +
                                     "?iteratorKey=$iteratorKey" +
-                                    "&length=$timeToReadAtOnce" +
-                                    "&timeUnit=$timeUnit"
-                    ).sampleArrayList()
+                                    "&buckets=$timeToReadAtOnce"
+                    ).nullableSampleArrayList()
                     pointer = 0
                 }
                 return samples

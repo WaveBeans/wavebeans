@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 
 class PodWorker(val pod: Pod<*, *>) : Closeable {
+
     private val results = ConcurrentHashMap<Long, PodCallResult>()
 
     private val queue = ConcurrentLinkedQueue<PodTask>()
@@ -34,7 +35,8 @@ class PodWorker(val pod: Pod<*, *>) : Closeable {
                                 val result = pod.call(call)
                                 results[task.taskId] = result
 
-//                                println("For task $task returned $result in ${(System.nanoTime() - start) / 1_000_000.0}ms")
+                                val l = (System.nanoTime() - start) / 1_000_000.0
+                                if (l > 100) println("[WARNING] [POD:$pod] For task $task returned $result in ${l}ms")
                             } catch (e: Throwable) {
                                 results[task.taskId] = PodCallResult.wrap(call, e)
                             }
@@ -47,7 +49,7 @@ class PodWorker(val pod: Pod<*, *>) : Closeable {
                     i = 0
                     if (!isStarted.get()) break
                 }
-                Thread.sleep(1)
+                Thread.sleep(0)
             } catch (e: InterruptedException) {
                 println("Got interrupted")
                 break
@@ -72,5 +74,5 @@ class PodWorker(val pod: Pod<*, *>) : Closeable {
         queue.add(task)
     }
 
-    internal fun result(taskId: Long): PodCallResult? = results[taskId]
+    internal fun result(taskId: Long): PodCallResult? = results.remove(taskId)
 }

@@ -1,18 +1,17 @@
 package mux.lib.execution
 
 import mux.lib.BeanStream
-import mux.lib.timeToSampleIndexFloor
 import java.util.*
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.collections.ArrayList
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.reflect.typeOf
 
 // the class is not thread safe
 abstract class StreamingPod<T : Any, S : Any>(
         override val podKey: PodKey,
-        val unclaimedElementsCleanupThreshold: Int = 1024
+        val unburdenElementsCleanupThreshold: Int = 1024
 ) : Pod<T, S>, BeanStream<T, S> {
 
     companion object {
@@ -27,7 +26,7 @@ abstract class StreamingPod<T : Any, S : Any>(
     private var iterator: PodIterator<T>? = null
 
     private val offsets = HashMap<Long, Long>()
-    private var buffer = ArrayList<T>()
+    private var buffer = ArrayList<T>(unburdenElementsCleanupThreshold * 2)
     private var globalOffset = 0L
 
     fun iteratorStart(sampleRate: Float): Long {
@@ -38,17 +37,16 @@ abstract class StreamingPod<T : Any, S : Any>(
         return key
     }
 
-    fun iteratorNext(iteratorKey: Long, length: Long, timeUnit: TimeUnit): List<T>? {
+    fun iteratorNext(iteratorKey: Long, buckets: Int): List<T>? {
         val pi = iterator
         check(pi != null) { "Pod wasn't initialized properly. Iterator not found. Call `start` first." }
         val offset = offsets[iteratorKey]
         check(offset != null) { "Iterator key $iteratorKey is unknown for the pod $this" }
 
         val bufferPos = max(offset - globalOffset, 0L).toInt()
-        val samplesCount = timeToSampleIndexFloor(length, timeUnit, pi.sampleRate).toInt()
 
-        // if we'retrying to read out of buffer -- try to read from downstream iterator
-        while (bufferPos + samplesCount >= buffer.size) {
+        // if we're trying to read out of buffer -- try to read first from downstream iterator
+        while (bufferPos + buckets >= buffer.size) {
             if (pi.iterator.hasNext()) {
                 val element = pi.iterator.next()
                 buffer.add(element)
@@ -62,20 +60,24 @@ abstract class StreamingPod<T : Any, S : Any>(
             null
         } else {
             // otherwise the element should be there
-            val sampleToRead = min(buffer.size, bufferPos + samplesCount)
+            val endOfBuffer = min(buffer.size, bufferPos + buckets)
 
             // make a copy, as sublist is just view of the list which later will be cleaned
-            val elements = buffer.subList(bufferPos, sampleToRead).toList()
+            val elements = buffer.subList(bufferPos, endOfBuffer).toList()
 
-            offsets[iteratorKey] = offset + sampleToRead
+            offsets[iteratorKey] = offset + (endOfBuffer - bufferPos)
 
             // if all iterators consumed data, push the global offset forward and drop the unneeded data from buffer
             val newGlobalOffset = offsets.values.min() ?: 0
-            val currentGlobalOffset = globalOffset
-            val unclaimedElements = (newGlobalOffset - currentGlobalOffset).toInt()
-            if (unclaimedElements >= unclaimedElementsCleanupThreshold) {
-                buffer = ArrayList(buffer.subList(unclaimedElements, buffer.size))
-                globalOffset = newGlobalOffset
+            val unburdenElements = (newGlobalOffset - globalOffset).toInt()
+            if (unburdenElements >= unburdenElementsCleanupThreshold) {
+                if (unburdenElements < buffer.size) {
+                    buffer = ArrayList(buffer.subList(unburdenElements, buffer.size))
+                    globalOffset = newGlobalOffset
+                } else {
+                    buffer = ArrayList(unburdenElementsCleanupThreshold * 2)
+                    globalOffset = newGlobalOffset
+                }
             }
 
             elements

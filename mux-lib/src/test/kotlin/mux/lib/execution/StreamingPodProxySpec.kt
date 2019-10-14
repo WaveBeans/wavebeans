@@ -9,13 +9,11 @@ import mux.lib.Sample
 import mux.lib.asInt
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
-import java.util.concurrent.TimeUnit
 
 @ExperimentalStdlibApi
 class PodProxyTester(
         val pointedTo: AnyPod,
-        val timeToReadAtOnce: Long = 100L,
-        val timeUnit: TimeUnit = TimeUnit.MILLISECONDS
+        val timeToReadAtOnce: Int = 1
 ) {
     val podDiscovery: PodDiscovery = mock()
 
@@ -50,8 +48,7 @@ class PodProxyTester(
             pointedTo = pointedTo.podKey,
             bushCallerRepository = bushCallerRepository,
             podDiscovery = podDiscovery,
-            timeToReadAtOnce = timeToReadAtOnce,
-            timeUnit = timeUnit
+            timeToReadAtOnce = timeToReadAtOnce
     ) {}
 }
 
@@ -62,7 +59,7 @@ object StreamingPodProxySpec : Spek({
     describe("Pod Proxy count amount of calls to Pod") {
         val podProxyTester = PodProxyTester(
                 pointedTo = newTestPod((1..10).toList()),
-                timeToReadAtOnce = 100L
+                timeToReadAtOnce = 5
         )
 
         val seq = podProxyTester.podProxy.asSequence(20.0f).flatMap { it.asSequence() }
@@ -79,7 +76,7 @@ object StreamingPodProxySpec : Spek({
         describe("data fits in one buffer") {
             val seq = PodProxyTester(
                     pointedTo = newTestPod((1..2).toList()),
-                    timeToReadAtOnce = 1000L
+                    timeToReadAtOnce = 2
             ).podProxy.asSequence(2.0f).flatMap { it.asSequence() }
             val iterator = seq.iterator()
 
@@ -110,7 +107,7 @@ object StreamingPodProxySpec : Spek({
         describe("data doesn't fit in one buffer") {
             val seq = PodProxyTester(
                     pointedTo = newTestPod((1..2).toList()),
-                    timeToReadAtOnce = 1000L
+                    timeToReadAtOnce = 2
             ).podProxy.asSequence(1.0f).flatMap { it.asSequence() }
             val iterator = seq.iterator()
 

@@ -5,7 +5,6 @@ import assertk.assertions.*
 import mux.lib.*
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
-import java.util.concurrent.TimeUnit.MILLISECONDS
 
 object StreamingPodSpec : Spek({
     describe("StreamingPod returning predefined sequence") {
@@ -15,7 +14,7 @@ object StreamingPodSpec : Spek({
             val pod = newTestPod(seq)
 
             val iteratorKey = pod.iteratorStart(100.0f)
-            val result = pod.iteratorNext(iteratorKey, 1000L, MILLISECONDS)
+            val result = pod.iteratorNext(iteratorKey, 100)
                     ?.map { it.asInt() }
 
             it("should be the same as defined sequence") { assertThat(result).isEqualTo(seq) }
@@ -27,9 +26,9 @@ object StreamingPodSpec : Spek({
 
             val iteratorKey1 = pod.iteratorStart(100.0f)
             val iteratorKey2 = pod.iteratorStart(100.0f)
-            val result1 = pod.iteratorNext(iteratorKey1, 1000L, MILLISECONDS)
+            val result1 = pod.iteratorNext(iteratorKey1, 100)
                     ?.map { it.asInt() }
-            val result2 = pod.iteratorNext(iteratorKey2, 1000L, MILLISECONDS)
+            val result2 = pod.iteratorNext(iteratorKey2, 100)
                     ?.map { it.asInt() }
 
             it("first should be the same as defined sequence") { assertThat(result1).isEqualTo(seq) }
@@ -41,10 +40,10 @@ object StreamingPodSpec : Spek({
             val pod = newTestPod(seq)
 
             val iteratorKey1 = pod.iteratorStart(100.0f)
-            val e = pod.iteratorNext(iteratorKey1, 1001L, MILLISECONDS)
+            val e = pod.iteratorNext(iteratorKey1, 101)
                     ?.map { it.asInt() }
 
-            it("should be the same as defined sequence + [null]") {
+            it("should be the same as defined sequence") {
                 assertThat(e).isEqualTo(seq)
             }
 
@@ -54,9 +53,9 @@ object StreamingPodSpec : Spek({
             val pod = newTestPod(seq)
 
             val iteratorKey1 = pod.iteratorStart(100.0f)
-            val e1 = pod.iteratorNext(iteratorKey1, 1000L, MILLISECONDS)
+            val e1 = pod.iteratorNext(iteratorKey1, 100)
                     ?.map { it.asInt() }
-            val e2 = pod.iteratorNext(iteratorKey1, 1L, MILLISECONDS)
+            val e2 = pod.iteratorNext(iteratorKey1, 1)
                     ?.map { it.asInt() }
 
             it("first attempt should be the same as defined sequence") {
@@ -72,15 +71,15 @@ object StreamingPodSpec : Spek({
             val pod = newTestPod(seq)
 
             val iteratorKey1 = pod.iteratorStart(100.0f)
-            val result1 = pod.iteratorNext(iteratorKey1, 500L, MILLISECONDS)
+            val result1 = pod.iteratorNext(iteratorKey1, 50)
                     ?.map { it.asInt() }
                     ?: emptyList()
 
             val iteratorKey2 = pod.iteratorStart(100.0f)
-            val result2 = pod.iteratorNext(iteratorKey2, 500L, MILLISECONDS)
+            val result2 = pod.iteratorNext(iteratorKey2, 50)
                     ?.map { it.asInt() }
 
-            val result11 = pod.iteratorNext(iteratorKey1, 500L, MILLISECONDS)
+            val result11 = pod.iteratorNext(iteratorKey1, 50)
                     ?.map { it.asInt() }
                     ?: emptyList()
 

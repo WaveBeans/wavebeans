@@ -80,22 +80,27 @@ internal fun List<*>.encodeBytes(): ByteArray =
             encodeEmptyList()
         } else {
             when (val value = this.first()) {
-                is Sample -> encodeList(this as List<Sample>, 8) { buf, at, el -> writeLong(el.toBits(), buf, at) }
+                is Sample -> {
+                    encodeList(this as List<Sample>, 8) { buf, at, el -> writeLong(el.toBits(), buf, at) }
+                }
                 is SampleArray -> {
-                    val elementSize = 4 + value.size * 8 // assuming sample array always have the same size throughout the whole set
-                    encodeList(
-                            this as List<SampleArray>,
-                            elementSize
-                    ) { buf, at, el ->
-                        check(el.size == value.size) { "Expected to have similar length throughout the whole list" }
-                        var pointer = at
-                        writeInt(el.size, buf, at)
+                    val seq = this.asSequence().map { (it as SampleArray) }
+
+                    val contentSize = seq.map { 4 + it.size * 8 }.sum()
+
+                    var pointer = 0
+                    val buf = ByteArray(4 + contentSize)
+                    writeInt(this.size, buf, 0)
+                    pointer += 4
+                    seq.forEach { el ->
+                        writeInt(el.size, buf, pointer)
                         pointer += 4
                         repeat(el.size) {
                             writeLong(el[it].toBits(), buf, pointer)
                             pointer += 8
                         }
                     }
+                    buf
                 }
                 else -> throw UnsupportedOperationException("${value!!::class}")
             }

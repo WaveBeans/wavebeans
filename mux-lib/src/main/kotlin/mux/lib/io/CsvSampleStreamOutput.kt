@@ -3,6 +3,7 @@ package mux.lib.io
 import kotlinx.serialization.Serializable
 import mux.lib.*
 import mux.lib.stream.FiniteSampleStream
+import java.io.ByteArrayOutputStream
 import java.net.URI
 import java.nio.charset.Charset
 import java.util.concurrent.TimeUnit
@@ -47,19 +48,24 @@ class CsvSampleStreamOutput(
 
     override fun writer(sampleRate: Float): Writer {
         var offset = 0L
-        return object : FileWriter<SampleArray, FiniteSampleStream>(URI(params.uri), stream, sampleRate) {
+
+        return object : FileWriter<SampleArray, FiniteSampleStream>(params.uri(), stream, sampleRate) {
+
             override fun header(dataSize: Int): ByteArray? = "time ${params.outputTimeUnit.abbreviation()}, value\n".toByteArray(params.encoding())
 
             override fun footer(dataSize: Int): ByteArray? = null
 
             override fun serialize(sampleRate: Float, samples: SampleArray): ByteArray {
-                return samples.asSequence()
-                        .mapIndexed { idx, sample ->
-                            val time = samplesCountToLength(offset++, sampleRate, params.outputTimeUnit)
-                            "$time,$sample\n"
-                        }
-                        .joinToString(separator = "")
-                        .toByteArray(params.encoding())
+                val baos = ByteArrayOutputStream(samples.size * 20)
+                for (i in 0 until samples.size) {
+                    if (offset % (sampleRate.toLong() * 1L) == 0L) {
+                        println("Processed ${offset / sampleRate} seconds")
+                    }
+                    val sample = samples[i]
+                    val time = samplesCountToLength(offset++, sampleRate, params.outputTimeUnit)
+                    baos.write(String.format("%d,%f.10\n", time, sample).toByteArray(params.encoding()))
+                }
+                return baos.toByteArray()
             }
 
         }
