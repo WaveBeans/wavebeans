@@ -21,7 +21,10 @@ class StreamInputPod(
         get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
 }
 
-class StreamInputPodProxy(podKey: PodKey) : StreamInput, StreamingPodProxy<StreamInput>(podKey) {
+class StreamInputPodProxy(podKey: PodKey) : StreamInput, StreamingPodProxy<SampleArray, StreamInput>(
+        pointedTo = podKey,
+        converter = { it.nullableSampleArrayList() }
+) {
 
     override fun inputs(): List<Bean<*, *>> {
         return super<StreamingPodProxy>.inputs()

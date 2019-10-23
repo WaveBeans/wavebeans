@@ -51,19 +51,19 @@ class CsvSampleStreamOutput(
 
         return object : FileWriter<SampleArray, FiniteSampleStream>(params.uri(), stream, sampleRate) {
 
-            override fun header(dataSize: Int): ByteArray? = "time ${params.outputTimeUnit.abbreviation()}, value\n".toByteArray(params.encoding())
+            override fun header(): ByteArray? = "time ${params.outputTimeUnit.abbreviation()}, value\n".toByteArray(params.encoding())
 
-            override fun footer(dataSize: Int): ByteArray? = null
+            override fun footer(): ByteArray? = null
 
-            override fun serialize(sampleRate: Float, samples: SampleArray): ByteArray {
-                val baos = ByteArrayOutputStream(samples.size * 20)
-                for (i in 0 until samples.size) {
+            override fun serialize(element: SampleArray): ByteArray {
+                val baos = ByteArrayOutputStream(element.size * 20)
+                for (i in 0 until element.size) {
                     if (offset % (sampleRate.toLong() * 1L) == 0L) {
                         println("Processed ${offset / sampleRate} seconds")
                     }
-                    val sample = samples[i]
+                    val sample = element[i]
                     val time = samplesCountToLength(offset++, sampleRate, params.outputTimeUnit)
-                    baos.write(String.format("%d,%f.10\n", time, sample).toByteArray(params.encoding()))
+                    baos.write(String.format("%d,%.10f\n", time, sample).toByteArray(params.encoding()))
                 }
                 return baos.toByteArray()
             }

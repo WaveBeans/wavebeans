@@ -26,10 +26,10 @@ object OverseerIntegrationSpec : Spek({
                 .rangeProjection(0, 1000)
 
         val o1 = p1
-                .trim(500000)
+                .trim(500)
                 .toCsv("file://${f1.absolutePath}")
         val o2 = p2 // (p2 + p1)
-                .trim(500000)
+                .trim(500)
                 .toCsv("file://${f2.absolutePath}")
 
         val topology = listOf(o1, o2).buildTopology()

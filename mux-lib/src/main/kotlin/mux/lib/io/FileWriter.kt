@@ -13,42 +13,36 @@ abstract class FileWriter<T : Any, S : BeanStream<T, S>>(
         val sampleRate: Float
 ) : Writer {
 
-    protected abstract fun header(dataSize: Int): ByteArray?
+    protected abstract fun header(): ByteArray?
 
-    protected abstract fun footer(dataSize: Int): ByteArray?
+    protected abstract fun footer(): ByteArray?
 
     private val tmpFile = File.createTempFile("file-stream-output", ".tmp")
-            .also { it.deleteOnExit() }
 
     private val file = FileOutputStream(tmpFile)
-    val bufferSize = 512 * 1024
+    private val bufferSize = 512 * 1024
     private val buffer = BufferedOutputStream(file, bufferSize)
-
-    val sampleIterator = stream.asSequence(sampleRate).iterator()
-
-    private var writtenBytes: Int = 0
+    private val sampleIterator = stream.asSequence(sampleRate).iterator()
 
     override fun write(): Boolean {
         return if (sampleIterator.hasNext()) {
-            val bytes = serialize(sampleRate, sampleIterator.next())
+            val bytes = serialize(sampleIterator.next())
             val r = bytes.size
-            buffer.write(bytes, 0, r)
-            writtenBytes += r
+            buffer.write(bytes, 0, bytes.size)
             true
         } else {
             false
         }
     }
 
-    protected abstract fun serialize(sampleRate: Float, element: T): ByteArray
-
+    protected abstract fun serialize(element: T): ByteArray
 
     override fun close() {
-        buffer.flush()
+        buffer.close()
         file.close()
 
         FileOutputStream(File(uri)).use { f ->
-            val header = header(writtenBytes)
+            val header = header()
             if (header != null) f.write(header)
 
             FileInputStream(tmpFile).use { tmpF ->
@@ -59,9 +53,11 @@ abstract class FileWriter<T : Any, S : BeanStream<T, S>>(
                 } while (r != -1)
             }
 
-            val footer = footer(writtenBytes)
+            val footer = footer()
             if (footer != null) f.write(footer)
         }
+
+        tmpFile.delete()
     }
 
 }

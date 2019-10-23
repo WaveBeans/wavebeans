@@ -53,7 +53,7 @@ class SineGeneratedInput constructor(
             override fun hasNext(): Boolean = true
 
             override fun next(): SampleArray {
-                return createSampleArray(512) {
+                return createSampleArray {
                     if (params.time != null && x >= params.time + params.timeOffset) {
                         ZeroSample
                     } else {

@@ -1,21 +1,21 @@
 package mux.lib.io
 
-import mux.lib.BeanParams
-import mux.lib.Sample
-import mux.lib.SampleArray
-import mux.lib.sampleOf
+import mux.lib.*
+import mux.lib.stream.SampleStreamException
 import java.util.concurrent.TimeUnit
 import kotlin.math.abs
 import kotlin.math.cos
 
 // TODO it should infinite stream
 
-fun ClosedRange<Int>.sineSweep(amplitude: Double, time: Double) =
+fun ClosedRange<Int>.sineSweep(amplitude: Double, time: Double, timeOffset: Double = 0.0, sweepDelta: Double = 0.1): StreamInput =
         SineSweepGeneratedInput(SineSweepGeneratedInputParams(
                 this.start.toDouble(),
                 this.endInclusive.toDouble(),
                 amplitude,
-                time
+                time,
+                timeOffset,
+                sweepDelta
         ))
 
 data class SineSweepGeneratedInputParams(
@@ -25,11 +25,11 @@ data class SineSweepGeneratedInputParams(
         val endFrequency: Double,
         /** Amplitude of the sinusoid. 0.0 < a <= 1.0 */
         val amplitude: Double,
-        /** Number of seconds to generate. */
+        /** Number of seconds to get the end frequency. */
         val time: Double,
         /** time offset. */
         val timeOffset: Double = 0.0,
-        /** Frequency will be changed by this value evenly. Make sure sample rate allowes this. It shouldn't be less than (1 / sample rate) */
+        /** Frequency will be changed by this value evenly. Make sure sample rate allows this. It shouldn't be less than (1 / sample rate) */
         val sweepDelta: Double = 0.1
 ) : BeanParams()
 
@@ -49,31 +49,33 @@ class SineSweepGeneratedInput(
     }
 
     override fun asSequence(sampleRate: Float): Sequence<SampleArray> {
-        TODO()
-//        return object : Iterator<Sample> {
-//
-//            private var x = params.timeOffset
-//            private var frequency = params.startFrequency
-//            private var transitionCounter = 0.0
-//            private val step = 1.0 / sampleRate // sinusoid automatically resamples to output sample rate
-//            private val frequencyDelta = params.time / (params.endFrequency - params.startFrequency) / params.sweepDelta
-//
-//            override fun hasNext(): Boolean = x < params.time + params.timeOffset
-//
-//            override fun next(): Sample {
-//                if (!hasNext()) NoSuchElementException("")
-//                val r = sampleOf(sineOf(x, frequency))
-//                x += step
-//                if (abs(transitionCounter - frequencyDelta) < step) {
-//                    frequency += params.sweepDelta
-//                    transitionCounter = 0.0
-//                } else {
-//                    transitionCounter += step
-//                }
-//
-//                return r
-//            }
-//        }.asSequence()
+        return object : Iterator<SampleArray> {
+
+            private var x = params.timeOffset
+            private var frequency = params.startFrequency
+            private var transitionCounter = 0.0
+            private val step = 1.0 / sampleRate // sinusoid automatically resamples to output sample rate
+            private val frequencyDelta = params.time / (params.endFrequency - params.startFrequency) / params.sweepDelta
+
+            override fun hasNext(): Boolean = true
+
+            override fun next(): SampleArray {
+                return createSampleArray {
+                    val r = sampleOf(sineOf(x, frequency))
+                    x += step
+                    if (x < params.time + params.timeOffset) {
+                        if (abs(transitionCounter - frequencyDelta) < step) {
+                            frequency += params.sweepDelta
+                            transitionCounter = 0.0
+                        } else {
+                            transitionCounter += step
+                        }
+                    }
+
+                    r
+                }
+            }
+        }.asSequence()
     }
 
     private fun sineOf(x: Double, frequency: Double): Double =

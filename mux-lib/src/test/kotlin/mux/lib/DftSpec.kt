@@ -270,7 +270,7 @@ object DftSpec : Spek({
                 },
                 "sweep sine from 64Hz to 1024Hz @ 4096Hz" to {
                     (64..1024).sineSweep(0.5, 2.0)
-                            .asSequence(4096.0f).flatMap { it.asSequence().map { it.r } }
+                            .asSequence(4096.0f).flatMap { it.asSequence().map { it.r } }.drop(1024).take(4096)
                 }
         )
 

@@ -9,7 +9,7 @@ import mux.lib.stream.RectangleWindow
 import mux.lib.stream.fft
 import mux.lib.stream.trim
 import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
+import org.spekframework.spek2.style.specification.xdescribe
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileInputStream
@@ -19,7 +19,7 @@ import kotlin.streams.toList
 
 
 class CsvFftStreamOutputSpec : Spek({
-    describe("FFT of signal with sample rate 4 Hz to CSV") {
+    xdescribe("FFT of signal with sample rate 4 Hz to CSV") {
         val sampleRate = 4.0f
         val x = (1..4)
                 .stream(sampleRate)
@@ -74,7 +74,7 @@ class CsvFftStreamOutputSpec : Spek({
             }
         }
 
-        describe("Generating phase") {
+        xdescribe("Generating phase") {
             val file = File.createTempFile("test_", ".mux.tmp")
             CsvFftStreamOutput(x, CsvFftStreamOutputParams(file.toURI(), false)).writer(sampleRate).use { w ->
                 while (w.write()) {

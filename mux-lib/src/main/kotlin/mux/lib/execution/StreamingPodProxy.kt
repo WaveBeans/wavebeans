@@ -3,22 +3,23 @@ package mux.lib.execution
 import mux.lib.*
 import java.util.concurrent.TimeUnit
 
-abstract class StreamingPodProxy<S : Any>(
+abstract class StreamingPodProxy<T: Any, S : Any>(
         override val pointedTo: PodKey,
         val podDiscovery: PodDiscovery = PodDiscovery.default,
         val bushCallerRepository: BushCallerRepository = BushCallerRepository.default(podDiscovery),
         val timeToReadAtOnce: Int = 10,
-        val timeUnit: TimeUnit = TimeUnit.MILLISECONDS
-) : BeanStream<SampleArray, S>, PodProxy<SampleArray, S> {
+        val timeUnit: TimeUnit = TimeUnit.MILLISECONDS,
+        val converter: (PodCallResult) -> List<T>?
+) : BeanStream<T, S>, PodProxy<T, S> {
 
-    override fun asSequence(sampleRate: Float): Sequence<SampleArray> {
+    override fun asSequence(sampleRate: Float): Sequence<T> {
         val bush = podDiscovery.bushFor(pointedTo)
         val caller = bushCallerRepository.create(bush, pointedTo)
         val iteratorKey = caller.call("iteratorStart?sampleRate=$sampleRate").long()
 
-        return object : Iterator<SampleArray> {
+        return object : Iterator<T> {
 
-            var samples: List<SampleArray>? = null
+            var samples: List<T>? = null
             var pointer = 0
 
             override fun hasNext(): Boolean {
@@ -26,19 +27,19 @@ abstract class StreamingPodProxy<S : Any>(
                 return s != null && s.isNotEmpty() && pointer < s.size
             }
 
-            override fun next(): SampleArray {
+            override fun next(): T {
                 val s = tryReadSamples()
                         ?: throw NoSuchElementException("Pod $pointedTo has no more samples")
                 return s[pointer++]
             }
 
-            private fun tryReadSamples(): List<SampleArray>? {
+            private fun tryReadSamples(): List<T>? {
                 if (samples == null || pointer >= samples?.size ?: 0) {
-                    samples = caller.call(
+                    samples = converter(caller.call(
                             "iteratorNext" +
                                     "?iteratorKey=$iteratorKey" +
                                     "&buckets=$timeToReadAtOnce"
-                    ).nullableSampleArrayList()
+                    ))
                     pointer = 0
                 }
                 return samples

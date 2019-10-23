@@ -28,7 +28,10 @@ class FiniteSampleStreamPod(
 @ExperimentalStdlibApi
 class FiniteSampleStreamPodProxy(
         podKey: PodKey
-) : StreamingPodProxy<FiniteSampleStream>(podKey), FiniteSampleStream {
+) : StreamingPodProxy<SampleArray, FiniteSampleStream>(
+        pointedTo = podKey,
+        converter = { it.nullableSampleArrayList() }
+), FiniteSampleStream {
 
     override fun length(timeUnit: TimeUnit): Long {
         val bush = podDiscovery.bushFor(pointedTo)

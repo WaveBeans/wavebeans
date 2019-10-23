@@ -7,10 +7,19 @@ import kotlin.math.min
 
 class ByteArrayLittleEndianDecoder(val sampleRate: Float, val bitDepth: BitDepth) {
 
-    fun sequence(sampleRate: Float, buffer: ByteArray): Sequence<Sample> {
+    fun sequence(sampleRate: Float, buffer: ByteArray): Sequence<SampleArray> {
         if (sampleRate != this.sampleRate) throw UnsupportedOperationException("Can't resample from ${this.sampleRate} to $sampleRate")
-        return buffer.iterator().asSequence()
-                .windowed(bitDepth.bytesPerSample, bitDepth.bytesPerSample) { bytes ->
+
+        var bufferPos = 0
+
+        return object : Iterator<SampleArray> {
+            override fun hasNext(): Boolean = bufferPos + bitDepth.bytesPerSample <= buffer.size
+
+            override fun next(): SampleArray {
+                val size = min((buffer.size - bufferPos) / bitDepth.bytesPerSample, DEFAULT_SAMPLE_ARRAY_SIZE)
+                return createSampleArray(size) {
+                    val bytes = buffer.copyOfRange(bufferPos, bufferPos + bitDepth.bytesPerSample)
+                    bufferPos += bitDepth.bytesPerSample
                     when (bitDepth) {
                         BitDepth.BIT_8 -> sampleOf(bytes[0])
                         BitDepth.BIT_16 -> sampleOf(
@@ -31,6 +40,9 @@ class ByteArrayLittleEndianDecoder(val sampleRate: Float, val bitDepth: BitDepth
                         )
                     }
                 }
+            }
+
+        }.asSequence()
     }
 }
 
@@ -59,7 +71,7 @@ class ByteArrayLittleEndianInput(val params: ByteArrayLittleEndianInputParams) :
         )
     }
 
-    override fun asSequence(sampleRate: Float): Sequence<SampleArray> = TODO()
-//            ByteArrayLittleEndianDecoder(params.sampleRate, params.bitDepth).sequence(sampleRate, params.buffer)
+    override fun asSequence(sampleRate: Float): Sequence<SampleArray> =
+            ByteArrayLittleEndianDecoder(params.sampleRate, params.bitDepth).sequence(sampleRate, params.buffer)
 
 }

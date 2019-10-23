@@ -35,8 +35,7 @@ class TrimmedFiniteSampleStream(
             override fun next(): SampleArray {
                 val a = iterator.next()
                 return if (samplesToTake < a.size) {
-                    samplesToTake = 0
-                    a.copyOf(samplesToTake.toInt())
+                    a.copyOf(samplesToTake.toInt()).also { samplesToTake = 0 }
                 } else {
                     samplesToTake -= a.size
                     a

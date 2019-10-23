@@ -134,18 +134,14 @@ object PodCallResultSpec : Spek({
 
                 }
 
-                it("should fire an exception if list has different lengths of arrays") {
+                it("should allow to have lists with different lengths of arrays") {
                     val list = listOf(
                             createSampleArray(10) { sampleOf(-1.0) },
                             createSampleArray(11) { sampleOf(1.0) }
                     )
-                    val e = catch { result(list).sampleArrayList() }
-                    assertThat(e)
-                            .isNotNull()
-                            .isInstanceOf(IllegalStateException::class)
-                            .message()
-                            .isNotNull()
-                            .isNotEmpty()
+                    assertThat(result(list).sampleArrayList()).eachIndexed(2) { el, i ->
+                        el.containsExactly(*list[i])
+                    }
                 }
             }
         }

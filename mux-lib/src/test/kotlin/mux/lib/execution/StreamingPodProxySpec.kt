@@ -7,12 +7,13 @@ import assertk.catch
 import com.nhaarman.mockitokotlin2.mock
 import mux.lib.Sample
 import mux.lib.asInt
+import mux.lib.stream.SampleStream
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 
 @ExperimentalStdlibApi
 class PodProxyTester(
-        val pointedTo: AnyPod,
+        val pointedTo: Pod<Sample, *>,
         val timeToReadAtOnce: Int = 1
 ) {
     val podDiscovery: PodDiscovery = mock()
@@ -44,11 +45,12 @@ class PodProxyTester(
         override fun create(bushKey: BushKey, podKey: PodKey): BushCaller = bushCaller
     }
 
-    val podProxy = object : StreamingPodProxy<Sample>(
+    val podProxy = object : StreamingPodProxy<Sample, SampleStream>(
             pointedTo = pointedTo.podKey,
             bushCallerRepository = bushCallerRepository,
             podDiscovery = podDiscovery,
-            timeToReadAtOnce = timeToReadAtOnce
+            timeToReadAtOnce = timeToReadAtOnce,
+            converter = { it.nullableSampleList() }
     ) {}
 }
 
@@ -62,13 +64,13 @@ object StreamingPodProxySpec : Spek({
                 timeToReadAtOnce = 5
         )
 
-        val seq = podProxyTester.podProxy.asSequence(20.0f).flatMap { it.asSequence() }
+        val seq = podProxyTester.podProxy.asSequence(20.0f)
         it("should create a sequence") { assertThat(seq).isNotNull() }
         it("should call iteratorStart once") { assertThat(podProxyTester.iteratorStartCounter).isEqualTo(1) }
         val res = seq.take(10).map { it.asInt() }.toList()
         it("should read all samples") { assertThat(res).isEqualTo((1..10).toList()) }
-        it("should call iteratorNext 5 times 500ms by 100ms step") {
-            assertThat(podProxyTester.iteratorNextCounter).isEqualTo(5)
+        it("should call iteratorNext 2 times") {
+            assertThat(podProxyTester.iteratorNextCounter).isEqualTo(2)
         }
     }
 
@@ -77,7 +79,7 @@ object StreamingPodProxySpec : Spek({
             val seq = PodProxyTester(
                     pointedTo = newTestPod((1..2).toList()),
                     timeToReadAtOnce = 2
-            ).podProxy.asSequence(2.0f).flatMap { it.asSequence() }
+            ).podProxy.asSequence(2.0f)
             val iterator = seq.iterator()
 
             it("should have value on 1st iteration") {
@@ -108,7 +110,7 @@ object StreamingPodProxySpec : Spek({
             val seq = PodProxyTester(
                     pointedTo = newTestPod((1..2).toList()),
                     timeToReadAtOnce = 2
-            ).podProxy.asSequence(1.0f).flatMap { it.asSequence() }
+            ).podProxy.asSequence(1.0f)
             val iterator = seq.iterator()
 
             it("should have value on 1st iteration") {

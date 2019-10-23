@@ -89,96 +89,125 @@ class MergedSampleStream(
     }
 
     override fun asSequence(sampleRate: Float): Sequence<SampleArray> {
-//        val s = max(timeToSampleIndexFloor(params.start, params.timeUnit, sampleRate), 0L)
-//        val e = params.end?.let { timeToSampleIndexCeil(it, params.timeUnit, sampleRate) }
-//        val l = e?.minus(s)
-//
-//        var ss: Long
-//        var ms: Long
-//        var newShift: Long
-//        if (params.shift < 0) {
-//            ss = s + params.shift
-//            if (ss < 0) ss = 0
-//            ms = s
-//            newShift = params.shift.toLong() + s
-//            if (newShift > 0) newShift = 0L
-//        } else {
-//            ss = s
-//            ms = s - params.shift
-//            if (ms < 0) ms = 0
-//            newShift = params.shift - s
-//            if (newShift < 0) newShift = 0L
-//        }
-//
-//        val sourceStreamIterator =
-//                (if (params.start != 0L || params.end != null)
-//                    sourceStream.rangeProjection(
-//                            samplesCountToLength(ss, sampleRate, params.timeUnit),
-//                            l?.plus(ss)?.let { samplesCountToLength(it, sampleRate, params.timeUnit) },
-//                            params.timeUnit
-//                    )
-//                else sourceStream)
-//                        .asSequence(sampleRate).iterator()
-//        val mergingStreamIterator =
-//                (if (params.start != 0L || params.end != null)
-//                    mergingStream.rangeProjection(
-//                            samplesCountToLength(ms, sampleRate, params.timeUnit),
-//                            l?.plus(ms)?.let { samplesCountToLength(it, sampleRate, params.timeUnit) },
-//                            params.timeUnit
-//                    )
-//                else mergingStream)
-//                        .asSequence(sampleRate).iterator()
-//
-//        var globalCounter = 0
-//        var sourceStreamPos = 0L
-//        var mergingStreamPos = if (newShift < 0) newShift else 0L
-//
-//        return object : Iterator<Sample> {
-//
-//            override fun hasNext(): Boolean {
-//                return !(l != null && globalCounter >= l)
-//            }
-//
-//            override fun next(): Sample {
-//                globalCounter++
-//                return when {
-//                    mergingStreamPos < 0 -> {
-//                        mergingStreamPos++
-//
-//                        val sourceSample = ZeroSample
-//                        val mergingSample =
-//                                if (mergingStreamIterator.hasNext()) mergingStreamIterator.next()
-//                                else ZeroSample
-//
-//                        params.operation.apply(sourceSample, mergingSample)
-//                    }
-//                    mergingStreamPos < newShift -> {
-//                        mergingStreamPos++
-//                        sourceStreamPos++
-//
-//                        val sourceSample =
-//                                if (sourceStreamIterator.hasNext()) sourceStreamIterator.next()
-//                                else ZeroSample
-//                        val mergingSample = ZeroSample
-//
-//                        params.operation.apply(sourceSample, mergingSample)
-//                    }
-//                    else -> {
-//                        mergingStreamPos++
-//                        sourceStreamPos++
-//
-//                        val sourceSample =
-//                                if (sourceStreamIterator.hasNext()) sourceStreamIterator.next()
-//                                else ZeroSample
-//                        val mergingSample =
-//                                if (mergingStreamIterator.hasNext()) mergingStreamIterator.next()
-//                                else ZeroSample
-//
-//                        params.operation.apply(sourceSample, mergingSample)
-//                    }
-//                }
-//            }
-//        }.asSequence()
-        TODO()
+        val s = max(timeToSampleIndexFloor(params.start, params.timeUnit, sampleRate), 0L)
+        val e = params.end?.let { timeToSampleIndexCeil(it, params.timeUnit, sampleRate) }
+        val l = e?.minus(s)
+
+        var ss: Long
+        var ms: Long
+        var newShift: Long
+        if (params.shift < 0) {
+            ss = s + params.shift
+            if (ss < 0) ss = 0
+            ms = s
+            newShift = params.shift.toLong() + s
+            if (newShift > 0) newShift = 0L
+        } else {
+            ss = s
+            ms = s - params.shift
+            if (ms < 0) ms = 0
+            newShift = params.shift - s
+            if (newShift < 0) newShift = 0L
+        }
+
+        val sourceStreamArrayIterator =
+                (if (params.start != 0L || params.end != null)
+                    sourceStream.rangeProjection(
+                            samplesCountToLength(ss, sampleRate, params.timeUnit),
+                            l?.plus(ss)?.let { samplesCountToLength(it, sampleRate, params.timeUnit) },
+                            params.timeUnit
+                    )
+                else sourceStream)
+                        .asSequence(sampleRate).iterator()
+
+        val mergingStreamArrayIterator =
+                (if (params.start != 0L || params.end != null)
+                    mergingStream.rangeProjection(
+                            samplesCountToLength(ms, sampleRate, params.timeUnit),
+                            l?.plus(ms)?.let { samplesCountToLength(it, sampleRate, params.timeUnit) },
+                            params.timeUnit
+                    )
+                else mergingStream)
+                        .asSequence(sampleRate).iterator()
+
+        var globalCounter = 0
+        var sourceStreamPos = 0L
+        var mergingStreamPos = if (newShift < 0) newShift else 0L
+
+        return object : Iterator<SampleArray> {
+
+            var mergingArrayIdx = 0
+            var mergingArray: SampleArray? = null
+            var sourceArrayIdx = 0
+            var sourceArray: SampleArray? = null
+
+            fun readFromMergingArray(): Sample {
+                return if (mergingArrayIdx >= mergingArray?.size ?: 0) { // we need to read next batch
+                    if (mergingStreamArrayIterator.hasNext()) { // if there is something to read, then read
+                        mergingArray = mergingStreamArrayIterator.next()
+                        mergingArrayIdx = 0
+                        mergingArray?.get(mergingArrayIdx++) ?: ZeroSample
+                    } else { // else simply return zero samples
+                        mergingArray = null
+                        ZeroSample
+                    }
+                } else {
+                    mergingArray?.get(mergingArrayIdx++) ?: ZeroSample
+                }
+            }
+
+            fun readFromSourceArray(): Sample {
+                return if (sourceArrayIdx >= sourceArray?.size ?: 0) { // we need to read next batch
+                    if (sourceStreamArrayIterator.hasNext()) { // if there is something to read, then read
+                        sourceArray = sourceStreamArrayIterator.next()
+                        sourceArrayIdx = 0
+                        sourceArray?.get(sourceArrayIdx++) ?: ZeroSample
+                    } else { // else -- no samples left
+                        sourceArray = null
+                        ZeroSample
+                    }
+                } else {
+                    sourceArray?.get(sourceArrayIdx++) ?: ZeroSample
+                }
+            }
+
+            override fun hasNext(): Boolean {
+                return !(l != null && globalCounter >= l)
+            }
+
+            override fun next(): SampleArray {
+                return createSampleArray {
+                    globalCounter++
+                    when {
+                        mergingStreamPos < 0 -> {
+                            mergingStreamPos++
+
+                            val sourceSample = ZeroSample
+                            val mergingSample = readFromMergingArray()
+
+                            params.operation.apply(sourceSample, mergingSample)
+                        }
+                        mergingStreamPos < newShift -> {
+                            mergingStreamPos++
+                            sourceStreamPos++
+
+                            val sourceSample = readFromSourceArray()
+                            val mergingSample = ZeroSample
+
+                            params.operation.apply(sourceSample, mergingSample)
+                        }
+                        else -> {
+                            mergingStreamPos++
+                            sourceStreamPos++
+
+                            val sourceSample = readFromSourceArray()
+                            val mergingSample = readFromMergingArray()
+
+                            params.operation.apply(sourceSample, mergingSample)
+                        }
+                    }
+                }
+            }
+        }.asSequence()
     }
 }

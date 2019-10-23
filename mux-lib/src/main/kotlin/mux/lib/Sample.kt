@@ -4,13 +4,14 @@ import kotlin.math.round
 
 
 const val INT_24BIT_MAX_VALUE = 8388608
+const val DEFAULT_SAMPLE_ARRAY_SIZE = 512
 
 /** Internal representation of sample. */
 typealias Sample = Double
 
 typealias SampleArray = DoubleArray
 
-fun createSampleArray(size: Int, fn: (Int) -> Sample): SampleArray {
+fun createSampleArray(size: Int = DEFAULT_SAMPLE_ARRAY_SIZE, fn: (Int) -> Sample): SampleArray {
     return DoubleArray(size, fn)
 }
 

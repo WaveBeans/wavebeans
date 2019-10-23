@@ -13,8 +13,10 @@ import mux.lib.io.FiniteInput
 import mux.lib.math.ComplexNumber
 import mux.lib.math.minus
 import mux.lib.math.plus
-import mux.lib.math.r
-import mux.lib.stream.*
+import mux.lib.stream.FiniteInputSampleStream
+import mux.lib.stream.SampleStream
+import mux.lib.stream.ZeroFilling
+import mux.lib.stream.sampleStream
 import org.spekframework.spek2.dsl.Skip
 import org.spekframework.spek2.dsl.TestBody
 import org.spekframework.spek2.style.specification.Suite
@@ -80,3 +82,5 @@ fun Iterable<Int>.stream(sampleRate: Float, bitDepth: BitDepth = BitDepth.BIT_8)
 
 fun ByteArray.asInput(sampleRate: Float, bitDepth: BitDepth = BitDepth.BIT_8): FiniteInput =
         ByteArrayLittleEndianInput(ByteArrayLittleEndianInputParams(sampleRate, bitDepth, this))
+
+fun <T> Int.repeat(f: (Int) -> T): List<T> = (0 until this).map { f(it) }
