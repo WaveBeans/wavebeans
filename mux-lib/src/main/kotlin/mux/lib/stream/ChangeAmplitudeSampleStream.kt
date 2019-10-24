@@ -23,7 +23,7 @@ class ChangeAmplitudeSampleStream(
 
     override fun asSequence(sampleRate: Float): Sequence<SampleArray> {
         return source.asSequence(sampleRate)
-                .map { arr -> createSampleArray(arr.size) { it * params.multiplier } }
+                .map { arr -> createSampleArray(arr.size) { arr[it] * params.multiplier } }
     }
 
     override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): SampleStream {

@@ -70,9 +70,9 @@ fun Iterable<Int>.stream(sampleRate: Float, bitDepth: BitDepth = BitDepth.BIT_8)
             this.map {
                 when (bitDepth) {
                     BitDepth.BIT_8 -> listOf(it.toByte())
-                    BitDepth.BIT_16 -> listOf((it shr 8) and 0xFF, it and 0xFF).map { i -> i.toByte() }
+                    BitDepth.BIT_16 -> listOf((it shr 8) and 0xFF, it and 0xFF).map { i -> i.toByte() }.reversed()
                     BitDepth.BIT_24 -> TODO()
-                    BitDepth.BIT_32 -> TODO()
+                    BitDepth.BIT_32 -> listOf((it shr 24) and 0xFF, (it shr 16) and 0xFF, (it shr 8) and 0xFF, it and 0xFF).map { i -> i.toByte() }.reversed()
                     BitDepth.BIT_64 -> TODO()
                 }
             }.flatten().toList().toByteArray().asInput(sampleRate, bitDepth),

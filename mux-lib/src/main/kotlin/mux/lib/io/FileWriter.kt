@@ -27,7 +27,6 @@ abstract class FileWriter<T : Any, S : BeanStream<T, S>>(
     override fun write(): Boolean {
         return if (sampleIterator.hasNext()) {
             val bytes = serialize(sampleIterator.next())
-            val r = bytes.size
             buffer.write(bytes, 0, bytes.size)
             true
         } else {

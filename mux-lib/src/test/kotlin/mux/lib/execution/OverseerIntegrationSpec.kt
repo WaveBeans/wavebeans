@@ -1,5 +1,7 @@
 package mux.lib.execution
 
+import assertk.assertThat
+import assertk.assertions.isEqualTo
 import mux.lib.io.sine
 import mux.lib.io.toCsv
 import mux.lib.stream.changeAmplitude
@@ -15,8 +17,8 @@ import kotlin.system.measureTimeMillis
 object OverseerIntegrationSpec : Spek({
 
     describe("Two outputs with different paths but same content") {
-        val f1 = File.createTempFile("test", ".csv")//.also { it.deleteOnExit() }
-        val f2 = File.createTempFile("test", ".csv")//.also { it.deleteOnExit() }
+        val f1 = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
+        val f2 = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
 
         val i1 = 440.sine(0.5)
         val i2 = 800.sine(0.0)
@@ -28,7 +30,7 @@ object OverseerIntegrationSpec : Spek({
         val o1 = p1
                 .trim(500)
                 .toCsv("file://${f1.absolutePath}")
-        val o2 = p2 // (p2 + p1)
+        val o2 = (p1 + p2)
                 .trim(500)
                 .toCsv("file://${f2.absolutePath}")
 
@@ -42,7 +44,7 @@ object OverseerIntegrationSpec : Spek({
             println("Topology deployed")
         }
         val timeToProcess = measureTimeMillis {
-            overseer.waitToFinish()
+            overseer.waitToFinish(1)
             println("Everything processed")
         }
         val timeToFinalize = measureTimeMillis {
@@ -50,7 +52,7 @@ object OverseerIntegrationSpec : Spek({
             println("Everything closed")
         }
 
-//        it("should have the same output") { assertThat(f1.readText()).isEqualTo(f2.readText()) }
+        it("should have the same output") { assertThat(f1.readLines()).isEqualTo(f2.readLines()) }
 
         val localRunTime = measureTimeMillis {
             listOf(o1, o2)
