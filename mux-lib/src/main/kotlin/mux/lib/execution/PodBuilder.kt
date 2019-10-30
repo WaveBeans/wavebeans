@@ -23,7 +23,7 @@ class PodBuilder(private val topology: Topology) {
         for (beanRef in topology.refs) {
             val nodeClazz = Class.forName(beanRef.type).kotlin
 
-            if (beanRef.id in createdPods) TODO("topology should be without it") /*continue*/ // do not create pods with the same ID more than once.
+            check(beanRef.id !in createdPods) { "Topology should already be created without duplication. Found duplicated bean: $beanRef" }
             createdPods += beanRef.id
 
             val pod = when {

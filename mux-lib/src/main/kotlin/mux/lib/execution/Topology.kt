@@ -46,7 +46,7 @@ data class Topology(
                 iterateOverNodes(it, null, 0)
             }
 
-            return Topology(refs, links.distinct())
+            return Topology(refs.distinctBy { it.id }, links.distinct())
         }
     }
 }
