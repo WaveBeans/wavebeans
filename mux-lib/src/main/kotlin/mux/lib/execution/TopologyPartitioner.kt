@@ -34,8 +34,7 @@ fun Topology.partition(partitionsCount: Int, idResolver: PartitioningIdResolver 
         println("linkedBeans=$linkedBeans")
         if (linkedBeans.isEmpty()) return
 
-        if (linkedBeans.size == 1) {
-            val linkedBeanRef = linkedBeans.first()
+        for (linkedBeanRef in linkedBeans) {
             val linkedBeanClazz = Class.forName(linkedBeanRef.type).kotlin
             when {
                 linkedBeanClazz.isSubclassOf(SinglePartitionBean::class) && beanClazz.isSubclassOf(SinglePartitionBean::class) -> {
@@ -48,7 +47,7 @@ fun Topology.partition(partitionsCount: Int, idResolver: PartitioningIdResolver 
                     val newLinks = partitionedBeans.map { BeanLink(it.id, newBean.id) }
                     beanRefs += newBean
                     links += newLinks
-                    handleBean(newBean, level + 1)
+                    handleBean(linkedBeanRef, level + 1)
                 }
                 linkedBeanClazz.isSubclassOf(Bean::class) && beanClazz.isSubclassOf(SinglePartitionBean::class) -> {
                     val newBeans = (0 until partitionsCount)
@@ -77,8 +76,6 @@ fun Topology.partition(partitionsCount: Int, idResolver: PartitioningIdResolver 
                     handleBean(linkedBeanRef, level + 1)
                 }
             }
-        } else {
-            TODO("linkedBeans.size=${linkedBeans.size}")
         }
     }
 
