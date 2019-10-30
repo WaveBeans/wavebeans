@@ -21,7 +21,7 @@ data class WavFiniteInputParams(
 class WavFiniteInput(
         val params: WavFiniteInputParams,
         private val content: Content? = null
-) : FiniteInput {
+) : FiniteInput, SinglePartitionBean {
 
     override val parameters: BeanParams = params
 

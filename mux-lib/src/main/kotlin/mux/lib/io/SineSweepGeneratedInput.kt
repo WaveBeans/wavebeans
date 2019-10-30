@@ -35,7 +35,7 @@ data class SineSweepGeneratedInputParams(
 
 class SineSweepGeneratedInput(
         val params: SineSweepGeneratedInputParams
-) : StreamInput {
+) : StreamInput, SinglePartitionBean {
 
     override val parameters: BeanParams = params
 

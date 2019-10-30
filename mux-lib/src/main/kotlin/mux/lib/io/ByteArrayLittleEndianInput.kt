@@ -48,7 +48,7 @@ class ByteArrayLittleEndianDecoder(val sampleRate: Float, val bitDepth: BitDepth
 
 data class ByteArrayLittleEndianInputParams(val sampleRate: Float, val bitDepth: BitDepth, val buffer: ByteArray) : BeanParams()
 
-class ByteArrayLittleEndianInput(val params: ByteArrayLittleEndianInputParams) : FiniteInput {
+class ByteArrayLittleEndianInput(val params: ByteArrayLittleEndianInputParams) : FiniteInput, SinglePartitionBean {
 
     override val parameters: BeanParams = params
 

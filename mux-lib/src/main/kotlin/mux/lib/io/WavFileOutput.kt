@@ -37,7 +37,7 @@ data class WavFileOutputParams(
 class WavFileOutput(
         val stream: FiniteSampleStream,
         val params: WavFileOutputParams
-) : StreamOutput<SampleArray, FiniteSampleStream> {
+) : StreamOutput<SampleArray, FiniteSampleStream>, SinglePartitionBean {
 
     override val input: Bean<SampleArray, FiniteSampleStream>
         get() = stream
