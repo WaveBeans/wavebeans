@@ -6,14 +6,14 @@ import mux.lib.SinglePartitionBean
 import kotlin.reflect.full.isSubclassOf
 
 interface PartitioningIdResolver {
-    fun id(node: BeanRef, partition: Int): Int
+    fun id(beanRef: BeanRef, partition: Int): Int
 }
 
 class DefaultPartitioningIdResolver(topology: Topology) : PartitioningIdResolver {
 
     private var idSeq = topology.refs.maxBy { it.id }?.id ?: 0
 
-    override fun id(node: BeanRef, partition: Int): Int = ++idSeq
+    override fun id(beanRef: BeanRef, partition: Int): Int = ++idSeq
 
 }
 
@@ -22,6 +22,7 @@ fun Topology.partition(partitionsCount: Int, idResolver: PartitioningIdResolver 
     val beanRefs = mutableListOf<BeanRef>()
     val links = mutableListOf<BeanLink>()
     val replacedBeans = mutableMapOf<BeanRef, List<BeanRef>>()
+    val handledBeans = mutableSetOf<BeanRef>()
 
 
     fun handleBean(beanRef: BeanRef, level: Int = 1) {
@@ -32,36 +33,37 @@ fun Topology.partition(partitionsCount: Int, idResolver: PartitioningIdResolver 
                 .filter { it.from == beanRef.id }
                 .map { l -> this.refs.first { it.id == l.to } }
         println("linkedBeans=$linkedBeans")
-        if (linkedBeans.isEmpty()) return
+        println("Current: beanRefs=$beanRefs, links=$links")
+        if (linkedBeans.isEmpty() || handledBeans.contains(beanRef)) {
+            println("Skipping")
+            return
+        }
+        handledBeans += beanRef
 
         for (linkedBeanRef in linkedBeans) {
             val linkedBeanClazz = Class.forName(linkedBeanRef.type).kotlin
-            when {
-                linkedBeanClazz.isSubclassOf(SinglePartitionBean::class) && beanClazz.isSubclassOf(SinglePartitionBean::class) -> {
-                    TODO("Not supported: beanClazz=$beanClazz, linkedBeanClazz=$linkedBeanClazz")
-                }
+            val (newLinks, newBeans) = when {
                 linkedBeanClazz.isSubclassOf(SinglePartitionBean::class) && beanClazz.isSubclassOf(Bean::class) -> {
                     val partitionedBeans = replacedBeans.getValue(beanRef)
-                    val newBean = linkedBeanRef.copy(id = idResolver.id(linkedBeanRef, 0))
-                    replacedBeans[linkedBeanRef] = listOf(newBean)
-                    val newLinks = partitionedBeans.map { BeanLink(it.id, newBean.id) }
-                    beanRefs += newBean
-                    links += newLinks
-                    handleBean(linkedBeanRef, level + 1)
+                    val newBeans = replacedBeans[linkedBeanRef]
+                            ?: listOf(linkedBeanRef.copy(id = idResolver.id(linkedBeanRef, 0)))
+                    val newLinks = partitionedBeans.map { BeanLink(it.id, newBeans.first().id) }
+
+                    Pair(newLinks, newBeans)
                 }
                 linkedBeanClazz.isSubclassOf(Bean::class) && beanClazz.isSubclassOf(SinglePartitionBean::class) -> {
-                    val newBeans = (0 until partitionsCount)
-                            .map { linkedBeanRef.copy(id = idResolver.id(linkedBeanRef, it), partition = it) }
+                    val newBeans = replacedBeans[linkedBeanRef]
+                            ?: (0 until partitionsCount)
+                                    .map { linkedBeanRef.copy(id = idResolver.id(linkedBeanRef, it), partition = it) }
                     val beanRefReplacementId = replacedBeans.getValue(beanRef).first().id
                     val newLinks = newBeans.map { BeanLink(beanRefReplacementId, it.id) }
-                    replacedBeans[linkedBeanRef] = newBeans
-                    beanRefs += newBeans
-                    links += newLinks
-                    handleBean(linkedBeanRef, level + 1)
+
+                    Pair(newLinks, newBeans)
                 }
                 linkedBeanClazz.isSubclassOf(Bean::class) && beanClazz.isSubclassOf(Bean::class) -> {
-                    val newBeans = (0 until partitionsCount)
-                            .map { linkedBeanRef.copy(id = idResolver.id(linkedBeanRef, it), partition = it) }
+                    val newBeans = replacedBeans[linkedBeanRef]
+                            ?: (0 until partitionsCount)
+                                    .map { linkedBeanRef.copy(id = idResolver.id(linkedBeanRef, it), partition = it) }
                     val partitionedBeans = replacedBeans.getValue(beanRef)
                     val newLinks = newBeans
                             .map { newBean ->
@@ -70,12 +72,19 @@ fun Topology.partition(partitionsCount: Int, idResolver: PartitioningIdResolver 
                                         newBean.id
                                 )
                             }
-                    replacedBeans[linkedBeanRef] = newBeans
-                    beanRefs += newBeans
-                    links += newLinks
-                    handleBean(linkedBeanRef, level + 1)
+
+                    Pair(newLinks, newBeans)
                 }
+                else -> throw UnsupportedOperationException("Not supported linkedBeanClazz=$linkedBeanClazz, beanClazz=$beanClazz")
             }
+
+            links += newLinks
+            if (linkedBeanRef !in replacedBeans.keys) {
+                beanRefs += newBeans
+                replacedBeans[linkedBeanRef] = newBeans
+                handleBean(linkedBeanRef, level + 1)
+            }
+
         }
     }
 

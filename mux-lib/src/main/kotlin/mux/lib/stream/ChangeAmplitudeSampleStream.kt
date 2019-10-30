@@ -4,6 +4,9 @@ import kotlinx.serialization.Serializable
 import mux.lib.*
 import java.util.concurrent.TimeUnit
 
+operator fun SampleStream.times(multiplier: Double): SampleStream = this.changeAmplitude(multiplier)
+operator fun SampleStream.div(divisor: Double): SampleStream = this.changeAmplitude(1.0 / divisor)
+
 fun SampleStream.changeAmplitude(multiplier: Double): SampleStream =
         ChangeAmplitudeSampleStream(this, ChangeAmplitudeSampleStreamParams(multiplier))
 

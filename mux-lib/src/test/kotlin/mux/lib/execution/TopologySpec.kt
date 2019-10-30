@@ -9,9 +9,7 @@ import mux.lib.io.CsvSampleStreamOutputParams
 import mux.lib.io.SineGeneratedInputParams
 import mux.lib.io.sine
 import mux.lib.io.toCsv
-import mux.lib.stream.changeAmplitude
-import mux.lib.stream.plus
-import mux.lib.stream.trim
+import mux.lib.stream.*
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 
@@ -106,31 +104,47 @@ object TopologySpec : Spek({
     }
 
     describe("Topology if outputs share parts") {
-        val i = 440.sine().i(1,2)
-        val p1 = i.changeAmplitude(2.0).n(3)
-        val p2 = i.changeAmplitude(3.0).n(4)
-        val o1 = p1.trim(3000).n(5).toCsv("file:///some1.csv").n(6)
-        val o2 = p2.trim(3000).n(7).toCsv("file:///some2.csv").n(8)
+        describe("Separate outputs") {
+            val i = 440.sine().i(1, 2)
+            val p1 = i.changeAmplitude(2.0).n(3)
+            val p2 = i.changeAmplitude(3.0).n(4)
+            val o1 = p1.trim(3000).n(5).toCsv("file:///some1.csv").n(6)
+            val o2 = p2.trim(3000).n(7).toCsv("file:///some2.csv").n(8)
 
-        val topology = listOf(o1, o2).buildTopology(idResolver).also {println(TopologySerializer.serialize(it, jsonPretty))}
-        it("shouldn't have duplicate beans") {
-            assertThat(topology.refs.distinctBy { it.id }).isEqualTo(topology.refs)
-        }
-        it("shouldn't have duplicate links") {
-            val expectedLinks = arrayOf(
-                    BeanLink(2, 1),
-                    BeanLink(3, 2),
-                    BeanLink(4, 2),
-                    BeanLink(5, 3),
-                    BeanLink(6, 5),
-                    BeanLink(7, 4),
-                    BeanLink(8, 7)
-            )
-            assertThat(topology.links).all {
-                size().isEqualTo(expectedLinks.size)
-                each {
-                    it.isIn(*expectedLinks)
+            val topology = listOf(o1, o2).buildTopology(idResolver)
+            it("shouldn't have duplicate beans") {
+                assertThat(topology.refs.distinctBy { it.id }).isEqualTo(topology.refs)
+            }
+            it("shouldn't have duplicate links") {
+                val expectedLinks = arrayOf(
+                        BeanLink(2, 1),
+                        BeanLink(3, 2),
+                        BeanLink(4, 2),
+                        BeanLink(5, 3),
+                        BeanLink(6, 5),
+                        BeanLink(7, 4),
+                        BeanLink(8, 7)
+                )
+                assertThat(topology.links).all {
+                    size().isEqualTo(expectedLinks.size)
+                    each {
+                        it.isIn(*expectedLinks)
+                    }
                 }
+            }
+        }
+
+        describe("One output") {
+            val i = 440.sine().i(1, 2)
+            val p1 = (i * 2.0).n(3)
+            val p2 = (i / 3.0).n(4)
+            val o1 = (p1 + p2).n(5)
+                    .trim(3000).n(6)
+                    .toCsv("file:///some1.csv").n(7)
+            val topology = listOf(o1).buildTopology(idResolver).also { println(TopologySerializer.serialize(it, jsonPretty)) }
+
+            it("shouldn't have duplicate beans") {
+                assertThat(topology.refs.distinctBy { it.id }).isEqualTo(topology.refs)
             }
         }
     }

@@ -5,7 +5,9 @@ import assertk.assertThat
 import assertk.assertions.*
 import mux.lib.Bean
 import mux.lib.io.*
+import mux.lib.stream.div
 import mux.lib.stream.plus
+import mux.lib.stream.times
 import mux.lib.stream.trim
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
@@ -17,8 +19,8 @@ object TopologyPartitionerSpec : Spek({
     val ids = mutableMapOf<Bean<*, *>, Int>()
 
     val partitioningIdResolver = object : PartitioningIdResolver {
-        override fun id(node: BeanRef, partition: Int): Int {
-            return partitionedIdsOffset + node.id * maxPartitions + partition
+        override fun id(beanRef: BeanRef, partition: Int): Int {
+            return partitionedIdsOffset + beanRef.id * maxPartitions + partition
         }
     }
 
@@ -170,6 +172,57 @@ object TopologyPartitionerSpec : Spek({
                         prop("Link[6.1->5.0]") { it.partitionLinks(6, 1, 5, 0) }.size().isEqualTo(1)
                         prop("Link[7.0->6.0]") { it.partitionLinks(7, 0, 6, 0) }.size().isEqualTo(1)
                         prop("Link[7.0->6.1]") { it.partitionLinks(7, 0, 6, 1) }.size().isEqualTo(1)
+                    }
+        }
+    }
+
+    describe("Topology with shared parts") {
+        val i = 440.sine().i(1, 2)
+        val p1 = (i * 2.0).n(3)
+        val p2 = (i / 3.0).n(4)
+        val o1 = (p1 + p2).n(5)
+                .trim(3000).n(6)
+                .toCsv("file:///some1.csv").n(7)
+
+        val topology = listOf(o1).buildTopology(idResolver)
+        it("should remain the same if partitionsCount=1") {
+            assertThat(topology.partition(1, partitioningIdResolver))
+                    .all {
+                        prop("Bean[id=1]") { it.beansForId(1) }.size().isEqualTo(1)
+                        prop("Bean[id=2]") { it.beansForId(2) }.size().isEqualTo(1)
+                        prop("Bean[id=3]") { it.beansForId(3) }.size().isEqualTo(1)
+                        prop("Bean[id=4]") { it.beansForId(4) }.size().isEqualTo(1)
+                        prop("Bean[id=5]") { it.beansForId(5) }.size().isEqualTo(1)
+                        prop("Bean[id=6]") { it.beansForId(6) }.size().isEqualTo(1)
+                        prop("Bean[id=7]") { it.beansForId(7) }.size().isEqualTo(1)
+                        prop("Link[2->1]") { it.links(2, 1) }.size().isEqualTo(1)
+                        prop("Link[3->2]") { it.links(3, 2) }.size().isEqualTo(1)
+                        prop("Link[4->2]") { it.links(4, 2) }.size().isEqualTo(1)
+                        prop("Link[5->3]") { it.links(5, 3) }.size().isEqualTo(1)
+                        prop("Link[5->4]") { it.links(5, 4) }.size().isEqualTo(1)
+                        prop("Link[6->5]") { it.links(6, 5) }.size().isEqualTo(1)
+                        prop("Link[7->6]") { it.links(7, 6) }.size().isEqualTo(1)
+                    }
+        }
+        it("should duplicate some of beans if partitionsCount=2") {
+            assertThat(topology.partition(2, partitioningIdResolver))
+                    .all {
+                        prop("Bean[id=1]") { it.beansForId(1) }.size().isEqualTo(1)
+                        prop("Bean[id=2]") { it.beansForId(2) }.size().isEqualTo(2)
+                        prop("Bean[id=3]") { it.beansForId(3) }.size().isEqualTo(2)
+                        prop("Bean[id=4]") { it.beansForId(4) }.size().isEqualTo(2)
+                        prop("Bean[id=5]") { it.beansForId(5) }.size().isEqualTo(1)
+                        prop("Bean[id=6]") { it.beansForId(6) }.size().isEqualTo(2)
+                        prop("Bean[id=7]") { it.beansForId(7) }.size().isEqualTo(1)
+                        prop("Link[2->1]") { it.links(2, 1) }.size().isEqualTo(2)
+                        prop("Link[3.0->2.0]") { it.partitionLinks(3, 0, 2, 0) }.size().isEqualTo(1)
+                        prop("Link[3.1->2.1]") { it.partitionLinks(3, 1, 2, 1) }.size().isEqualTo(1)
+                        prop("Link[4.0->2.0]") { it.partitionLinks(4, 0, 2, 0) }.size().isEqualTo(1)
+                        prop("Link[4.1->2.1]") { it.partitionLinks(4, 1, 2, 1) }.size().isEqualTo(1)
+                        prop("Link[5->3]") { it.links(5, 3) }.size().isEqualTo(2)
+                        prop("Link[5->4]") { it.links(5, 4) }.size().isEqualTo(2)
+                        prop("Link[6->5]") { it.links(6, 5) }.size().isEqualTo(2)
+                        prop("Link[7->6]") { it.links(7, 6) }.size().isEqualTo(2)
                     }
         }
     }
