@@ -1,9 +1,9 @@
 package mux.lib.io
 
-import mux.lib.SingleBean
+import mux.lib.SinkBean
 import java.io.Closeable
 
-interface StreamOutput<T : Any, S : Any> : SingleBean<T, S> {
+interface StreamOutput<T : Any, S : Any> : SinkBean<T, S> {
 
     fun writer(sampleRate: Float): Writer
 }

@@ -6,6 +6,7 @@ import mux.lib.Sample
 import mux.lib.sampleOf
 import mux.lib.stream.SampleStream
 import java.util.concurrent.TimeUnit
+import kotlin.reflect.KClass
 
 fun newTestPod(seq: List<Int>): StreamingPod<Sample, SampleStream> {
     return object : StreamingPod<Sample, SampleStream>(1, unburdenElementsCleanupThreshold = 0) {
@@ -20,4 +21,6 @@ fun newTestPod(seq: List<Int>): StreamingPod<Sample, SampleStream> {
 
     }
 }
-
+fun String.toClass(): KClass<out Any> {
+    return Class.forName(this).kotlin
+}

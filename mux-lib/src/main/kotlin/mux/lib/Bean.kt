@@ -41,6 +41,10 @@ interface MultiBean<T : Any, S : Any> : Bean<T, S> {
     override fun inputs(): List<Bean<*, *>> = inputs
 }
 
+interface SinkBean<T : Any, S : Any> : SingleBean<T, S>
+
+interface SinglePartitionBean
+
 @Serializable
 open class BeanParams
 

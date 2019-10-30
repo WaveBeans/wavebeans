@@ -1,6 +1,7 @@
 package mux.lib.execution
 
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.modules.SerializersModule
 import mux.lib.BeanParams
 import mux.lib.NoParams
@@ -23,9 +24,11 @@ object TopologySerializer {
         }
     }
 
-    private val json = Json(context = paramsModule)
+    val jsonCompact = Json(context = paramsModule)
 
-    fun deserialize(topology: String): Topology = json.parse(Topology.serializer(), topology)
+    val jsonPretty = Json(context = paramsModule, configuration = JsonConfiguration.Stable.copy(prettyPrint = true))
 
-    fun serialize(topology: Topology): String = json.stringify(Topology.serializer(), topology)
+    fun deserialize(topology: String): Topology = jsonCompact.parse(Topology.serializer(), topology)
+
+    fun serialize(topology: Topology, json: Json = jsonCompact): String = json.stringify(Topology.serializer(), topology)
 }

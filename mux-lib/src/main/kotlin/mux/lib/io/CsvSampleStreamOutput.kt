@@ -44,7 +44,7 @@ data class CsvSampleStreamOutputParams(
 class CsvSampleStreamOutput(
         val stream: FiniteSampleStream,
         val params: CsvSampleStreamOutputParams
-) : StreamOutput<SampleArray, FiniteSampleStream> {
+) : StreamOutput<SampleArray, FiniteSampleStream>, SinglePartitionBean {
 
     override fun writer(sampleRate: Float): Writer {
         var offset = 0L

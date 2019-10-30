@@ -10,7 +10,8 @@ import mux.lib.io.StreamOutput
 data class BeanRef(
         val id: Int,
         val type: String,
-        @Serializable(with = PolymorphicSerializer::class) val params: BeanParams
+        @Serializable(with = PolymorphicSerializer::class) val params: BeanParams,
+        val partition: Int = 0
 )
 
 @Serializable

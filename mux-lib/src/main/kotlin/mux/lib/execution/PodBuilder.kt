@@ -8,6 +8,7 @@ import kotlin.reflect.typeOf
 @ExperimentalStdlibApi
 fun Topology.buildPods(): List<AnyPod> = PodBuilder(this).build()
 
+
 @ExperimentalStdlibApi
 class PodBuilder(private val topology: Topology) {
 
@@ -19,11 +20,11 @@ class PodBuilder(private val topology: Topology) {
         val pods = mutableListOf<AnyPod>()
 
         val createdPods = mutableSetOf<PodKey>()
-        for (nodeRef in topology.refs) {
-            val nodeClazz = Class.forName(nodeRef.type).kotlin
+        for (beanRef in topology.refs) {
+            val nodeClazz = Class.forName(beanRef.type).kotlin
 
-            if (nodeRef.id in createdPods) continue // do not create pods with the same ID more than once.
-            createdPods += nodeRef.id
+            if (beanRef.id in createdPods) TODO("topology should be without it") /*continue*/ // do not create pods with the same ID more than once.
+            createdPods += beanRef.id
 
             val pod = when {
                 nodeClazz.isSubclassOf(SingleBean::class) || nodeClazz.isSubclassOf(AlterBean::class) -> {
@@ -34,15 +35,15 @@ class PodBuilder(private val topology: Topology) {
                     }
 
                     val podProxyType = constructor.parameters[0].type
-                    val links = nodeLinks.getValue(nodeRef.id).map { nodeById.getValue(it.to) }
-                    require(links.size == 1) { "SingleBean or AlterBean $nodeRef should have only one link, but: $links" }
+                    val links = nodeLinks.getValue(beanRef.id).map { nodeById.getValue(it.to) }
+                    require(links.size == 1) { "SingleBean or AlterBean $beanRef should have only one link, but: $links" }
 
                     val podProxy = PodRegistry.createPodProxy(podProxyType, links[0].id)
 
                     PodRegistry.createPod(
                             nodeClazz.supertypes.first { it.isSubtypeOf(typeOf<Bean<*, *>>()) },
-                            nodeRef.id,
-                            constructor.call(podProxy, nodeRef.params) as Bean<*, *>
+                            beanRef.id,
+                            constructor.call(podProxy, beanRef.params) as Bean<*, *>
                     )
                 }
 
@@ -54,8 +55,8 @@ class PodBuilder(private val topology: Topology) {
 
                     PodRegistry.createPod(
                             nodeClazz.supertypes.first { it.isSubtypeOf(typeOf<Bean<*, *>>()) },
-                            nodeRef.id,
-                            constructor.call(nodeRef.params) as Bean<*, *>
+                            beanRef.id,
+                            constructor.call(beanRef.params) as Bean<*, *>
                     )
                 }
 
@@ -69,7 +70,7 @@ class PodBuilder(private val topology: Topology) {
                     }
                     val podProxyType1 = constructor.parameters[0].type
                     val podProxyType2 = constructor.parameters[1].type
-                    val links = nodeLinks.getValue(nodeRef.id)
+                    val links = nodeLinks.getValue(beanRef.id)
                             .sortedBy { it.order }
                             .map { nodeById.getValue(it.to) }
                     require(links.size == 2) { "MergedSampleStream should have only 2 links: $links" }
@@ -78,8 +79,8 @@ class PodBuilder(private val topology: Topology) {
 
                     PodRegistry.createPod(
                             nodeClazz.supertypes.first { it.isSubtypeOf(typeOf<Bean<*, *>>()) },
-                            nodeRef.id,
-                            constructor.call(podProxy1, podProxy2, nodeRef.params) as Bean<*, *>
+                            beanRef.id,
+                            constructor.call(podProxy1, podProxy2, beanRef.params) as Bean<*, *>
                     )
                 }
 
@@ -88,7 +89,7 @@ class PodBuilder(private val topology: Topology) {
 
             println("""
                 NODE CLASS: $nodeClazz
-                #: ${nodeRef.id}
+                #: ${beanRef.id}
                 POD: $pod
                 POD INPUTS: ${pod.inputs()}
                 POD INPUT INPUTS: ${pod.inputs().map { it.inputs() }}

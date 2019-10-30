@@ -31,7 +31,7 @@ data class SineGeneratedInputParams(
 
 class SineGeneratedInput constructor(
         val params: SineGeneratedInputParams
-) : StreamInput {
+) : StreamInput, SinglePartitionBean {
     override val parameters: BeanParams = params
 
     override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): StreamInput {
