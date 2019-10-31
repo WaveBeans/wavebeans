@@ -14,15 +14,7 @@ import org.spekframework.spek2.style.specification.describe
 
 object TopologyPartitionerSpec : Spek({
 
-    val maxPartitions = 10
-    val partitionedIdsOffset = 100
     val ids = mutableMapOf<Bean<*, *>, Int>()
-
-    val partitioningIdResolver = object : PartitioningIdResolver {
-        override fun id(beanRef: BeanRef, partition: Int): Int {
-            return partitionedIdsOffset + beanRef.id * maxPartitions + partition
-        }
-    }
 
     val idResolver = object : IdResolver {
         override fun id(node: Bean<*, *>): Int = ids[node] ?: throw IllegalStateException("$node is not found")
@@ -43,19 +35,15 @@ object TopologyPartitionerSpec : Spek({
         return this
     }
 
-    fun Topology.beansForId(id: Int) = this.refs.filter { (it.id - partitionedIdsOffset) / maxPartitions == id }
+    fun Topology.beansForId(id: Int) = this.refs.filter { it.id == id }
 
     fun Topology.links(from: Int, to: Int): List<BeanLink> {
-        val fromIds = this.beansForId(from).map { it.id }
-        val toIds = this.beansForId(to).map { it.id }
         return this.links
-                .filter { it.from in fromIds && it.to in toIds }
+                .filter { it.from == from && it.to == to }
     }
 
     fun Topology.partitionLinks(from: Int, pFrom: Int, to: Int, pTo: Int): List<BeanLink> {
-        val from = this.beansForId(from).filter { it.partition == pFrom }.map { it.id }
-        val to = this.beansForId(to).filter { it.partition == pTo }.map { it.id }
-        return this.links.filter { it.from in from && it.to in to }
+        return this.links.filter { it.fromPartition == pFrom && it.from == from && it.toPartition == pTo && it.to == to}
     }
 
     describe("Simple one-line topology") {
@@ -65,7 +53,7 @@ object TopologyPartitionerSpec : Spek({
         val topology = listOf(o1).buildTopology(idResolver)
 
         it("should remain the same if partitionsCount=1") {
-            assertThat(topology.partition(1, partitioningIdResolver))
+            assertThat(topology.partition(1))
                     .all {
                         prop("Bean[id=1]") { it.beansForId(1) }.size().isEqualTo(1)
                         prop("Bean[id=2]") { it.beansForId(2) }.size().isEqualTo(1)
@@ -78,7 +66,7 @@ object TopologyPartitionerSpec : Spek({
         }
 
         it("should duplicate some of beans if partitionsCount=2") {
-            assertThat(topology.partition(2, partitioningIdResolver))
+            assertThat(topology.partition(2))
                     .all {
                         prop("Bean[id=1]") { it.beansForId(1) }.size().isEqualTo(1)
                         prop("Bean[id=2]") { it.beansForId(2) }.size().isEqualTo(2)
@@ -97,7 +85,7 @@ object TopologyPartitionerSpec : Spek({
         }
 
         it("should duplicate some of beans if partitionsCount=5") {
-            assertThat(topology.partition(5, partitioningIdResolver))
+            assertThat(topology.partition(5))
                     .all {
                         prop("Bean[id=1]") { it.beansForId(1) }.size().isEqualTo(1)
                         prop("Bean[id=2]") { it.beansForId(2) }.size().isEqualTo(5)
@@ -134,7 +122,7 @@ object TopologyPartitionerSpec : Spek({
         val topology = listOf(o1).buildTopology(idResolver)
 
         it("should remain the same if partitionsCount=1") {
-            assertThat(topology.partition(1, partitioningIdResolver))
+            assertThat(topology.partition(1))
                     .all {
                         prop("Bean[id=1]") { it.beansForId(1) }.size().isEqualTo(1)
                         prop("Bean[id=2]") { it.beansForId(2) }.size().isEqualTo(1)
@@ -153,7 +141,7 @@ object TopologyPartitionerSpec : Spek({
         }
 
         it("should duplicate some of beans if partitionsCount=2") {
-            assertThat(topology.partition(2, partitioningIdResolver))
+            assertThat(topology.partition(2))
                     .all {
                         prop("Bean[id=1]") { it.beansForId(1) }.size().isEqualTo(1)
                         prop("Bean[id=2]") { it.beansForId(2) }.size().isEqualTo(2)
@@ -186,7 +174,7 @@ object TopologyPartitionerSpec : Spek({
 
         val topology = listOf(o1).buildTopology(idResolver)
         it("should remain the same if partitionsCount=1") {
-            assertThat(topology.partition(1, partitioningIdResolver))
+            assertThat(topology.partition(1))
                     .all {
                         prop("Bean[id=1]") { it.beansForId(1) }.size().isEqualTo(1)
                         prop("Bean[id=2]") { it.beansForId(2) }.size().isEqualTo(1)
@@ -205,7 +193,7 @@ object TopologyPartitionerSpec : Spek({
                     }
         }
         it("should duplicate some of beans if partitionsCount=2") {
-            assertThat(topology.partition(2, partitioningIdResolver))
+            assertThat(topology.partition(2))
                     .all {
                         prop("Bean[id=1]") { it.beansForId(1) }.size().isEqualTo(1)
                         prop("Bean[id=2]") { it.beansForId(2) }.size().isEqualTo(2)

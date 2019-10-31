@@ -23,6 +23,9 @@ object BushSpec : Spek({
             override val podKey: PodKey
                 get() = podKey
 
+            override val partition: Int
+                get() = throw UnsupportedOperationException()
+
             override fun inputs(): List<Bean<*, *>> = throw UnsupportedOperationException()
 
             override val parameters: BeanParams

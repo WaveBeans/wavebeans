@@ -9,8 +9,9 @@ import java.util.concurrent.TimeUnit
 
 class StreamInputPod(
         val node: StreamInput,
-        podKey: PodKey
-) : StreamingPod<SampleArray, StreamInput>(podKey), StreamInput, Pod<SampleArray, StreamInput> {
+        podKey: PodKey,
+        partition: Int
+) : StreamingPod<SampleArray, StreamInput>(podKey, partition), StreamInput, Pod<SampleArray, StreamInput> {
     override fun asSequence(sampleRate: Float): Sequence<SampleArray> = node.asSequence(sampleRate)
 
     override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): StreamInput {
@@ -21,12 +22,19 @@ class StreamInputPod(
         get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
 }
 
-class StreamInputPodProxy(podKey: PodKey) : StreamInput, StreamingPodProxy<SampleArray, StreamInput>(
+class StreamInputPodProxy(podKey: PodKey, partition: Int) : StreamInput, StreamingPodProxy<SampleArray, StreamInput>(
         pointedTo = podKey,
+        partition = partition,
         converter = { it.nullableSampleArrayList() }
 ) {
 
     override fun inputs(): List<Bean<*, *>> {
         return super<StreamingPodProxy>.inputs()
+    }
+}
+class StreamInputMergingPodProxy() : StreamInput, MergingPodProxy<SampleArray, StreamInput>() {
+
+    override fun inputs(): List<Bean<*, *>> {
+        return super<MergingPodProxy>.inputs()
     }
 }

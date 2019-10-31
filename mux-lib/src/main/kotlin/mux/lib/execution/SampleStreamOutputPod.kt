@@ -10,7 +10,8 @@ import mux.lib.stream.FiniteSampleStream
 
 class SampleStreamOutputPod(
         val bean: StreamOutput<Sample, FiniteSampleStream>,
-        override val podKey: PodKey
+        override val podKey: PodKey,
+        override val partition: Int
 ) : StreamOutput<Sample, FiniteSampleStream>, Pod<Sample, FiniteSampleStream>, TickPod {
 
     // TODO that should be the part of configuration

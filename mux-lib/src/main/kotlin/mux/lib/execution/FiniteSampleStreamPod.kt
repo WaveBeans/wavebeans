@@ -6,8 +6,9 @@ import java.util.concurrent.TimeUnit
 
 class FiniteSampleStreamPod(
         val bean: FiniteSampleStream,
-        podKey: PodKey
-) : FiniteSampleStream, StreamingPod<SampleArray, FiniteSampleStream>(podKey) {
+        podKey: PodKey,
+        partition: Int
+) : FiniteSampleStream, StreamingPod<SampleArray, FiniteSampleStream>(podKey, partition) {
 
     override fun length(timeUnit: TimeUnit): Long {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
@@ -27,9 +28,11 @@ class FiniteSampleStreamPod(
 
 @ExperimentalStdlibApi
 class FiniteSampleStreamPodProxy(
-        podKey: PodKey
+        podKey: PodKey,
+        partition: Int
 ) : StreamingPodProxy<SampleArray, FiniteSampleStream>(
         pointedTo = podKey,
+        partition = partition,
         converter = { it.nullableSampleArrayList() }
 ), FiniteSampleStream {
 
@@ -38,5 +41,12 @@ class FiniteSampleStreamPodProxy(
         val caller = bushCallerRepository.create(bush, pointedTo)
 
         return caller.call("length?timeUnit=${timeUnit.name}").long()
+    }
+}
+class FiniteSampleStreamMergingPodProxy(
+) : MergingPodProxy<SampleArray, FiniteSampleStream>(), FiniteSampleStream {
+
+    override fun length(timeUnit: TimeUnit): Long {
+        TODO()
     }
 }

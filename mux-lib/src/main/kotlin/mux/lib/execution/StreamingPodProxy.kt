@@ -3,8 +3,9 @@ package mux.lib.execution
 import mux.lib.*
 import java.util.concurrent.TimeUnit
 
-abstract class StreamingPodProxy<T: Any, S : Any>(
+abstract class StreamingPodProxy<T : Any, S : Any>(
         override val pointedTo: PodKey,
+        override val partition: Int,
         val podDiscovery: PodDiscovery = PodDiscovery.default,
         val bushCallerRepository: BushCallerRepository = BushCallerRepository.default(podDiscovery),
         val timeToReadAtOnce: Int = 10,
@@ -54,5 +55,5 @@ abstract class StreamingPodProxy<T: Any, S : Any>(
     override val parameters: BeanParams
         get() = throw UnsupportedOperationException("That's not required for PodProxy")
 
-    override fun toString(): String = "${this::class.simpleName}->[$pointedTo]"
+    override fun toString(): String = "${this::class.simpleName}->[$pointedTo:$partition]"
 }

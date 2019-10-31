@@ -18,6 +18,8 @@ data class BeanRef(
 data class BeanLink(
         val from: Int,
         val to: Int,
+        val fromPartition: Int = 0,
+        val toPartition: Int = 0,
         val order: Int = 0
 )
 
@@ -37,7 +39,11 @@ data class Topology(
                 refs += BeanRef(id, node::class.qualifiedName!!, node.parameters)
 
                 if (sourceNodeId != null)
-                    links += BeanLink(sourceNodeId, id, order)
+                    links += BeanLink(
+                            from = sourceNodeId,
+                            to = id,
+                            order = order
+                    )
 
                 node.inputs().forEachIndexed { idx, n -> iterateOverNodes(n, id, idx) }
             }

@@ -1,6 +1,7 @@
 package mux.lib.execution
 
 import mux.lib.*
+import mux.lib.execution.TopologySerializer.jsonPretty
 import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.typeOf
@@ -12,93 +13,123 @@ fun Topology.buildPods(): List<AnyPod> = PodBuilder(this).build()
 @ExperimentalStdlibApi
 class PodBuilder(private val topology: Topology) {
 
-    private val nodeById = topology.refs.map { it.id to it }.toMap()
+    private val beansById = topology.refs.groupBy { it.id }
 
-    private val nodeLinks = topology.links.groupBy { it.from }
+    private val beanLinks = topology.links.groupBy { it.from }
 
     fun build(): List<AnyPod> {
-        val pods = mutableListOf<AnyPod>()
+        val builtPods = mutableListOf<AnyPod>()
 
         val createdPods = mutableSetOf<PodKey>()
-        for (beanRef in topology.refs) {
-            val nodeClazz = Class.forName(beanRef.type).kotlin
+        for (beanRefs in beansById.values) {
+            val ref = beanRefs.first()
+            check(ref.id !in createdPods) { "Topology should already be created without duplication. Found duplicated bean: $ref" }
+            createdPods += ref.id
+            val beanClazz = Class.forName(ref.type).kotlin
 
-            check(beanRef.id !in createdPods) { "Topology should already be created without duplication. Found duplicated bean: $beanRef" }
-            createdPods += beanRef.id
 
-            val pod = when {
-                nodeClazz.isSubclassOf(SingleBean::class) || nodeClazz.isSubclassOf(AlterBean::class) -> {
-                    val constructor = nodeClazz.constructors.first {
+            val pods: List<AnyPod> = when {
+                beanClazz.isSubclassOf(SingleBean::class) || beanClazz.isSubclassOf(AlterBean::class) -> {
+                    val constructor = beanClazz.constructors.first {
                         it.parameters.size == 2 &&
                                 it.parameters[0].type.isSubtypeOf(typeOf<Bean<*, *>>()) &&
                                 it.parameters[1].type.isSubtypeOf(typeOf<BeanParams>())
                     }
 
                     val podProxyType = constructor.parameters[0].type
-                    val links = nodeLinks.getValue(beanRef.id).map { nodeById.getValue(it.to) }
-                    require(links.size == 1) { "SingleBean or AlterBean $beanRef should have only one link, but: $links" }
 
-                    val podProxy = PodRegistry.createPodProxy(podProxyType, links[0].id)
+                    beanRefs.map { beanRef ->
+                        val links = beanLinks.getValue(beanRef.id)
+                                .filter { it.fromPartition == beanRef.partition }
+                        if (links.size == 1) {
+                            val link = links.first()
+                            val podProxy = PodRegistry.createPodProxy(
+                                    podProxyType,
+                                    link.to,
+                                    link.toPartition
+                            )
 
-                    PodRegistry.createPod(
-                            nodeClazz.supertypes.first { it.isSubtypeOf(typeOf<Bean<*, *>>()) },
-                            beanRef.id,
-                            constructor.call(podProxy, beanRef.params) as Bean<*, *>
-                    )
+                            PodRegistry.createPod(
+                                    beanClazz.supertypes.first { it.isSubtypeOf(typeOf<Bean<*, *>>()) },
+                                    beanRef.id,
+                                    constructor.call(podProxy, beanRef.params) as Bean<*, *>,
+                                    beanRef.partition
+                            )
+                        } else {
+                            val podProxy = PodRegistry.createMergingPodProxy(
+                                    podProxyType,
+                                    links.map { Pair(it.to, it.toPartition) }
+                            )
+
+                            PodRegistry.createPod(
+                                    beanClazz.supertypes.first { it.isSubtypeOf(typeOf<Bean<*, *>>()) },
+                                    beanRef.id,
+                                    constructor.call(podProxy, beanRef.params) as Bean<*, *>,
+                                    beanRef.partition
+                            )
+                        }
+                    }
                 }
 
-                nodeClazz.isSubclassOf(SourceBean::class) -> {
-                    val constructor = nodeClazz.constructors.first {
+                beanClazz.isSubclassOf(SourceBean::class) -> {
+                    val constructor = beanClazz.constructors.first {
                         it.parameters.size == 1 &&
                                 it.parameters[0].type.isSubtypeOf(typeOf<BeanParams>())
                     }
 
-                    PodRegistry.createPod(
-                            nodeClazz.supertypes.first { it.isSubtypeOf(typeOf<Bean<*, *>>()) },
-                            beanRef.id,
-                            constructor.call(beanRef.params) as Bean<*, *>
-                    )
+                    beanRefs.map { beanRef ->
+                        PodRegistry.createPod(
+                                beanClazz.supertypes.first { it.isSubtypeOf(typeOf<Bean<*, *>>()) },
+                                beanRef.id,
+                                constructor.call(beanRef.params) as Bean<*, *>,
+                                beanRef.partition
+                        )
+                    }
                 }
 
-                nodeClazz.isSubclassOf(MultiBean::class) -> {
+                beanClazz.isSubclassOf(MultiBean::class) -> {
                     // TODO add support for 2+
-                    val constructor = nodeClazz.constructors.first {
+                    val constructor = beanClazz.constructors.first {
                         it.parameters.size == 3 &&
                                 it.parameters[0].type.isSubtypeOf(typeOf<Bean<*, *>>()) &&
                                 it.parameters[1].type.isSubtypeOf(typeOf<Bean<*, *>>()) &&
                                 it.parameters[2].type.isSubtypeOf(typeOf<BeanParams>())
                     }
-                    val podProxyType1 = constructor.parameters[0].type
-                    val podProxyType2 = constructor.parameters[1].type
-                    val links = nodeLinks.getValue(beanRef.id)
-                            .sortedBy { it.order }
-                            .map { nodeById.getValue(it.to) }
-                    require(links.size == 2) { "MergedSampleStream should have only 2 links: $links" }
-                    val podProxy1 = PodRegistry.createPodProxy(podProxyType1, links[0].id)
-                    val podProxy2 = PodRegistry.createPodProxy(podProxyType2, links[1].id)
+                    beanRefs.map { beanRef ->
+                        val podProxyType1 = constructor.parameters[0].type
+                        val podProxyType2 = constructor.parameters[1].type
+                        val links = beanLinks.getValue(beanRef.id)
+                                .sortedBy { it.order }
+                        require(links.size == 2) { "MergedSampleStream should have only 2 links per partition: $links" }
 
-                    PodRegistry.createPod(
-                            nodeClazz.supertypes.first { it.isSubtypeOf(typeOf<Bean<*, *>>()) },
-                            beanRef.id,
-                            constructor.call(podProxy1, podProxy2, beanRef.params) as Bean<*, *>
-                    )
+                        val podProxy1 = PodRegistry.createPodProxy(podProxyType1, links[0].to, beanRef.partition)
+                        val podProxy2 = PodRegistry.createPodProxy(podProxyType2, links[1].to, beanRef.partition)
+
+                        PodRegistry.createPod(
+                                beanClazz.supertypes.first { it.isSubtypeOf(typeOf<Bean<*, *>>()) },
+                                beanRef.id,
+                                constructor.call(podProxy1, podProxy2, beanRef.params) as Bean<*, *>,
+                                beanRef.partition
+
+                        )
+                    }
                 }
 
-                else -> throw UnsupportedOperationException("Unsupported class $nodeClazz for decorating")
+                else -> throw UnsupportedOperationException("Unsupported class $beanClazz for decorating")
             }
 
             println("""
-                NODE CLASS: $nodeClazz
-                #: ${beanRef.id}
-                POD: $pod
-                POD INPUTS: ${pod.inputs()}
-                POD INPUT INPUTS: ${pod.inputs().map { it.inputs() }}
+                BEAN CLASS: $beanClazz
+                #: ${ref.id}
+                POD: $pods
+                POD INPUTS: ${pods.map { it.inputs() }.flatten()}
+                POD INPUT INPUTS: ${pods.map { it.inputs() }.flatten().map { it.inputs() }.flatten()}
                 -----
                 """.trimIndent())
 
-            pods += pod
+            builtPods += pods
         }
 
-        return pods
+        return builtPods
     }
 }

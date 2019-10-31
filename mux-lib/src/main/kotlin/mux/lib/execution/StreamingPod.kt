@@ -11,6 +11,7 @@ import kotlin.reflect.typeOf
 // the class is not thread safe
 abstract class StreamingPod<T : Any, S : Any>(
         override val podKey: PodKey,
+        override val partition: Int,
         val unburdenElementsCleanupThreshold: Int = 1024
 ) : Pod<T, S>, BeanStream<T, S> {
 
@@ -84,5 +85,5 @@ abstract class StreamingPod<T : Any, S : Any>(
         }
     }
 
-    override fun toString(): String = "[$podKey]${this::class.simpleName}"
+    override fun toString(): String = "[$podKey:$partition]${this::class.simpleName}"
 }

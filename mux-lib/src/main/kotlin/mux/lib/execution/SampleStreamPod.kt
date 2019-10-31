@@ -6,8 +6,9 @@ import java.util.concurrent.TimeUnit
 
 class SampleStreamPod(
         val bean: SampleStream,
-        podKey: PodKey
-) : StreamingPod<SampleArray, SampleStream>(podKey), SampleStream, Pod<SampleArray, SampleStream> {
+        podKey: PodKey,
+        partition: Int
+) : StreamingPod<SampleArray, SampleStream>(podKey, partition), SampleStream, Pod<SampleArray, SampleStream> {
 
     override val parameters: BeanParams = NoParams()
 
@@ -20,7 +21,11 @@ class SampleStreamPod(
     override fun inputs(): List<Bean<*, *>> = listOf(bean)
 }
 
-class SampleStreamPodProxy(podKey: PodKey) : SampleStream, StreamingPodProxy<SampleArray, SampleStream>(
+class SampleStreamPodProxy(podKey: PodKey, partition: Int) : SampleStream, StreamingPodProxy<SampleArray, SampleStream>(
         pointedTo = podKey,
+        partition = partition,
         converter = { it.nullableSampleArrayList() }
+)
+
+class SampleStreamMergingPodProxy() : SampleStream, MergingPodProxy<SampleArray, SampleStream>(
 )
