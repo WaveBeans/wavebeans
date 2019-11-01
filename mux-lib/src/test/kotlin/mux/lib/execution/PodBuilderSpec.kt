@@ -90,4 +90,24 @@ class PodBuilderSpec : Spek({
             assertThat(pods.map { it.podKey }.distinct().sorted()).isEqualTo((1..5).toList())
         }
     }
+    describe("Building pods on partitioned topology. Merging topology") {
+        val o1 =
+                440.sine().i(1, 2) // 1 + partitionCount
+                        .div(3.0).n(3) // partitionCount
+                        .plus (
+                                880.sine().i(4,5) // 1 + partitionCount
+                        ).n(6) // 1
+                        .trim(3000).n(7) // partitionCount
+                        .toCsv("file:///some1.csv").n(8) // 1
+
+        val pods = listOf(o1)
+                .buildTopology(idResolver)
+                .partition(2)
+                .buildPods()
+
+        it("should have 12 pods") { assertThat(pods).size().isEqualTo(12) }
+        it("should have 8 unique ids") {
+            assertThat(pods.map { it.podKey }.distinct().sorted()).isEqualTo((1..8).toList())
+        }
+    }
 })

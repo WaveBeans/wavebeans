@@ -36,11 +36,14 @@ fun Topology.partition(partitionsCount: Int): Topology {
                     val newBeans = replacedBeans[linkedBeanRef] ?: listOf(linkedBeanRef)
                     val newLinks = partitionedBeans
                             .map {
+                                val bean = newBeans.first()
+                                val currentLink = this.links.first { l -> it.id == l.from && bean.id == l.to }
                                 BeanLink(
                                         from = it.id,
                                         fromPartition = it.partition,
-                                        to = newBeans.first().id,
-                                        toPartition = 0
+                                        to = bean.id,
+                                        toPartition = 0,
+                                        order = currentLink.order
                                 )
                             }
 
@@ -51,11 +54,13 @@ fun Topology.partition(partitionsCount: Int): Topology {
                             ?: (0 until partitionsCount).map { linkedBeanRef.copy(partition = it) }
                     val newLinks = newBeans
                             .map {
+                                val currentLink = this.links.first { l -> beanRef.id == l.from && it.id == l.to }
                                 BeanLink(
                                         from = beanRef.id,
                                         fromPartition = 0,
                                         to = it.id,
-                                        toPartition = it.partition
+                                        toPartition = it.partition,
+                                        order = currentLink.order
                                 )
                             }
 
@@ -66,11 +71,13 @@ fun Topology.partition(partitionsCount: Int): Topology {
                             ?: (0 until partitionsCount).map { linkedBeanRef.copy(partition = it) }
                     val newLinks = newBeans
                             .map { newBean ->
+                                val currentLink = this.links.first { l -> beanRef.id == l.from && newBean.id == l.to }
                                 BeanLink(
                                         from = beanRef.id,
                                         fromPartition = newBean.partition,
                                         to = newBean.id,
-                                        toPartition = newBean.partition
+                                        toPartition = newBean.partition,
+                                        order = currentLink.order
                                 )
                             }
 

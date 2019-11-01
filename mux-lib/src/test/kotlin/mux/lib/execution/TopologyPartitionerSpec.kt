@@ -43,7 +43,7 @@ object TopologyPartitionerSpec : Spek({
     }
 
     fun Topology.partitionLinks(from: Int, pFrom: Int, to: Int, pTo: Int): List<BeanLink> {
-        return this.links.filter { it.fromPartition == pFrom && it.from == from && it.toPartition == pTo && it.to == to}
+        return this.links.filter { it.fromPartition == pFrom && it.from == from && it.toPartition == pTo && it.to == to }
     }
 
     describe("Simple one-line topology") {
@@ -111,7 +111,6 @@ object TopologyPartitionerSpec : Spek({
                         prop("Link[4.0->3.4]") { it.partitionLinks(4, 0, 3, 4) }.size().isEqualTo(1)
                     }
         }
-
     }
 
     describe("Merging topology") {
@@ -212,6 +211,38 @@ object TopologyPartitionerSpec : Spek({
                         prop("Link[6->5]") { it.links(6, 5) }.size().isEqualTo(2)
                         prop("Link[7->6]") { it.links(7, 6) }.size().isEqualTo(2)
                     }
+        }
+    }
+
+    describe("Topology where order of links matters") {
+        val o1 = (440.sine().i(1, 2) + 880.sine().i(3, 4)).n(5)
+                .trim(1).n(6)
+                .toCsv("file:///some.csv").n(7)
+        val topology = listOf(o1).buildTopology(idResolver)
+
+        it("should preserve order if partitions count = 1") {
+            assertThat(topology.partition(1)).all {
+                prop("Link[5->2]") { it.links(5, 2) }.size().isEqualTo(1)
+                prop("Link[5->2][0]") { it.links(5, 2)[0] }.isEqualTo(BeanLink(5, 2, order = 0))
+                prop("Link[5->4]") { it.links(5, 4) }.size().isEqualTo(1)
+                prop("Link[5->4][0]") { it.links(5, 4)[0] }.isEqualTo(BeanLink(5, 4, order = 1))
+            }
+        }
+
+        it("should preserve order if partitions count = 1") {
+            assertThat(topology.partition(2)).all {
+                prop("Link[5->2]") { it.links(5, 2) }.size().isEqualTo(2)
+                prop("Link[5->2][0]") { it.links(5, 2)[0] }
+                        .isEqualTo(BeanLink(from = 5, fromPartition = 0, to = 2, toPartition = 0, order = 0))
+                prop("Link[5->2][1]") { it.links(5, 2)[1] }
+                        .isEqualTo(BeanLink(from = 5, fromPartition = 0, to = 2, toPartition = 1, order = 0))
+                prop("Link[5->4]") { it.links(5, 4) }.size().isEqualTo(2)
+                prop("Link[5->4][0]") { it.links(5, 4)[0] }
+                        .isEqualTo(BeanLink(from = 5, fromPartition = 0, to = 4, toPartition = 0, order = 1))
+                prop("Link[5->4][1]") { it.links(5, 4)[1] }
+                        .isEqualTo(BeanLink(from = 5, fromPartition = 0, to = 4, toPartition = 1, order = 1))
+
+            }
         }
     }
 })

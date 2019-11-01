@@ -99,19 +99,28 @@ class PodBuilder(private val topology: Topology) {
                         val podProxyType1 = constructor.parameters[0].type
                         val podProxyType2 = constructor.parameters[1].type
                         val links = beanLinks.getValue(beanRef.id)
-                                .sortedBy { it.order }
-                        require(links.size == 2) { "MergedSampleStream should have only 2 links per partition: $links" }
+                                .filter { it.fromPartition == beanRef.partition }
+                        if (links.size == 2) {
+                            throw UnsupportedOperationException("Non-merging pod proxy is not implemented.")
+                        } else {
+                            // requires merging first
+                            val podProxy1 = PodRegistry.createMergingPodProxy(
+                                    podProxyType1,
+                                    links.filter { it.order == 0 }.map { Pair(it.to, it.toPartition) }
+                            )
+                            val podProxy2 = PodRegistry.createMergingPodProxy(
+                                    podProxyType2,
+                                    links.filter { it.order == 1 }.map { Pair(it.to, it.toPartition) }
+                            )
 
-                        val podProxy1 = PodRegistry.createPodProxy(podProxyType1, links[0].to, beanRef.partition)
-                        val podProxy2 = PodRegistry.createPodProxy(podProxyType2, links[1].to, beanRef.partition)
+                            PodRegistry.createPod(
+                                    beanClazz.supertypes.first { it.isSubtypeOf(typeOf<Bean<*, *>>()) },
+                                    beanRef.id,
+                                    constructor.call(podProxy1, podProxy2, beanRef.params) as Bean<*, *>,
+                                    beanRef.partition
 
-                        PodRegistry.createPod(
-                                beanClazz.supertypes.first { it.isSubtypeOf(typeOf<Bean<*, *>>()) },
-                                beanRef.id,
-                                constructor.call(podProxy1, podProxy2, beanRef.params) as Bean<*, *>,
-                                beanRef.partition
-
-                        )
+                            )
+                        }
                     }
                 }
 
