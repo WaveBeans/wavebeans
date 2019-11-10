@@ -18,13 +18,10 @@ object BushSpec : Spek({
 
     describe("Bush should call pod method. 1 pod per bush") {
 
-        val podKey = random.nextInt()
+        val podKey = PodKey(random.nextInt(), 0)
         val pod = object : Pod<Sample, SampleStream> {
             override val podKey: PodKey
                 get() = podKey
-
-            override val partition: Int
-                get() = throw UnsupportedOperationException()
 
             override fun inputs(): List<Bean<*, *>> = throw UnsupportedOperationException()
 

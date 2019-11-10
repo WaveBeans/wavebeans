@@ -3,14 +3,13 @@ package mux.lib.execution
 import mux.lib.*
 import java.lang.reflect.InvocationTargetException
 
-typealias PodKey = Int
+data class PodKey(val id: Int, val partition: Int)
 typealias AnyPod = Pod<*, *>
 typealias AnyPodProxy = PodProxy<*, *>
 
 interface Pod<T : Any, S : Any> : Bean<T, S> {
 
     val podKey: PodKey
-    val partition: Int
 
     @ExperimentalStdlibApi
     fun call(call: Call): PodCallResult {
@@ -47,9 +46,5 @@ interface Pod<T : Any, S : Any> : Bean<T, S> {
     }
 }
 
-interface PodProxy<T : Any, S : Any> : Bean<T, S> {
-
-    val pointedTo: PodKey
-    val partition: Int
-}
+interface PodProxy<T : Any, S : Any> : Bean<T, S>
 

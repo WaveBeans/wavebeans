@@ -7,11 +7,11 @@ import mux.lib.Sample
 import mux.lib.io.StreamOutput
 import mux.lib.io.Writer
 import mux.lib.stream.FiniteSampleStream
+import java.util.concurrent.TimeUnit
 
 class SampleStreamOutputPod(
         val bean: StreamOutput<Sample, FiniteSampleStream>,
-        override val podKey: PodKey,
-        override val partition: Int
+        override val podKey: PodKey
 ) : StreamOutput<Sample, FiniteSampleStream>, Pod<Sample, FiniteSampleStream>, TickPod {
 
     // TODO that should be the part of configuration

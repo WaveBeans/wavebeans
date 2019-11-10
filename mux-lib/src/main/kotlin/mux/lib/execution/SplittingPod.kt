@@ -4,13 +4,12 @@ import mux.lib.BeanStream
 import java.util.*
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.collections.ArrayList
+import kotlin.collections.set
 import kotlin.math.max
-import kotlin.math.min
-import kotlin.reflect.typeOf
 
-// the class is not thread safe
-abstract class StreamingPod<T : Any, S : Any>(
+abstract class SplittingPod<T : Any, S : Any>(
         override val podKey: PodKey,
+        val partitionCount: Int,
         val unburdenElementsCleanupThreshold: Int = 1024
 ) : Pod<T, S>, BeanStream<T, S> {
 
@@ -18,15 +17,14 @@ abstract class StreamingPod<T : Any, S : Any>(
         private val idSeq = AtomicLong(0)
     }
 
-    private var iterator: Iterator<T>? = null
-
-    private val offsets = HashMap<Long, Long>()
-    private var buffer = ArrayList<T>(unburdenElementsCleanupThreshold * 2)
     private var globalOffset = 0L
+    private val offsets = HashMap<Long, Long>()
+    private var iterator: Iterator<T>? = null
+    private var buffer = ArrayList<T>(unburdenElementsCleanupThreshold * partitionCount * 2)
 
-    fun iteratorStart(sampleRate: Float): Long {
+    fun iteratorStart(sampleRate: Float, partitionIdx: Int): Long {
         val key = idSeq.incrementAndGet()
-        offsets[key] = globalOffset
+        offsets[key] = globalOffset / partitionCount * partitionCount + partitionIdx
         if (iterator == null) // TODO handle different sample rate?
             iterator = asSequence(sampleRate).iterator()
         return key
@@ -39,9 +37,10 @@ abstract class StreamingPod<T : Any, S : Any>(
         check(offset != null) { "Iterator key $iteratorKey is unknown for the pod $this" }
 
         val bufferPos = max(offset - globalOffset, 0L).toInt()
+        val toHaveBuffered = buckets * partitionCount
 
         // if we're trying to read out of buffer -- try to read first from downstream iterator
-        while (bufferPos + buckets >= buffer.size) {
+        while (bufferPos + toHaveBuffered >= buffer.size) {
             if (pi.hasNext()) {
                 val element = pi.next()
                 buffer.add(element)
@@ -54,18 +53,22 @@ abstract class StreamingPod<T : Any, S : Any>(
             // if nothing to read from down stream iterator, then nothing to return
             null
         } else {
-            // otherwise the element should be there
-            val endOfBuffer = min(buffer.size, bufferPos + buckets)
+            // otherwise the elements should be there
+            val elements = ArrayList<T>(buckets)
+            var read = 1
+            var idx = bufferPos
+            do {
+                elements.add(buffer[idx])
+                idx += partitionCount
+            } while (idx < buffer.size && read++ < buckets)
+            offsets[iteratorKey] = offset + idx - bufferPos
 
-            // make a copy, as sublist is just view of the list which later will be cleaned
-            val elements = buffer.subList(bufferPos, endOfBuffer).toList()
-
-            offsets[iteratorKey] = offset + (endOfBuffer - bufferPos)
 
             // if all iterators consumed data, push the global offset forward and drop the unneeded data from buffer
             val newGlobalOffset = offsets.values.min() ?: 0
             val unburdenElements = (newGlobalOffset - globalOffset).toInt()
             if (unburdenElements >= unburdenElementsCleanupThreshold) {
+                println("Before clean up: ${buffer.size}")
                 if (unburdenElements < buffer.size) {
                     buffer = ArrayList(buffer.subList(unburdenElements, buffer.size))
                     globalOffset = newGlobalOffset
@@ -73,11 +76,13 @@ abstract class StreamingPod<T : Any, S : Any>(
                     buffer = ArrayList(unburdenElementsCleanupThreshold * 2)
                     globalOffset = newGlobalOffset
                 }
+                println("Cleaned up, new buffer: ${buffer.size}")
             }
 
             elements
         }
     }
 
-    override fun toString(): String = "[$podKey]${this::class.simpleName}"
+    override fun toString(): String = "[$podKey]${this::class.simpleName}<SplitTo=${partitionCount}>"
+
 }

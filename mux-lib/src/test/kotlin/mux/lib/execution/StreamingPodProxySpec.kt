@@ -47,7 +47,6 @@ class PodProxyTester(
 
     val podProxy = object : StreamingPodProxy<Sample, SampleStream>(
             pointedTo = pointedTo.podKey,
-            partition = 0,
             bushCallerRepository = bushCallerRepository,
             podDiscovery = podDiscovery,
             timeToReadAtOnce = timeToReadAtOnce,
@@ -61,7 +60,7 @@ object StreamingPodProxySpec : Spek({
 
     describe("Pod Proxy count amount of calls to Pod") {
         val podProxyTester = PodProxyTester(
-                pointedTo = newTestPod((1..10).toList()),
+                pointedTo = newTestStreamingPod((1..10).toList()),
                 timeToReadAtOnce = 5
         )
 
@@ -78,7 +77,7 @@ object StreamingPodProxySpec : Spek({
     describe("Iterator testing") {
         describe("data fits in one buffer") {
             val seq = PodProxyTester(
-                    pointedTo = newTestPod((1..2).toList()),
+                    pointedTo = newTestStreamingPod((1..2).toList()),
                     timeToReadAtOnce = 2
             ).podProxy.asSequence(2.0f)
             val iterator = seq.iterator()
@@ -109,7 +108,7 @@ object StreamingPodProxySpec : Spek({
 
         describe("data doesn't fit in one buffer") {
             val seq = PodProxyTester(
-                    pointedTo = newTestPod((1..2).toList()),
+                    pointedTo = newTestStreamingPod((1..2).toList()),
                     timeToReadAtOnce = 2
             ).podProxy.asSequence(1.0f)
             val iterator = seq.iterator()

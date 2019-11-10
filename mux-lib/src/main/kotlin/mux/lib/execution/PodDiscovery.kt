@@ -17,12 +17,13 @@ open class PodDiscovery protected constructor() {
     private val pods = ConcurrentHashMap<PodKey, PodInfo>()
 
     open fun bushFor(podKey: PodKey): BushKey {
-        return pods.asSequence().first { it.value.pod.podKey == podKey }.value.bushKey
+        return pods[podKey]?.bushKey
+                ?: throw IllegalStateException("Can't locate bush for pod with key $podKey")
     }
 
     open fun registerPod(bushKey: BushKey, pod: AnyPod) {
         val value = pods.putIfAbsent(pod.podKey, PodInfo(bushKey, pod))
-        check(value == null) { "Pod with key `$pod.podKey` already has value `$value`" }
+        check(value == null) { "Pod with key `${pod.podKey}` already has value `$value`" }
     }
 
     open fun registerBush(bushKey: BushKey, bush: Bush) {

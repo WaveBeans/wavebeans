@@ -53,6 +53,10 @@ class PodWorker(val pod: Pod<*, *>) : Closeable {
             } catch (e: InterruptedException) {
                 println("Got interrupted")
                 break
+            } catch (e: Throwable) {
+                println("[ERROR] Unexpected exception ${e.message}")
+                e.printStackTrace()
+                break
             }
         }
         isStarted.set(false)

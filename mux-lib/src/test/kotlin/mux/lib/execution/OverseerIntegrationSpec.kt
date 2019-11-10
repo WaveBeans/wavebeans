@@ -2,6 +2,9 @@ package mux.lib.execution
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import assertk.assertions.isGreaterThan
+import assertk.assertions.isNotEmpty
+import assertk.assertions.size
 import mux.lib.io.sine
 import mux.lib.io.toCsv
 import mux.lib.stream.changeAmplitude
@@ -28,10 +31,10 @@ object OverseerIntegrationSpec : Spek({
                 .rangeProjection(0, 1000)
 
         val o1 = p1
-                .trim(500)
+                .trim(100)
                 .toCsv("file://${f1.absolutePath}")
         val o2 = (p1 + p2)
-                .trim(500)
+                .trim(100)
                 .toCsv("file://${f2.absolutePath}")
 
         val topology = listOf(o1, o2).buildTopology().partition(2)
@@ -52,7 +55,11 @@ object OverseerIntegrationSpec : Spek({
             println("Everything closed")
         }
 
-        it("should have the same output") { assertThat(f1.readLines()).isEqualTo(f2.readLines()) }
+        val f1Content = f1.readLines()
+        val f2Content = f2.readLines()
+        it("should have non empty output. 1st file") { assertThat(f1Content).size().isGreaterThan(1) }
+        it("should have non empty output. 2nd file") { assertThat(f2Content).size().isGreaterThan(1) }
+        it("should have the same output") { assertThat(f1Content).isEqualTo(f2Content) }
 
         val localRunTime = measureTimeMillis {
             listOf(o1, o2)

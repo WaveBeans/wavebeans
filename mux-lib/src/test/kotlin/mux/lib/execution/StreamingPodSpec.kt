@@ -11,7 +11,7 @@ object StreamingPodSpec : Spek({
         val seq = (1..100).toList()
 
         describe("Iterate over pod sequence") {
-            val pod = newTestPod(seq)
+            val pod = newTestStreamingPod(seq)
 
             val iteratorKey = pod.iteratorStart(100.0f)
             val result = pod.iteratorNext(iteratorKey, 100)
@@ -22,7 +22,7 @@ object StreamingPodSpec : Spek({
         }
 
         describe("Iterate over pod sequence with 2 proxies") {
-            val pod = newTestPod(seq)
+            val pod = newTestStreamingPod(seq)
 
             val iteratorKey1 = pod.iteratorStart(100.0f)
             val iteratorKey2 = pod.iteratorStart(100.0f)
@@ -37,7 +37,7 @@ object StreamingPodSpec : Spek({
         }
 
         describe("Iterate over pod sequence for more than defined in sequence at once") {
-            val pod = newTestPod(seq)
+            val pod = newTestStreamingPod(seq)
 
             val iteratorKey1 = pod.iteratorStart(100.0f)
             val e = pod.iteratorNext(iteratorKey1, 101)
@@ -50,7 +50,7 @@ object StreamingPodSpec : Spek({
         }
 
         describe("Iterate over pod sequence for more than defined in sequence in two attempts") {
-            val pod = newTestPod(seq)
+            val pod = newTestStreamingPod(seq)
 
             val iteratorKey1 = pod.iteratorStart(100.0f)
             val e1 = pod.iteratorNext(iteratorKey1, 100)
@@ -68,7 +68,7 @@ object StreamingPodSpec : Spek({
         }
 
         describe("Iterate over pod sequence with 2 proxies adding second in the middle") {
-            val pod = newTestPod(seq)
+            val pod = newTestStreamingPod(seq)
 
             val iteratorKey1 = pod.iteratorStart(100.0f)
             val result1 = pod.iteratorNext(iteratorKey1, 50)
