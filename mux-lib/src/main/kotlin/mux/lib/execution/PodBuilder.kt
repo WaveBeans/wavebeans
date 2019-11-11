@@ -42,7 +42,8 @@ class PodBuilder(private val topology: Topology) {
                             val link = links.first()
                             val podProxy = PodRegistry.createPodProxy(
                                     podProxyType,
-                                    PodKey(link.to, link.toPartition)
+                                    PodKey(link.to, link.toPartition),
+                                    beanRef.partition
                             )
 
                             PodRegistry.createPod(
@@ -53,7 +54,8 @@ class PodBuilder(private val topology: Topology) {
                         } else {
                             val podProxy = PodRegistry.createMergingPodProxy(
                                     podProxyType,
-                                    links.map { PodKey(it.to, it.toPartition) }
+                                    links.map { PodKey(it.to, it.toPartition) },
+                                    beanRef.partition
                             )
 
                             if (beanClazz.isSubclassOf(SinglePartitionBean::class) && !beanClazz.isSubclassOf(SinkBean::class)) {
@@ -119,11 +121,13 @@ class PodBuilder(private val topology: Topology) {
                             // requires merging first
                             val podProxy1 = PodRegistry.createMergingPodProxy(
                                     podProxyType1,
-                                    links.filter { it.order == 0 }.map { PodKey(it.to, it.toPartition) }
+                                    links.filter { it.order == 0 }.map { PodKey(it.to, it.toPartition) },
+                                    beanRef.partition
                             )
                             val podProxy2 = PodRegistry.createMergingPodProxy(
                                     podProxyType2,
-                                    links.filter { it.order == 1 }.map { PodKey(it.to, it.toPartition) }
+                                    links.filter { it.order == 1 }.map { PodKey(it.to, it.toPartition) },
+                                    beanRef.partition
                             )
 
                             PodRegistry.createSplittingPod(

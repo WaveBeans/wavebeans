@@ -35,8 +35,9 @@ class StreamInputSplittingPod(
         get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
 }
 
-class StreamInputPodProxy(podKey: PodKey) : StreamInput, StreamingPodProxy<SampleArray, StreamInput>(
+class StreamInputPodProxy(podKey: PodKey, forPartition: Int) : StreamInput, StreamingPodProxy<SampleArray, StreamInput>(
         pointedTo = podKey,
+        forPartition = forPartition,
         converter = { it.nullableSampleArrayList() }
 ) {
 
@@ -46,8 +47,10 @@ class StreamInputPodProxy(podKey: PodKey) : StreamInput, StreamingPodProxy<Sampl
 }
 
 class StreamInputMergingPodProxy(
-        override val readsFrom: List<PodKey>
+        override val readsFrom: List<PodKey>,
+        forPartition: Int
 ) : MergingPodProxy<SampleArray, StreamInput>(
+        forPartition = forPartition,
         converter = { it.nullableSampleArrayList() }
 ), StreamInput {
 

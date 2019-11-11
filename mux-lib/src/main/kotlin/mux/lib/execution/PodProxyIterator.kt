@@ -3,6 +3,7 @@ package mux.lib.execution
 class PodProxyIterator<T>(
         val sampleRate: Float,
         val pod: PodKey,
+        val readingPartition: Int,
         val podDiscovery: PodDiscovery = PodDiscovery.default,
         val bushCallerRepository: BushCallerRepository = BushCallerRepository.default(podDiscovery),
         val converter: (PodCallResult) -> List<T>?,
@@ -11,7 +12,7 @@ class PodProxyIterator<T>(
 
     private val bush = podDiscovery.bushFor(pod)
     private val caller = bushCallerRepository.create(bush, pod)
-    private val iteratorKey = caller.call("iteratorStart?sampleRate=$sampleRate&partitionIdx=${pod.partition}").long()
+    private val iteratorKey = caller.call("iteratorStart?sampleRate=$sampleRate&partitionIdx=${readingPartition}").long()
 
     private var buckets: List<T>? = null
     private var pointer = 0

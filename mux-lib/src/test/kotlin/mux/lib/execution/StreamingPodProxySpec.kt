@@ -47,6 +47,7 @@ class PodProxyTester(
 
     val podProxy = object : StreamingPodProxy<Sample, SampleStream>(
             pointedTo = pointedTo.podKey,
+            forPartition = 0,
             bushCallerRepository = bushCallerRepository,
             podDiscovery = podDiscovery,
             timeToReadAtOnce = timeToReadAtOnce,

@@ -6,7 +6,8 @@ import mux.lib.BeanStream
 import java.util.concurrent.TimeUnit
 
 abstract class MergingPodProxy<T : Any, S : Any>(
-        val converter: (PodCallResult) -> List<T>?
+        val converter: (PodCallResult) -> List<T>?,
+        override val forPartition: Int
 ) : BeanStream<T, S>, PodProxy<T, S> {
 
     abstract val readsFrom: List<PodKey>
@@ -14,7 +15,10 @@ abstract class MergingPodProxy<T : Any, S : Any>(
     override fun asSequence(sampleRate: Float): Sequence<T> {
         return object : Iterator<T> {
 
-            val iterators = readsFrom.map { PodProxyIterator(sampleRate, it, converter = converter) }.toTypedArray()
+            val iterators = readsFrom
+                    .map {
+                        PodProxyIterator(sampleRate = sampleRate, pod = it, converter = converter, readingPartition = forPartition)
+                    }.toTypedArray()
             var iteratorToReadFrom = 0
 
             override fun hasNext(): Boolean {
@@ -42,6 +46,6 @@ abstract class MergingPodProxy<T : Any, S : Any>(
         get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
 
     override fun toString(): String {
-        return "${this::class.simpleName}->$readsFrom"
+        return "${this::class.simpleName}->$readsFrom for $forPartition"
     }
 }

@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit
 
 abstract class StreamingPodProxy<T : Any, S : Any>(
         val pointedTo: PodKey,
+        override val forPartition: Int,
         val podDiscovery: PodDiscovery = PodDiscovery.default,
         val bushCallerRepository: BushCallerRepository = BushCallerRepository.default(podDiscovery),
         val timeToReadAtOnce: Int = 10,
@@ -13,7 +14,7 @@ abstract class StreamingPodProxy<T : Any, S : Any>(
 ) : BeanStream<T, S>, PodProxy<T, S> {
 
     override fun asSequence(sampleRate: Float): Sequence<T> {
-        return PodProxyIterator(sampleRate, pointedTo, podDiscovery, bushCallerRepository, converter, timeToReadAtOnce).asSequence()
+        return PodProxyIterator(sampleRate, pointedTo, forPartition, podDiscovery, bushCallerRepository, converter, timeToReadAtOnce).asSequence()
     }
 
     override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): S = throw UnsupportedOperationException("That's not required for PodProxy")
@@ -23,5 +24,5 @@ abstract class StreamingPodProxy<T : Any, S : Any>(
     override val parameters: BeanParams
         get() = throw UnsupportedOperationException("That's not required for PodProxy")
 
-    override fun toString(): String = "${this::class.simpleName}->[$pointedTo]"
+    override fun toString(): String = "${this::class.simpleName}->[$pointedTo] for $forPartition"
 }

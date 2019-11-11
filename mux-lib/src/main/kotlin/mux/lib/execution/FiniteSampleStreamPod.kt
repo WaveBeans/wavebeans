@@ -49,9 +49,11 @@ class FiniteSampleStreamSplittingPod(
 
 @ExperimentalStdlibApi
 class FiniteSampleStreamPodProxy(
-        podKey: PodKey
+        podKey: PodKey,
+        forPartition: Int
 ) : StreamingPodProxy<SampleArray, FiniteSampleStream>(
         pointedTo = podKey,
+        forPartition = forPartition,
         converter = { it.nullableSampleArrayList() }
 ), FiniteSampleStream {
 
@@ -64,8 +66,10 @@ class FiniteSampleStreamPodProxy(
 }
 
 class FiniteSampleStreamMergingPodProxy(
-        override val readsFrom: List<PodKey>
+        override val readsFrom: List<PodKey>,
+        forPartition: Int
 ) : MergingPodProxy<SampleArray, FiniteSampleStream>(
+        forPartition = forPartition,
         converter = { it.nullableSampleArrayList() }
 ), FiniteSampleStream {
 

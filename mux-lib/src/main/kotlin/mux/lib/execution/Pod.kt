@@ -50,5 +50,9 @@ interface Pod<T : Any, S : Any> : Bean<T, S> {
     fun iteratorNext(iteratorKey: Long, buckets: Int): List<T>?
 }
 
-interface PodProxy<T : Any, S : Any> : Bean<T, S>
+interface PodProxy<T : Any, S : Any> : Bean<T, S> {
+
+    val forPartition: Int
+
+}
 
