@@ -6,9 +6,11 @@ import assertk.catch
 import mux.lib.Sample
 import mux.lib.createSampleArray
 import mux.lib.eachIndexed
+import mux.lib.io.sine
 import mux.lib.sampleOf
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
+import kotlin.math.cos
 
 object PodCallResultSpec : Spek({
 
@@ -91,21 +93,24 @@ object PodCallResultSpec : Spek({
         }
 
         describe("Wrapping list of samples array") {
-            val sampleArrayList = listOf(
-                    createSampleArray(2) { sampleOf(it) },
-                    createSampleArray(2) { sampleOf(it + 2) }
-            )
-            val result = result(sampleArrayList)
 
-            it("should have non empty byteArray") { assertThat(result.byteArray).isNotNull() }
-            it("should have empty exception") { assertThat(result.exception).isNull() }
-            it("should return valid value") {
-                assertThat(result.sampleArrayList()).eachIndexed(2) { el, i ->
-                    el.containsExactly(*sampleArrayList[i])
+            describe("Int range") {
+                val sampleArrayList = listOf(
+                        createSampleArray(2) { sampleOf(it) },
+                        createSampleArray(2) { sampleOf(it + 2) }
+                )
+
+                val result = result(sampleArrayList)
+                it("should have non empty byteArray") { assertThat(result.byteArray).isNotNull() }
+                it("should have empty exception") { assertThat(result.exception).isNull() }
+                it("should return valid value") {
+                    assertThat(result.sampleArrayList()).eachIndexed(2) { el, i ->
+                        el.containsExactly(*sampleArrayList[i])
+                    }
                 }
             }
 
-            describe("More sample array lists") {
+            describe("Edge cases") {
                 it("should wrap lists with type of values in it") {
                     val longList = (0..127).map {
                         when (it % 5) {
@@ -143,6 +148,27 @@ object PodCallResultSpec : Spek({
                         el.containsExactly(*list[i])
                     }
                 }
+            }
+
+            describe("Double sequence -- sinosoid") {
+                val sampleRate = 44100.0
+                val freq = 440
+                val amplitude = 0.5
+                val sampleArrayLength = 10
+                val sampleArrayList = listOf(
+                        createSampleArray(sampleArrayLength) { x -> amplitude * cos(x / sampleRate * 2 * Math.PI * freq) },
+                        createSampleArray(sampleArrayLength) { x -> amplitude * cos((x + sampleArrayLength) / sampleRate * 2 * Math.PI * freq) }
+                )
+                val result = result(sampleArrayList)
+
+                it("should have non empty byteArray") { assertThat(result.byteArray).isNotNull() }
+                it("should have empty exception") { assertThat(result.exception).isNull() }
+                it("should return valid value") {
+                    assertThat(result.sampleArrayList()).eachIndexed(2) { el, i ->
+                        el.containsExactly(*sampleArrayList[i])
+                    }
+                }
+
             }
         }
 

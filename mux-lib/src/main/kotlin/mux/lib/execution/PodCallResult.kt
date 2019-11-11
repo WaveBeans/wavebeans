@@ -132,7 +132,8 @@ fun PodCallResult.sampleArrayList(): List<SampleArray> =
                     val arraySize = readInt(buf, pointer)
                     pointer += 4
                     list.add(createSampleArray(arraySize) {
-                        val v = Double.fromBits(readLong(buf, pointer))
+                        val bits = readLong(buf, pointer)
+                        val v = Double.fromBits(bits)
                         pointer += 8
                         v
                     })
@@ -162,7 +163,7 @@ internal fun writeLong(value: Long, buf: ByteArray, at: Int) {
 }
 
 internal fun readLong(buf: ByteArray, from: Int): Long {
-    return readInt(buf, from).toLong() or
+    return readInt(buf, from).toLong() and 0xFFFFFFFF or
             (readInt(buf, from + 4).toLong() shl 32)
 }
 
