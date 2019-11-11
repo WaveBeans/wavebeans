@@ -13,7 +13,7 @@ object StreamingPodSpec : Spek({
         describe("Iterate over pod sequence") {
             val pod = newTestStreamingPod(seq)
 
-            val iteratorKey = pod.iteratorStart(100.0f)
+            val iteratorKey = pod.iteratorStart(100.0f, 0)
             val result = pod.iteratorNext(iteratorKey, 100)
                     ?.map { it.asInt() }
 
@@ -24,8 +24,8 @@ object StreamingPodSpec : Spek({
         describe("Iterate over pod sequence with 2 proxies") {
             val pod = newTestStreamingPod(seq)
 
-            val iteratorKey1 = pod.iteratorStart(100.0f)
-            val iteratorKey2 = pod.iteratorStart(100.0f)
+            val iteratorKey1 = pod.iteratorStart(100.0f, 0)
+            val iteratorKey2 = pod.iteratorStart(100.0f, 0)
             val result1 = pod.iteratorNext(iteratorKey1, 100)
                     ?.map { it.asInt() }
             val result2 = pod.iteratorNext(iteratorKey2, 100)
@@ -39,7 +39,7 @@ object StreamingPodSpec : Spek({
         describe("Iterate over pod sequence for more than defined in sequence at once") {
             val pod = newTestStreamingPod(seq)
 
-            val iteratorKey1 = pod.iteratorStart(100.0f)
+            val iteratorKey1 = pod.iteratorStart(100.0f, 0)
             val e = pod.iteratorNext(iteratorKey1, 101)
                     ?.map { it.asInt() }
 
@@ -52,7 +52,7 @@ object StreamingPodSpec : Spek({
         describe("Iterate over pod sequence for more than defined in sequence in two attempts") {
             val pod = newTestStreamingPod(seq)
 
-            val iteratorKey1 = pod.iteratorStart(100.0f)
+            val iteratorKey1 = pod.iteratorStart(100.0f, 0)
             val e1 = pod.iteratorNext(iteratorKey1, 100)
                     ?.map { it.asInt() }
             val e2 = pod.iteratorNext(iteratorKey1, 1)
@@ -70,12 +70,12 @@ object StreamingPodSpec : Spek({
         describe("Iterate over pod sequence with 2 proxies adding second in the middle") {
             val pod = newTestStreamingPod(seq)
 
-            val iteratorKey1 = pod.iteratorStart(100.0f)
+            val iteratorKey1 = pod.iteratorStart(100.0f, 0)
             val result1 = pod.iteratorNext(iteratorKey1, 50)
                     ?.map { it.asInt() }
                     ?: emptyList()
 
-            val iteratorKey2 = pod.iteratorStart(100.0f)
+            val iteratorKey2 = pod.iteratorStart(100.0f, 0)
             val result2 = pod.iteratorNext(iteratorKey2, 50)
                     ?.map { it.asInt() }
 

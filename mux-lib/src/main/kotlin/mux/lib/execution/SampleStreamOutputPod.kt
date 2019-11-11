@@ -7,7 +7,6 @@ import mux.lib.Sample
 import mux.lib.io.StreamOutput
 import mux.lib.io.Writer
 import mux.lib.stream.FiniteSampleStream
-import java.util.concurrent.TimeUnit
 
 class SampleStreamOutputPod(
         val bean: StreamOutput<Sample, FiniteSampleStream>,
@@ -16,6 +15,10 @@ class SampleStreamOutputPod(
 
     // TODO that should be the part of configuration
     private val sampleRate = 44100.0f
+
+    override fun iteratorStart(sampleRate: Float, partitionIdx: Int): Long  = throw UnsupportedOperationException()
+
+    override fun iteratorNext(iteratorKey: Long, buckets: Int): List<Sample>? = throw UnsupportedOperationException()
 
     private val writer by lazy { bean.writer(sampleRate) }
 

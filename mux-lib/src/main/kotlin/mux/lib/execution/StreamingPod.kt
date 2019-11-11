@@ -24,7 +24,7 @@ abstract class StreamingPod<T : Any, S : Any>(
     private var buffer = ArrayList<T>(unburdenElementsCleanupThreshold * 2)
     private var globalOffset = 0L
 
-    fun iteratorStart(sampleRate: Float): Long {
+    override fun iteratorStart(sampleRate: Float, partitionIdx: Int): Long {
         val key = idSeq.incrementAndGet()
         offsets[key] = globalOffset
         if (iterator == null) // TODO handle different sample rate?
@@ -32,7 +32,7 @@ abstract class StreamingPod<T : Any, S : Any>(
         return key
     }
 
-    fun iteratorNext(iteratorKey: Long, buckets: Int): List<T>? {
+    override fun iteratorNext(iteratorKey: Long, buckets: Int): List<T>? {
         val pi = iterator
         check(pi != null) { "Pod wasn't initialized properly. Iterator not found. Call `start` first." }
         val offset = offsets[iteratorKey]

@@ -44,6 +44,10 @@ interface Pod<T : Any, S : Any> : Bean<T, S> {
             PodCallResult.wrap(call, e)
         }
     }
+
+    fun iteratorStart(sampleRate: Float, partitionIdx: Int): Long
+
+    fun iteratorNext(iteratorKey: Long, buckets: Int): List<T>?
 }
 
 interface PodProxy<T : Any, S : Any> : Bean<T, S>

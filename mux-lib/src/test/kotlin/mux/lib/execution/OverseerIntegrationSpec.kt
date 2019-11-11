@@ -3,7 +3,6 @@ package mux.lib.execution
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThan
-import assertk.assertions.isNotEmpty
 import assertk.assertions.size
 import mux.lib.io.sine
 import mux.lib.io.toCsv
@@ -72,6 +71,10 @@ object OverseerIntegrationSpec : Spek({
                     }
         }
         println("Local run finished")
+
+        val f1LocalContent = f1.readLines()
+        it("should have the same size as local content") { assertThat(f1Content.size).isEqualTo(f1LocalContent.size) }
+        it("should have the same output as local content") { assertThat(f1Content).isEqualTo(f1LocalContent) }
 
         println("Deploy took $timeToDeploy ms, processing took $timeToProcess ms, " +
                 "finalizing took $timeToFinalize ms, local run time is $localRunTime ms")

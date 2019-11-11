@@ -22,7 +22,7 @@ abstract class SplittingPod<T : Any, S : Any>(
     private var iterator: Iterator<T>? = null
     private var buffer = ArrayList<T>(unburdenElementsCleanupThreshold * partitionCount * 2)
 
-    fun iteratorStart(sampleRate: Float, partitionIdx: Int): Long {
+    override fun iteratorStart(sampleRate: Float, partitionIdx: Int): Long {
         val key = idSeq.incrementAndGet()
         offsets[key] = globalOffset / partitionCount * partitionCount + partitionIdx
         if (iterator == null) // TODO handle different sample rate?
@@ -30,7 +30,7 @@ abstract class SplittingPod<T : Any, S : Any>(
         return key
     }
 
-    fun iteratorNext(iteratorKey: Long, buckets: Int): List<T>? {
+    override fun iteratorNext(iteratorKey: Long, buckets: Int): List<T>? {
         val pi = iterator
         check(pi != null) { "Pod wasn't initialized properly. Iterator not found. Call `start` first." }
         val offset = offsets[iteratorKey]

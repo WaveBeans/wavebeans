@@ -20,6 +20,10 @@ object BushSpec : Spek({
 
         val podKey = PodKey(random.nextInt(), 0)
         val pod = object : Pod<Sample, SampleStream> {
+            override fun iteratorStart(sampleRate: Float, partitionIdx: Int): Long = throw UnsupportedOperationException()
+
+            override fun iteratorNext(iteratorKey: Long, buckets: Int): List<Sample>? = throw UnsupportedOperationException()
+
             override val podKey: PodKey
                 get() = podKey
 

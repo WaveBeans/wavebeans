@@ -40,4 +40,8 @@ abstract class MergingPodProxy<T : Any, S : Any>(
 
     override val parameters: BeanParams
         get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+
+    override fun toString(): String {
+        return "${this::class.simpleName}->$readsFrom"
+    }
 }
