@@ -78,7 +78,7 @@ class PodBuilderSpec : Spek({
         val o1 =
                 440.sine().i(1, 2) // 1 + partitionCount
                         .div(3.0).n(3) // partitionCount
-                        .trim(3000).n(4) // partitionCount
+                        .trim(3000).n(4) // 1
                         .toCsv("file:///some1.csv").n(5) // 1
 
         val pods = listOf(o1)
@@ -86,7 +86,7 @@ class PodBuilderSpec : Spek({
                 .partition(2)
                 .buildPods()
 
-        it("should have 8 pods") { assertThat(pods).size().isEqualTo(8) }
+        it("should have 8 pods") { assertThat(pods).size().isEqualTo(7) }
         it("should have 5 unique ids") {
             assertThat(pods.map { it.podKey.id }.distinct().sorted()).isEqualTo((1..5).toList())
         }
@@ -98,7 +98,7 @@ class PodBuilderSpec : Spek({
                         .plus(
                                 880.sine().i(4, 5) // 1 + partitionCount
                         ).n(6) // 1
-                        .trim(3000).n(7) // partitionCount
+                        .trim(3000).n(7) // 1
                         .toCsv("file:///some1.csv").n(8) // 1
 
         val pods = listOf(o1)
@@ -106,7 +106,7 @@ class PodBuilderSpec : Spek({
                 .partition(2)
                 .buildPods()
 
-        it("should have 12 pods") { assertThat(pods).size().isEqualTo(12) }
+        it("should have 12 pods") { assertThat(pods).size().isEqualTo(11) }
         it("should have 8 unique ids") {
             assertThat(pods.map { it.podKey.id }.distinct().sorted()).isEqualTo((1..8).toList())
         }
@@ -117,7 +117,7 @@ class PodBuilderSpec : Spek({
                         p.isInstanceOf(SampleStreamOutputPod::class)
                         p.podProxies().eachIndexed(1) { a, i ->
                             when (i) {
-                                0 -> a.mergingPodProxyKeys().isEqualTo(setOf(PodKey(7, 0), PodKey(7, 1)))
+                                0 -> a.streamingPodProxyKey().isEqualTo(PodKey(7, 0))
                             }
                             a.forPartition().isEqualTo(podPartitionIdx)
                         }
@@ -126,12 +126,11 @@ class PodBuilderSpec : Spek({
 
                 }
                 podWithKey("trim", 7).all {
-                    eachIndexed(2) { p, podPartitionIdx ->
+                    eachIndexed(1) { p, podPartitionIdx ->
                         p.isInstanceOf(StreamingPod::class)
                         p.podProxies().eachIndexed(1) { a, podProxyIndex ->
                             when (Pair(podProxyIndex, podPartitionIdx)) {
                                 Pair(0, 0) -> a.streamingPodProxyKey().isEqualTo(PodKey(6, 0))
-                                Pair(0, 1) -> a.streamingPodProxyKey().isEqualTo(PodKey(6, 0))
                             }
                             a.forPartition().isEqualTo(podPartitionIdx)
                         }
@@ -141,7 +140,7 @@ class PodBuilderSpec : Spek({
                 podWithKey("plus", 6).all {
                     eachIndexed(1) { it, podPartitionIdx ->
                         it.isInstanceOf(SplittingPod::class)
-                                .prop("partitionCount") { pod -> pod.partitionCount }.isEqualTo(2)
+                                .prop("partitionCount") { pod -> pod.partitionCount }.isEqualTo(1)
                         it.podProxies().eachIndexed(2) { a, i ->
                             when (i) {
                                 0 -> a.mergingPodProxyKeys().isEqualTo(setOf(PodKey(3, 0), PodKey(3, 1)))

@@ -14,10 +14,11 @@ data class TrimmedFiniteSampleStreamParams(
         val timeUnit: TimeUnit
 ) : BeanParams()
 
+// TODO move this functionality to output and perhaps get rid of FiniteSampleStream. This functionality looks fishy overall
 class TrimmedFiniteSampleStream(
         val sampleStream: SampleStream,
         val params: TrimmedFiniteSampleStreamParams
-) : FiniteSampleStream, AlterBean<SampleArray, SampleStream, SampleArray, FiniteSampleStream> {
+) : FiniteSampleStream, AlterBean<SampleArray, SampleStream, SampleArray, FiniteSampleStream>, SinglePartitionBean {
 
     override val parameters: BeanParams = params
 

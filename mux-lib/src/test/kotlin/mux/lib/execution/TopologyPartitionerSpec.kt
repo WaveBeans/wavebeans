@@ -70,17 +70,15 @@ object TopologyPartitionerSpec : Spek({
                     .all {
                         prop("Bean[id=1]") { it.beansForId(1) }.size().isEqualTo(1)
                         prop("Bean[id=2]") { it.beansForId(2) }.size().isEqualTo(2)
-                        prop("Bean[id=3]") { it.beansForId(3) }.size().isEqualTo(2)
+                        prop("Bean[id=3]") { it.beansForId(3) }.size().isEqualTo(1)
                         prop("Bean[id=4]") { it.beansForId(4) }.size().isEqualTo(1)
                         prop("Link[2->1]") { it.links(2, 1) }.size().isEqualTo(2)
                         prop("Link[3->2]") { it.links(3, 2) }.size().isEqualTo(2)
-                        prop("Link[4->3]") { it.links(4, 3) }.size().isEqualTo(2)
+                        prop("Link[4->3]") { it.links(4, 3) }.size().isEqualTo(1)
                         prop("Link[2.0->1.0]") { it.partitionLinks(2, 0, 1, 0) }.size().isEqualTo(1)
                         prop("Link[2.1->1.0]") { it.partitionLinks(2, 1, 1, 0) }.size().isEqualTo(1)
                         prop("Link[3.0->2.0]") { it.partitionLinks(3, 0, 2, 0) }.size().isEqualTo(1)
-                        prop("Link[3.1->2.1]") { it.partitionLinks(3, 1, 2, 1) }.size().isEqualTo(1)
-                        prop("Link[4.0->3.0]") { it.partitionLinks(4, 0, 3, 0) }.size().isEqualTo(1)
-                        prop("Link[4.0->3.1]") { it.partitionLinks(4, 0, 3, 1) }.size().isEqualTo(1)
+                        prop("Link[3.0->2.1]") { it.partitionLinks(3, 0, 2, 1) }.size().isEqualTo(1)
                     }
         }
 
@@ -89,26 +87,21 @@ object TopologyPartitionerSpec : Spek({
                     .all {
                         prop("Bean[id=1]") { it.beansForId(1) }.size().isEqualTo(1)
                         prop("Bean[id=2]") { it.beansForId(2) }.size().isEqualTo(5)
-                        prop("Bean[id=3]") { it.beansForId(3) }.size().isEqualTo(5)
+                        prop("Bean[id=3]") { it.beansForId(3) }.size().isEqualTo(1)
                         prop("Bean[id=4]") { it.beansForId(4) }.size().isEqualTo(1)
                         prop("Link[2->1]") { it.links(2, 1) }.size().isEqualTo(5)
                         prop("Link[3->2]") { it.links(3, 2) }.size().isEqualTo(5)
-                        prop("Link[4->3]") { it.links(4, 3) }.size().isEqualTo(5)
+                        prop("Link[4->3]") { it.links(4, 3) }.size().isEqualTo(1)
                         prop("Link[2.0->1.0]") { it.partitionLinks(2, 0, 1, 0) }.size().isEqualTo(1)
                         prop("Link[2.1->1.0]") { it.partitionLinks(2, 1, 1, 0) }.size().isEqualTo(1)
                         prop("Link[2.2->1.0]") { it.partitionLinks(2, 2, 1, 0) }.size().isEqualTo(1)
                         prop("Link[2.3->1.0]") { it.partitionLinks(2, 3, 1, 0) }.size().isEqualTo(1)
                         prop("Link[2.4->1.0]") { it.partitionLinks(2, 4, 1, 0) }.size().isEqualTo(1)
                         prop("Link[3.0->2.0]") { it.partitionLinks(3, 0, 2, 0) }.size().isEqualTo(1)
-                        prop("Link[3.1->2.1]") { it.partitionLinks(3, 1, 2, 1) }.size().isEqualTo(1)
-                        prop("Link[3.2->2.2]") { it.partitionLinks(3, 2, 2, 2) }.size().isEqualTo(1)
-                        prop("Link[3.3->2.3]") { it.partitionLinks(3, 3, 2, 3) }.size().isEqualTo(1)
-                        prop("Link[3.4->2.4]") { it.partitionLinks(3, 4, 2, 4) }.size().isEqualTo(1)
-                        prop("Link[4.0->3.0]") { it.partitionLinks(4, 0, 3, 0) }.size().isEqualTo(1)
-                        prop("Link[4.0->3.1]") { it.partitionLinks(4, 0, 3, 1) }.size().isEqualTo(1)
-                        prop("Link[4.0->3.2]") { it.partitionLinks(4, 0, 3, 2) }.size().isEqualTo(1)
-                        prop("Link[4.0->3.3]") { it.partitionLinks(4, 0, 3, 3) }.size().isEqualTo(1)
-                        prop("Link[4.0->3.4]") { it.partitionLinks(4, 0, 3, 4) }.size().isEqualTo(1)
+                        prop("Link[3.0->2.1]") { it.partitionLinks(3, 0, 2, 1) }.size().isEqualTo(1)
+                        prop("Link[3.0->2.2]") { it.partitionLinks(3, 0, 2, 2) }.size().isEqualTo(1)
+                        prop("Link[3.0->2.3]") { it.partitionLinks(3, 0, 2, 3) }.size().isEqualTo(1)
+                        prop("Link[3.0->2.4]") { it.partitionLinks(3, 0, 2, 4) }.size().isEqualTo(1)
                     }
         }
     }
@@ -147,18 +140,16 @@ object TopologyPartitionerSpec : Spek({
                         prop("Bean[id=3]") { it.beansForId(3) }.size().isEqualTo(1)
                         prop("Bean[id=4]") { it.beansForId(4) }.size().isEqualTo(2)
                         prop("Bean[id=5]") { it.beansForId(5) }.size().isEqualTo(1)
-                        prop("Bean[id=6]") { it.beansForId(6) }.size().isEqualTo(2)
+                        prop("Bean[id=6]") { it.beansForId(6) }.size().isEqualTo(1)
                         prop("Bean[id=7]") { it.beansForId(7) }.size().isEqualTo(1)
                         prop("Link[2->1]") { it.links(2, 1) }.size().isEqualTo(2)
                         prop("Link[4->3]") { it.links(4, 3) }.size().isEqualTo(2)
+                        prop("Link[7->6]") { it.links(7, 6) }.size().isEqualTo(1)
+                        prop("Link[6->5]") { it.links(6, 5) }.size().isEqualTo(1)
                         prop("Link[5.0->4.0]") { it.partitionLinks(5, 0, 4, 0) }.size().isEqualTo(1)
                         prop("Link[5.0->4.1]") { it.partitionLinks(5, 0, 4, 1) }.size().isEqualTo(1)
                         prop("Link[5.0->2.0]") { it.partitionLinks(5, 0, 2, 0) }.size().isEqualTo(1)
                         prop("Link[5.0->2.1]") { it.partitionLinks(5, 0, 2, 1) }.size().isEqualTo(1)
-                        prop("Link[6.0->5.0]") { it.partitionLinks(6, 0, 5, 0) }.size().isEqualTo(1)
-                        prop("Link[6.1->5.0]") { it.partitionLinks(6, 1, 5, 0) }.size().isEqualTo(1)
-                        prop("Link[7.0->6.0]") { it.partitionLinks(7, 0, 6, 0) }.size().isEqualTo(1)
-                        prop("Link[7.0->6.1]") { it.partitionLinks(7, 0, 6, 1) }.size().isEqualTo(1)
                     }
         }
     }
@@ -199,7 +190,7 @@ object TopologyPartitionerSpec : Spek({
                         prop("Bean[id=3]") { it.beansForId(3) }.size().isEqualTo(2)
                         prop("Bean[id=4]") { it.beansForId(4) }.size().isEqualTo(2)
                         prop("Bean[id=5]") { it.beansForId(5) }.size().isEqualTo(1)
-                        prop("Bean[id=6]") { it.beansForId(6) }.size().isEqualTo(2)
+                        prop("Bean[id=6]") { it.beansForId(6) }.size().isEqualTo(1)
                         prop("Bean[id=7]") { it.beansForId(7) }.size().isEqualTo(1)
                         prop("Link[2->1]") { it.links(2, 1) }.size().isEqualTo(2)
                         prop("Link[3.0->2.0]") { it.partitionLinks(3, 0, 2, 0) }.size().isEqualTo(1)
@@ -208,8 +199,8 @@ object TopologyPartitionerSpec : Spek({
                         prop("Link[4.1->2.1]") { it.partitionLinks(4, 1, 2, 1) }.size().isEqualTo(1)
                         prop("Link[5->3]") { it.links(5, 3) }.size().isEqualTo(2)
                         prop("Link[5->4]") { it.links(5, 4) }.size().isEqualTo(2)
-                        prop("Link[6->5]") { it.links(6, 5) }.size().isEqualTo(2)
-                        prop("Link[7->6]") { it.links(7, 6) }.size().isEqualTo(2)
+                        prop("Link[6->5]") { it.links(6, 5) }.size().isEqualTo(1)
+                        prop("Link[7->6]") { it.links(7, 6) }.size().isEqualTo(1)
                     }
         }
     }

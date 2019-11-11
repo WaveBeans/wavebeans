@@ -75,6 +75,9 @@ object OverseerIntegrationSpec : Spek({
         val f1LocalContent = f1.readLines()
         it("should have the same size as local content") { assertThat(f1Content.size).isEqualTo(f1LocalContent.size) }
         it("should have the same output as local content") { assertThat(f1Content).isEqualTo(f1LocalContent) }
+        val f2LocalContent = f2.readLines()
+        it("should have the same size as local content") { assertThat(f2Content.size).isEqualTo(f2LocalContent.size) }
+        it("should have the same output as local content") { assertThat(f2Content).isEqualTo(f2LocalContent) }
 
         println("Deploy took $timeToDeploy ms, processing took $timeToProcess ms, " +
                 "finalizing took $timeToFinalize ms, local run time is $localRunTime ms")
