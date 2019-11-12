@@ -5,6 +5,7 @@ import kotlinx.serialization.Serializable
 import mux.lib.Bean
 import mux.lib.BeanParams
 import mux.lib.io.StreamOutput
+import kotlin.reflect.KClass
 
 @Serializable
 data class BeanRef(
@@ -12,7 +13,11 @@ data class BeanRef(
         val type: String,
         @Serializable(with = PolymorphicSerializer::class) val params: BeanParams,
         val partition: Int = 0
-)
+) {
+    companion object {
+        fun create(id: Int, type: KClass<out Any>, parameters: BeanParams): BeanRef = BeanRef(id, type.qualifiedName!!, parameters)
+    }
+}
 
 @Serializable
 data class BeanLink(
@@ -36,7 +41,7 @@ data class Topology(
             fun iterateOverNodes(node: Bean<*, *>, sourceNodeId: Int?, order: Int) {
                 val id = idResolver.id(node)
 
-                refs += BeanRef(id, node::class.qualifiedName!!, node.parameters)
+                refs += BeanRef.create(id, node::class, node.parameters)
 
                 if (sourceNodeId != null)
                     links += BeanLink(

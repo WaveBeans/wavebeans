@@ -21,6 +21,7 @@ object TopologySerializer {
             TrimmedFiniteSampleStreamParams::class with TrimmedFiniteSampleStreamParams.serializer()
             MergedSampleStreamParams::class with MergedSampleStreamParams.serializer()
             CsvSampleStreamOutputParams::class with CsvSampleStreamOutputParams.serializer()
+            BeanGroupParams::class with BeanGroupParams.serializer()
         }
     }
 
