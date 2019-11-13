@@ -15,7 +15,8 @@ data class BeanRef(
         val partition: Int = 0
 ) {
     companion object {
-        fun create(id: Int, type: KClass<out Any>, parameters: BeanParams): BeanRef = BeanRef(id, type.qualifiedName!!, parameters)
+        fun create(id: Int, type: KClass<out Any>, parameters: BeanParams, partition: Int = 0): BeanRef =
+                BeanRef(id, type.qualifiedName!!, parameters, partition)
     }
 }
 
