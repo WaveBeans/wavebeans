@@ -6,6 +6,7 @@ import assertk.assertions.each
 import assertk.assertions.isCloseTo
 import assertk.assertions.isEqualTo
 import assertk.assertions.support.expected
+import assertk.assertions.support.fail
 import assertk.assertions.support.show
 import mux.lib.io.ByteArrayLittleEndianInput
 import mux.lib.io.ByteArrayLittleEndianInputParams
@@ -84,3 +85,9 @@ fun ByteArray.asInput(sampleRate: Float, bitDepth: BitDepth = BitDepth.BIT_8): F
         ByteArrayLittleEndianInput(ByteArrayLittleEndianInputParams(sampleRate, bitDepth, this))
 
 fun <T> Int.repeat(f: (Int) -> T): List<T> = (0 until this).map { f(it) }
+
+fun <T> Assert<List<T>>.isListOf(vararg expected: Any?) = given { actual ->
+    if (actual == expected.toList()) return
+    fail(expected, actual)
+}
+

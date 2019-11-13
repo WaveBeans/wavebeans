@@ -10,6 +10,7 @@ import mux.lib.Bean
 import mux.lib.execution.TopologySerializer.jsonPretty
 import mux.lib.io.sine
 import mux.lib.io.toCsv
+import mux.lib.isListOf
 import mux.lib.stream.div
 import mux.lib.stream.plus
 import mux.lib.stream.trim
@@ -144,6 +145,61 @@ object BeanGroupSpec : Spek({
 
     }
 
+    describe("Topology with split-merge in the middle") {
+        //-----------------------------------------------------------------------
+        // (i1)<-(inf2)<---        v---(trim6)<--(o7)
+        //                 |-(plus5)
+        // (i3)<-(inf4)<---        ^---(trim8)<--(o9)
+        //-----------------------------------------------------------------------
+        val i1 = 440.sine().i(1, 2)
+        val i2 = 880.sine().i(3, 4)
+        val plus = (i1 + i2).n(5)
+        val o1 = plus.trim(1).n(6).toCsv("file:///some1.csv").n(7)
+        val o2 = plus.trim(1).n(8).toCsv("file:///some2.csv").n(9)
+
+        //-----------------------------------------------------------------------
+        // [101]<---        v---[100]
+        //          |-(plus5)
+        // [102]<---        ^---[103]
+        //-----------------------------------------------------------------------
+        val topology = listOf(o1, o2)
+                .buildTopology(idResolver)
+                .groupBeans(groupIdResolver())
+                .also { println(TopologySerializer.serialize(it, jsonPretty)) }
+
+
+        it("should have five group beans") {
+            assertThat(topology.refs).all {
+                size().isEqualTo(5)
+                group(100).all {
+                    groupRefs().ids().isListOf(7, 6)
+                    groupLinks().isListOf(7 to 6)
+                }
+                group(101).all {
+                    groupRefs().ids().isListOf(2, 1)
+                    groupLinks().isListOf(2 to 1)
+                }
+                bean(5).isNotNull()
+                group(103).all {
+                    groupRefs().ids().isListOf(9, 8)
+                    groupLinks().isListOf(9 to 8)
+                }
+                group(102).all {
+                    groupRefs().ids().isListOf(4, 3)
+                    groupLinks().isListOf(4 to 3)
+                }
+            }
+        }
+        it("should have four links") {
+            assertThat(topology.links).isListOf(
+                    100 to 5,
+                    5 to 101 order 0,
+                    5 to 102 order 1,
+                    103 to 5
+            )
+        }
+    }
+
     describe("Single line topology. Two partitions") {
         val topology = listOf(
                 440.sine().i(1, 2)                     // (i1.0) <-(inf2.0) <-(inf2.1)
@@ -193,11 +249,6 @@ object BeanGroupSpec : Spek({
         //                           ^-(trim7.0)                       <| [100.0]
         //                                 ^-(o8.0)                    <|
         //-----------------------------------------------------------------------
-        // (i1.0)                       <-[101.0]   <-[101.1]
-        // (i4.0) <-(inf5.0)  <-(inf5.1)
-        //             ^----------^-[100.0]-^-----------^
-        //-----------------------------------------------------------------------
-
         val topology = listOf(
                 440.sine().i(1, 2)
                         .div(2.0).n(3)
@@ -207,10 +258,14 @@ object BeanGroupSpec : Spek({
                         .trim(1).n(7)
                         .toCsv("file:///some.csv").n(8)
         )
+                //-----------------------------------------------------------------------
+                // (i1.0)                       <-[101.0]   <-[101.1]
+                // (i4.0) <-(inf5.0)  <-(inf5.1)
+                //             ^----------^-[100.0]-^-----------^
+                //-----------------------------------------------------------------------
                 .buildTopology(idResolver)
                 .partition(2)
                 .groupBeans(groupIdResolver())
-                .also { println(TopologySerializer.serialize(it, jsonPretty)) }
 
         it("should have seven group beans") {
             assertThat(topology.refs).all {
@@ -272,11 +327,6 @@ private fun <T : Bean<*, *>> T.i(id1: Int, id2: Int): T {
 private fun groupIdResolver() = object : GroupIdResolver {
     var groupIdSeq = 100
     override fun id(): Int = groupIdSeq++
-}
-
-private fun <T> Assert<List<T>>.isListOf(vararg expected: Any?) = given { actual ->
-    if (actual == expected.toList()) return
-    fail(expected, actual)
 }
 
 private infix fun Int.to(to: Int) = BeanLink(this, to)

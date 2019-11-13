@@ -36,6 +36,15 @@ fun Topology.groupBeans(idResolver: GroupIdResolver = DefaultGroupIdResolver(thi
         val linksToBean = beanLinksTo[bean.id]?.filter { it.toPartition == currentPartition } ?: emptyList()
         val linksFromBean = beanLinksFrom[bean.id]?.filter { it.fromPartition == currentPartition } ?: emptyList()
         when {
+            linksFromBean.size > 1 && linksToBean.size > 1 -> {
+                //split-merge case. The bean should be left intact in its own stroke
+                if (currentStroke.isNotEmpty()) strokes += currentStroke
+                strokes += listOf(bean)
+                val nextBeans = linksFromBean.map { link -> beans.getValue(link.to).single { link.toPartition == it.partition } }
+                for (b in nextBeans) {
+                    buildStrokes(b, emptyList(), b.partition)
+                }
+            }
             linksFromBean.size > 1 -> { // merge, stroke finished on this element
                 strokes += currentStroke + bean
                 val nextBeans = linksFromBean.map { link -> beans.getValue(link.to).single { link.toPartition == it.partition } }
