@@ -36,7 +36,9 @@ object OverseerIntegrationSpec : Spek({
                 .trim(100)
                 .toCsv("file://${f2.absolutePath}")
 
-        val topology = listOf(o1, o2).buildTopology().partition(2)
+        val topology = listOf(o1, o2).buildTopology()
+                .partition(2)
+                .groupBeans()
         println("Topology: $topology")
 
         val overseer = Overseer()

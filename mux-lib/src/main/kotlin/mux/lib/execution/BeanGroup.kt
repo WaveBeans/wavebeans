@@ -90,7 +90,9 @@ fun Topology.groupBeans(idResolver: GroupIdResolver = DefaultGroupIdResolver(thi
     // create new bean structure
     val replacedBeans = mutableMapOf<Int, BeanRef>() // locate the group which absorbed the bean by its id
     val groups = mutableMapOf<Set<Int>, Int>() // locate group by its internal ids
-    val beanRefs = strokes.distinct()
+    val beanRefs = strokes
+            .filter { it.isNotEmpty() }
+            .distinct()
             .map { stroke ->
                 if (stroke.size > 1) {
                     val strokePartition = stroke.first().partition
