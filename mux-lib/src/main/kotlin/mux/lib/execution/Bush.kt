@@ -45,7 +45,7 @@ class Bush(
                 }
     }
 
-    fun addPod(pod: AnyPod) {
+    fun addPod(pod: Pod) {
         val worker = PodWorker(pod)
         workers[pod.podKey] = worker
         podDiscovery.registerPod(bushKey, pod)

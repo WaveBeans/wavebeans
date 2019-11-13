@@ -6,7 +6,7 @@ import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.typeOf
 
 @ExperimentalStdlibApi
-fun Topology.buildPods(): List<AnyPod> = PodBuilder(this).build()
+fun Topology.buildPods(): List<Pod> = PodBuilder(this).build()
 
 
 @ExperimentalStdlibApi
@@ -18,14 +18,14 @@ class PodBuilder(private val topology: Topology) {
 
     private val beanLinksTo = topology.links.groupBy { it.to }
 
-    fun build(): List<AnyPod> {
-        val builtPods = mutableListOf<AnyPod>()
+    fun build(): List<Pod> {
+        val builtPods = mutableListOf<Pod>()
 
         for (beanRefs in beansById.values) {
             val ref = beanRefs.first()
             val beanClazz = Class.forName(ref.type).kotlin
 
-            val pods: List<AnyPod> = when {
+            val pods: List<Pod> = when {
                 beanClazz.isSubclassOf(SingleBean::class) || beanClazz.isSubclassOf(AlterBean::class) -> {
                     val constructor = beanClazz.constructors.first {
                         it.parameters.size == 2 &&

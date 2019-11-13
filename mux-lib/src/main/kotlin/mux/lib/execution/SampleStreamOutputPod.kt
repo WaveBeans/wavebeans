@@ -1,9 +1,6 @@
 package mux.lib.execution
 
-import mux.lib.Bean
-import mux.lib.BeanParams
-import mux.lib.NoParams
-import mux.lib.Sample
+import mux.lib.*
 import mux.lib.io.StreamOutput
 import mux.lib.io.Writer
 import mux.lib.stream.FiniteSampleStream
@@ -11,7 +8,9 @@ import mux.lib.stream.FiniteSampleStream
 class SampleStreamOutputPod(
         val bean: StreamOutput<Sample, FiniteSampleStream>,
         override val podKey: PodKey
-) : StreamOutput<Sample, FiniteSampleStream>, Pod<Sample, FiniteSampleStream>, TickPod {
+) : StreamOutput<Sample, FiniteSampleStream>, TickPod {
+
+    override fun inputs(): List<AnyBean> = listOf(bean)
 
     // TODO that should be the part of configuration
     private val sampleRate = 44100.0f

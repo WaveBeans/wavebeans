@@ -4,7 +4,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 data class PodInfo(
         val bushKey: BushKey,
-        val pod: AnyPod
+        val pod: Pod
 )
 
 open class PodDiscovery protected constructor() {
@@ -21,7 +21,7 @@ open class PodDiscovery protected constructor() {
                 ?: throw IllegalStateException("Can't locate bush for pod with key $podKey")
     }
 
-    open fun registerPod(bushKey: BushKey, pod: AnyPod) {
+    open fun registerPod(bushKey: BushKey, pod: Pod) {
         val value = pods.putIfAbsent(pod.podKey, PodInfo(bushKey, pod))
         check(value == null) { "Pod with key `${pod.podKey}` already has value `$value`" }
     }

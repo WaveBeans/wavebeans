@@ -1,6 +1,6 @@
 package mux.lib.execution
 
-interface TickPod {
+interface TickPod: Pod {
 
     fun tick(): Boolean
 

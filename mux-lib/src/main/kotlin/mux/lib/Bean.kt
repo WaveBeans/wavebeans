@@ -4,6 +4,8 @@ package mux.lib
 
 import kotlinx.serialization.Serializable
 
+typealias AnyBean = Bean<*, *>
+
 interface Bean<T : Any, S : Any> {
 
     fun inputs(): List<Bean<*, *>>

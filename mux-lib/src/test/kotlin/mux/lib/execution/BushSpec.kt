@@ -3,10 +3,8 @@ package mux.lib.execution
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
-import mux.lib.Bean
-import mux.lib.BeanParams
+import mux.lib.AnyBean
 import mux.lib.Sample
-import mux.lib.stream.SampleStream
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import kotlin.random.Random
@@ -19,18 +17,15 @@ object BushSpec : Spek({
     describe("Bush should call pod method. 1 pod per bush") {
 
         val podKey = PodKey(random.nextInt(), 0)
-        val pod = object : Pod<Sample, SampleStream> {
+        val pod = object : Pod {
+            override fun inputs(): List<AnyBean> = throw UnsupportedOperationException()
+
             override fun iteratorStart(sampleRate: Float, partitionIdx: Int): Long = throw UnsupportedOperationException()
 
             override fun iteratorNext(iteratorKey: Long, buckets: Int): List<Sample>? = throw UnsupportedOperationException()
 
             override val podKey: PodKey
                 get() = podKey
-
-            override fun inputs(): List<Bean<*, *>> = throw UnsupportedOperationException()
-
-            override val parameters: BeanParams
-                get() = throw UnsupportedOperationException()
 
             fun methodWithNoParamsAndNoReturn(): Unit = Unit
 

@@ -4,12 +4,13 @@ import mux.lib.*
 import java.lang.reflect.InvocationTargetException
 
 data class PodKey(val id: Int, val partition: Int)
-typealias AnyPod = Pod<*, *>
 typealias AnyPodProxy = PodProxy<*, *>
 
-interface Pod<T : Any, S : Any> : Bean<T, S> {
+interface Pod {
 
     val podKey: PodKey
+
+    fun inputs(): List<AnyBean>
 
     @ExperimentalStdlibApi
     fun call(call: Call): PodCallResult {
@@ -47,7 +48,7 @@ interface Pod<T : Any, S : Any> : Bean<T, S> {
 
     fun iteratorStart(sampleRate: Float, partitionIdx: Int): Long
 
-    fun iteratorNext(iteratorKey: Long, buckets: Int): List<T>?
+    fun iteratorNext(iteratorKey: Long, buckets: Int): List<Any>?
 }
 
 interface PodProxy<T : Any, S : Any> : Bean<T, S> {

@@ -5,7 +5,7 @@ class BushController {
 
     private val bushes = listOf(Bush())
 
-    fun spreadThePods(pods: List<AnyPod>): BushController {
+    fun spreadThePods(pods: List<Pod>): BushController {
         // TODO make actual spreading
         pods.forEach { u ->
             bushes.first().addPod(u)

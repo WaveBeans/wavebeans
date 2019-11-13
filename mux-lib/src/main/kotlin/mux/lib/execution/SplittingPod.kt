@@ -1,5 +1,6 @@
 package mux.lib.execution
 
+import mux.lib.AnyBean
 import mux.lib.BeanStream
 import java.util.*
 import java.util.concurrent.atomic.AtomicLong
@@ -7,11 +8,18 @@ import kotlin.collections.ArrayList
 import kotlin.collections.set
 import kotlin.math.max
 
-abstract class SplittingPod<T : Any, S : Any>(
+class SplittingPod(
+        val stream: BeanStream<*, *>,
         override val podKey: PodKey,
         val partitionCount: Int,
         val unburdenElementsCleanupThreshold: Int = 1024
-) : Pod<T, S>, BeanStream<T, S> {
+) : Pod {
+
+    @Suppress("unused") // called via reflection
+    constructor(stream: BeanStream<*, *>, podKey: PodKey, partitionCount: Int)
+            : this(stream, podKey, partitionCount, 1024)
+
+    override fun inputs(): List<AnyBean> = listOf(stream)
 
     companion object {
         private val idSeq = AtomicLong(0)
@@ -19,18 +27,18 @@ abstract class SplittingPod<T : Any, S : Any>(
 
     private var globalOffset = 0L
     private val offsets = HashMap<Long, Long>()
-    private var iterator: Iterator<T>? = null
-    private var buffer = ArrayList<T>(unburdenElementsCleanupThreshold * partitionCount * 2)
+    private var iterator: Iterator<Any>? = null
+    private var buffer = ArrayList<Any>(unburdenElementsCleanupThreshold * partitionCount * 2)
 
     override fun iteratorStart(sampleRate: Float, partitionIdx: Int): Long {
         val key = idSeq.incrementAndGet()
         offsets[key] = globalOffset / partitionCount * partitionCount + partitionIdx
         if (iterator == null) // TODO handle different sample rate?
-            iterator = asSequence(sampleRate).iterator()
+            iterator = stream.asSequence(sampleRate).iterator()
         return key
     }
 
-    override fun iteratorNext(iteratorKey: Long, buckets: Int): List<T>? {
+    override fun iteratorNext(iteratorKey: Long, buckets: Int): List<Any>? {
         val pi = iterator
         check(pi != null) { "Pod wasn't initialized properly. Iterator not found. Call `start` first." }
         val offset = offsets[iteratorKey]
@@ -54,7 +62,7 @@ abstract class SplittingPod<T : Any, S : Any>(
             null
         } else {
             // otherwise the elements should be there
-            val elements = ArrayList<T>(buckets)
+            val elements = ArrayList<Any>(buckets)
             var read = 1
             var idx = bufferPos
             do {

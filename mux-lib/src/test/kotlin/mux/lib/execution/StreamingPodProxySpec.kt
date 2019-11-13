@@ -13,7 +13,7 @@ import org.spekframework.spek2.style.specification.describe
 
 @ExperimentalStdlibApi
 class PodProxyTester(
-        val pointedTo: Pod<Sample, *>,
+        val pointedTo: Pod,
         val timeToReadAtOnce: Int = 1
 ) {
     val podDiscovery: PodDiscovery = mock()

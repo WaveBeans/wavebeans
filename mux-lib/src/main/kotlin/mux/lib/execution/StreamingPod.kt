@@ -1,38 +1,45 @@
 package mux.lib.execution
 
+import mux.lib.AnyBean
 import mux.lib.BeanStream
 import java.util.*
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.collections.ArrayList
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.reflect.typeOf
 
 // the class is not thread safe
-abstract class StreamingPod<T : Any, S : Any>(
+class StreamingPod(
+        val stream: BeanStream<*, *>,
         override val podKey: PodKey,
         val unburdenElementsCleanupThreshold: Int = 1024
-) : Pod<T, S>, BeanStream<T, S> {
+) : Pod {
+
+    @Suppress("unused") // called via reflection
+    constructor(stream: BeanStream<*, *>, podKey: PodKey)
+            : this(stream, podKey, 1024)
 
     companion object {
         private val idSeq = AtomicLong(0)
     }
 
-    private var iterator: Iterator<T>? = null
+    override fun inputs(): List<AnyBean> = listOf(stream)
+
+    private var iterator: Iterator<Any>? = null
 
     private val offsets = HashMap<Long, Long>()
-    private var buffer = ArrayList<T>(unburdenElementsCleanupThreshold * 2)
+    private var buffer = ArrayList<Any>(unburdenElementsCleanupThreshold * 2)
     private var globalOffset = 0L
 
     override fun iteratorStart(sampleRate: Float, partitionIdx: Int): Long {
         val key = idSeq.incrementAndGet()
         offsets[key] = globalOffset
         if (iterator == null) // TODO handle different sample rate?
-            iterator = asSequence(sampleRate).iterator()
+            iterator = stream.asSequence(sampleRate).iterator()
         return key
     }
 
-    override fun iteratorNext(iteratorKey: Long, buckets: Int): List<T>? {
+    override fun iteratorNext(iteratorKey: Long, buckets: Int): List<Any>? {
         val pi = iterator
         check(pi != null) { "Pod wasn't initialized properly. Iterator not found. Call `start` first." }
         val offset = offsets[iteratorKey]

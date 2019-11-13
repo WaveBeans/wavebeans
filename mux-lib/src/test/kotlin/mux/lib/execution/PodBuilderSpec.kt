@@ -213,12 +213,12 @@ class PodBuilderSpec : Spek({
     }
 })
 
-private fun Assert<AnyPod>.partition() = this.prop("partition") { it.podKey.partition }
+private fun Assert<Pod>.partition() = this.prop("partition") { it.podKey.partition }
 
-private fun Assert<List<AnyPod>>.podWithKey(name: String, id: Int) =
+private fun Assert<List<Pod>>.podWithKey(name: String, id: Int) =
         prop(name) { ps -> ps.filter { it.podKey.id == id }.sortedBy { it.podKey.partition } }
 
-private fun Assert<AnyPod>.podProxies() =
+private fun Assert<Pod>.podProxies() =
         prop("pod proxies") { ps ->
             ps.inputs()
                     .map { it.inputs() }.flatten()
