@@ -6,11 +6,11 @@ import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.typeOf
 
 @ExperimentalStdlibApi
-fun Topology.buildPods(): List<Pod> = PodBuilder(this).build()
+fun Topology.buildPods(): List<PodRef> = PodBuilder(this).build()
 
 
 @ExperimentalStdlibApi
-class PodBuilder(private val topology: Topology) {
+class PodBuilder(topology: Topology) {
 
     private val beansById = topology.refs.groupBy { it.id }
 
@@ -18,14 +18,15 @@ class PodBuilder(private val topology: Topology) {
 
     private val beanLinksTo = topology.links.groupBy { it.to }
 
-    fun build(): List<Pod> {
-        val builtPods = mutableListOf<Pod>()
+    fun build(): List<PodRef> {
+        val builtPods = mutableListOf<PodRef>()
 
         for (beanRefs in beansById.values) {
             val ref = beanRefs.first()
             val beanClazz = Class.forName(ref.type).kotlin
+            //beanClazz.supertypes.first { it.isSubtypeOf(typeOf<Bean<*, *>>()) }
 
-            val pods: List<Pod> = when {
+            val pods: List<PodRef> = when {
                 beanClazz.isSubclassOf(SingleBean::class) || beanClazz.isSubclassOf(AlterBean::class) -> {
                     val constructor = beanClazz.constructors.first {
                         it.parameters.size == 2 &&
@@ -40,63 +41,46 @@ class PodBuilder(private val topology: Topology) {
                                 .filter { it.fromPartition == beanRef.partition }
                         if (links.size == 1) {
                             val link = links.first()
-                            val podProxy = PodRegistry.createPodProxy(
-                                    podProxyType,
-                                    PodKey(link.to, link.toPartition),
-                                    beanRef.partition
-                            )
-
-                            PodRegistry.createPod(
-                                    beanClazz.supertypes.first { it.isSubtypeOf(typeOf<Bean<*, *>>()) },
+                            val podProxy = PodProxyRef(podProxyType, listOf(PodKey(link.to, link.toPartition)), beanRef.partition)
+                            PodRef(
                                     PodKey(beanRef.id, beanRef.partition),
-                                    constructor.call(podProxy, beanRef.params) as Bean<*, *>
+                                    listOf(beanRef),
+                                    listOf(podProxy)
+
                             )
                         } else {
-                            val podProxy = PodRegistry.createMergingPodProxy(
-                                    podProxyType,
-                                    links.map { PodKey(it.to, it.toPartition) },
-                                    beanRef.partition
-                            )
-
+                            val podProxy = PodProxyRef(podProxyType, links.map { PodKey(it.to, it.toPartition) }, beanRef.partition)
                             if (beanClazz.isSubclassOf(SinglePartitionBean::class) && !beanClazz.isSubclassOf(SinkBean::class)) {
-                                PodRegistry.createSplittingPod(
-                                        beanClazz.supertypes.first { it.isSubtypeOf(typeOf<Bean<*, *>>()) },
+                                PodRef(
                                         PodKey(beanRef.id, beanRef.partition),
-                                        constructor.call(podProxy, beanRef.params) as Bean<*, *>,
+                                        listOf(beanRef),
+                                        listOf(podProxy),
                                         beanLinksTo.getValue(beanRef.id).count()
                                 )
                             } else {
-                                PodRegistry.createPod(
-                                        beanClazz.supertypes.first { it.isSubtypeOf(typeOf<Bean<*, *>>()) },
-                                        PodKey(beanRef.id, beanRef.partition),
-                                        constructor.call(podProxy, beanRef.params) as Bean<*, *>
-                                )
+                                throw UnsupportedOperationException("Currently shouldn't be reachable")
                             }
                         }
                     }
                 }
 
                 beanClazz.isSubclassOf(SourceBean::class) -> {
-                    val constructor = beanClazz.constructors.first {
-                        it.parameters.size == 1 &&
-                                it.parameters[0].type.isSubtypeOf(typeOf<BeanParams>())
-                    }
 
                     beanRefs.map { beanRef ->
 
                         if (beanClazz.isSubclassOf(SinglePartitionBean::class)) {
 
-                            PodRegistry.createSplittingPod(
-                                    beanClazz.supertypes.first { it.isSubtypeOf(typeOf<Bean<*, *>>()) },
+                            PodRef(
                                     PodKey(beanRef.id, beanRef.partition),
-                                    constructor.call(beanRef.params) as Bean<*, *>,
+                                    listOf(beanRef),
+                                    emptyList(),
                                     beanLinksTo.getValue(beanRef.id).count()
                             )
                         } else {
-                            PodRegistry.createPod(
-                                    beanClazz.supertypes.first { it.isSubtypeOf(typeOf<Bean<*, *>>()) },
+                            PodRef(
                                     PodKey(beanRef.id, beanRef.partition),
-                                    constructor.call(beanRef.params) as Bean<*, *>
+                                    listOf(beanRef),
+                                    emptyList()
                             )
                         }
                     }
@@ -115,42 +99,38 @@ class PodBuilder(private val topology: Topology) {
                         val podProxyType2 = constructor.parameters[1].type
                         val links = beanLinksFrom.getValue(beanRef.id)
                                 .filter { it.fromPartition == beanRef.partition }
-                        if (links.size == 2) {
-                            throw UnsupportedOperationException("Non-merging pod proxy is not implemented.")
-                        } else {
-                            // requires merging first
-                            val podProxy1 = PodRegistry.createMergingPodProxy(
-                                    podProxyType1,
-                                    links.filter { it.order == 0 }.map { PodKey(it.to, it.toPartition) },
-                                    beanRef.partition
-                            )
-                            val podProxy2 = PodRegistry.createMergingPodProxy(
-                                    podProxyType2,
-                                    links.filter { it.order == 1 }.map { PodKey(it.to, it.toPartition) },
-                                    beanRef.partition
-                            )
+                        val podProxy1 = PodProxyRef(
+                                podProxyType1,
+                                links.filter { it.order == 0 }.map { PodKey(it.to, it.toPartition) },
+                                beanRef.partition
+                        )
+                        val podProxy2 = PodProxyRef(
+                                podProxyType2,
+                                links.filter { it.order == 1 }.map { PodKey(it.to, it.toPartition) },
+                                beanRef.partition
+                        )
 
-                            PodRegistry.createSplittingPod(
-                                    beanClazz.supertypes.first { it.isSubtypeOf(typeOf<Bean<*, *>>()) },
-                                    PodKey(beanRef.id, beanRef.partition),
-                                    constructor.call(podProxy1, podProxy2, beanRef.params) as Bean<*, *>,
-                                    beanLinksTo.getValue(beanRef.id).count()
-                            )
-                        }
+                        PodRef(
+                                PodKey(beanRef.id, beanRef.partition),
+                                listOf(beanRef),
+                                listOf(podProxy1, podProxy2),
+                                beanLinksTo.getValue(beanRef.id).count()
+                        )
                     }
                 }
 
                 else -> throw UnsupportedOperationException("Unsupported class $beanClazz for decorating")
             }
 
-            println("""
-                BEAN CLASS: $beanClazz
-                #: ${ref.id}
-                POD: $pods
-                POD INPUTS: ${pods.map { it.inputs() }.flatten()}
-                POD INPUT INPUTS: ${pods.map { it.inputs() }.flatten().map { it.inputs() }.flatten()}
-                -----
-                """.trimIndent())
+//            println("""
+//                BEAN CLASS: $beanClazz
+//                #: ${ref.id}
+//                POD: $pods
+//                POD INPUTS: ${pods.map { it.inputs() }.flatten()}
+//                POD INPUT INPUTS: ${pods.map { it.inputs() }.flatten().map { it.inputs() }.flatten()}
+//                -----
+//                """.trimIndent())
+            println("${pods}\n-------")
 
             builtPods += pods
         }

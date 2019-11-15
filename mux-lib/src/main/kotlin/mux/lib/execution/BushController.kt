@@ -5,10 +5,11 @@ class BushController {
 
     private val bushes = listOf(Bush())
 
-    fun spreadThePods(pods: List<Pod>): BushController {
+    fun spreadThePods(pods: List<PodRef>): BushController {
         // TODO make actual spreading
         pods.forEach { u ->
-            bushes.first().addPod(u)
+            val pod = u.instantiate()
+            bushes.first().addPod(pod)
         }
         return this
     }

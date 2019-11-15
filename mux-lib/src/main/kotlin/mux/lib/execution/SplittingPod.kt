@@ -9,7 +9,7 @@ import kotlin.collections.set
 import kotlin.math.max
 
 class SplittingPod(
-        val stream: BeanStream<*, *>,
+        val bean: BeanStream<*, *>,
         override val podKey: PodKey,
         val partitionCount: Int,
         val unburdenElementsCleanupThreshold: Int = 1024
@@ -19,7 +19,7 @@ class SplittingPod(
     constructor(stream: BeanStream<*, *>, podKey: PodKey, partitionCount: Int)
             : this(stream, podKey, partitionCount, 1024)
 
-    override fun inputs(): List<AnyBean> = listOf(stream)
+    override fun inputs(): List<AnyBean> = listOf(bean)
 
     companion object {
         private val idSeq = AtomicLong(0)
@@ -34,7 +34,7 @@ class SplittingPod(
         val key = idSeq.incrementAndGet()
         offsets[key] = globalOffset / partitionCount * partitionCount + partitionIdx
         if (iterator == null) // TODO handle different sample rate?
-            iterator = stream.asSequence(sampleRate).iterator()
+            iterator = bean.asSequence(sampleRate).iterator()
         return key
     }
 

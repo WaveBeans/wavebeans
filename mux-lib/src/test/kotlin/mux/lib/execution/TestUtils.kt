@@ -1,6 +1,7 @@
 package mux.lib.execution
 
 import mux.lib.*
+import mux.lib.io.StreamInput
 import java.util.concurrent.TimeUnit
 
 class IntStream(
@@ -33,3 +34,15 @@ fun newTestSplittingPod(seq: List<Int>, partitionCount: Int): SplittingPod {
             unburdenElementsCleanupThreshold = 0
     )
 }
+
+infix fun Int.to(to: Int) = BeanLink(this, to)
+
+infix fun Double.to(to: Double) = BeanLink(
+        from = this.toInt(),
+        fromPartition = (this * 10.0).toInt() % 10,
+        to = to.toInt(),
+        toPartition = (to * 10.0).toInt() % 10
+)
+
+infix fun BeanLink.order(order: Int) = this.copy(order = order)
+

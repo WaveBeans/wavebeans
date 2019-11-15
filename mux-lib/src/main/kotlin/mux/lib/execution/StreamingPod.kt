@@ -10,7 +10,7 @@ import kotlin.math.min
 
 // the class is not thread safe
 class StreamingPod(
-        val stream: BeanStream<*, *>,
+        val bean: BeanStream<*, *>,
         override val podKey: PodKey,
         val unburdenElementsCleanupThreshold: Int = 1024
 ) : Pod {
@@ -23,7 +23,7 @@ class StreamingPod(
         private val idSeq = AtomicLong(0)
     }
 
-    override fun inputs(): List<AnyBean> = listOf(stream)
+    override fun inputs(): List<AnyBean> = listOf(bean)
 
     private var iterator: Iterator<Any>? = null
 
@@ -35,7 +35,7 @@ class StreamingPod(
         val key = idSeq.incrementAndGet()
         offsets[key] = globalOffset
         if (iterator == null) // TODO handle different sample rate?
-            iterator = stream.asSequence(sampleRate).iterator()
+            iterator = bean.asSequence(sampleRate).iterator()
         return key
     }
 

@@ -329,16 +329,6 @@ private fun groupIdResolver() = object : GroupIdResolver {
     override fun id(): Int = groupIdSeq++
 }
 
-private infix fun Int.to(to: Int) = BeanLink(this, to)
-private infix fun Double.to(to: Double) = BeanLink(
-        from = this.toInt(),
-        fromPartition = (this * 10.0).toInt() % 10,
-        to = to.toInt(),
-        toPartition = (to * 10.0).toInt() % 10
-)
-
-private infix fun BeanLink.order(order: Int) = this.copy(order = order)
-
 private fun Assert<List<BeanRef>>.bean(id: Int): Assert<BeanRef?> =
         this.prop("[$id]") { it.singleOrNull { it.id == id } }
 

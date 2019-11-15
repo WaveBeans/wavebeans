@@ -38,7 +38,6 @@ object OverseerIntegrationSpec : Spek({
 
         val topology = listOf(o1, o2).buildTopology()
                 .partition(2)
-                .groupBeans()
         println("Topology: $topology")
 
         val overseer = Overseer()

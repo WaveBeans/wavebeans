@@ -52,9 +52,9 @@ object PodRegistry {
         splittingPodRegistry[inputType] = constructor
     }
 
-    fun createPodProxy(nodeType: KType, podKey: PodKey, forPartition: Int): AnyPodProxy =
-            podProxyRegistry[findRegisteredType(nodeType, podProxyRegistry.keys)]?.call(podKey, forPartition)
-                    ?: throw IllegalStateException("PodProxy for `$nodeType` is not found")
+    fun createPodProxy(beanType: KType, podKey: PodKey, forPartition: Int): AnyPodProxy =
+            podProxyRegistry[findRegisteredType(beanType, podProxyRegistry.keys)]?.call(podKey, forPartition)
+                    ?: throw IllegalStateException("PodProxy for `$beanType` is not found")
 
     fun createMergingPodProxy(beanType: KType, podKeys: List<PodKey>, forPartition: Int): AnyPodProxy =
             mergingPodProxyRegistry[findRegisteredType(beanType, mergingPodProxyRegistry.keys)]?.call(podKeys, forPartition)
