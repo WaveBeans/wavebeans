@@ -38,65 +38,74 @@ data class PodRef(
 ) {
     @ExperimentalStdlibApi
     fun instantiate(): Pod {
-        val proxies = podProxies.map {
-            if (it.pointedTo.size > 1) {
-                PodRegistry.createMergingPodProxy(
-                        it.type,
-                        it.pointedTo,
-                        it.partition
+        try {
+            val proxies = podProxies.map {
+                if (it.pointedTo.size > 1) {
+                    PodRegistry.createMergingPodProxy(
+                            it.type,
+                            it.pointedTo,
+                            it.partition
+                    )
+                } else {
+                    PodRegistry.createPodProxy(
+                            it.type,
+                            it.pointedTo.single(),
+                            it.partition
+                    )
+
+                }
+            }
+
+            // TODO follow internal links but not the order of the beans in the list
+            // assumption: currently only first bean may have multiple inputs. Beans should be planned this way.
+            fun createBean(inputs: List<AnyBean>, leftRefs: List<BeanRef>): AnyBean {
+                if (leftRefs.isEmpty()) return inputs.single()
+                val beanRef = leftRefs.first()
+                try {
+                    val beanClazz = Class.forName(beanRef.type).kotlin
+                    val bean = when {
+                        inputs.isEmpty() -> beanClazz.constructors.first {
+                            it.parameters.size == 1 &&
+                                    it.parameters[0].type.isSubtypeOf(typeOf<BeanParams>())
+                        }.call(beanRef.params) as Bean<*, *>
+                        inputs.size == 1 -> beanClazz.constructors.first {
+                            it.parameters.size == 2 &&
+                                    it.parameters[0].type.isSubtypeOf(typeOf<Bean<*, *>>()) &&
+                                    it.parameters[1].type.isSubtypeOf(typeOf<BeanParams>())
+                        }.call(inputs[0], beanRef.params) as Bean<*, *>
+                        inputs.size == 2 -> beanClazz.constructors.first {
+                            it.parameters.size == 3 &&
+                                    it.parameters[0].type.isSubtypeOf(typeOf<Bean<*, *>>()) &&
+                                    it.parameters[1].type.isSubtypeOf(typeOf<Bean<*, *>>()) &&
+                                    it.parameters[2].type.isSubtypeOf(typeOf<BeanParams>())
+                        }.call(inputs[0], inputs[1], beanRef.params) as Bean<*, *>
+                        else -> throw UnsupportedOperationException("Too much input for the bean: ${inputs.size}")
+                    }
+
+                    return createBean(listOf(bean), leftRefs.drop(1))
+                } catch (e: Exception) {
+                    throw IllegalStateException("Can't create bean instance with inputs=$inputs, beanRef=$beanRef", e)
+                }
+            }
+
+            val tailBean = createBean(proxies, internalBeans.reversed())
+
+            return if (splitToPartitions == null) {
+                PodRegistry.createPod(
+                        tailBean::class.supertypes.first { it.isSubtypeOf(typeOf<AnyBean>()) },
+                        key,
+                        tailBean
                 )
             } else {
-                PodRegistry.createPodProxy(
-                        it.type,
-                        it.pointedTo.single(),
-                        it.partition
+                PodRegistry.createSplittingPod(
+                        tailBean::class.supertypes.first { it.isSubtypeOf(typeOf<AnyBean>()) },
+                        key,
+                        tailBean,
+                        splitToPartitions
                 )
-
             }
-        }
-
-        // assumption: currently only first bean may have multiple inputs. Beans should be planned this way.
-        fun createBean(inputs: List<AnyBean>, leftRefs: List<BeanRef>): AnyBean {
-            if (leftRefs.isEmpty()) return inputs.single()
-            val beanRef = leftRefs.first()
-            val beanClazz = Class.forName(beanRef.type).kotlin
-            val bean = when {
-                inputs.isEmpty() -> beanClazz.constructors.first {
-                    it.parameters.size == 1 &&
-                            it.parameters[0].type.isSubtypeOf(typeOf<BeanParams>())
-                }.call(beanRef.params) as Bean<*, *>
-                inputs.size == 1 -> beanClazz.constructors.first {
-                    it.parameters.size == 2 &&
-                            it.parameters[0].type.isSubtypeOf(typeOf<Bean<*, *>>()) &&
-                            it.parameters[1].type.isSubtypeOf(typeOf<BeanParams>())
-                }.call(inputs[0], beanRef.params) as Bean<*, *>
-                inputs.size == 2 -> beanClazz.constructors.first {
-                    it.parameters.size == 3 &&
-                            it.parameters[0].type.isSubtypeOf(typeOf<Bean<*, *>>()) &&
-                            it.parameters[1].type.isSubtypeOf(typeOf<Bean<*, *>>()) &&
-                            it.parameters[2].type.isSubtypeOf(typeOf<BeanParams>())
-                }.call(inputs[0], inputs[1], beanRef.params) as Bean<*, *>
-                else -> throw UnsupportedOperationException("Too much input for the bean: ${inputs.size}")
-            }
-
-            return createBean(listOf(bean), leftRefs.drop(1))
-        }
-
-        val tailBean = createBean(proxies, internalBeans)
-
-        return if (splitToPartitions == null) {
-            PodRegistry.createPod(
-                    tailBean::class.supertypes.first { it.isSubtypeOf(typeOf<AnyBean>()) },
-                    key,
-                    tailBean
-            )
-        } else {
-            PodRegistry.createSplittingPod(
-                    tailBean::class.supertypes.first { it.isSubtypeOf(typeOf<AnyBean>()) },
-                    key,
-                    tailBean,
-                    splitToPartitions
-            )
+        } catch (e: Exception) {
+            throw IllegalStateException("Can't instantiate Pod=$this", e)
         }
     }
 

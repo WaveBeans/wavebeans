@@ -127,5 +127,5 @@ fun Topology.groupBeans(idResolver: GroupIdResolver = DefaultGroupIdResolver(thi
             .distinct() // remove links that start pointing to the same beans
             .filter { it.to != it.from } // remove self linked beans
 
-    return Topology(beanRefs, beanLinks)
+    return Topology(beanRefs, beanLinks, this.partitionsCount)
 }

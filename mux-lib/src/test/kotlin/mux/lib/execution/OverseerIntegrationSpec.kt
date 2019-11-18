@@ -4,6 +4,7 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThan
 import assertk.assertions.size
+import mux.lib.execution.TopologySerializer.jsonPretty
 import mux.lib.io.sine
 import mux.lib.io.toCsv
 import mux.lib.stream.changeAmplitude
@@ -38,6 +39,7 @@ object OverseerIntegrationSpec : Spek({
 
         val topology = listOf(o1, o2).buildTopology()
                 .partition(2)
+                .groupBeans()
         println("Topology: $topology")
 
         val overseer = Overseer()

@@ -21,7 +21,7 @@ object PodRegistry {
     private val splittingPodRegistry = mutableMapOf<KType, KFunction<Pod>>()
 
     init {
-        // TODO replace with annotations on classes themselves
+        // TODO replace with runtime proxy generation
         registerPodProxy(typeOf<FiniteSampleStream>(), FiniteSampleStreamPodProxy::class.constructors.first())
         registerPodProxy(typeOf<SampleStream>(), SampleStreamPodProxy::class.constructors.first())
         registerPodProxy(typeOf<StreamInput>(), StreamInputPodProxy::class.constructors.first())
