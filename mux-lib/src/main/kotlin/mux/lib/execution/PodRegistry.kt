@@ -18,7 +18,7 @@ object PodRegistry {
     private val podProxyRegistry = mutableMapOf<KType, KFunction<AnyPodProxy>>()
     private val mergingPodProxyRegistry = mutableMapOf<KType, KFunction<MergingPodProxy<*, *>>>()
     private val podRegistry = mutableMapOf<KType, KFunction<Pod>>()
-    private val splittingPodRegistry = mutableMapOf<KType, KFunction<SplittingPod>>()
+    private val splittingPodRegistry = mutableMapOf<KType, KFunction<Pod>>()
 
     init {
         // TODO replace with annotations on classes themselves
@@ -48,7 +48,7 @@ object PodRegistry {
         podRegistry[inputType] = constructor
     }
 
-    fun registerSplittingPod(inputType: KType, constructor: KFunction<SplittingPod>) {
+    fun registerSplittingPod(inputType: KType, constructor: KFunction<Pod>) {
         splittingPodRegistry[inputType] = constructor
     }
 

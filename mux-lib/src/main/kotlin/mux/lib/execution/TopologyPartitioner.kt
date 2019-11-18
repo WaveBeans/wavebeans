@@ -104,5 +104,5 @@ fun Topology.partition(partitionsCount: Int): Topology {
             }
 
 
-    return Topology(beanRefs, links)
+    return Topology(beanRefs, links, partitionsCount)
 }

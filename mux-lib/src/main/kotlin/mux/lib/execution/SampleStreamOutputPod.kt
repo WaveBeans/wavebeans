@@ -15,9 +15,9 @@ class SampleStreamOutputPod(
     // TODO that should be the part of configuration
     private val sampleRate = 44100.0f
 
-    override fun iteratorStart(sampleRate: Float, partitionIdx: Int): Long  = throw UnsupportedOperationException()
+    override fun iteratorStart(sampleRate: Float, partitionIdx: Int): Long  = throw UnsupportedOperationException("You can't read from this pod")
 
-    override fun iteratorNext(iteratorKey: Long, buckets: Int): List<Sample>? = throw UnsupportedOperationException()
+    override fun iteratorNext(iteratorKey: Long, buckets: Int): List<Sample>? = throw UnsupportedOperationException("You can't read from this pod")
 
     private val writer by lazy { bean.writer(sampleRate) }
 

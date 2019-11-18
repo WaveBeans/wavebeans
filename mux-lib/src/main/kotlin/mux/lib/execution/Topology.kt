@@ -32,7 +32,8 @@ data class BeanLink(
 @Serializable
 data class Topology(
         val refs: List<BeanRef>,
-        val links: List<BeanLink>
+        val links: List<BeanLink>,
+        val partitionsCount: Int = 1
 ) {
     companion object {
 

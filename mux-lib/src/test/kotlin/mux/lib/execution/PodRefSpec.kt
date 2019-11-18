@@ -34,6 +34,7 @@ class PodRefSpec : Spek({
                 val podRef = PodRef(
                         PodKey(1, 0),
                         listOf(BeanRef.create(1, bean::class, bean.parameters)),
+                        emptyList(),
                         listOf(podProxy)
                 )
 
@@ -65,6 +66,7 @@ class PodRefSpec : Spek({
                     val podRef = PodRef(
                             PodKey(2, 0),
                             listOf(BeanRef.create(2, bean::class, bean.parameters)),
+                            emptyList(),
                             listOf(podProxy),
                             2
                     )
@@ -94,6 +96,7 @@ class PodRefSpec : Spek({
                 val podRef = PodRef(
                         PodKey(0, 0),
                         listOf(BeanRef.create(1, bean::class, bean.parameters)),
+                        emptyList(),
                         listOf()
                 )
 
@@ -112,6 +115,7 @@ class PodRefSpec : Spek({
                 val podRef = PodRef(
                         PodKey(0, 0),
                         listOf(BeanRef.create(1, bean::class, bean.parameters)),
+                        emptyList(),
                         listOf(),
                         2
                 )
@@ -148,6 +152,7 @@ class PodRefSpec : Spek({
                 val podRef = PodRef(
                         PodKey(3, 0),
                         listOf(BeanRef.create(3, bean::class, bean.parameters)),
+                        emptyList(),
                         listOf(podProxy1, podProxy2),
                         0
                 )
@@ -188,6 +193,7 @@ class PodRefSpec : Spek({
                 val podRef = PodRef(
                         PodKey(3, 0),
                         listOf(BeanRef.create(3, bean::class, bean.parameters)),
+                        emptyList(),
                         listOf(podProxy1, podProxy2),
                         0
                 )

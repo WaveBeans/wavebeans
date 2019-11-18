@@ -18,9 +18,13 @@ data class PodRef(
         val key: PodKey,
         /**
          * beans to be inside of this pod. The first one is to be initialized with the proxies,
-         * the last one is to be read from, the rest to be connected according to the order in the list.
+         * the last one is to be read from, the rest to be connected according to the [internalLinks].
          */
         val internalBeans: List<BeanRef>,
+        /**
+         * How internal links are interconnected between each other. Empty if only one bean in a pod.
+         */
+        val internalLinks: List<BeanLink>,
         /**
          * A list of [PodProxy] to be applied as the stream of the first bean from [internalBeans].
          * The order of the proxies is preserved and it will be matched during [mux.lib.Bean] creation.
@@ -28,9 +32,9 @@ data class PodRef(
          */
         val podProxies: List<PodProxyRef>,
         /**
-         * Overall amount of partitions for all similar pods (meaning, how many similar pods exist). Null if not applicable
+         * If more that one then assuming that the pod should split data among several partitions. If null then not applicable
          */
-        val partitionCount: Int? = null
+        val splitToPartitions: Int? = null
 ) {
     @ExperimentalStdlibApi
     fun instantiate(): Pod {
@@ -80,7 +84,7 @@ data class PodRef(
 
         val tailBean = createBean(proxies, internalBeans)
 
-        return if (partitionCount == null) {
+        return if (splitToPartitions == null) {
             PodRegistry.createPod(
                     tailBean::class.supertypes.first { it.isSubtypeOf(typeOf<AnyBean>()) },
                     key,
@@ -91,7 +95,7 @@ data class PodRef(
                     tailBean::class.supertypes.first { it.isSubtypeOf(typeOf<AnyBean>()) },
                     key,
                     tailBean,
-                    partitionCount
+                    splitToPartitions
             )
         }
     }
