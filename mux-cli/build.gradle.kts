@@ -1,3 +1,11 @@
+plugins {
+    application
+}
+
+application {
+    mainClassName = "mux.cli.CliKt"
+}
+
 dependencies {
     implementation(project(":mux-lib"))
 

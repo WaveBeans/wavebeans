@@ -9,8 +9,10 @@ class RootScope(private val session: Session) : Scope {
 
     override fun prompt(): String = ""
 
+    @ExperimentalStdlibApi
     override fun commands(): Set<Command> {
         return setOf(
+                BenchmarkCommand(session),
                 OpenFileCommand(session),
                 GenCommand(session),
                 SaveFileCommand(session, null, null, null),
