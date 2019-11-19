@@ -1,12 +1,13 @@
 package mux.lib.execution
 
 import mux.lib.*
+import java.io.Closeable
 import java.lang.reflect.InvocationTargetException
 
 data class PodKey(val id: Int, val partition: Int)
 typealias AnyPodProxy = PodProxy<*, *>
 
-interface Pod {
+interface Pod: Closeable {
 
     val podKey: PodKey
 

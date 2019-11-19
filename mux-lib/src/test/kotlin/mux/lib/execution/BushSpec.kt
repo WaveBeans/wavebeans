@@ -18,6 +18,8 @@ object BushSpec : Spek({
 
         val podKey = PodKey(random.nextInt(), 0)
         val pod = object : Pod {
+            override fun close() {}
+
             override fun inputs(): List<AnyBean> = throw UnsupportedOperationException()
 
             override fun iteratorStart(sampleRate: Float, partitionIdx: Int): Long = throw UnsupportedOperationException()

@@ -14,7 +14,6 @@ class StreamingPod(
         override val podKey: PodKey,
         val unburdenElementsCleanupThreshold: Int = 1024
 ) : Pod {
-
     @Suppress("unused") // called via reflection
     constructor(stream: BeanStream<*, *>, podKey: PodKey)
             : this(stream, podKey, 1024)
@@ -84,6 +83,10 @@ class StreamingPod(
 
             elements
         }
+    }
+
+    override fun close() {
+
     }
 
     override fun toString(): String = "[$podKey]${this::class.simpleName}"

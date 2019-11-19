@@ -15,7 +15,7 @@ class SampleStreamOutputPod(
     // TODO that should be the part of configuration
     private val sampleRate = 44100.0f
 
-    override fun iteratorStart(sampleRate: Float, partitionIdx: Int): Long  = throw UnsupportedOperationException("You can't read from this pod")
+    override fun iteratorStart(sampleRate: Float, partitionIdx: Int): Long = throw UnsupportedOperationException("You can't read from this pod")
 
     override fun iteratorNext(iteratorKey: Long, buckets: Int): List<Sample>? = throw UnsupportedOperationException("You can't read from this pod")
 
@@ -25,10 +25,6 @@ class SampleStreamOutputPod(
         return writer.write()
     }
 
-    override fun terminate() {
-        writer.close()
-    }
-
     override fun writer(sampleRate: Float): Writer = throw UnsupportedOperationException("Not required by pod")
 
     override val parameters: BeanParams
@@ -36,6 +32,10 @@ class SampleStreamOutputPod(
 
     override val input: Bean<Sample, FiniteSampleStream>
         get() = bean
+
+    override fun close() {
+        writer.close()
+    }
 
     override fun toString(): String = "[$podKey]${this::class.simpleName}"
 }
