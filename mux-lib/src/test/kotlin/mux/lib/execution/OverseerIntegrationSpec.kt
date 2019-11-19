@@ -9,6 +9,7 @@ import mux.lib.io.sine
 import mux.lib.io.toCsv
 import mux.lib.stream.changeAmplitude
 import mux.lib.stream.plus
+import mux.lib.stream.toDevNull
 import mux.lib.stream.trim
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
@@ -40,7 +41,7 @@ object OverseerIntegrationSpec : Spek({
         val topology = listOf(o1, o2).buildTopology()
                 .partition(2)
                 .groupBeans()
-        println("Topology: $topology")
+        println("Topology: ${TopologySerializer.serialize(topology, jsonPretty)}")
 
         val overseer = Overseer()
 

@@ -20,8 +20,7 @@ class IntStream(
 fun newTestStreamingPod(seq: List<Int>, partition: Int = 0): StreamingPod {
     return StreamingPod(
             IntStream(seq),
-            PodKey(1, partition),
-            unburdenElementsCleanupThreshold = 1
+            PodKey(1, partition)
     )
 }
 
