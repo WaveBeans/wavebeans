@@ -28,6 +28,7 @@ class SimpleBushCaller internal constructor(
     @ExperimentalStdlibApi
     override fun call(request: String): PodCallResult {
         val bush = podDiscovery.bush(bushKey)
+        if (bush == null) throw IllegalStateException("Unable to make call `$request` to Bush[$bushKey] as it hasn't been found.")
         // TODO that should be done over the network soon
         return if (bush != null /* && bush.locallyAccessible()*/)
             bush.call(podKey, request)

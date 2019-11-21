@@ -18,6 +18,9 @@ object BushSpec : Spek({
 
         val podKey = PodKey(random.nextInt(), 0)
         val pod = object : Pod {
+
+            override fun isFinished(): Boolean = throw UnsupportedOperationException()
+
             override fun close() {}
 
             override fun inputs(): List<AnyBean> = throw UnsupportedOperationException()
@@ -40,7 +43,7 @@ object BushSpec : Spek({
             fun convertsIntToLong(value: Int): Long = value.toLong()
 
         }
-        val bush = Bush()
+        val bush = Bush(1)
                 .also { it.addPod(pod) }
                 .also { it.start() }
 

@@ -5,6 +5,7 @@ import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.min
+import kotlin.random.Random
 
 // ThreadSafe
 abstract class AbstractPod(
@@ -27,18 +28,20 @@ abstract class AbstractPod(
     private var prefetchingThreadIsRunning = true
 
     @Volatile
-    private var waitForFirstConsume = true
+    private var firstConsumerCameBy = false
 
     @Suppress("unused")
     private val prefetchingThread = Thread {
         var partitionIdx = 0
         // do not start prefetching before clients start to really read
         // that allows to establish more than one parallel iterator
-        while (waitForFirstConsume) Thread.sleep(0)
+        while (prefetchingThreadIsRunning && !firstConsumerCameBy) Thread.sleep(0)
+        println("POD[$podKey] Started fetching [prefetchingThreadIsRunning=$prefetchingThreadIsRunning, firstConsumerCameBy=$firstConsumerCameBy]")
+        var i = 0
         while (prefetchingThreadIsRunning) {
             val biggestBufferSize = buffers.values.map { it.second.size }.max() ?: 0
             var iterations = maxPrefetchAmount - biggestBufferSize
-            while (iterations > 0) {
+            while (prefetchingThreadIsRunning && iterations > 0) {
                 if (iterator != null) {
                     if (iterator!!.hasNext()) {
                         // read the next element from the stream and spread across consumer queues
@@ -55,8 +58,10 @@ abstract class AbstractPod(
                 }
                 iterations--
             }
+            i++
             Thread.sleep(0)
         }
+        println("POD[$podKey] Prefetching thread finished.")
     }
             .also { it.name = "Prefetch-$podKey" }
             .also { it.start() }
@@ -74,16 +79,19 @@ abstract class AbstractPod(
     }
 
     override fun iteratorNext(iteratorKey: Long, buckets: Int): List<Any>? {
+        val reqId = Random.Default.nextLong().toString(32)
         val pi = iterator
         check(pi != null) { "Pod wasn't initialized properly. Iterator not found. Call `start` first." }
         val buf = buffers[iteratorKey]?.second
         check(buf != null) { "Iterator key $iteratorKey is unknown for the pod $this" }
+        println("[$reqId] POD[$podKey] Running next iteration buf.size=${buf.size} ")
 
-        waitForFirstConsume = false
+        firstConsumerCameBy = true
         // only one thread can read from the buffer itself
         synchronized(buf) {
             // make sure we have all data prefetched
             while (prefetchingThreadIsRunning && buf.size < buckets) Thread.sleep(0)
+            println("[$reqId] POD[$podKey] Enough data to return")
 
             val elements = (0 until min(buckets, buf.size)).map { buf.take() }
             return if (elements.isEmpty()) null else elements
@@ -92,6 +100,8 @@ abstract class AbstractPod(
 
     override fun close() {
         prefetchingThreadIsRunning = false
+        println("POD[$podKey] Closed")
     }
 
+    override fun isFinished(): Boolean = !prefetchingThreadIsRunning
 }

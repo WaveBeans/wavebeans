@@ -50,6 +50,8 @@ interface Pod: Closeable {
     fun iteratorStart(sampleRate: Float, partitionIdx: Int): Long
 
     fun iteratorNext(iteratorKey: Long, buckets: Int): List<Any>?
+
+    fun isFinished(): Boolean
 }
 
 interface PodProxy<T : Any, S : Any> : Bean<T, S> {

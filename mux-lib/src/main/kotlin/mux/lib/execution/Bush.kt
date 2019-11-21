@@ -2,100 +2,103 @@ package mux.lib.execution
 
 import java.io.Closeable
 import java.lang.Thread.sleep
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.TimeoutException
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicLong
 
 typealias BushKey = Int
 
-internal data class PodTask(
-        val taskId: Long,
-        val podKey: PodKey,
-        val request: String
-)
-
 class Bush(
+        val bushKey: BushKey,
         val podDiscovery: PodDiscovery = PodDiscovery.default
 ) : Closeable {
 
     companion object {
-        private val idSeq = AtomicInteger(0)
         private val taskIdSeq = AtomicLong(0)
     }
 
-    private val workers = ConcurrentHashMap<PodKey, PodWorker>()
+    private val pool = Executors.newFixedThreadPool(10)
+    private val tickPool = Executors.newCachedThreadPool()
 
-    private val bushKey = idSeq.incrementAndGet()
-            .also { podDiscovery.registerBush(it, this) }
+    @Volatile
+    private var isDraining = false
 
+    private val pods = ConcurrentHashMap<PodKey, Pod>()
+
+    private val tickFutures = CopyOnWriteArrayList<Future<Boolean>>()
+
+    init {
+        podDiscovery.registerBush(bushKey, this)
+    }
 
     @ExperimentalStdlibApi
     fun start() {
-        workers.entries
-                // tick pods should start last, as they start calling other pods before they've started
-                .sortedBy { it.value.pod is TickPod }
-                .forEach { (podKey, worker) ->
-                    worker.start()
-                    while (!worker.isStarted()) {
-                        sleep(0)
-                    }
-                    println("Pod started [$podKey]${worker.pod}")
+        tickFutures += pods.values.filterIsInstance<TickPod>()
+                .map { pod ->
+                    tickPool.submit(Callable {
+                        return@Callable try {
+                            while (!isDraining && pod.tick()) sleep(0)
+                            println("TICK POD [$pod] finished successfully [isDraining=$isDraining]")
+                            true
+                        } catch (e: Exception) {
+                            System.err.println("TICK POD [$pod] finished with exception: $e")
+                            e.printStackTrace()
+                            false
+                        }
+
+                    })
                 }
     }
 
     fun addPod(pod: Pod) {
-        val worker = PodWorker(pod)
-        workers[pod.podKey] = worker
+        pods[pod.podKey] = pod
         podDiscovery.registerPod(bushKey, pod)
     }
 
-    fun areTicksFinished(): Boolean {
-        return workers.entries
-                // tick pods should start last, as they start calling other pods before they've started
-                .filter { it.value.pod is TickPod }
-                .all { !it.value.isStarted() }
+    fun areTickPodsFinished(): Boolean {
+        // TODO what if no tick pods on bush?
+        // TODO handle failure finish
+        return tickFutures.all { it.isDone }
     }
 
 
     override fun close() {
-        podDiscovery.unregisterBush(bushKey)
-        workers.forEach {
-            podDiscovery.unregisterPod(bushKey, it.key)
-            it.value.close()
+        pods.values.forEach { it.close() }
+        isDraining = true
+        pool.shutdown()
+        if (!pool.awaitTermination(5000, TimeUnit.MILLISECONDS)) {
+            pool.shutdownNow()
         }
+        tickPool.shutdown()
+        if (!tickPool.awaitTermination(5000, TimeUnit.MILLISECONDS)) {
+            tickPool.shutdownNow()
+        }
+        podDiscovery.unregisterBush(bushKey)
     }
 
+    @ExperimentalStdlibApi
     fun call(podKey: PodKey, request: String, timeout: Long = 1000L, timeUnit: TimeUnit = TimeUnit.MILLISECONDS): PodCallResult {
-        val podWorker = workers[podKey] ?: TODO("pod not on the bush case")
+        val pod = pods[podKey]
+        check(pod != null) { "Pod $podKey is not found on Bush $bushKey" }
+        println("Bush [$bushKey] enqueued request `$request` for `$podKey`")
+        val f = pool.submit(Callable<PodCallResult> {
+            val call = Call.parseRequest(request)
+            if (!isDraining) {
+                val start = System.nanoTime()
+                try {
+                    val result = pod.call(call)
 
-        check(podWorker.isStarted()) { "PodWorker $podKey is not started. Can't do request `$request`" }
+                    val l = (System.nanoTime() - start) / 1_000_000.0
+                    if (l > 100) println("[WARNING] [POD:$pod] For request $request returned $result in ${l}ms")
 
-        val start = System.nanoTime()
-        val taskId = taskIdSeq.incrementAndGet()
-        val task = PodTask(taskId, podKey, request)
-//        println("Enqueued task $task")
-        podWorker.enqueue(task)
-        var timeoutWarningFired = false
-        val nanoTimeout = TimeUnit.NANOSECONDS.convert(timeout, timeUnit)
-        while (true) {
-            val timeElapsed = start - System.nanoTime()
-            val r = podWorker.result(taskId)
-            if (r != null) {
-                if (timeElapsed > nanoTimeout / 3) {
-                    println("[WARNING] Call to pod[$podKey] for `$request` took ${(System.nanoTime() - start) / 1_000_000.0}ms")
+                    result
+                } catch (e: Throwable) {
+                    PodCallResult.wrap(call, e)
                 }
-                return r
+            } else {
+                PodCallResult.wrap(call, null)
             }
-            if (!timeoutWarningFired && timeElapsed >= nanoTimeout / 2) {
-                println("[WARNING] Long call (~${timeElapsed / 1_000_000.0}ms) to Pod [$podKey] for $request\n" +
-                        Thread.currentThread().stackTrace.joinToString(separator = "\n") { it.toString() })
-                timeoutWarningFired = true
-            } else if (timeElapsed >= nanoTimeout) {
-                throw TimeoutException("Unable to call Pod with key=$podKey, request=`$request` within $timeout $timeUnit")
-            }
-            sleep(0)
-        }
+        })
+        return f.get(/*timeout, timeUnit*/)
+
     }
 }

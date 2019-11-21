@@ -6,10 +6,10 @@ import java.util.concurrent.TimeUnit
 
 @ExperimentalStdlibApi
 class FiniteSampleStreamPodProxy(
-        podKey: PodKey,
+        pointedTo: PodKey,
         forPartition: Int
 ) : StreamingPodProxy<SampleArray, FiniteSampleStream>(
-        pointedTo = podKey,
+        pointedTo = pointedTo,
         forPartition = forPartition,
         converter = { it.nullableSampleArrayList() }
 ), FiniteSampleStream {

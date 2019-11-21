@@ -1,8 +1,11 @@
 package mux.lib.stream
 
+import kotlinx.serialization.Serializable
 import mux.lib.*
+import mux.lib.io.StreamInput
 import mux.lib.io.StreamOutput
 import mux.lib.io.Writer
+import java.util.concurrent.TimeUnit
 
 fun FiniteSampleStream.toDevNull(
 ): StreamOutput<SampleArray, FiniteSampleStream> {
@@ -37,5 +40,26 @@ class DevNullSampleStreamOutput(
         get() = stream
 
     override val parameters: BeanParams = params
+
+}
+
+
+fun seqStream() = InfiniteSampleStream(SeqInput(NoParams()), NoParams())
+
+class SeqInput constructor(
+        val params: NoParams
+) : StreamInput, SinglePartitionBean {
+
+    private val seq = (0..10_000_000_000).asSequence().map { 1e-10 * it }
+
+    override val parameters: BeanParams = params
+
+    override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): StreamInput = throw UnsupportedOperationException()
+
+    override fun asSequence(sampleRate: Float): Sequence<SampleArray> {
+        return seq.windowed(DEFAULT_SAMPLE_ARRAY_SIZE, DEFAULT_SAMPLE_ARRAY_SIZE, true)
+                .map { createSampleArray(it.size) { i -> it[i] } }
+    }
+
 
 }

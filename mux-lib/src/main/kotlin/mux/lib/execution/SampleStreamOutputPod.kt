@@ -10,6 +10,11 @@ class SampleStreamOutputPod(
         override val podKey: PodKey
 ) : StreamOutput<Sample, FiniteSampleStream>, TickPod {
 
+    @Volatile
+    private var isFinished = false
+
+    override fun isFinished(): Boolean = isFinished
+
     override fun inputs(): List<AnyBean> = listOf(bean)
 
     // TODO that should be the part of configuration
@@ -22,7 +27,15 @@ class SampleStreamOutputPod(
     private val writer by lazy { bean.writer(sampleRate) }
 
     override fun tick(): Boolean {
-        return writer.write()
+        val ret = if (!isFinished) {
+            val isSomethingLeft = writer.write()
+            if (!isSomethingLeft) isFinished = true
+            true
+        } else {
+            false
+        }
+        println("OUTPOD [$podKey] Tick. Result=$ret")
+        return ret
     }
 
     override fun writer(sampleRate: Float): Writer = throw UnsupportedOperationException("Not required by pod")
@@ -34,6 +47,7 @@ class SampleStreamOutputPod(
         get() = bean
 
     override fun close() {
+        isFinished = true
         writer.close()
     }
 
