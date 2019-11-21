@@ -12,11 +12,7 @@ class Bush(
         val podDiscovery: PodDiscovery = PodDiscovery.default
 ) : Closeable {
 
-    companion object {
-        private val taskIdSeq = AtomicLong(0)
-    }
-
-    private val pool = Executors.newFixedThreadPool(10)
+    private val pool = Executors.newFixedThreadPool(20)
     private val tickPool = Executors.newCachedThreadPool()
 
     @Volatile
@@ -62,7 +58,10 @@ class Bush(
 
 
     override fun close() {
-        pods.values.forEach { it.close() }
+        pods.values.forEach {
+            it.close()
+            podDiscovery.unregisterPod(bushKey, it.podKey)
+        }
         isDraining = true
         pool.shutdown()
         if (!pool.awaitTermination(5000, TimeUnit.MILLISECONDS)) {

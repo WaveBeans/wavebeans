@@ -43,7 +43,9 @@ object BushSpec : Spek({
             fun convertsIntToLong(value: Int): Long = value.toLong()
 
         }
-        val bush = Bush(1)
+        val bush = Bush(
+                Overseer.bushKeySeq.incrementAndGet() // avoid clasing of ids with other tests
+        )
                 .also { it.addPod(pod) }
                 .also { it.start() }
 

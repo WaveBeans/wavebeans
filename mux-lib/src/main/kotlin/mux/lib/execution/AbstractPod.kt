@@ -80,8 +80,6 @@ abstract class AbstractPod(
 
     override fun iteratorNext(iteratorKey: Long, buckets: Int): List<Any>? {
         val reqId = Random.Default.nextLong().toString(32)
-        val pi = iterator
-        check(pi != null) { "Pod wasn't initialized properly. Iterator not found. Call `start` first." }
         val buf = buffers[iteratorKey]?.second
         check(buf != null) { "Iterator key $iteratorKey is unknown for the pod $this" }
         println("[$reqId] POD[$podKey] Running next iteration buf.size=${buf.size} ")

@@ -1,18 +1,16 @@
 package mux.lib.execution
 
 import mux.lib.io.sine
-import mux.lib.stream.changeAmplitude
-import mux.lib.stream.times
-import mux.lib.stream.toDevNull
-import mux.lib.stream.trim
+import mux.lib.stream.*
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
+import org.spekframework.spek2.style.specification.xdescribe
 import kotlin.system.measureTimeMillis
 
 @ExperimentalStdlibApi
 object BenchmarkSpec : Spek({
     describe("test") {
-        val time = 10000L//00000L
+        val time = 100L//00000L
         val partitions = 2
 
         val i1 = 440.sine(0.5)
@@ -22,10 +20,10 @@ object BenchmarkSpec : Spek({
         val p2 = i2.changeAmplitude(1.8)
                 .rangeProjection(0, 1000)
 
-        val o1 = (p1 /* * 2.0 * 3.0 * 4.0 * 4.0 * 3.0 * 5.0 * 2.0*/)
+        val o1 = (p1 * 2.0/* * 3.0 * 4.0 * 4.0 * 3.0 * 5.0 * 2.0*/)
                 .trim(time)
                 .toDevNull()
-        val o2 = (p1/* * 2.0 * 3.0 * 4.0 * 4.0 * 3.0 * 5.0 * 2.0*/)//(p1 + p2)
+        val o2 = ((p1 * 2.0/* * 3.0 * 4.0 * 4.0 * 3.0 * 5.0 * 2.0*/) + p2)
                 .trim(time)
                 .toDevNull()
 
@@ -37,13 +35,13 @@ object BenchmarkSpec : Spek({
         val overseer = Overseer()
 
         val timeToDeploy = measureTimeMillis {
-            overseer.deployTopology(topology)
+//            overseer.deployTopology(topology)
         }
         val timeToProcess = measureTimeMillis {
-            overseer.waitToFinish(1)
+//            overseer.waitToFinish(1)
         }
         val timeToFinalize = measureTimeMillis {
-            overseer.close()
+//            overseer.close()
         }
 
         val localRunTime = measureTimeMillis {
