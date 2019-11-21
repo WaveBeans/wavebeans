@@ -1,4 +1,158 @@
-const graphJson = "{\"refs\":[{\"id\":8,\"type\":\"mux.lib.execution.BeanGroup\",\"params\":{\"type\":\"mux.lib.execution.BeanGroupParams\",\"beanRefs\":[{\"id\":1,\"type\":\"mux.lib.stream.DevNullSampleStreamOutput\",\"params\":{\"type\":\"mux.lib.NoParams\"},\"partition\":0},{\"id\":2,\"type\":\"mux.lib.stream.TrimmedFiniteSampleStream\",\"params\":{\"type\":\"mux.lib.stream.TrimmedFiniteSampleStreamParams\",\"length\":10000,\"timeUnit\":\"MILLISECONDS\"},\"partition\":0}],\"links\":[{\"from\":1,\"to\":2,\"fromPartition\":0,\"toPartition\":0,\"order\":0}]},\"partition\":0},{\"id\":9,\"type\":\"mux.lib.execution.BeanGroup\",\"params\":{\"type\":\"mux.lib.execution.BeanGroupParams\",\"beanRefs\":[{\"id\":3,\"type\":\"mux.lib.stream.ChangeAmplitudeSampleStream\",\"params\":{\"type\":\"mux.lib.stream.ChangeAmplitudeSampleStreamParams\",\"multiplier\":1.7},\"partition\":0},{\"id\":4,\"type\":\"mux.lib.stream.InfiniteSampleStream\",\"params\":{\"type\":\"mux.lib.NoParams\"},\"partition\":0}],\"links\":[{\"from\":3,\"to\":4,\"fromPartition\":0,\"toPartition\":0,\"order\":0}]},\"partition\":0},{\"id\":5,\"type\":\"mux.lib.io.SineGeneratedInput\",\"params\":{\"type\":\"mux.lib.io.SineGeneratedInputParams\",\"frequency\":440.0,\"amplitude\":0.5,\"timeOffset\":0.0,\"time\":null},\"partition\":0},{\"id\":9,\"type\":\"mux.lib.execution.BeanGroup\",\"params\":{\"type\":\"mux.lib.execution.BeanGroupParams\",\"beanRefs\":[{\"id\":3,\"type\":\"mux.lib.stream.ChangeAmplitudeSampleStream\",\"params\":{\"type\":\"mux.lib.stream.ChangeAmplitudeSampleStreamParams\",\"multiplier\":1.7},\"partition\":1},{\"id\":4,\"type\":\"mux.lib.stream.InfiniteSampleStream\",\"params\":{\"type\":\"mux.lib.NoParams\"},\"partition\":1}],\"links\":[{\"from\":3,\"to\":4,\"fromPartition\":1,\"toPartition\":1,\"order\":0}]},\"partition\":1},{\"id\":10,\"type\":\"mux.lib.execution.BeanGroup\",\"params\":{\"type\":\"mux.lib.execution.BeanGroupParams\",\"beanRefs\":[{\"id\":6,\"type\":\"mux.lib.stream.DevNullSampleStreamOutput\",\"params\":{\"type\":\"mux.lib.NoParams\"},\"partition\":0},{\"id\":7,\"type\":\"mux.lib.stream.TrimmedFiniteSampleStream\",\"params\":{\"type\":\"mux.lib.stream.TrimmedFiniteSampleStreamParams\",\"length\":10000,\"timeUnit\":\"MILLISECONDS\"},\"partition\":0}],\"links\":[{\"from\":6,\"to\":7,\"fromPartition\":0,\"toPartition\":0,\"order\":0}]},\"partition\":0}],\"links\":[{\"from\":8,\"to\":9,\"fromPartition\":0,\"toPartition\":0,\"order\":0},{\"from\":8,\"to\":9,\"fromPartition\":0,\"toPartition\":1,\"order\":0},{\"from\":9,\"to\":5,\"fromPartition\":0,\"toPartition\":0,\"order\":0},{\"from\":9,\"to\":5,\"fromPartition\":1,\"toPartition\":0,\"order\":0},{\"from\":10,\"to\":9,\"fromPartition\":0,\"toPartition\":0,\"order\":0},{\"from\":10,\"to\":9,\"fromPartition\":0,\"toPartition\":1,\"order\":0}],\"partitionsCount\":2}";
+const graphJson = "{\n" +
+    "    \"refs\": [\n" +
+    "        {\n" +
+    "            \"id\": 6,\n" +
+    "            \"type\": \"mux.lib.execution.BeanGroup\",\n" +
+    "            \"params\": {\n" +
+    "                \"type\": \"mux.lib.execution.BeanGroupParams\",\n" +
+    "                \"beanRefs\": [\n" +
+    "                    {\n" +
+    "                        \"id\": 1,\n" +
+    "                        \"type\": \"mux.lib.io.CsvSampleStreamOutput\",\n" +
+    "                        \"params\": {\n" +
+    "                            \"type\": \"mux.lib.io.CsvSampleStreamOutputParams\",\n" +
+    "                            \"uri\": \"file:///var/folders/1n/q1rsg7_90mz903hqck3ghcvm0000gn/T/test4207591538981590014.csv\",\n" +
+    "                            \"outputTimeUnit\": \"MILLISECONDS\",\n" +
+    "                            \"encoding\": \"UTF-8\"\n" +
+    "                        },\n" +
+    "                        \"partition\": 0\n" +
+    "                    },\n" +
+    "                    {\n" +
+    "                        \"id\": 2,\n" +
+    "                        \"type\": \"mux.lib.stream.TrimmedFiniteSampleStream\",\n" +
+    "                        \"params\": {\n" +
+    "                            \"type\": \"mux.lib.stream.TrimmedFiniteSampleStreamParams\",\n" +
+    "                            \"length\": 50,\n" +
+    "                            \"timeUnit\": \"MILLISECONDS\"\n" +
+    "                        },\n" +
+    "                        \"partition\": 0\n" +
+    "                    }\n" +
+    "                ],\n" +
+    "                \"links\": [\n" +
+    "                    {\n" +
+    "                        \"from\": 1,\n" +
+    "                        \"to\": 2,\n" +
+    "                        \"fromPartition\": 0,\n" +
+    "                        \"toPartition\": 0,\n" +
+    "                        \"order\": 0\n" +
+    "                    }\n" +
+    "                ]\n" +
+    "            },\n" +
+    "            \"partition\": 0\n" +
+    "        },\n" +
+    "        {\n" +
+    "            \"id\": 7,\n" +
+    "            \"type\": \"mux.lib.execution.BeanGroup\",\n" +
+    "            \"params\": {\n" +
+    "                \"type\": \"mux.lib.execution.BeanGroupParams\",\n" +
+    "                \"beanRefs\": [\n" +
+    "                    {\n" +
+    "                        \"id\": 3,\n" +
+    "                        \"type\": \"mux.lib.stream.ChangeAmplitudeSampleStream\",\n" +
+    "                        \"params\": {\n" +
+    "                            \"type\": \"mux.lib.stream.ChangeAmplitudeSampleStreamParams\",\n" +
+    "                            \"multiplier\": 1.0\n" +
+    "                        },\n" +
+    "                        \"partition\": 0\n" +
+    "                    },\n" +
+    "                    {\n" +
+    "                        \"id\": 4,\n" +
+    "                        \"type\": \"mux.lib.stream.InfiniteSampleStream\",\n" +
+    "                        \"params\": {\n" +
+    "                            \"type\": \"mux.lib.NoParams\"\n" +
+    "                        },\n" +
+    "                        \"partition\": 0\n" +
+    "                    }\n" +
+    "                ],\n" +
+    "                \"links\": [\n" +
+    "                    {\n" +
+    "                        \"from\": 3,\n" +
+    "                        \"to\": 4,\n" +
+    "                        \"fromPartition\": 0,\n" +
+    "                        \"toPartition\": 0,\n" +
+    "                        \"order\": 0\n" +
+    "                    }\n" +
+    "                ]\n" +
+    "            },\n" +
+    "            \"partition\": 0\n" +
+    "        },\n" +
+    "        {\n" +
+    "            \"id\": 5,\n" +
+    "            \"type\": \"mux.lib.stream.SeqInput\",\n" +
+    "            \"params\": {\n" +
+    "                \"type\": \"mux.lib.NoParams\"\n" +
+    "            },\n" +
+    "            \"partition\": 0\n" +
+    "        },\n" +
+    "        {\n" +
+    "            \"id\": 7,\n" +
+    "            \"type\": \"mux.lib.execution.BeanGroup\",\n" +
+    "            \"params\": {\n" +
+    "                \"type\": \"mux.lib.execution.BeanGroupParams\",\n" +
+    "                \"beanRefs\": [\n" +
+    "                    {\n" +
+    "                        \"id\": 3,\n" +
+    "                        \"type\": \"mux.lib.stream.ChangeAmplitudeSampleStream\",\n" +
+    "                        \"params\": {\n" +
+    "                            \"type\": \"mux.lib.stream.ChangeAmplitudeSampleStreamParams\",\n" +
+    "                            \"multiplier\": 1.0\n" +
+    "                        },\n" +
+    "                        \"partition\": 1\n" +
+    "                    },\n" +
+    "                    {\n" +
+    "                        \"id\": 4,\n" +
+    "                        \"type\": \"mux.lib.stream.InfiniteSampleStream\",\n" +
+    "                        \"params\": {\n" +
+    "                            \"type\": \"mux.lib.NoParams\"\n" +
+    "                        },\n" +
+    "                        \"partition\": 1\n" +
+    "                    }\n" +
+    "                ],\n" +
+    "                \"links\": [\n" +
+    "                    {\n" +
+    "                        \"from\": 3,\n" +
+    "                        \"to\": 4,\n" +
+    "                        \"fromPartition\": 1,\n" +
+    "                        \"toPartition\": 1,\n" +
+    "                        \"order\": 0\n" +
+    "                    }\n" +
+    "                ]\n" +
+    "            },\n" +
+    "            \"partition\": 1\n" +
+    "        }\n" +
+    "    ],\n" +
+    "    \"links\": [\n" +
+    "        {\n" +
+    "            \"from\": 6,\n" +
+    "            \"to\": 7,\n" +
+    "            \"fromPartition\": 0,\n" +
+    "            \"toPartition\": 0,\n" +
+    "            \"order\": 0\n" +
+    "        },\n" +
+    "        {\n" +
+    "            \"from\": 6,\n" +
+    "            \"to\": 7,\n" +
+    "            \"fromPartition\": 0,\n" +
+    "            \"toPartition\": 1,\n" +
+    "            \"order\": 0\n" +
+    "        },\n" +
+    "        {\n" +
+    "            \"from\": 7,\n" +
+    "            \"to\": 5,\n" +
+    "            \"fromPartition\": 0,\n" +
+    "            \"toPartition\": 0,\n" +
+    "            \"order\": 0\n" +
+    "        },\n" +
+    "        {\n" +
+    "            \"from\": 7,\n" +
+    "            \"to\": 5,\n" +
+    "            \"fromPartition\": 1,\n" +
+    "            \"toPartition\": 0,\n" +
+    "            \"order\": 0\n" +
+    "        }\n" +
+    "    ],\n" +
+    "    \"partitionsCount\": 2\n" +
+    "}";
 
 // src/index.js
 document.addEventListener("DOMContentLoaded", function (event) {
