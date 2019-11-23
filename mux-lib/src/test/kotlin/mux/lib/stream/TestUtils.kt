@@ -24,14 +24,15 @@ class DevNullSampleStreamOutput(
             override fun write(): Boolean {
                 return if (sampleIterator.hasNext()) {
                     sampleCounter += sampleIterator.next().size
-                    println("[/DEV/NULL] Written $sampleCounter samples")
                     true
                 } else {
                     false
                 }
             }
 
-            override fun close() {}
+            override fun close() {
+                println("[/DEV/NULL] Written $sampleCounter samples")
+            }
 
         }
     }

@@ -8,7 +8,7 @@ import kotlin.system.measureTimeMillis
 @ExperimentalStdlibApi
 object BenchmarkSpec : Spek({
     describe("test") {
-        val time = 100L//00000L
+        val time = 1000000L
         val partitions = 2
 
         val i1 = seqStream()//440.sine(0.5)
@@ -30,6 +30,7 @@ object BenchmarkSpec : Spek({
                 .groupBeans()
                 .also { println(TopologySerializer.serialize(it)) }
 
+        println("Starting cluster run...")
         val overseer = Overseer()
 
         val timeToDeploy = measureTimeMillis {
@@ -41,6 +42,8 @@ object BenchmarkSpec : Spek({
         val timeToFinalize = measureTimeMillis {
             overseer.close()
         }
+
+        println("Starting local run...")
 
         val localRunTime = measureTimeMillis {
             listOf(o1, o2)

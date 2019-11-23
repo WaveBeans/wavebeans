@@ -28,7 +28,7 @@ class SimpleBushCaller internal constructor(
 ) : BushCaller {
 
     companion object {
-        val callPool = Executors.newFixedThreadPool(5)
+        val callPool = Executors.newFixedThreadPool(10)
 
         init {
             Runtime.getRuntime().addShutdownHook(Thread {

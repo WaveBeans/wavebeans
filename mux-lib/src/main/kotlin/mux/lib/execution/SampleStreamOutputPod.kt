@@ -27,15 +27,13 @@ class SampleStreamOutputPod(
     private val writer by lazy { bean.writer(sampleRate) }
 
     override fun tick(): Boolean {
-        val ret = if (!isFinished) {
+        return if (!isFinished) {
             val isSomethingLeft = writer.write()
             if (!isSomethingLeft) isFinished = true
             true
         } else {
             false
         }
-        println("OUTPOD [$podKey] Tick. Result=$ret")
-        return ret
     }
 
     override fun writer(sampleRate: Float): Writer = throw UnsupportedOperationException("Not required by pod")

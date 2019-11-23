@@ -11,7 +11,7 @@ class Bush(
         val podDiscovery: PodDiscovery = PodDiscovery.default
 ) : Closeable {
 
-    private val pool = Executors.newFixedThreadPool(20)
+    private val pool = Executors.newFixedThreadPool(8)
     private val tickPool = Executors.newCachedThreadPool()
 
     @Volatile
@@ -77,7 +77,6 @@ class Bush(
     fun call(podKey: PodKey, request: String, timeout: Long = 1000L, timeUnit: TimeUnit = TimeUnit.MILLISECONDS): PodCallResult {
         val pod = pods[podKey]
         check(pod != null) { "Pod $podKey is not found on Bush $bushKey" }
-        println("Bush [$bushKey] enqueued request `$request` for `$podKey`")
         val callable = Callable<PodCallResult> {
             val call = Call.parseRequest(request)
             if (!isDraining) {
@@ -97,7 +96,7 @@ class Bush(
             }
         }
         val f = pool.submit(callable)
-        return f.get(timeout, timeUnit)
+        return f.get(/*timeout, timeUnit*/)
 
     }
 }
