@@ -3,7 +3,6 @@ package mux.lib.execution
 import java.io.Closeable
 import java.lang.Thread.sleep
 import java.util.concurrent.*
-import java.util.concurrent.atomic.AtomicLong
 
 typealias BushKey = Int
 
@@ -58,11 +57,11 @@ class Bush(
 
 
     override fun close() {
+        isDraining = true
         pods.values.forEach {
             it.close()
             podDiscovery.unregisterPod(bushKey, it.podKey)
         }
-        isDraining = true
         pool.shutdown()
         if (!pool.awaitTermination(5000, TimeUnit.MILLISECONDS)) {
             pool.shutdownNow()
@@ -79,7 +78,7 @@ class Bush(
         val pod = pods[podKey]
         check(pod != null) { "Pod $podKey is not found on Bush $bushKey" }
         println("Bush [$bushKey] enqueued request `$request` for `$podKey`")
-        val f = pool.submit(Callable<PodCallResult> {
+        val callable = Callable<PodCallResult> {
             val call = Call.parseRequest(request)
             if (!isDraining) {
                 val start = System.nanoTime()
@@ -96,8 +95,9 @@ class Bush(
             } else {
                 PodCallResult.wrap(call, null)
             }
-        })
-        return f.get(/*timeout, timeUnit*/)
+        }
+        val f = pool.submit(callable)
+        return f.get(timeout, timeUnit)
 
     }
 }

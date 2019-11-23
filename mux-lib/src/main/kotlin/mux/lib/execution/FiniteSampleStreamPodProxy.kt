@@ -18,7 +18,7 @@ class FiniteSampleStreamPodProxy(
         val bush = podDiscovery.bushFor(pointedTo)
         val caller = bushCallerRepository.create(bush, pointedTo)
 
-        return caller.call("length?timeUnit=${timeUnit.name}").long()
+        return caller.call("length?timeUnit=${timeUnit.name}").get().long()
     }
 }
 

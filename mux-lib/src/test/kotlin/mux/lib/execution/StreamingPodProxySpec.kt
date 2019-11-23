@@ -10,6 +10,8 @@ import mux.lib.asInt
 import mux.lib.stream.SampleStream
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Future
 
 @ExperimentalStdlibApi
 class PodProxyTester(
@@ -26,7 +28,7 @@ class PodProxyTester(
 
     val bushCaller = object : BushCaller {
 
-        override fun call(request: String): PodCallResult {
+        override fun call(request: String): Future<PodCallResult> {
             val call = Call.parseRequest(request)
             when (call.method) {
                 "iteratorStart" -> {
@@ -37,7 +39,9 @@ class PodProxyTester(
                 }
                 else -> throw UnsupportedOperationException()
             }
-            return pointedTo.call(call)
+            val f = CompletableFuture<PodCallResult>()
+            f.complete(pointedTo.call(call))
+            return f
         }
     }
 

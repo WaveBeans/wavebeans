@@ -12,7 +12,7 @@ class PodProxyIterator<T>(
 
     private val bush = podDiscovery.bushFor(pod)
     private val caller = bushCallerRepository.create(bush, pod)
-    private val iteratorKey = caller.call("iteratorStart?sampleRate=$sampleRate&partitionIdx=${readingPartition}").long()
+    private val iteratorKey = caller.call("iteratorStart?sampleRate=$sampleRate&partitionIdx=${readingPartition}").get().long()
 
     private var buckets: List<T>? = null
     private var pointer = 0
@@ -34,7 +34,7 @@ class PodProxyIterator<T>(
                     "iteratorNext" +
                             "?iteratorKey=$iteratorKey" +
                             "&buckets=$prefetchBucketAmount"
-            ))
+            ).get())
             pointer = 0
         }
         return buckets

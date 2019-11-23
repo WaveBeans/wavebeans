@@ -1,6 +1,5 @@
 package mux.lib.stream
 
-import kotlinx.serialization.Serializable
 import mux.lib.*
 import mux.lib.io.StreamInput
 import mux.lib.io.StreamOutput
@@ -20,11 +19,12 @@ class DevNullSampleStreamOutput(
     override fun writer(sampleRate: Float): Writer {
 
         val sampleIterator = stream.asSequence(sampleRate).iterator()
-
+        var sampleCounter = 0L
         return object : Writer {
             override fun write(): Boolean {
                 return if (sampleIterator.hasNext()) {
-                    sampleIterator.next()
+                    sampleCounter += sampleIterator.next().size
+                    println("[/DEV/NULL] Written $sampleCounter samples")
                     true
                 } else {
                     false

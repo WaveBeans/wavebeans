@@ -1,14 +1,19 @@
 package mux.lib.execution
 
 import mux.lib.BeanStream
-import java.util.concurrent.ArrayBlockingQueue
-import java.util.concurrent.ConcurrentHashMap
+import java.lang.Thread.sleep
+import java.util.*
+import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.math.abs
+import kotlin.math.max
 import kotlin.math.min
 import kotlin.random.Random
 
 // ThreadSafe
 abstract class AbstractPod(
+        override val podKey: PodKey,
         val bean: BeanStream<*, *>,
         val partitionCount: Int,
         val maxPrefetchAmount: Int = 1024
@@ -22,7 +27,8 @@ abstract class AbstractPod(
     @Volatile
     private var iterator: Iterator<Any>? = null
 
-    private val buffers = ConcurrentHashMap<Long, Pair<Int, ArrayBlockingQueue<Any>>>()
+    private val buffers = ConcurrentHashMap<Long, Pair<Int, Queue<Any>>>()
+    private val locks = ConcurrentHashMap<Long, ReentrantLock>()
 
     @Volatile
     private var prefetchingThreadIsRunning = true
@@ -35,19 +41,23 @@ abstract class AbstractPod(
         var partitionIdx = 0
         // do not start prefetching before clients start to really read
         // that allows to establish more than one parallel iterator
-        while (prefetchingThreadIsRunning && !firstConsumerCameBy) Thread.sleep(0)
-        println("POD[$podKey] Started fetching [prefetchingThreadIsRunning=$prefetchingThreadIsRunning, firstConsumerCameBy=$firstConsumerCameBy]")
+        while (prefetchingThreadIsRunning && !firstConsumerCameBy) sleep(0)
+
+        // wait for all partitions to start streaming
+        println("POD[$podKey] Started fetching [prefetchingThreadIsRunning=$prefetchingThreadIsRunning, " +
+                "firstConsumerCameBy=$firstConsumerCameBy, active iterators key:partition=${buffers.map { it.key to it.value.first }}]")
         var i = 0
         while (prefetchingThreadIsRunning) {
             val biggestBufferSize = buffers.values.map { it.second.size }.max() ?: 0
             var iterations = maxPrefetchAmount - biggestBufferSize
+
             while (prefetchingThreadIsRunning && iterations > 0) {
                 if (iterator != null) {
                     if (iterator!!.hasNext()) {
                         // read the next element from the stream and spread across consumer queues
                         val el = iterator!!.next()
                         buffers
-                                .filter { it.value.first == partitionIdx }
+                                .filter { partitionCount == 1 || it.value.first == partitionIdx }
                                 .forEach { it.value.second.add(el) }
                         partitionIdx = (partitionIdx + 1) % partitionCount
                     } else {
@@ -59,7 +69,7 @@ abstract class AbstractPod(
                 iterations--
             }
             i++
-            Thread.sleep(0)
+            sleep(0)
         }
         println("POD[$podKey] Prefetching thread finished.")
     }
@@ -69,6 +79,7 @@ abstract class AbstractPod(
     override fun iteratorStart(sampleRate: Float, partitionIdx: Int): Long {
         val key = idSeq.incrementAndGet()
         buffers[key] = Pair(partitionIdx, ArrayBlockingQueue(maxPrefetchAmount))
+        locks[key] = ReentrantLock()
         newIteratorMutex.putIfAbsent(podKey, Any())
         if (iterator == null) {
             synchronized(newIteratorMutex[podKey]!!) {
@@ -79,20 +90,22 @@ abstract class AbstractPod(
     }
 
     override fun iteratorNext(iteratorKey: Long, buckets: Int): List<Any>? {
-        val reqId = Random.Default.nextLong().toString(32)
         val buf = buffers[iteratorKey]?.second
-        check(buf != null) { "Iterator key $iteratorKey is unknown for the pod $this" }
-        println("[$reqId] POD[$podKey] Running next iteration buf.size=${buf.size} ")
+        val lock = locks[iteratorKey]
+        check(buf != null && lock != null) { "Iterator key $iteratorKey is unknown for the pod $this" }
+        val forPartition = buffers[iteratorKey]?.first
 
         firstConsumerCameBy = true
         // only one thread can read from the buffer itself
-        synchronized(buf) {
+        check(lock.tryLock(1000, TimeUnit.MILLISECONDS)) { "POD[$podKey][iteratorKey=$iteratorKey, forPartition=$forPartition] Can't acquire lock" }
+        try {
             // make sure we have all data prefetched
-            while (prefetchingThreadIsRunning && buf.size < buckets) Thread.sleep(0)
-            println("[$reqId] POD[$podKey] Enough data to return")
+            while (prefetchingThreadIsRunning && buf.size < buckets) sleep(0)
 
-            val elements = (0 until min(buckets, buf.size)).map { buf.take() }
+            val elements = (0 until min(buckets, buf.size)).mapNotNull { buf.poll() }
             return if (elements.isEmpty()) null else elements
+        } finally {
+            lock.unlock()
         }
     }
 

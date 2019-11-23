@@ -5,9 +5,9 @@ import mux.lib.BeanStream
 
 class SplittingPod(
         bean: BeanStream<*, *>,
-        override val podKey: PodKey,
+        podKey: PodKey,
         partitionCount: Int
-) : AbstractPod(bean, partitionCount) {
+) : AbstractPod(podKey, bean, partitionCount) {
 
     override fun inputs(): List<AnyBean> = listOf(bean)
 
