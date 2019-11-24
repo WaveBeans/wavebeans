@@ -19,6 +19,7 @@ class BenchmarkCommand(session: Session) : InScopeCommand(
                     ?: throw IllegalArgumentException("Provide time in milliseconds and partitions as parameters")
             val time = args[0].toLong()
             val partitions = args[1].toInt()
+            val threadsPerBush = args[2].toInt()
 
             val f1 = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
             val f2 = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
@@ -44,7 +45,7 @@ class BenchmarkCommand(session: Session) : InScopeCommand(
             val overseer = Overseer()
 
             val timeToDeploy = measureTimeMillis {
-                overseer.deployTopology(topology)
+                overseer.deployTopology(topology, threadsPerBush)
             }
             val timeToProcess = measureTimeMillis {
                 overseer.waitToFinish(1)

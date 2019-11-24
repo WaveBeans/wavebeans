@@ -44,7 +44,8 @@ object BushSpec : Spek({
 
         }
         val bush = Bush(
-                Overseer.bushKeySeq.incrementAndGet() // avoid clasing of ids with other tests
+                Overseer.bushKeySeq.incrementAndGet(), // avoid clashing of ids with other tests
+                1
         )
                 .also { it.addPod(pod) }
                 .also { it.start() }
@@ -55,7 +56,7 @@ object BushSpec : Spek({
 
         it("should not have params and return nothing") {
             val method = "methodWithNoParamsAndNoReturn"
-            assertThat(bush.call(podKey, method)).all {
+            assertThat(bush.call(podKey, method).get()).all {
                 prop("call") { it.call }.all {
                     prop("method") { it.method }.isEqualTo(method)
                     prop("params") { it.params }.isEmpty()
@@ -68,7 +69,7 @@ object BushSpec : Spek({
 
         it("should return IllegalStateException") {
             val method = "throwsIllegalStateException"
-            assertThat(bush.call(podKey, method)).all {
+            assertThat(bush.call(podKey, method).get()).all {
                 prop("call") { it.call }.all {
                     prop("method") { it.method }.isEqualTo(method)
                     prop("params") { it.params }.isEmpty()
@@ -84,7 +85,7 @@ object BushSpec : Spek({
 
         it("should return UnsupportedOperationException") {
             val method = "throwsUnsupportedOperationException"
-            assertThat(bush.call(podKey, method)).all {
+            assertThat(bush.call(podKey, method).get()).all {
                 prop("call") { it.call }.all {
                     prop("method") { it.method }.isEqualTo(method)
                     prop("params") { it.params }.isEmpty()
@@ -100,7 +101,7 @@ object BushSpec : Spek({
 
         it("should return NotImplementedError") {
             val method = "throwsNotImplementedError"
-            assertThat(bush.call(podKey, method)).all {
+            assertThat(bush.call(podKey, method).get()).all {
                 prop("call") { it.call }.all {
                     prop("method") { it.method }.isEqualTo(method)
                     prop("params") { it.params }.isEmpty()
@@ -116,7 +117,7 @@ object BushSpec : Spek({
 
         it("should have int convertsIntToLong and return long") {
             val method = "convertsIntToLong"
-            assertThat(bush.call(podKey, "$method?value=123")).all {
+            assertThat(bush.call(podKey, "$method?value=123").get()).all {
                 prop("call") { it.call }.all {
                     prop("method") { it.method }.isEqualTo(method)
                     prop("params") { it.params }.isEqualTo(mapOf("value" to "123"))

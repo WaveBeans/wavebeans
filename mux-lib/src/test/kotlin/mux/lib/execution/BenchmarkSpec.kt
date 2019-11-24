@@ -9,14 +9,14 @@ import kotlin.system.measureTimeMillis
 object BenchmarkSpec : Spek({
     describe("test") {
         val time = 1000000L
-        val partitions = 2
+        val partitions = 4
+        val bushThreadCount = 2
 
         val i1 = seqStream()//440.sine(0.5)
         val i2 = seqStream()//800.sine(0.0)
 
         val p1 = i1.changeAmplitude(1.7)
         val p2 = i2.changeAmplitude(1.8)
-                //.rangeProjection(0, 1000)
 
         val o1 = (p1 * 2.0 * 3.0 * 4.0 * 4.0 * 3.0 * 5.0 * 2.0)
                 .trim(time)
@@ -34,7 +34,7 @@ object BenchmarkSpec : Spek({
         val overseer = Overseer()
 
         val timeToDeploy = measureTimeMillis {
-            overseer.deployTopology(topology)
+            overseer.deployTopology(topology, bushThreadCount)
         }
         val timeToProcess = measureTimeMillis {
             overseer.waitToFinish(1)

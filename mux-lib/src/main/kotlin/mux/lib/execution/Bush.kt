@@ -1,46 +1,62 @@
 package mux.lib.execution
 
 import java.io.Closeable
-import java.lang.Thread.sleep
+import java.util.*
 import java.util.concurrent.*
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.reflect.typeOf
 
 typealias BushKey = Int
 
 class Bush(
         val bushKey: BushKey,
+        val threadsCount: Int,
         val podDiscovery: PodDiscovery = PodDiscovery.default
 ) : Closeable {
 
-    private val pool = Executors.newFixedThreadPool(8)
-    private val tickPool = Executors.newCachedThreadPool()
+    class NamedThreadFactory(val name: String) : ThreadFactory {
+        private var c = 0
+        override fun newThread(r: Runnable): Thread {
+            return Thread(ThreadGroup(name), r, "$name-${c++}")
+        }
+    }
+
+    private val workingPool = Executors.newFixedThreadPool(threadsCount, NamedThreadFactory("work"))
 
     @Volatile
     private var isDraining = false
 
     private val pods = ConcurrentHashMap<PodKey, Pod>()
 
-    private val tickFutures = CopyOnWriteArrayList<Future<Boolean>>()
+    private val tickFinished = ConcurrentHashMap<Pod, Boolean>()
 
     init {
         podDiscovery.registerBush(bushKey, this)
     }
 
+    inner class Tick(val pod: TickPod) : Runnable {
+
+        override fun run() {
+            try {
+                if (!isDraining && pod.tick()) {
+                    workingPool.submit(Tick(pod))
+                } else {
+                    tickFinished[pod] = true
+                }
+            } catch (e: Exception) {
+                workingPool.submit(Tick(pod))
+                e.printStackTrace(System.err)
+            }
+        }
+
+    }
+
     @ExperimentalStdlibApi
     fun start() {
-        tickFutures += pods.values.filterIsInstance<TickPod>()
+        pods.values.filterIsInstance<TickPod>()
                 .map { pod ->
-                    tickPool.submit(Callable {
-                        return@Callable try {
-                            while (!isDraining && pod.tick()) sleep(0)
-                            println("TICK POD [$pod] finished successfully [isDraining=$isDraining]")
-                            true
-                        } catch (e: Exception) {
-                            System.err.println("TICK POD [$pod] finished with exception: $e")
-                            e.printStackTrace()
-                            false
-                        }
-
-                    })
+                    tickFinished[pod] = false
+                    workingPool.submit(Tick(pod))
                 }
     }
 
@@ -52,7 +68,7 @@ class Bush(
     fun areTickPodsFinished(): Boolean {
         // TODO what if no tick pods on bush?
         // TODO handle failure finish
-        return tickFutures.all { it.isDone }
+        return tickFinished.values.all { it }
     }
 
 
@@ -62,41 +78,38 @@ class Bush(
             it.close()
             podDiscovery.unregisterPod(bushKey, it.podKey)
         }
-        pool.shutdown()
-        if (!pool.awaitTermination(5000, TimeUnit.MILLISECONDS)) {
-            pool.shutdownNow()
-        }
-        tickPool.shutdown()
-        if (!tickPool.awaitTermination(5000, TimeUnit.MILLISECONDS)) {
-            tickPool.shutdownNow()
+        workingPool.shutdown()
+        if (!workingPool.awaitTermination(5000, TimeUnit.MILLISECONDS)) {
+            workingPool.shutdownNow()
         }
         podDiscovery.unregisterBush(bushKey)
     }
 
     @ExperimentalStdlibApi
-    fun call(podKey: PodKey, request: String, timeout: Long = 1000L, timeUnit: TimeUnit = TimeUnit.MILLISECONDS): PodCallResult {
+    fun call(podKey: PodKey, request: String): Future<PodCallResult> {
         val pod = pods[podKey]
         check(pod != null) { "Pod $podKey is not found on Bush $bushKey" }
-        val callable = Callable<PodCallResult> {
-            val call = Call.parseRequest(request)
-            if (!isDraining) {
-                val start = System.nanoTime()
-                try {
-                    val result = pod.call(call)
-
-                    val l = (System.nanoTime() - start) / 1_000_000.0
-                    if (l > 100) println("[WARNING] [POD:$pod] For request $request returned $result in ${l}ms")
-
-                    result
+        val call = Call.parseRequest(request)
+        return when (call.method) {
+            "iteratorStart" -> {
+                val iteratorKey = pod.iteratorStart(call.param("sampleRate", typeOf<Float>()) as Float, call.param("partitionIdx", typeOf<Int>()) as Int)
+                val res = CompletableFuture<PodCallResult>()
+                res.complete(PodCallResult.wrap(call, iteratorKey))
+                res
+            }
+            "iteratorNext" -> {
+                val iteratorKey = call.param("iteratorKey", typeOf<Long>()) as Long
+                val buckets = call.param("buckets", typeOf<Int>()) as Int
+                val res = CompletableFuture<PodCallResult>()
+                val r = try {
+                    PodCallResult.wrap(call, pod.iteratorNext(iteratorKey, buckets))
                 } catch (e: Throwable) {
                     PodCallResult.wrap(call, e)
                 }
-            } else {
-                PodCallResult.wrap(call, null)
+                res.complete(r)
+                res
             }
+            else -> throw UnsupportedOperationException("$call can't be handled")
         }
-        val f = pool.submit(callable)
-        return f.get(/*timeout, timeUnit*/)
-
     }
 }

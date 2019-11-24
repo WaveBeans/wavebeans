@@ -1,5 +1,7 @@
 package mux.lib.execution
 
+import java.util.concurrent.TimeUnit
+
 class PodProxyIterator<T>(
         val sampleRate: Float,
         val pod: PodKey,
@@ -8,11 +10,11 @@ class PodProxyIterator<T>(
         val bushCallerRepository: BushCallerRepository = BushCallerRepository.default(podDiscovery),
         val converter: (PodCallResult) -> List<T>?,
         val prefetchBucketAmount: Int = 10
-): Iterator<T> {
+) : Iterator<T> {
 
     private val bush = podDiscovery.bushFor(pod)
     private val caller = bushCallerRepository.create(bush, pod)
-    private val iteratorKey = caller.call("iteratorStart?sampleRate=$sampleRate&partitionIdx=${readingPartition}").get().long()
+    private val iteratorKey = caller.call("iteratorStart?sampleRate=$sampleRate&partitionIdx=${readingPartition}").get(5000, TimeUnit.MILLISECONDS).long()
 
     private var buckets: List<T>? = null
     private var pointer = 0
@@ -34,7 +36,7 @@ class PodProxyIterator<T>(
                     "iteratorNext" +
                             "?iteratorKey=$iteratorKey" +
                             "&buckets=$prefetchBucketAmount"
-            ).get())
+            ).get(5000, TimeUnit.MILLISECONDS))
             pointer = 0
         }
         return buckets

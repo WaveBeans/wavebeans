@@ -1,9 +1,6 @@
 package mux.lib.execution
 
-import java.util.concurrent.Callable
-import java.util.concurrent.Executors
 import java.util.concurrent.Future
-import java.util.concurrent.TimeUnit
 
 open class BushCallerRepository protected constructor(
         protected val podDiscovery: PodDiscovery
@@ -28,16 +25,16 @@ class SimpleBushCaller internal constructor(
 ) : BushCaller {
 
     companion object {
-        val callPool = Executors.newFixedThreadPool(10)
-
-        init {
-            Runtime.getRuntime().addShutdownHook(Thread {
-                callPool.shutdown()
-                if (!callPool.awaitTermination(5000, TimeUnit.MILLISECONDS)) {
-                    callPool.shutdownNow()
-                }
-            })
-        }
+//        val callPool = Executors.newFixedThreadPool(10)
+//
+//        init {
+//            Runtime.getRuntime().addShutdownHook(Thread {
+//                callPool.shutdown()
+//                if (!callPool.awaitTermination(5000, TimeUnit.MILLISECONDS)) {
+//                    callPool.shutdownNow()
+//                }
+//            })
+//        }
     }
 
     /***
@@ -49,7 +46,7 @@ class SimpleBushCaller internal constructor(
                 ?: throw IllegalStateException("Unable to make call `$request` to Bush[$bushKey] as it hasn't been found.")
         // TODO that should be done over the network soon
 //         if (true /* && bush.locallyAccessible()*/)
-        return callPool.submit(Callable<PodCallResult> { bush.call(podKey, request) })
+        return bush.call(podKey, request)
 //        else {
 //            TODO("call bush remotely")
 //        }
