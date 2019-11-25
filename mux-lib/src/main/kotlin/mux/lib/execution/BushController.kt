@@ -1,5 +1,7 @@
 package mux.lib.execution
 
+import java.util.concurrent.Future
+
 @ExperimentalStdlibApi
 class BushController(val key: BushKey, val pods: List<PodRef>, threads: Int) {
 
@@ -12,15 +14,12 @@ class BushController(val key: BushKey, val pods: List<PodRef>, threads: Int) {
         return this
     }
 
-    fun close(onlyFinished: Boolean) {
-        val arePodsFinished = bush.areTickPodsFinished()
-        if (onlyFinished && arePodsFinished || !onlyFinished) {
-            println("BUSH[$key] Closed. Tick Pods were finished? `$arePodsFinished` ")
-            bush.close()
-        }
+    fun close() {
+        println("BUSH[$key] Closed. ")
+        bush.close()
     }
 
-    fun isFinished(): Boolean {
-        return bush.areTickPodsFinished()
+    fun getAllFutures(): List<Future<Boolean>> {
+        return bush.tickPodsFutures()
     }
 }

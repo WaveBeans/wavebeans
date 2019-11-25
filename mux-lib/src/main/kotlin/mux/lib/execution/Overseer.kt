@@ -1,8 +1,6 @@
 package mux.lib.execution
 
 import java.io.Closeable
-import java.lang.Thread.sleep
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
 @ExperimentalStdlibApi
@@ -25,16 +23,14 @@ class Overseer : Closeable {
         return this
     }
 
-    fun waitToFinish(delay: Long = 1000): Overseer {
-        while (!controllers.all { it.isFinished() }) {
-            sleep(delay)
-        }
+    fun waitToFinish(): Overseer {
+        controllers.map { it.getAllFutures() }.flatten().all { it.get() == true }
         println("OVERSEER All controllers (${controllers.size}) are finished")
         return this
     }
 
     override fun close() {
-        controllers.forEach { it.close(false) }
+        controllers.forEach { it.close() }
         println("OVERSEER All controllers (${controllers.size}) are closed")
     }
 

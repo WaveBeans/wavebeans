@@ -48,7 +48,7 @@ class BenchmarkCommand(session: Session) : InScopeCommand(
                 overseer.deployTopology(topology, threadsPerBush)
             }
             val timeToProcess = measureTimeMillis {
-                overseer.waitToFinish(1)
+                overseer.waitToFinish()
             }
             val timeToFinalize = measureTimeMillis {
                 overseer.close()

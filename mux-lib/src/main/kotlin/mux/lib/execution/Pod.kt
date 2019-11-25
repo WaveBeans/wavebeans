@@ -7,7 +7,7 @@ import java.lang.reflect.InvocationTargetException
 data class PodKey(val id: Int, val partition: Int)
 typealias AnyPodProxy = PodProxy<*, *>
 
-interface Pod: Closeable {
+interface Pod : Closeable {
 
     val podKey: PodKey
 
@@ -46,6 +46,8 @@ interface Pod: Closeable {
             PodCallResult.wrap(call, e)
         }
     }
+
+    fun start(): Unit {}
 
     fun iteratorStart(sampleRate: Float, partitionIdx: Int): Long
 

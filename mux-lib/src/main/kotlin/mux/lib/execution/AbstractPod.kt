@@ -32,36 +32,6 @@ abstract class AbstractPod(
     private val buffers = ConcurrentHashMap<Long, Pair<Int, Queue<Any>>>()
     private val locks = ConcurrentHashMap<Long, ReentrantLock>()
 
-
-    @Suppress("unused")
-    private val prefetchingThread = Thread {
-        var i = 0
-        while (true) {
-            val biggestBufferSize = buffers.values.map { it.second.size }.max() ?: 0
-            var iterations = maxPrefetchAmount - biggestBufferSize
-
-            while (iterations > 0) {
-                if (iterator != null) {
-                    if (iterator!!.hasNext()) {
-                        // read the next element from the stream and spread across consumer queues
-                        val el = iterator!!.next()
-                        buffers
-                                .filter { partitionCount == 1 || it.value.first == partitionIdx }
-                                .forEach { it.value.second.add(el) }
-                        partitionIdx = (partitionIdx + 1) % partitionCount
-                    } else {
-                        // nothing more to read, stop the prefetch
-                        break
-                    }
-                }
-                iterations--
-            }
-            i++
-            sleep(0)
-        }
-        println("POD[$podKey] Prefetching thread finished.")
-    }
-
     override fun iteratorStart(sampleRate: Float, partitionIdx: Int): Long {
         val key = idSeq.incrementAndGet()
         buffers[key] = Pair(partitionIdx, ConcurrentLinkedQueue())
@@ -78,14 +48,15 @@ abstract class AbstractPod(
         val buf = buffers[iteratorKey]?.second
         val lock = locks[iteratorKey]
         check(buf != null && lock != null) { "Iterator key $iteratorKey is unknown for the pod $this" }
-        val forPartition = buffers[iteratorKey]?.first
 
         // only one thread can read from the buffer itself
-        check(lock.tryLock(1000, TimeUnit.MILLISECONDS)) { "POD[$podKey][iteratorKey=$iteratorKey, forPartition=$forPartition] Can't acquire lock" }
+        check(lock.tryLock(1000, TimeUnit.MILLISECONDS)) {
+            "POD[$podKey][iteratorKey=$iteratorKey, forPartition=${buffers[iteratorKey]?.first}] Can't acquire lock"
+        }
         try {
             if (buf.size < buckets) { // not enough data
                 synchronized(iterator!!) {
-                    var iterations = buckets - buf.size
+                    var iterations = buckets * partitionCount - buf.size
                     while (iterations > 0) {
                         if (iterator!!.hasNext()) {
                             // read the next element from the stream and spread across consumer queues

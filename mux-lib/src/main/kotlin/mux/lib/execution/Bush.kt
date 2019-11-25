@@ -4,6 +4,7 @@ import java.io.Closeable
 import java.util.*
 import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.locks.ReadWriteLock
 import kotlin.reflect.typeOf
 
 typealias BushKey = Int
@@ -28,7 +29,7 @@ class Bush(
 
     private val pods = ConcurrentHashMap<PodKey, Pod>()
 
-    private val tickFinished = ConcurrentHashMap<Pod, Boolean>()
+    private val tickFinished = ConcurrentHashMap<Pod, CompletableFuture<Boolean>>()
 
     init {
         podDiscovery.registerBush(bushKey, this)
@@ -41,7 +42,7 @@ class Bush(
                 if (!isDraining && pod.tick()) {
                     workingPool.submit(Tick(pod))
                 } else {
-                    tickFinished[pod] = true
+                    tickFinished[pod]!!.complete(true)
                 }
             } catch (e: Exception) {
                 workingPool.submit(Tick(pod))
@@ -55,7 +56,10 @@ class Bush(
     fun start() {
         pods.values.filterIsInstance<TickPod>()
                 .map { pod ->
-                    tickFinished[pod] = false
+                    tickFinished[pod] = CompletableFuture()
+                    pod.start()
+                    pod
+                }.map { pod ->
                     workingPool.submit(Tick(pod))
                 }
     }
@@ -65,10 +69,8 @@ class Bush(
         podDiscovery.registerPod(bushKey, pod)
     }
 
-    fun areTickPodsFinished(): Boolean {
-        // TODO what if no tick pods on bush?
-        // TODO handle failure finish
-        return tickFinished.values.all { it }
+    fun tickPodsFutures(): List<Future<Boolean>> {
+        return tickFinished.values.toList()
     }
 
 
@@ -90,26 +92,14 @@ class Bush(
         val pod = pods[podKey]
         check(pod != null) { "Pod $podKey is not found on Bush $bushKey" }
         val call = Call.parseRequest(request)
-        return when (call.method) {
-            "iteratorStart" -> {
-                val iteratorKey = pod.iteratorStart(call.param("sampleRate", typeOf<Float>()) as Float, call.param("partitionIdx", typeOf<Int>()) as Int)
-                val res = CompletableFuture<PodCallResult>()
-                res.complete(PodCallResult.wrap(call, iteratorKey))
-                res
-            }
-            "iteratorNext" -> {
-                val iteratorKey = call.param("iteratorKey", typeOf<Long>()) as Long
-                val buckets = call.param("buckets", typeOf<Int>()) as Int
-                val res = CompletableFuture<PodCallResult>()
-                val r = try {
-                    PodCallResult.wrap(call, pod.iteratorNext(iteratorKey, buckets))
-                } catch (e: Throwable) {
-                    PodCallResult.wrap(call, e)
-                }
-                res.complete(r)
-                res
-            }
-            else -> throw UnsupportedOperationException("$call can't be handled")
+        val res = CompletableFuture<PodCallResult>()
+        val r = try {
+            val retVal = pod.call(call)
+            retVal
+        } catch (e: Throwable) {
+            PodCallResult.wrap(call, e)
         }
+        res.complete(r)
+        return res
     }
 }

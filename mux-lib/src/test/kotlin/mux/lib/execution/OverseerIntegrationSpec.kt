@@ -49,7 +49,7 @@ object OverseerIntegrationSpec : Spek({
             println("Topology deployed")
         }
         val timeToProcess = measureTimeMillis {
-            overseer.waitToFinish(1)
+            overseer.waitToFinish()
             println("Everything processed")
         }
         val timeToFinalize = measureTimeMillis {
