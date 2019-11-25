@@ -3,8 +3,6 @@ package io.wavebeans.lib.io
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import io.wavebeans.lib.*
-import io.wavebeans.lib.io.*
-import mux.lib.*
 import io.wavebeans.lib.stream.FiniteInputSampleStream
 import io.wavebeans.lib.stream.FiniteSampleStream
 import io.wavebeans.lib.stream.trim

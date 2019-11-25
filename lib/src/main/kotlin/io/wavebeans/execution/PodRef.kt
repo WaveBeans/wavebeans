@@ -27,7 +27,7 @@ data class PodRef(
         val internalLinks: List<BeanLink>,
         /**
          * A list of [PodProxy] to be applied as the stream of the first bean from [internalBeans].
-         * The order of the proxies is preserved and it will be matched during [mux.lib.Bean] creation.
+         * The order of the proxies is preserved and it will be matched during [io.wavebeans.lib.Bean] creation.
          * Currently supported 1 and 2 pod proxies per bean.
          */
         val podProxies: List<PodProxyRef>,
