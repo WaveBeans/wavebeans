@@ -10,24 +10,41 @@ class SampleStreamOutputPod(
         override val podKey: PodKey
 ) : StreamOutput<Sample, FiniteSampleStream>, TickPod {
 
-    override fun inputs(): List<AnyBean> = listOf(bean)
-
     // TODO that should be the part of configuration
     private val sampleRate = 44100.0f
 
-    override fun iteratorStart(sampleRate: Float, partitionIdx: Int): Long  = throw UnsupportedOperationException("You can't read from this pod")
+    @Volatile
+    private var isFinished = false
 
-    override fun iteratorNext(iteratorKey: Long, buckets: Int): List<Sample>? = throw UnsupportedOperationException("You can't read from this pod")
+    private var writer: Writer? = null
 
-    private val writer by lazy { bean.writer(sampleRate) }
+    override fun start() {
+        writer = bean.writer(sampleRate)
+    }
 
     override fun tick(): Boolean {
-        return writer.write()
+        check(writer != null) { "Pod should be started first" }
+        return if (!isFinished) {
+            val isSomethingLeft = writer!!.write()
+            if (!isSomethingLeft) isFinished = true
+            true
+        } else {
+            false
+        }
     }
 
-    override fun terminate() {
-        writer.close()
+    override fun close() {
+        isFinished = true
+        writer?.close()
     }
+
+    override fun isFinished(): Boolean = isFinished
+
+    override fun inputs(): List<AnyBean> = listOf(bean)
+
+    override fun iteratorStart(sampleRate: Float, partitionIdx: Int): Long = throw UnsupportedOperationException("You can't read from this pod")
+
+    override fun iteratorNext(iteratorKey: Long, buckets: Int): List<Sample>? = throw UnsupportedOperationException("You can't read from this pod")
 
     override fun writer(sampleRate: Float): Writer = throw UnsupportedOperationException("Not required by pod")
 

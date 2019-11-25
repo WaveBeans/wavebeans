@@ -6,10 +6,10 @@ import java.util.concurrent.TimeUnit
 
 @ExperimentalStdlibApi
 class FiniteSampleStreamPodProxy(
-        podKey: PodKey,
+        pointedTo: PodKey,
         forPartition: Int
 ) : StreamingPodProxy<SampleArray, FiniteSampleStream>(
-        pointedTo = podKey,
+        pointedTo = pointedTo,
         forPartition = forPartition,
         converter = { it.nullableSampleArrayList() }
 ), FiniteSampleStream {
@@ -18,7 +18,7 @@ class FiniteSampleStreamPodProxy(
         val bush = podDiscovery.bushFor(pointedTo)
         val caller = bushCallerRepository.create(bush, pointedTo)
 
-        return caller.call("length?timeUnit=${timeUnit.name}").long()
+        return caller.call("length?timeUnit=${timeUnit.name}").get().long()
     }
 }
 

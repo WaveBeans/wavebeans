@@ -14,16 +14,11 @@ fun Topology.partition(partitionsCount: Int): Topology {
 
 
     fun handleBean(beanRef: BeanRef, level: Int = 1) {
-        println(">>>> Level: $level")
         val beanClazz = Class.forName(beanRef.type).kotlin
-        println("Bean=$beanRef")
         val linkedBeans = this.links
                 .filter { it.from == beanRef.id }
                 .map { l -> this.refs.first { it.id == l.to } }
-        println("linkedBeans=$linkedBeans")
-        println("Current: beanRefs=$beanRefs, links=$links")
         if (linkedBeans.isEmpty() || handledBeans.contains(beanRef)) {
-            println("Skipping")
             return
         }
         handledBeans += beanRef

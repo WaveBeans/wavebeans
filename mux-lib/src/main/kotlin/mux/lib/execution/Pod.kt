@@ -1,12 +1,13 @@
 package mux.lib.execution
 
 import mux.lib.*
+import java.io.Closeable
 import java.lang.reflect.InvocationTargetException
 
 data class PodKey(val id: Int, val partition: Int)
 typealias AnyPodProxy = PodProxy<*, *>
 
-interface Pod {
+interface Pod : Closeable {
 
     val podKey: PodKey
 
@@ -46,9 +47,13 @@ interface Pod {
         }
     }
 
+    fun start(): Unit {}
+
     fun iteratorStart(sampleRate: Float, partitionIdx: Int): Long
 
     fun iteratorNext(iteratorKey: Long, buckets: Int): List<Any>?
+
+    fun isFinished(): Boolean
 }
 
 interface PodProxy<T : Any, S : Any> : Bean<T, S> {

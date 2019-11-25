@@ -1,5 +1,7 @@
 package mux.lib.execution
 
+import java.util.concurrent.Future
+
 open class BushCallerRepository protected constructor(
         protected val podDiscovery: PodDiscovery
 ) {
@@ -13,7 +15,7 @@ open class BushCallerRepository protected constructor(
 }
 
 interface BushCaller {
-    fun call(request: String): PodCallResult
+    fun call(request: String): Future<PodCallResult>
 }
 
 class SimpleBushCaller internal constructor(
@@ -22,17 +24,31 @@ class SimpleBushCaller internal constructor(
         val podDiscovery: PodDiscovery
 ) : BushCaller {
 
+    companion object {
+//        val callPool = Executors.newFixedThreadPool(10)
+//
+//        init {
+//            Runtime.getRuntime().addShutdownHook(Thread {
+//                callPool.shutdown()
+//                if (!callPool.awaitTermination(5000, TimeUnit.MILLISECONDS)) {
+//                    callPool.shutdownNow()
+//                }
+//            })
+//        }
+    }
+
     /***
      * @param request HTTP-like request: methodName?param1=value&param2=value
      */
     @ExperimentalStdlibApi
-    override fun call(request: String): PodCallResult {
+    override fun call(request: String): Future<PodCallResult> {
         val bush = podDiscovery.bush(bushKey)
+                ?: throw IllegalStateException("Unable to make call `$request` to Bush[$bushKey] as it hasn't been found.")
         // TODO that should be done over the network soon
-        return if (bush != null /* && bush.locallyAccessible()*/)
-            bush.call(podKey, request)
-        else {
-            TODO("call bush remotely")
-        }
+//         if (true /* && bush.locallyAccessible()*/)
+        return bush.call(podKey, request)
+//        else {
+//            TODO("call bush remotely")
+//        }
     }
 }

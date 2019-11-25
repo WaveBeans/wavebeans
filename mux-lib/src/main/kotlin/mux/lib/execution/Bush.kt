@@ -1,101 +1,105 @@
 package mux.lib.execution
 
 import java.io.Closeable
-import java.lang.Thread.sleep
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.TimeoutException
-import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicLong
+import java.util.*
+import java.util.concurrent.*
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.locks.ReadWriteLock
+import kotlin.reflect.typeOf
 
 typealias BushKey = Int
 
-internal data class PodTask(
-        val taskId: Long,
-        val podKey: PodKey,
-        val request: String
-)
-
 class Bush(
+        val bushKey: BushKey,
+        val threadsCount: Int,
         val podDiscovery: PodDiscovery = PodDiscovery.default
 ) : Closeable {
 
-    companion object {
-        private val idSeq = AtomicInteger(0)
-        private val taskIdSeq = AtomicLong(0)
+    class NamedThreadFactory(val name: String) : ThreadFactory {
+        private var c = 0
+        override fun newThread(r: Runnable): Thread {
+            return Thread(ThreadGroup(name), r, "$name-${c++}")
+        }
     }
 
-    private val workers = ConcurrentHashMap<PodKey, PodWorker>()
+    private val workingPool = Executors.newFixedThreadPool(threadsCount, NamedThreadFactory("work"))
 
-    private val bushKey = idSeq.incrementAndGet()
-            .also { podDiscovery.registerBush(it, this) }
+    @Volatile
+    private var isDraining = false
 
+    private val pods = ConcurrentHashMap<PodKey, Pod>()
+
+    private val tickFinished = ConcurrentHashMap<Pod, CompletableFuture<Boolean>>()
+
+    init {
+        podDiscovery.registerBush(bushKey, this)
+    }
+
+    inner class Tick(val pod: TickPod) : Runnable {
+
+        override fun run() {
+            try {
+                if (!isDraining && pod.tick()) {
+                    workingPool.submit(Tick(pod))
+                } else {
+                    tickFinished[pod]!!.complete(true)
+                }
+            } catch (e: Exception) {
+                workingPool.submit(Tick(pod))
+                e.printStackTrace(System.err)
+            }
+        }
+
+    }
 
     @ExperimentalStdlibApi
     fun start() {
-        workers.entries
-                // tick pods should start last, as they start calling other pods before they've started
-                .sortedBy { it.value.pod is TickPod }
-                .forEach { (podKey, worker) ->
-                    worker.start()
-                    while (!worker.isStarted()) {
-                        sleep(0)
-                    }
-                    println("Pod started [$podKey]${worker.pod}")
+        pods.values.filterIsInstance<TickPod>()
+                .map { pod ->
+                    tickFinished[pod] = CompletableFuture()
+                    pod.start()
+                    pod
+                }.map { pod ->
+                    workingPool.submit(Tick(pod))
                 }
     }
 
     fun addPod(pod: Pod) {
-        val worker = PodWorker(pod)
-        workers[pod.podKey] = worker
+        pods[pod.podKey] = pod
         podDiscovery.registerPod(bushKey, pod)
     }
 
-    fun areTicksFinished(): Boolean {
-        return workers.entries
-                // tick pods should start last, as they start calling other pods before they've started
-                .filter { it.value.pod is TickPod }
-                .all { !it.value.isStarted() }
+    fun tickPodsFutures(): List<Future<Boolean>> {
+        return tickFinished.values.toList()
     }
 
 
     override fun close() {
-        podDiscovery.unregisterBush(bushKey)
-        workers.forEach {
-            podDiscovery.unregisterPod(bushKey, it.key)
-            it.value.close()
+        isDraining = true
+        pods.values.forEach {
+            it.close()
+            podDiscovery.unregisterPod(bushKey, it.podKey)
         }
+        workingPool.shutdown()
+        if (!workingPool.awaitTermination(5000, TimeUnit.MILLISECONDS)) {
+            workingPool.shutdownNow()
+        }
+        podDiscovery.unregisterBush(bushKey)
     }
 
-    fun call(podKey: PodKey, request: String, timeout: Long = 1000L, timeUnit: TimeUnit = TimeUnit.MILLISECONDS): PodCallResult {
-        val podWorker = workers[podKey] ?: TODO("pod not on the bush case")
-
-        check(podWorker.isStarted()) { "PodWorker $podKey is not started. Can't do request `$request`" }
-
-        val start = System.nanoTime()
-        val taskId = taskIdSeq.incrementAndGet()
-        val task = PodTask(taskId, podKey, request)
-//        println("Enqueued task $task")
-        podWorker.enqueue(task)
-        var timeoutWarningFired = false
-        val nanoTimeout = TimeUnit.NANOSECONDS.convert(timeout, timeUnit)
-        while (true) {
-            val timeElapsed = start - System.nanoTime()
-            val r = podWorker.result(taskId)
-            if (r != null) {
-                if (timeElapsed > nanoTimeout / 3) {
-                    println("[WARNING] Call to pod[$podKey] for `$request` took ${(System.nanoTime() - start) / 1_000_000.0}ms")
-                }
-                return r
-            }
-            if (!timeoutWarningFired && timeElapsed >= nanoTimeout / 2) {
-                println("[WARNING] Long call (~${timeElapsed / 1_000_000.0}ms) to Pod [$podKey] for $request\n" +
-                        Thread.currentThread().stackTrace.joinToString(separator = "\n") { it.toString() })
-                timeoutWarningFired = true
-            } else if (timeElapsed >= nanoTimeout) {
-                throw TimeoutException("Unable to call Pod with key=$podKey, request=`$request` within $timeout $timeUnit")
-            }
-            sleep(0)
+    @ExperimentalStdlibApi
+    fun call(podKey: PodKey, request: String): Future<PodCallResult> {
+        val pod = pods[podKey]
+        check(pod != null) { "Pod $podKey is not found on Bush $bushKey" }
+        val call = Call.parseRequest(request)
+        val res = CompletableFuture<PodCallResult>()
+        val r = try {
+            val retVal = pod.call(call)
+            retVal
+        } catch (e: Throwable) {
+            PodCallResult.wrap(call, e)
         }
+        res.complete(r)
+        return res
     }
 }

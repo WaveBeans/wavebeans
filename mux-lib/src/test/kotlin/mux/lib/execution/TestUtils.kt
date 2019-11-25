@@ -1,7 +1,6 @@
 package mux.lib.execution
 
 import mux.lib.*
-import mux.lib.io.StreamInput
 import java.util.concurrent.TimeUnit
 
 class IntStream(
@@ -21,8 +20,7 @@ class IntStream(
 fun newTestStreamingPod(seq: List<Int>, partition: Int = 0): StreamingPod {
     return StreamingPod(
             IntStream(seq),
-            PodKey(1, partition),
-            unburdenElementsCleanupThreshold = 0
+            PodKey(1, partition)
     )
 }
 
@@ -30,8 +28,7 @@ fun newTestSplittingPod(seq: List<Int>, partitionCount: Int): SplittingPod {
     return SplittingPod(
             IntStream(seq),
             PodKey(1, 0),
-            partitionCount,
-            unburdenElementsCleanupThreshold = 0
+            partitionCount
     )
 }
 
