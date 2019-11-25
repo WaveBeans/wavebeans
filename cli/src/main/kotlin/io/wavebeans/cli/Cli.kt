@@ -1,11 +1,11 @@
 package io.wavebeans.cli
 
-import mux.cli.command.ArgumentMissingException
-import mux.cli.command.ArgumentWrongException
-import mux.cli.command.InScopeCommand
-import mux.cli.command.NewScopeCommand
-import mux.cli.scope.RootScope
-import mux.cli.scope.Scope
+import io.wavebeans.cli.command.ArgumentMissingException
+import io.wavebeans.cli.command.ArgumentWrongException
+import io.wavebeans.cli.command.InScopeCommand
+import io.wavebeans.cli.command.NewScopeCommand
+import io.wavebeans.cli.scope.RootScope
+import io.wavebeans.cli.scope.Scope
 import org.jline.reader.LineReader
 import org.jline.reader.LineReaderBuilder
 import org.jline.terminal.TerminalBuilder

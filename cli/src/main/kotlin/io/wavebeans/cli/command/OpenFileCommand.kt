@@ -1,9 +1,6 @@
 package io.wavebeans.cli.command
 
-import mux.cli.Session
-import mux.lib.io.WavFileReader
-import java.io.File
-import java.io.FileInputStream
+import io.wavebeans.cli.Session
 
 class OpenFileCommand(session: Session) : AbstractNewSamplesScopeCommand(
         session,

@@ -2,10 +2,10 @@ package io.wavebeans.cli.command
 
 import assertk.assertThat
 import assertk.assertions.isInstanceOf
-import mux.cli.Session
-import mux.cli.scope.AudioStreamScope
-import mux.cli.scope.MixStreamCommand
-import mux.lib.io.sine
+import io.wavebeans.cli.Session
+import io.wavebeans.cli.scope.AudioStreamScope
+import io.wavebeans.cli.scope.MixStreamCommand
+import io.wavebeans.lib.io.sine
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.xdescribe
 

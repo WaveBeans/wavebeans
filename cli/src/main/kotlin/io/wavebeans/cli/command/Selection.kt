@@ -1,6 +1,6 @@
 package io.wavebeans.cli.command
 
-import mux.lib.samplesCountToLength
+import io.wavebeans.lib.samplesCountToLength
 import java.util.concurrent.TimeUnit
 
 data class Selection(val start: SelectionValue, val end: SelectionValue) {

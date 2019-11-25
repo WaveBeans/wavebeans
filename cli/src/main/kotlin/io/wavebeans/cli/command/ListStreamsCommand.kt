@@ -1,7 +1,6 @@
 package io.wavebeans.cli.command
 
-import mux.cli.Session
-import java.util.concurrent.TimeUnit
+import io.wavebeans.cli.Session
 
 class ListStreamsCommand(val session: Session) : InScopeCommand(
         "list",

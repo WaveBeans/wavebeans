@@ -1,9 +1,9 @@
 package io.wavebeans.cli.command
 
-import mux.cli.Session
-import mux.cli.scope.AudioStreamScope
-import mux.cli.scope.Scope
-import mux.lib.stream.SampleStream
+import io.wavebeans.cli.Session
+import io.wavebeans.cli.scope.AudioStreamScope
+import io.wavebeans.cli.scope.Scope
+import io.wavebeans.lib.stream.SampleStream
 
 interface Command {
     fun name(): String

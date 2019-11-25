@@ -1,10 +1,10 @@
 package io.wavebeans.cli.command
 
-import mux.cli.Session
-import mux.lib.io.SineGeneratedInput
-import mux.lib.io.SineGeneratedInputParams
-import mux.lib.stream.SampleStream
-import mux.lib.stream.sampleStream
+import io.wavebeans.cli.Session
+import io.wavebeans.lib.io.SineGeneratedInput
+import io.wavebeans.lib.io.SineGeneratedInputParams
+import io.wavebeans.lib.stream.SampleStream
+import io.wavebeans.lib.stream.sampleStream
 import java.util.*
 
 enum class Generator(val type: String, val streamBuilder: () -> GeneratedStreamBuilder) {

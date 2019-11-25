@@ -1,8 +1,8 @@
 package io.wavebeans.cli.command
 
-import mux.cli.Session
-import mux.cli.scope.AudioStreamScope
-import mux.cli.scope.AudioSubStreamScope
+import io.wavebeans.cli.Session
+import io.wavebeans.cli.scope.AudioStreamScope
+import io.wavebeans.cli.scope.AudioSubStreamScope
 
 class SelectCommand(val session: Session, parentScope: AudioStreamScope) : NewScopeCommand(
         "select",

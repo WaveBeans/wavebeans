@@ -1,6 +1,6 @@
 package io.wavebeans.cli.command
 
-import mux.cli.Session
+import io.wavebeans.cli.Session
 
 class SaveFileCommand(
         val session: Session,

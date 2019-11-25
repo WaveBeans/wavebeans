@@ -1,8 +1,8 @@
 package io.wavebeans.cli
 
-import mux.cli.command.ArgumentWrongException
-import mux.lib.BitDepth
-import mux.lib.stream.SampleStream
+import io.wavebeans.cli.command.ArgumentWrongException
+import io.wavebeans.lib.BitDepth
+import io.wavebeans.lib.stream.SampleStream
 
 data class OutputDescriptor(
         val sampleRate: Float,

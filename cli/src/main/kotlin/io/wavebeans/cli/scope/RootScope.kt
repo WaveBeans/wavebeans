@@ -1,7 +1,7 @@
 package io.wavebeans.cli.scope
 
-import mux.cli.Session
-import mux.cli.command.*
+import io.wavebeans.cli.Session
+import io.wavebeans.cli.command.*
 
 class RootScope(private val session: Session) : Scope {
 

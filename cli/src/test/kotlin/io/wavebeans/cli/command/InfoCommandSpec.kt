@@ -4,16 +4,16 @@ import assertk.assertThat
 import assertk.assertions.contains
 import assertk.assertions.isNotEqualTo
 import assertk.assertions.isNotNull
-import mux.cli.Session
-import mux.cli.scope.AudioStreamScope
-import mux.lib.BitDepth
-import mux.lib.NoParams
-import mux.lib.io.ByteArrayLittleEndianInput
-import mux.lib.io.ByteArrayLittleEndianInputParams
-import mux.lib.io.sine
-import mux.lib.stream.FiniteInputSampleStream
-import mux.lib.stream.ZeroFilling
-import mux.lib.stream.sampleStream
+import io.wavebeans.cli.Session
+import io.wavebeans.cli.scope.AudioStreamScope
+import io.wavebeans.lib.BitDepth
+import io.wavebeans.lib.NoParams
+import io.wavebeans.lib.io.ByteArrayLittleEndianInput
+import io.wavebeans.lib.io.ByteArrayLittleEndianInputParams
+import io.wavebeans.lib.io.sine
+import io.wavebeans.lib.stream.FiniteInputSampleStream
+import io.wavebeans.lib.stream.ZeroFilling
+import io.wavebeans.lib.stream.sampleStream
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.xdescribe
 

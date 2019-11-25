@@ -1,7 +1,7 @@
 package io.wavebeans.cli.scope
 
-import mux.cli.command.Command
-import mux.cli.command.CommandException
+import io.wavebeans.cli.command.Command
+import io.wavebeans.cli.command.CommandException
 
 interface Scope {
     fun prompt(): String

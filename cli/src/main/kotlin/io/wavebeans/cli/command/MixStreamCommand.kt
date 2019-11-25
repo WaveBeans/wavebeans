@@ -1,11 +1,11 @@
-package mux.cli.scope
+package io.wavebeans.cli.scope
 
-import mux.cli.Session
-import mux.cli.command.AbstractNewSamplesScopeCommand
-import mux.cli.command.ArgumentMissingException
-import mux.cli.command.ArgumentWrongException
-import mux.cli.command.Selection
-import mux.lib.stream.sum
+import io.wavebeans.cli.Session
+import io.wavebeans.cli.command.AbstractNewSamplesScopeCommand
+import io.wavebeans.cli.command.ArgumentMissingException
+import io.wavebeans.cli.command.ArgumentWrongException
+import io.wavebeans.cli.command.Selection
+import io.wavebeans.lib.stream.sum
 import java.util.concurrent.TimeUnit
 
 class MixStreamCommand(session: Session, val sourceStreamName: String) : AbstractNewSamplesScopeCommand(

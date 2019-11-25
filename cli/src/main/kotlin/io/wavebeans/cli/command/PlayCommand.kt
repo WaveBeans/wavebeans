@@ -1,7 +1,7 @@
 package io.wavebeans.cli.command
 
-import mux.cli.Session
-import mux.lib.stream.SampleStream
+import io.wavebeans.cli.Session
+import io.wavebeans.lib.stream.SampleStream
 
 
 class PlayCommand(
