@@ -1,6 +1,6 @@
 package io.wavebeans.execution
 
-import io.wavebeans.lib.SampleArray
+import io.wavebeans.lib.Sample
 import io.wavebeans.lib.stream.FiniteSampleStream
 import java.util.concurrent.TimeUnit
 
@@ -8,10 +8,10 @@ import java.util.concurrent.TimeUnit
 class FiniteSampleStreamPodProxy(
         pointedTo: PodKey,
         forPartition: Int
-) : StreamingPodProxy<SampleArray, FiniteSampleStream>(
+) : StreamingPodProxy<Sample, FiniteSampleStream>(
         pointedTo = pointedTo,
         forPartition = forPartition,
-        converter = { it.nullableSampleArrayList() }
+        converter = { it.nullableSampleList() }
 ), FiniteSampleStream {
 
     override fun length(timeUnit: TimeUnit): Long {
@@ -25,9 +25,9 @@ class FiniteSampleStreamPodProxy(
 class FiniteSampleStreamMergingPodProxy(
         override val readsFrom: List<PodKey>,
         forPartition: Int
-) : MergingPodProxy<SampleArray, FiniteSampleStream>(
+) : MergingPodProxy<Sample, FiniteSampleStream>(
         forPartition = forPartition,
-        converter = { it.nullableSampleArrayList() }
+        converter = { it.nullableSampleList() }
 ), FiniteSampleStream {
 
     override fun length(timeUnit: TimeUnit): Long {

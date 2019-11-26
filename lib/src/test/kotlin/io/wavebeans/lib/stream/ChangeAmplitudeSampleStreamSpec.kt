@@ -22,7 +22,6 @@ object ChangeAmplitudeSampleStreamSpec : Spek({
         fun stream(range: IntProgression) = range.stream(sampleRate, BitDepth.BIT_32)
 
         fun SampleStream.take(amount: Int) = this.asSequence(sampleRate)
-                .flatMap { it.asSequence() }
                 .map { it.asInt() }
                 .take(amount)
                 .toList()

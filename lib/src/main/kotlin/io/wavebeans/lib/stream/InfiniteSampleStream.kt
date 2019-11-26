@@ -9,13 +9,13 @@ fun StreamInput.sampleStream(): SampleStream = InfiniteSampleStream(this, NoPara
 class InfiniteSampleStream(
         val streamInput: StreamInput,
         val params: NoParams
-) : SampleStream, AlterBean<SampleArray, StreamInput, SampleArray, SampleStream> {
+) : SampleStream, AlterBean<Sample, StreamInput, Sample, SampleStream> {
 
     override val parameters: BeanParams = params
 
-    override val input: Bean<SampleArray, StreamInput> = streamInput
+    override val input: Bean<Sample, StreamInput> = streamInput
 
-    override fun asSequence(sampleRate: Float): Sequence<SampleArray> = streamInput.asSequence(sampleRate)
+    override fun asSequence(sampleRate: Float): Sequence<Sample> = streamInput.asSequence(sampleRate)
 
     override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): InfiniteSampleStream =
             InfiniteSampleStream(streamInput.rangeProjection(start, end, timeUnit), params)

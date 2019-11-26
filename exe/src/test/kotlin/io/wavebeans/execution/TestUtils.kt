@@ -59,14 +59,14 @@ fun <T> Assert<List<T>>.isListOf(vararg expected: Any?) = given { actual ->
 }
 
 fun FiniteSampleStream.toDevNull(
-): StreamOutput<SampleArray, FiniteSampleStream> {
+): StreamOutput<Sample, FiniteSampleStream> {
     return DevNullSampleStreamOutput(this, NoParams())
 }
 
 class DevNullSampleStreamOutput(
         val stream: FiniteSampleStream,
         params: NoParams
-) : StreamOutput<SampleArray, FiniteSampleStream>, SinglePartitionBean {
+) : StreamOutput<Sample, FiniteSampleStream>, SinglePartitionBean {
 
     override fun writer(sampleRate: Float): Writer {
 
@@ -75,7 +75,8 @@ class DevNullSampleStreamOutput(
         return object : Writer {
             override fun write(): Boolean {
                 return if (sampleIterator.hasNext()) {
-                    sampleCounter += sampleIterator.next().size
+                    sampleIterator.next()
+                    sampleCounter++
                     true
                 } else {
                     false
@@ -89,7 +90,7 @@ class DevNullSampleStreamOutput(
         }
     }
 
-    override val input: Bean<SampleArray, FiniteSampleStream>
+    override val input: Bean<Sample, FiniteSampleStream>
         get() = stream
 
     override val parameters: BeanParams = params
@@ -109,10 +110,7 @@ class SeqInput constructor(
 
     override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): StreamInput = throw UnsupportedOperationException()
 
-    override fun asSequence(sampleRate: Float): Sequence<SampleArray> {
-        return seq.windowed(DEFAULT_SAMPLE_ARRAY_SIZE, DEFAULT_SAMPLE_ARRAY_SIZE, true)
-                .map { createSampleArray(it.size) { i -> it[i] } }
-    }
+    override fun asSequence(sampleRate: Float): Sequence<Sample> = seq
 
 
 }

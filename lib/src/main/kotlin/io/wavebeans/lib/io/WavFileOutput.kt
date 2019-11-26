@@ -7,19 +7,19 @@ import java.io.DataOutputStream
 import java.net.URI
 
 
-fun FiniteSampleStream.toMono8bitWav(uri: String): StreamOutput<SampleArray, FiniteSampleStream> {
+fun FiniteSampleStream.toMono8bitWav(uri: String): StreamOutput<Sample, FiniteSampleStream> {
     return WavFileOutput(this, WavFileOutputParams(URI(uri), BitDepth.BIT_8, 1))
 }
 
-fun FiniteSampleStream.toMono16bitWav(uri: String): StreamOutput<SampleArray, FiniteSampleStream> {
+fun FiniteSampleStream.toMono16bitWav(uri: String): StreamOutput<Sample, FiniteSampleStream> {
     return WavFileOutput(this, WavFileOutputParams(URI(uri), BitDepth.BIT_16, 1))
 }
 
-fun FiniteSampleStream.toMono24bitWav(uri: String): StreamOutput<SampleArray, FiniteSampleStream> {
+fun FiniteSampleStream.toMono24bitWav(uri: String): StreamOutput<Sample, FiniteSampleStream> {
     return WavFileOutput(this, WavFileOutputParams(URI(uri), BitDepth.BIT_24, 1))
 }
 
-fun FiniteSampleStream.toMono32bitWav(uri: String): StreamOutput<SampleArray, FiniteSampleStream> {
+fun FiniteSampleStream.toMono32bitWav(uri: String): StreamOutput<Sample, FiniteSampleStream> {
     return WavFileOutput(this, WavFileOutputParams(URI(uri), BitDepth.BIT_32, 1))
 }
 
@@ -37,9 +37,9 @@ data class WavFileOutputParams(
 class WavFileOutput(
         val stream: FiniteSampleStream,
         val params: WavFileOutputParams
-) : StreamOutput<SampleArray, FiniteSampleStream>, SinglePartitionBean {
+) : StreamOutput<Sample, FiniteSampleStream>, SinglePartitionBean {
 
-    override val input: Bean<SampleArray, FiniteSampleStream>
+    override val input: Bean<Sample, FiniteSampleStream>
         get() = stream
 
     override val parameters: BeanParams = params

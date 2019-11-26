@@ -1,8 +1,6 @@
 package io.wavebeans.execution
 
 import io.wavebeans.lib.Sample
-import io.wavebeans.lib.SampleArray
-import io.wavebeans.lib.createSampleArray
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.ObjectInputStream
@@ -83,25 +81,6 @@ internal fun List<*>.encodeBytes(): ByteArray =
                 is Sample -> {
                     encodeList(this as List<Sample>, 8) { buf, at, el -> writeLong(el.toBits(), buf, at) }
                 }
-                is SampleArray -> {
-                    val seq = this.asSequence().map { (it as SampleArray) }
-
-                    val contentSize = seq.map { 4 + it.size * 8 }.sum()
-
-                    var pointer = 0
-                    val buf = ByteArray(4 + contentSize)
-                    writeInt(this.size, buf, 0)
-                    pointer += 4
-                    seq.forEach { el ->
-                        writeInt(el.size, buf, pointer)
-                        pointer += 4
-                        repeat(el.size) {
-                            writeLong(el[it].toBits(), buf, pointer)
-                            pointer += 8
-                        }
-                    }
-                    buf
-                }
                 else -> throw UnsupportedOperationException("${value!!::class}")
             }
         }
@@ -121,31 +100,7 @@ fun PodCallResult.sampleList(): List<Sample> =
             }
         } ?: throw IllegalStateException("Can't decode null", this.exception)
 
-fun PodCallResult.sampleArrayList(): List<SampleArray> =
-        throwIfError().byteArray?.let { buf ->
-            var pointer = 0
-            val size = readInt(buf, 0)
-            pointer += 4
-            if (size > 0) {
-                val list = ArrayList<SampleArray>(size)
-                repeat(size) {
-                    val arraySize = readInt(buf, pointer)
-                    pointer += 4
-                    list.add(createSampleArray(arraySize) {
-                        val bits = readLong(buf, pointer)
-                        val v = Double.fromBits(bits)
-                        pointer += 8
-                        v
-                    })
-                }
-                list
-            } else {
-                emptyList<SampleArray>()
-            }
-        } ?: throw IllegalStateException("Can't decode null", this.exception)
-
 fun PodCallResult.nullableSampleList(): List<Sample>? = ifNotNull { this.sampleList() }
-fun PodCallResult.nullableSampleArrayList(): List<SampleArray>? = ifNotNull { this.sampleArrayList() }
 
 internal fun PodCallResult.throwIfError(): PodCallResult =
         if (this.exception != null) throw IllegalStateException("Got exception during call ${this.call}", this.exception)

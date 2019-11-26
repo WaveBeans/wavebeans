@@ -1,18 +1,18 @@
 package io.wavebeans.execution
 
-import io.wavebeans.lib.SampleArray
+import io.wavebeans.lib.Sample
 import io.wavebeans.lib.stream.SampleStream
 
-class SampleStreamPodProxy(podKey: PodKey, forPartition: Int) : SampleStream, StreamingPodProxy<SampleArray, SampleStream>(
+class SampleStreamPodProxy(podKey: PodKey, forPartition: Int) : SampleStream, StreamingPodProxy<Sample, SampleStream>(
         pointedTo = podKey,
         forPartition = forPartition,
-        converter = { it.nullableSampleArrayList() }
+        converter = { it.nullableSampleList() }
 )
 
 class SampleStreamMergingPodProxy(
         override val readsFrom: List<PodKey>,
         forPartition: Int
-) : MergingPodProxy<SampleArray, SampleStream>(
+) : MergingPodProxy<Sample, SampleStream>(
         forPartition = forPartition,
-        converter = { it.nullableSampleArrayList() }
+        converter = { it.nullableSampleList() }
 ), SampleStream

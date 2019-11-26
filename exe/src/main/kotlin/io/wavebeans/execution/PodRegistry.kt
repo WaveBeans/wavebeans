@@ -2,7 +2,7 @@ package io.wavebeans.execution
 
 import io.wavebeans.lib.Bean
 import io.wavebeans.lib.BeanStream
-import io.wavebeans.lib.SampleArray
+import io.wavebeans.lib.Sample
 import io.wavebeans.lib.io.StreamInput
 import io.wavebeans.lib.io.StreamOutput
 import io.wavebeans.lib.stream.FiniteSampleStream
@@ -31,7 +31,7 @@ object PodRegistry {
         registerMergingPodProxy(typeOf<StreamInput>(), StreamInputMergingPodProxy::class.constructors.first())
 
         registerPod(typeOf<BeanStream<*, *>>(), StreamingPod::class.constructors.single { it.parameters.size == 2 })
-        registerPod(typeOf<StreamOutput<SampleArray, FiniteSampleStream>>(), SampleStreamOutputPod::class.constructors.first())
+        registerPod(typeOf<StreamOutput<Sample, FiniteSampleStream>>(), SampleStreamOutputPod::class.constructors.first())
 
         registerSplittingPod(typeOf<BeanStream<*, *>>(), SplittingPod::class.constructors.single { it.parameters.size == 3 })
     }

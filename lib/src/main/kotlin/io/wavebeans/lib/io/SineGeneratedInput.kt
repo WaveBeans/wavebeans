@@ -44,23 +44,21 @@ class SineGeneratedInput constructor(
             SineGeneratedInput(params.copy(timeOffset = s + params.timeOffset))
     }
 
-    override fun asSequence(sampleRate: Float): Sequence<SampleArray> {
-        return object : Iterator<SampleArray> {
+    override fun asSequence(sampleRate: Float): Sequence<Sample> {
+        return object : Iterator<Sample> {
 
             private var x = params.timeOffset
             private val delta = 1.0 / sampleRate // sinusoid automatically resamples to output sample rate
 
             override fun hasNext(): Boolean = true
 
-            override fun next(): SampleArray {
-                return createSampleArray {
-                    if (params.time != null && x >= params.time + params.timeOffset) {
-                        ZeroSample
-                    } else {
-                        val r = sampleOf(sineOf(x))
-                        x += delta
-                        r
-                    }
+            override fun next(): Sample {
+                return if (params.time != null && x >= params.time + params.timeOffset) {
+                    ZeroSample
+                } else {
+                    val r = sampleOf(sineOf(x))
+                    x += delta
+                    r
                 }
             }
         }.asSequence()

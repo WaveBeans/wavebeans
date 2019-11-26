@@ -47,8 +47,8 @@ class SineSweepGeneratedInput(
 //        return SineSweepGeneratedInput(sampleRate, frequency, amplitude, newLength, s + timeOffset)
     }
 
-    override fun asSequence(sampleRate: Float): Sequence<SampleArray> {
-        return object : Iterator<SampleArray> {
+    override fun asSequence(sampleRate: Float): Sequence<Sample> {
+        return object : Iterator<Sample> {
 
             private var x = params.timeOffset
             private var frequency = params.startFrequency
@@ -58,21 +58,19 @@ class SineSweepGeneratedInput(
 
             override fun hasNext(): Boolean = true
 
-            override fun next(): SampleArray {
-                return createSampleArray {
-                    val r = sampleOf(sineOf(x, frequency))
-                    x += step
-                    if (x < params.time + params.timeOffset) {
-                        if (abs(transitionCounter - frequencyDelta) < step) {
-                            frequency += params.sweepDelta
-                            transitionCounter = 0.0
-                        } else {
-                            transitionCounter += step
-                        }
+            override fun next(): Sample {
+                val r = sampleOf(sineOf(x, frequency))
+                x += step
+                if (x < params.time + params.timeOffset) {
+                    if (abs(transitionCounter - frequencyDelta) < step) {
+                        frequency += params.sweepDelta
+                        transitionCounter = 0.0
+                    } else {
+                        transitionCounter += step
                     }
-
-                    r
                 }
+
+                return r
             }
         }.asSequence()
     }

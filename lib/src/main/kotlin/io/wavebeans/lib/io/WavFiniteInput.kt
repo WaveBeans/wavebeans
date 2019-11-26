@@ -84,8 +84,8 @@ class WavFiniteInput(
         )
     }
 
-    override fun asSequence(sampleRate: Float): Sequence<SampleArray> = TODO()
-//            ByteArrayLittleEndianDecoder(cnt.sampleRate, cnt.bitDepth).sequence(sampleRate, cnt.buffer)
+    override fun asSequence(sampleRate: Float): Sequence<Sample> =
+            ByteArrayLittleEndianDecoder(cnt.sampleRate, cnt.bitDepth).sequence(sampleRate, cnt.buffer)
 }
 
 class WavFileReaderException(message: String, cause: Exception?) : Exception(message, cause) {

@@ -243,7 +243,7 @@ private fun Assert<PodProxy<*, *>>.forPartition() = prop("forPartition") { it.fo
 internal class TestPartitionableStreamingInput(
         override val parameters: BeanParams
 ) : StreamInput {
-    override fun asSequence(sampleRate: Float): Sequence<SampleArray> = throw UnsupportedOperationException()
+    override fun asSequence(sampleRate: Float): Sequence<Sample> = throw UnsupportedOperationException()
 
     override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): StreamInput = throw UnsupportedOperationException()
 }
@@ -251,21 +251,21 @@ internal class TestPartitionableStreamingInput(
 internal class TestSinglePartitionStreamingInput(
         override val parameters: BeanParams
 ) : StreamInput, SinglePartitionBean {
-    override fun asSequence(sampleRate: Float): Sequence<SampleArray> = throw UnsupportedOperationException()
+    override fun asSequence(sampleRate: Float): Sequence<Sample> = throw UnsupportedOperationException()
 
     override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): StreamInput = throw UnsupportedOperationException()
 }
 
 internal class TestMultiBean(
-        val input1: BeanStream<SampleArray, SampleStream>,
-        val input2: BeanStream<SampleArray, SampleStream>,
+        val input1: BeanStream<Sample, SampleStream>,
+        val input2: BeanStream<Sample, SampleStream>,
         override val parameters: BeanParams
-) : SampleStream, MultiBean<SampleArray, SampleStream> {
+) : SampleStream, MultiBean<Sample, SampleStream> {
 
-    override val inputs: List<Bean<SampleArray, SampleStream>>
+    override val inputs: List<Bean<Sample, SampleStream>>
         get() = listOf(input1, input2)
 
-    override fun asSequence(sampleRate: Float): Sequence<SampleArray> = throw UnsupportedOperationException()
+    override fun asSequence(sampleRate: Float): Sequence<Sample> = throw UnsupportedOperationException()
 
     override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): SampleStream = throw UnsupportedOperationException()
 }

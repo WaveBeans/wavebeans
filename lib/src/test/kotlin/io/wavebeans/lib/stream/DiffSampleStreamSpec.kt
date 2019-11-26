@@ -16,7 +16,6 @@ private fun Number.repeat(times: Int): List<Number> = (1..times).map { this }
 
 private fun SampleStream.listOfSignedBytesAsInts(sampleRate: Float, samplesToRead: Int): List<Int> =
         this.asSequence(sampleRate)
-                .flatMap { it.asSequence() }
                 .take(samplesToRead)
                 .map { it.asByte().toInt() and 0xFF }
                 .map { if (it > 128) it - 256 else it }

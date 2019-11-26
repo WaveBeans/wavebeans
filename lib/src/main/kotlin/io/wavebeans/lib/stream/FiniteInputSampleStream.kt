@@ -11,13 +11,13 @@ fun FiniteInput.sampleStream(converter: FiniteToStream): SampleStream = this.fin
 class FiniteInputSampleStream(
         val finiteInput: FiniteInput,
         val params: NoParams
-) : FiniteSampleStream, AlterBean<SampleArray, FiniteInput, SampleArray, FiniteSampleStream> {
+) : FiniteSampleStream, AlterBean<Sample, FiniteInput, Sample, FiniteSampleStream> {
 
     override val parameters: BeanParams = params
 
-    override val input: Bean<SampleArray, FiniteInput> = finiteInput
+    override val input: Bean<Sample, FiniteInput> = finiteInput
 
-    override fun asSequence(sampleRate: Float): Sequence<SampleArray> = finiteInput.asSequence(sampleRate)
+    override fun asSequence(sampleRate: Float): Sequence<Sample> = finiteInput.asSequence(sampleRate)
 
     override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): FiniteInputSampleStream =
             FiniteInputSampleStream(finiteInput.rangeProjection(start, end, timeUnit), params)
