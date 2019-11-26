@@ -5,7 +5,6 @@ import assertk.assertions.*
 import assertk.catch
 import io.wavebeans.lib.Sample
 import io.wavebeans.lib.createSampleArray
-import io.wavebeans.lib.eachIndexed
 import io.wavebeans.lib.sampleOf
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe

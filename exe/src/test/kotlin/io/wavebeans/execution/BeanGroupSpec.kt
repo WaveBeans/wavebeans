@@ -8,7 +8,6 @@ import io.wavebeans.lib.Bean
 import io.wavebeans.execution.TopologySerializer.jsonPretty
 import io.wavebeans.lib.io.sine
 import io.wavebeans.lib.io.toCsv
-import io.wavebeans.lib.isListOf
 import io.wavebeans.lib.stream.div
 import io.wavebeans.lib.stream.plus
 import io.wavebeans.lib.stream.trim
