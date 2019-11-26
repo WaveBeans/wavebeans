@@ -1,1 +1,1 @@
-include(":mux-lib", ":mux-cli")
+include(":lib", ":cli", ":exe")

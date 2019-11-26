@@ -2,15 +2,15 @@ const graphJson = "{\n" +
     "    \"refs\": [\n" +
     "        {\n" +
     "            \"id\": 6,\n" +
-    "            \"type\": \"mux.lib.execution.BeanGroup\",\n" +
+    "            \"type\": \"io.wavebeans.lib.execution.BeanGroup\",\n" +
     "            \"params\": {\n" +
-    "                \"type\": \"mux.lib.execution.BeanGroupParams\",\n" +
+    "                \"type\": \"io.wavebeans.lib.execution.BeanGroupParams\",\n" +
     "                \"beanRefs\": [\n" +
     "                    {\n" +
     "                        \"id\": 1,\n" +
-    "                        \"type\": \"mux.lib.io.CsvSampleStreamOutput\",\n" +
+    "                        \"type\": \"io.wavebeans.lib.io.CsvSampleStreamOutput\",\n" +
     "                        \"params\": {\n" +
-    "                            \"type\": \"mux.lib.io.CsvSampleStreamOutputParams\",\n" +
+    "                            \"type\": \"io.wavebeans.lib.io.CsvSampleStreamOutputParams\",\n" +
     "                            \"uri\": \"file:///var/folders/1n/q1rsg7_90mz903hqck3ghcvm0000gn/T/test4207591538981590014.csv\",\n" +
     "                            \"outputTimeUnit\": \"MILLISECONDS\",\n" +
     "                            \"encoding\": \"UTF-8\"\n" +
@@ -19,9 +19,9 @@ const graphJson = "{\n" +
     "                    },\n" +
     "                    {\n" +
     "                        \"id\": 2,\n" +
-    "                        \"type\": \"mux.lib.stream.TrimmedFiniteSampleStream\",\n" +
+    "                        \"type\": \"io.wavebeans.lib.stream.TrimmedFiniteSampleStream\",\n" +
     "                        \"params\": {\n" +
-    "                            \"type\": \"mux.lib.stream.TrimmedFiniteSampleStreamParams\",\n" +
+    "                            \"type\": \"io.wavebeans.lib.stream.TrimmedFiniteSampleStreamParams\",\n" +
     "                            \"length\": 50,\n" +
     "                            \"timeUnit\": \"MILLISECONDS\"\n" +
     "                        },\n" +
@@ -42,24 +42,24 @@ const graphJson = "{\n" +
     "        },\n" +
     "        {\n" +
     "            \"id\": 7,\n" +
-    "            \"type\": \"mux.lib.execution.BeanGroup\",\n" +
+    "            \"type\": \"io.wavebeans.lib.execution.BeanGroup\",\n" +
     "            \"params\": {\n" +
-    "                \"type\": \"mux.lib.execution.BeanGroupParams\",\n" +
+    "                \"type\": \"io.wavebeans.lib.execution.BeanGroupParams\",\n" +
     "                \"beanRefs\": [\n" +
     "                    {\n" +
     "                        \"id\": 3,\n" +
-    "                        \"type\": \"mux.lib.stream.ChangeAmplitudeSampleStream\",\n" +
+    "                        \"type\": \"io.wavebeans.lib.stream.ChangeAmplitudeSampleStream\",\n" +
     "                        \"params\": {\n" +
-    "                            \"type\": \"mux.lib.stream.ChangeAmplitudeSampleStreamParams\",\n" +
+    "                            \"type\": \"io.wavebeans.lib.stream.ChangeAmplitudeSampleStreamParams\",\n" +
     "                            \"multiplier\": 1.0\n" +
     "                        },\n" +
     "                        \"partition\": 0\n" +
     "                    },\n" +
     "                    {\n" +
     "                        \"id\": 4,\n" +
-    "                        \"type\": \"mux.lib.stream.InfiniteSampleStream\",\n" +
+    "                        \"type\": \"io.wavebeans.lib.stream.InfiniteSampleStream\",\n" +
     "                        \"params\": {\n" +
-    "                            \"type\": \"mux.lib.NoParams\"\n" +
+    "                            \"type\": \"io.wavebeans.lib.NoParams\"\n" +
     "                        },\n" +
     "                        \"partition\": 0\n" +
     "                    }\n" +
@@ -78,32 +78,32 @@ const graphJson = "{\n" +
     "        },\n" +
     "        {\n" +
     "            \"id\": 5,\n" +
-    "            \"type\": \"mux.lib.stream.SeqInput\",\n" +
+    "            \"type\": \"io.wavebeans.lib.stream.SeqInput\",\n" +
     "            \"params\": {\n" +
-    "                \"type\": \"mux.lib.NoParams\"\n" +
+    "                \"type\": \"io.wavebeans.lib.NoParams\"\n" +
     "            },\n" +
     "            \"partition\": 0\n" +
     "        },\n" +
     "        {\n" +
     "            \"id\": 7,\n" +
-    "            \"type\": \"mux.lib.execution.BeanGroup\",\n" +
+    "            \"type\": \"io.wavebeans.lib.execution.BeanGroup\",\n" +
     "            \"params\": {\n" +
-    "                \"type\": \"mux.lib.execution.BeanGroupParams\",\n" +
+    "                \"type\": \"io.wavebeans.lib.execution.BeanGroupParams\",\n" +
     "                \"beanRefs\": [\n" +
     "                    {\n" +
     "                        \"id\": 3,\n" +
-    "                        \"type\": \"mux.lib.stream.ChangeAmplitudeSampleStream\",\n" +
+    "                        \"type\": \"io.wavebeans.lib.stream.ChangeAmplitudeSampleStream\",\n" +
     "                        \"params\": {\n" +
-    "                            \"type\": \"mux.lib.stream.ChangeAmplitudeSampleStreamParams\",\n" +
+    "                            \"type\": \"io.wavebeans.lib.stream.ChangeAmplitudeSampleStreamParams\",\n" +
     "                            \"multiplier\": 1.0\n" +
     "                        },\n" +
     "                        \"partition\": 1\n" +
     "                    },\n" +
     "                    {\n" +
     "                        \"id\": 4,\n" +
-    "                        \"type\": \"mux.lib.stream.InfiniteSampleStream\",\n" +
+    "                        \"type\": \"io.wavebeans.lib.stream.InfiniteSampleStream\",\n" +
     "                        \"params\": {\n" +
-    "                            \"type\": \"mux.lib.NoParams\"\n" +
+    "                            \"type\": \"io.wavebeans.lib.NoParams\"\n" +
     "                        },\n" +
     "                        \"partition\": 1\n" +
     "                    }\n" +
