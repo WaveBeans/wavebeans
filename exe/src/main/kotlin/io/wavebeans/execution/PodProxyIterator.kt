@@ -9,7 +9,7 @@ class PodProxyIterator<T>(
         val podDiscovery: PodDiscovery = PodDiscovery.default,
         val bushCallerRepository: BushCallerRepository = BushCallerRepository.default(podDiscovery),
         val converter: (PodCallResult) -> List<T>?,
-        val prefetchBucketAmount: Int = 10
+        val prefetchBucketAmount: Int = 1024
 ) : Iterator<T> {
 
     private val bush = podDiscovery.bushFor(pod)
