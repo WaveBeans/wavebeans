@@ -5,11 +5,11 @@ import assertk.assertions.*
 import io.wavebeans.lib.eachIndexed
 import io.wavebeans.lib.io.sine
 import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.xdescribe
+import org.spekframework.spek2.style.specification.describe
 import kotlin.math.PI
 
 class FftStreamSpec : Spek({
-    xdescribe("Given sinusoid 32Hz, sample rate 128Hz, 2seconds, amplitude=0.5") {
+    describe("Given sinusoid 32Hz, sample rate 128Hz, 2seconds, amplitude=0.5") {
         val sine = 32.sine(0.5)
 
         describe("Calculating FFT") {
@@ -45,7 +45,7 @@ class FftStreamSpec : Spek({
         }
     }
 
-    xdescribe("Given sinusoid 440Hz, sample rate 44100Hz, 0.5 seconds, amplitude=0.5") {
+    describe("Given sinusoid 440Hz, sample rate 44100Hz, 0.5 seconds, amplitude=0.5") {
         val sine = 440.sine(0.5)
 
         describe("Calculating FFT") {
