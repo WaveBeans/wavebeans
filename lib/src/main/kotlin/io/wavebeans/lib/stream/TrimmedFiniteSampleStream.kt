@@ -17,29 +17,24 @@ data class TrimmedFiniteSampleStreamParams(
 class TrimmedFiniteSampleStream(
         val sampleStream: SampleStream,
         val params: TrimmedFiniteSampleStreamParams
-) : FiniteSampleStream, AlterBean<SampleArray, SampleStream, SampleArray, FiniteSampleStream>, SinglePartitionBean {
+) : FiniteSampleStream, AlterBean<Sample, SampleStream, Sample, FiniteSampleStream>, SinglePartitionBean {
 
     override val parameters: BeanParams = params
 
-    override val input: Bean<SampleArray, SampleStream> = sampleStream
+    override val input: Bean<Sample, SampleStream> = sampleStream
 
-    override fun asSequence(sampleRate: Float): Sequence<SampleArray> {
+    override fun asSequence(sampleRate: Float): Sequence<Sample> {
         var samplesToTake = timeToSampleIndexFloor(TimeUnit.NANOSECONDS.convert(params.length, params.timeUnit), TimeUnit.NANOSECONDS, sampleRate)
         val iterator = sampleStream.asSequence(sampleRate).iterator()
 
-        return object : Iterator<SampleArray> {
+        return object : Iterator<Sample> {
 
             override fun hasNext(): Boolean =
                     samplesToTake > 0 && iterator.hasNext()
 
-            override fun next(): SampleArray {
-                val a = iterator.next()
-                return if (samplesToTake < a.size) {
-                    a.copyOf(samplesToTake.toInt()).also { samplesToTake = 0 }
-                } else {
-                    samplesToTake -= a.size
-                    a
-                }
+            override fun next(): Sample {
+                samplesToTake--
+                return iterator.next()
             }
 
         }.asSequence()

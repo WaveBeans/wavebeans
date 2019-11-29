@@ -16,11 +16,11 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
 private class ByteArrayFileOutputMock(
         val stream: FiniteSampleStream,
         val bitDepth: BitDepth
-) : StreamOutput<SampleArray, FiniteSampleStream> {
+) : StreamOutput<Sample, FiniteSampleStream> {
 
     private val file = File.createTempFile("test", ".tmp").also { it.deleteOnExit() }
 
-    override val input: Bean<SampleArray, FiniteSampleStream>
+    override val input: Bean<Sample, FiniteSampleStream>
         get() = throw UnsupportedOperationException()
 
     override val parameters: BeanParams
@@ -54,7 +54,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
         describe("samples are with values 0..100") {
             val samples = (0 until 100).map { sampleOf(it.toByte()) }
             it("should be the same") {
-                assertThat(input.asSequence(sampleRate).flatMap { it.asSequence() }.toList()).isEqualTo(samples)
+                assertThat(input.asSequence(sampleRate).toList()).isEqualTo(samples)
             }
         }
 
@@ -141,7 +141,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
             val samples = (0 until 200 step 2)
                     .map { sampleOf((it + 1 and 0xFF shl 8 or (it and 0xFF)).toShort()) }
             it("should be the same") {
-                assertThat(input.asSequence(sampleRate).flatMap { it.asSequence() }.toList()).isEqualTo(samples)
+                assertThat(input.asSequence(sampleRate).toList()).isEqualTo(samples)
             }
         }
 
@@ -192,9 +192,8 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
                     override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): FiniteInput =
                             throw UnsupportedOperationException()
 
-                    override fun asSequence(sampleRate: Float): Sequence<SampleArray> =
-                            signal.asSequence()
-                                    .map { el -> createSampleArray(1) { sampleOf(el.toShort()) } }
+                    override fun asSequence(sampleRate: Float): Sequence<Sample> =
+                            signal.asSequence().map { el -> sampleOf(el.toShort()) }
 
                 },
                 NoParams()
@@ -220,9 +219,9 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
                     override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): FiniteInput =
                             throw UnsupportedOperationException()
 
-                    override fun asSequence(sampleRate: Float): Sequence<SampleArray> =
+                    override fun asSequence(sampleRate: Float): Sequence<Sample> =
                             signal.asSequence()
-                                    .map { el -> createSampleArray(1) { sampleOf(el, true) } }
+                                    .map { el -> sampleOf(el, true) }
 
                 },
                 NoParams()
@@ -244,7 +243,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
         it("output should be correspond to input signal") {
             assertThat(output.readBytes(44100.0f).map { it.asUnsignedByte() })
                     .isEqualTo(
-                            signal.asSequence(44100.0f).flatMap { it.asSequence() }.map { it.asByte().toInt() and 0xFF }.toList()
+                            signal.asSequence(44100.0f).map { it.asByte().toInt() and 0xFF }.toList()
                     )
         }
     }

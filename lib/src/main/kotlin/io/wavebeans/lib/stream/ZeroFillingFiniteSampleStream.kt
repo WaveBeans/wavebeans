@@ -20,22 +20,19 @@ data class ZeroFillingFiniteSampleStreamParams(
 private class ZeroFillingFiniteSampleStream(
         val finiteSampleStream: FiniteSampleStream,
         val params: ZeroFillingFiniteSampleStreamParams
-) : SampleStream, AlterBean<SampleArray, FiniteSampleStream, SampleArray, SampleStream> {
+) : SampleStream, AlterBean<Sample, FiniteSampleStream, Sample, SampleStream> {
 
     override val parameters: BeanParams = params
 
-    override val input: Bean<SampleArray, FiniteSampleStream> = finiteSampleStream
+    override val input: Bean<Sample, FiniteSampleStream> = finiteSampleStream
 
-    override fun asSequence(sampleRate: Float): Sequence<SampleArray> {
-        return object : Iterator<SampleArray> {
+    override fun asSequence(sampleRate: Float): Sequence<Sample> {
+        return object : Iterator<Sample> {
 
             var toSkip = timeToSampleIndexFloor(params.start, params.timeUnit, sampleRate)
-            val innerArrayIterator = finiteSampleStream
+            val iterator = finiteSampleStream
                     .asSequence(sampleRate)
                     .iterator()
-
-            var innerArrayIdx = 0
-            var innerArray: SampleArray? = null
 
             var samplesLeft = params.end
                     ?.let { timeToSampleIndexCeil(it, params.timeUnit, sampleRate) }
@@ -43,27 +40,18 @@ private class ZeroFillingFiniteSampleStream(
 
             override fun hasNext(): Boolean = true
 
-            override fun next(): SampleArray = createSampleArray {
+            override fun next(): Sample {
                 var el: Sample
                 do {
-                    if (samplesLeft-- > 0) { // there is something left to read
-                        if (innerArrayIdx >= innerArray?.size ?: 0) { // we need to read next element
-                            if (innerArrayIterator.hasNext()) {
-                                innerArray = innerArrayIterator.next()
-                                innerArrayIdx = 0
-                            } else {
-                                innerArray = null
-                            }
-                        }
-                        // inner array is in a good shape
-                        el = innerArray?.get(innerArrayIdx++) ?: ZeroSample
+                    el = if (iterator.hasNext() && samplesLeft-- > 0) { // there is something left to read
+                        iterator.next()
                     } else {
-                        el = ZeroSample
+                        ZeroSample
                     }
                     toSkip--
                 } while (toSkip >= 0)
 
-                el
+                return el
             }
         }.asSequence()
     }

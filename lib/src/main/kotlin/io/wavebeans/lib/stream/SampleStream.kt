@@ -1,8 +1,8 @@
 package io.wavebeans.lib.stream
 
 import io.wavebeans.lib.BeanStream
-import io.wavebeans.lib.SampleArray
+import io.wavebeans.lib.Sample
 
-interface SampleStream : BeanStream<SampleArray, SampleStream>
+interface SampleStream : BeanStream<Sample, SampleStream>
 
 class SampleStreamException(message: String) : Exception(message)

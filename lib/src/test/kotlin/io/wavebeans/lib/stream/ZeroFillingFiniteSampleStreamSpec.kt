@@ -12,8 +12,8 @@ object ZeroFillingFiniteSampleStreamSpec : Spek({
     fun stream(seq: List<Int>): FiniteSampleStream = object : FiniteSampleStream {
         override fun length(timeUnit: TimeUnit): Long = throw UnsupportedOperationException()
 
-        override fun asSequence(sampleRate: Float): Sequence<SampleArray> {
-            return seq.asSequence().windowed(5, 5, true) { e -> createSampleArray(e.size) { sampleOf(e[it]) } }
+        override fun asSequence(sampleRate: Float): Sequence<Sample> {
+            return seq.asSequence().map { sampleOf(it) }
         }
 
         override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): FiniteSampleStream = throw UnsupportedOperationException()
@@ -49,7 +49,7 @@ object ZeroFillingFiniteSampleStreamSpec : Spek({
     }
 
     describe("Finite stream having more elements than default sample array size") {
-        val elCount = (DEFAULT_SAMPLE_ARRAY_SIZE * 3.14).toInt()
+        val elCount = (512 * 3.14).toInt()
         val seq = elCount.repeat { it }
         val zeroFilling = stream(seq).sampleStream(ZeroFilling())
 
@@ -119,5 +119,4 @@ object ZeroFillingFiniteSampleStreamSpec : Spek({
 })
 
 private fun getZeroFillSeq(zeroFilling: SampleStream) =
-        zeroFilling.asSequence(10.0f)
-                .flatMap { it.asSequence() }.map { it.asInt() }
+        zeroFilling.asSequence(10.0f).map { it.asInt() }

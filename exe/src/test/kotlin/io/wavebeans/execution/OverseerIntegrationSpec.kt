@@ -11,6 +11,7 @@ import io.wavebeans.lib.stream.plus
 import io.wavebeans.lib.stream.trim
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
+import org.spekframework.spek2.style.specification.xdescribe
 import java.io.File
 import java.lang.Thread.sleep
 import kotlin.system.measureTimeMillis
@@ -44,7 +45,7 @@ object OverseerIntegrationSpec : Spek({
         val overseer = Overseer()
 
         val timeToDeploy = measureTimeMillis {
-            overseer.deployTopology(topology, 1)
+            overseer.deployTopology(topology, 2)
             println("Topology deployed")
         }
         val timeToProcess = measureTimeMillis {

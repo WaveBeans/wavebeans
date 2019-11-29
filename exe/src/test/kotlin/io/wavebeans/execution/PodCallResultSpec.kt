@@ -4,11 +4,9 @@ import assertk.assertThat
 import assertk.assertions.*
 import assertk.catch
 import io.wavebeans.lib.Sample
-import io.wavebeans.lib.createSampleArray
 import io.wavebeans.lib.sampleOf
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
-import kotlin.math.cos
 
 object PodCallResultSpec : Spek({
 
@@ -90,85 +88,6 @@ object PodCallResultSpec : Spek({
             }
         }
 
-        describe("Wrapping list of samples array") {
-
-            describe("Int range") {
-                val sampleArrayList = listOf(
-                        createSampleArray(2) { sampleOf(it) },
-                        createSampleArray(2) { sampleOf(it + 2) }
-                )
-
-                val result = result(sampleArrayList)
-                it("should have non empty byteArray") { assertThat(result.byteArray).isNotNull() }
-                it("should have empty exception") { assertThat(result.exception).isNull() }
-                it("should return valid value") {
-                    assertThat(result.sampleArrayList()).eachIndexed(2) { el, i ->
-                        el.containsExactly(*sampleArrayList[i])
-                    }
-                }
-            }
-
-            describe("Edge cases") {
-                it("should wrap lists with type of values in it") {
-                    val longList = (0..127).map {
-                        when (it % 5) {
-                            0 -> createSampleArray(10) { sampleOf(-1.0) }
-                            1 -> createSampleArray(10) { sampleOf(1.0) }
-                            2 -> createSampleArray(10) { sampleOf(0.0) }
-                            3 -> createSampleArray(10) { sampleOf(0.5) }
-                            4 -> createSampleArray(10) { sampleOf(-0.5) }
-                            else -> throw IllegalStateException("unreachable")
-                        }
-
-                    }
-                    assertThat(result(longList).sampleArrayList()).eachIndexed(128) { el, i ->
-                        el.containsExactly(*longList[i])
-                    }
-                }
-
-                it("should hold empty array") {
-                    val list = listOf(
-                            createSampleArray(0) { sampleOf(-1.0) }
-                    )
-
-                    assertThat(result(list).sampleArrayList()).eachIndexed(1) { el, i ->
-                        el.containsExactly(*list[i])
-                    }
-
-                }
-
-                it("should allow to have lists with different lengths of arrays") {
-                    val list = listOf(
-                            createSampleArray(10) { sampleOf(-1.0) },
-                            createSampleArray(11) { sampleOf(1.0) }
-                    )
-                    assertThat(result(list).sampleArrayList()).eachIndexed(2) { el, i ->
-                        el.containsExactly(*list[i])
-                    }
-                }
-            }
-
-            describe("Double sequence -- sinosoid") {
-                val sampleRate = 44100.0
-                val freq = 440
-                val amplitude = 0.5
-                val sampleArrayLength = 10
-                val sampleArrayList = listOf(
-                        createSampleArray(sampleArrayLength) { x -> amplitude * cos(x / sampleRate * 2 * Math.PI * freq) },
-                        createSampleArray(sampleArrayLength) { x -> amplitude * cos((x + sampleArrayLength) / sampleRate * 2 * Math.PI * freq) }
-                )
-                val result = result(sampleArrayList)
-
-                it("should have non empty byteArray") { assertThat(result.byteArray).isNotNull() }
-                it("should have empty exception") { assertThat(result.exception).isNull() }
-                it("should return valid value") {
-                    assertThat(result.sampleArrayList()).eachIndexed(2) { el, i ->
-                        el.containsExactly(*sampleArrayList[i])
-                    }
-                }
-
-            }
-        }
 
         describe("Wrapping empty list of samples") {
             val sampleList = listOf<Sample>()

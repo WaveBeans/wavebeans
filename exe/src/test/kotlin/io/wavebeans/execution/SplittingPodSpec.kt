@@ -19,14 +19,18 @@ object SplittingPodSpec : Spek({
 
                 describe("Partition 0") {
                     val result = pod.iteratorNext(iteratorKey0, 50)
-                            ?.map { (it as Sample).asInt() }
+                            ?.map {it as SampleArray}
+                            ?.flatMap { it.asList() }
+                            ?.map { it.asInt() }
 
                     it("should be the same as defined sequence even elements") { assertThat(result).isEqualTo(seq.windowed(2, 2).map { it[0] }) }
                 }
 
                 describe("Partition 1") {
                     val result = pod.iteratorNext(iteratorKey1, 50)
-                            ?.map { (it as Sample).asInt() }
+                            ?.map {it as SampleArray}
+                            ?.flatMap { it.asList() }
+                            ?.map { it.asInt() }
 
                     it("should be the same as defined sequence odd elements") { assertThat(result).isEqualTo(seq.windowed(2, 2).map { it[1] }) }
                 }
@@ -43,7 +47,9 @@ object SplittingPodSpec : Spek({
 
                 describe("Partition 0") {
                     val result = pod.iteratorNext(iteratorKey0, 100)
-                            ?.map { (it as Sample).asInt() }
+                            ?.map {it as SampleArray}
+                            ?.flatMap { it.asList() }
+                            ?.map { it.asInt() }
 
                     it("should be the same as defined sequence") { assertThat(result).isEqualTo(seq) }
                 }
@@ -62,7 +68,9 @@ object SplittingPodSpec : Spek({
 
                 describe("Partition 0") {
                     val result = pod.iteratorNext(iteratorKey0, 34)
-                            ?.map { (it as Sample).asInt() }
+                            ?.map {it as SampleArray}
+                            ?.flatMap { it.asList() }
+                            ?.map { it.asInt() }
 
                     it("should be the same as defined sequence 0th elements in triplets") {
                         assertThat(result).isEqualTo(seq.windowed(3, 3, true).map { it[0] })
@@ -70,7 +78,9 @@ object SplittingPodSpec : Spek({
                 }
                 describe("Partition 1") {
                     val result = pod.iteratorNext(iteratorKey1, 33)
-                            ?.map { (it as Sample).asInt() }
+                            ?.map {it as SampleArray}
+                            ?.flatMap { it.asList() }
+                            ?.map { it.asInt() }
 
                     it("should be the same as defined sequence 0th elements in triplets") {
                         assertThat(result).isEqualTo(seq.windowed(3, 3, true).filter { it.size > 1 }.map { it[1] })
@@ -78,7 +88,9 @@ object SplittingPodSpec : Spek({
                 }
                 describe("Partition 2") {
                     val result = pod.iteratorNext(iteratorKey2, 33)
-                            ?.map { (it as Sample).asInt() }
+                            ?.map {it as SampleArray}
+                            ?.flatMap { it.asList() }
+                            ?.map { it.asInt() }
 
                     it("should be the same as defined sequence 0th elements in triplets") {
                         assertThat(result).isEqualTo(seq.windowed(3, 3, true).filter { it.size > 2 }.map { it[2] })
@@ -99,9 +111,13 @@ object SplittingPodSpec : Spek({
 
             describe("Partition 0") {
                 val result1 = pod.iteratorNext(iteratorKey1p0, 50)
-                        ?.map { (it as Sample).asInt() }
+                        ?.map {it as SampleArray}
+                        ?.flatMap { it.asList() }
+                        ?.map { it.asInt() }
                 val result2 = pod.iteratorNext(iteratorKey2p0, 50)
-                        ?.map { (it as Sample).asInt() }
+                        ?.map {it as SampleArray}
+                        ?.flatMap { it.asList() }
+                        ?.map { it.asInt() }
 
                 it("first should be the same as defined sequence even elements") {
                     assertThat(result1).isEqualTo(seq.windowed(2, 2, true).map { it[0] })
@@ -113,9 +129,13 @@ object SplittingPodSpec : Spek({
 
             describe("Partition 1") {
                 val result1 = pod.iteratorNext(iteratorKey1p1, 50)
-                        ?.map { (it as Sample).asInt() }
+                        ?.map {it as SampleArray}
+                        ?.flatMap { it.asList() }
+                        ?.map { it.asInt() }
                 val result2 = pod.iteratorNext(iteratorKey2p1, 50)
-                        ?.map { (it as Sample).asInt() }
+                        ?.map {it as SampleArray}
+                        ?.flatMap { it.asList() }
+                        ?.map { it.asInt() }
 
                 it("first should be the same as defined sequence odd elements") {
                     assertThat(result1).isEqualTo(seq.windowed(2, 2, true).map { it[1] })
@@ -134,7 +154,9 @@ object SplittingPodSpec : Spek({
             val iteratorKey1 = pod.iteratorStart(100.0f, 1)
             describe("Partition 0") {
                 val e = pod.iteratorNext(iteratorKey0, 51)
-                        ?.map { (it as Sample).asInt() }
+                        ?.map {it as SampleArray}
+                        ?.flatMap { it.asList() }
+                        ?.map { it.asInt() }
 
                 it("should be the same as defined sequence odd elements") {
                     assertThat(e).isEqualTo(seq.windowed(2, 2, true).map { it[0] })
@@ -143,7 +165,9 @@ object SplittingPodSpec : Spek({
 
             describe("Partition 1") {
                 val e = pod.iteratorNext(iteratorKey1, 51)
-                        ?.map { (it as Sample).asInt() }
+                        ?.map {it as SampleArray}
+                        ?.flatMap { it.asList() }
+                        ?.map { it.asInt() }
 
                 it("should be the same as defined sequence even elements") {
                     assertThat(e).isEqualTo(seq.windowed(2, 2, true).map { it[1] })
@@ -160,9 +184,13 @@ object SplittingPodSpec : Spek({
 
             describe("Partition 0") {
                 val e1 = pod.iteratorNext(iteratorKey0, 50)
-                        ?.map { (it as Sample).asInt() }
+                        ?.map {it as SampleArray}
+                        ?.flatMap { it.asList() }
+                        ?.map { it.asInt() }
                 val e2 = pod.iteratorNext(iteratorKey0, 1)
-                        ?.map { (it as Sample).asInt() }
+                        ?.map {it as SampleArray}
+                        ?.flatMap { it.asList() }
+                        ?.map { it.asInt() }
 
                 it("first attempt should be the same as defined sequence even elements") {
                     assertThat(e1).isEqualTo(seq.windowed(2, 2, true).map { it[0] })
@@ -174,9 +202,13 @@ object SplittingPodSpec : Spek({
 
             describe("Partition 1") {
                 val e1 = pod.iteratorNext(iteratorKey1, 50)
-                        ?.map { (it as Sample).asInt() }
+                        ?.map {it as SampleArray}
+                        ?.flatMap { it.asList() }
+                        ?.map { it.asInt() }
                 val e2 = pod.iteratorNext(iteratorKey1, 1)
-                        ?.map { (it as Sample).asInt() }
+                        ?.map {it as SampleArray}
+                        ?.flatMap { it.asList() }
+                        ?.map { it.asInt() }
 
                 it("first attempt should be the same as defined sequence odd elements") {
                     assertThat(e1).isEqualTo(seq.windowed(2, 2, true).map { it[1] })

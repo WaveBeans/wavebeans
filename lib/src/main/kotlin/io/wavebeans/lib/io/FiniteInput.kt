@@ -1,11 +1,11 @@
 package io.wavebeans.lib.io
 
 import io.wavebeans.lib.BeanStream
+import io.wavebeans.lib.Sample
 import io.wavebeans.lib.SourceBean
-import io.wavebeans.lib.SampleArray
 import java.util.concurrent.TimeUnit
 
-interface FiniteInput : BeanStream<SampleArray, FiniteInput>, SourceBean<SampleArray, FiniteInput> {
+interface FiniteInput : BeanStream<Sample, FiniteInput>, SourceBean<Sample, FiniteInput> {
 
     /** Amount of samples available */
     fun samplesCount(): Int

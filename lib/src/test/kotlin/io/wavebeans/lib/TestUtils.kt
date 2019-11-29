@@ -23,16 +23,14 @@ import org.spekframework.spek2.dsl.Skip
 import org.spekframework.spek2.dsl.TestBody
 import org.spekframework.spek2.style.specification.Suite
 
-fun BeanStream<SampleArray, *>.listOfBytesAsInts(sampleRate: Float, samplesToRead: Int = Int.MAX_VALUE): List<Int> =
+fun BeanStream<Sample, *>.listOfBytesAsInts(sampleRate: Float, samplesToRead: Int = Int.MAX_VALUE): List<Int> =
         this.asSequence(sampleRate)
-                .flatMap { it.asSequence() }
                 .take(samplesToRead)
                 .map { it.asByte().toInt() and 0xFF }
                 .toList()
 
-fun BeanStream<SampleArray, *>.listOfShortsAsInts(sampleRate: Float, samplesToRead: Int = Int.MAX_VALUE): List<Int> =
+fun BeanStream<Sample, *>.listOfShortsAsInts(sampleRate: Float, samplesToRead: Int = Int.MAX_VALUE): List<Int> =
         this.asSequence(sampleRate)
-                .flatMap { it.asSequence() }
                 .take(samplesToRead)
                 .map { it.asShort().toInt() and 0xFFFF }
                 .toList()
@@ -48,8 +46,8 @@ fun <T> Assert<Iterable<T>>.eachIndexed(expectedSize: Int? = null, f: (Assert<T>
 }
 
 fun Assert<SampleStream>.isCloseTo(v: SampleStream, sampleRate: Float, samplesToCompare: Int, delta: Double) = given { actual ->
-    val actualss = actual.asSequence(sampleRate).flatMap { it.asSequence() }.take(samplesToCompare).toList()
-    val vss = v.asSequence(sampleRate).flatMap { it.asSequence() }.take(samplesToCompare).toList()
+    val actualss = actual.asSequence(sampleRate).take(samplesToCompare).toList()
+    val vss = v.asSequence(sampleRate).take(samplesToCompare).toList()
     if (actualss.size - vss.size != 0) expected("The size should be the same", vss.size, actualss.size)
     val diff = actualss
             .zip(vss)
