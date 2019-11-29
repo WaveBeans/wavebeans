@@ -45,7 +45,7 @@ object OverseerIntegrationSpec : Spek({
         val overseer = Overseer()
 
         val timeToDeploy = measureTimeMillis {
-            overseer.deployTopology(topology, 1)
+            overseer.deployTopology(topology, 2)
             println("Topology deployed")
         }
         val timeToProcess = measureTimeMillis {
