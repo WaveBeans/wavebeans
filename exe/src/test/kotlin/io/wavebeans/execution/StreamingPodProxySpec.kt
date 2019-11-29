@@ -49,13 +49,16 @@ class PodProxyTester(
         override fun create(bushKey: BushKey, podKey: PodKey): BushCaller = bushCaller
     }
 
-    val podProxy = object : StreamingPodProxy<Sample, SampleStream>(
+    val podProxy = object : StreamingPodProxy<Sample, SampleStream, SampleArray>(
             pointedTo = pointedTo.podKey,
             forPartition = 0,
             bushCallerRepository = bushCallerRepository,
             podDiscovery = podDiscovery,
-            timeToReadAtOnce = timeToReadAtOnce,
-            converter = { it.nullableSampleList() }
+            converter = { it.nullableSampleArrayList() },
+            elementExtractor = { arr, i -> if (i < arr.size) arr[i] else null },
+            zeroEl = { io.wavebeans.lib.ZeroSample },
+            prefetchBucketAmount = timeToReadAtOnce,
+            partitionSize = 1
     ) {}
 }
 

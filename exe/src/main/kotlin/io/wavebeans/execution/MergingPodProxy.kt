@@ -5,9 +5,15 @@ import io.wavebeans.lib.BeanParams
 import io.wavebeans.lib.BeanStream
 import java.util.concurrent.TimeUnit
 
-abstract class MergingPodProxy<T : Any, S : Any>(
-        val converter: (PodCallResult) -> List<T>?,
-        override val forPartition: Int
+abstract class MergingPodProxy<T : Any, S : Any, ARRAY_T>(
+        val converter: (PodCallResult) -> List<ARRAY_T>?,
+        val elementExtractor: (ARRAY_T, Int) -> T?,
+        val zeroEl: () -> T,
+        override val forPartition: Int,
+        val podDiscovery: PodDiscovery = PodDiscovery.default,
+        val bushCallerRepository: BushCallerRepository = BushCallerRepository.default(podDiscovery),
+        val prefetchBucketAmount: Int = DEFAULT_PREFETCH_BUCKET_AMOUNT,
+        val partitionSize: Int = DEFAULT_PARTITION_SIZE
 ) : BeanStream<T, S>, PodProxy<T, S> {
 
     abstract val readsFrom: List<PodKey>
@@ -15,19 +21,35 @@ abstract class MergingPodProxy<T : Any, S : Any>(
     override fun asSequence(sampleRate: Float): Sequence<T> {
         return object : Iterator<T> {
 
-            val iterators = readsFrom
+            val partitionIterators = readsFrom
                     .map {
-                        PodProxyIterator(sampleRate = sampleRate, pod = it, converter = converter, readingPartition = forPartition)
+                        PodProxyIterator(
+                                sampleRate = sampleRate,
+                                pod = it,
+                                converter = converter,
+                                elementExtractor = elementExtractor,
+                                zeroEl = zeroEl,
+                                readingPartition = forPartition,
+                                podDiscovery = podDiscovery,
+                                bushCallerRepository = bushCallerRepository,
+                                prefetchBucketAmount = prefetchBucketAmount,
+                                partitionSize = partitionSize
+                        )
                     }.toTypedArray()
-            var iteratorToReadFrom = 0
+
+            var activePartitionIterator = 0
+            var partitionPointer = 0
 
             override fun hasNext(): Boolean {
-                return iterators[iteratorToReadFrom].hasNext()
+                return partitionIterators[activePartitionIterator].hasNext()
             }
 
             override fun next(): T {
-                val el = iterators[iteratorToReadFrom].next()
-                iteratorToReadFrom = (iteratorToReadFrom + 1) % iterators.size
+                val el = partitionIterators[activePartitionIterator].next()
+                if (++partitionPointer >= partitionSize) {
+                    activePartitionIterator = (activePartitionIterator + 1) % partitionIterators.size
+                    partitionPointer = 0
+                }
                 return el
             }
 

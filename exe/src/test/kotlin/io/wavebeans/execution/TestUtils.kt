@@ -27,19 +27,29 @@ class IntStream(
 
 }
 
-fun newTestStreamingPod(seq: List<Int>, partition: Int = 0): StreamingPod {
-    return StreamingPod(
-            IntStream(seq),
-            PodKey(1, partition)
-    )
+fun newTestStreamingPod(seq: List<Int>, partition: Int = 0, partitionSize: Int = 1): StreamingPod<Sample, SampleArray> {
+    return object : StreamingPod<Sample, SampleArray>(
+            bean = IntStream(seq),
+            podKey = PodKey(1, partition),
+            partitionSize = partitionSize,
+            converter = { list ->
+                val i = list.iterator()
+                createSampleArray(list.size) { i.next() }
+            }
+    ) {}
 }
 
-fun newTestSplittingPod(seq: List<Int>, partitionCount: Int): SplittingPod {
-    return SplittingPod(
-            IntStream(seq),
-            PodKey(1, 0),
-            partitionCount
-    )
+fun newTestSplittingPod(seq: List<Int>, partitionCount: Int): SplittingPod<Sample, SampleArray> {
+    return object : SplittingPod<Sample, SampleArray>(
+            bean = IntStream(seq),
+            podKey = PodKey(1, 0),
+            partitionCount = partitionCount,
+            partitionSize = 1,
+            converter = { list ->
+                val i = list.iterator()
+                createSampleArray(list.size) { i.next() }
+            }
+    ) {}
 }
 
 infix fun Int.to(to: Int) = BeanLink(this, to)

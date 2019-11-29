@@ -49,7 +49,7 @@ object ZeroFillingFiniteSampleStreamSpec : Spek({
     }
 
     describe("Finite stream having more elements than default sample array size") {
-        val elCount = (DEFAULT_SAMPLE_ARRAY_SIZE * 3.14).toInt()
+        val elCount = (512 * 3.14).toInt()
         val seq = elCount.repeat { it }
         val zeroFilling = stream(seq).sampleStream(ZeroFilling())
 

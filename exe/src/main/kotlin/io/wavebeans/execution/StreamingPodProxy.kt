@@ -5,18 +5,31 @@ import io.wavebeans.lib.BeanParams
 import io.wavebeans.lib.BeanStream
 import java.util.concurrent.TimeUnit
 
-abstract class StreamingPodProxy<T : Any, S : Any>(
+abstract class StreamingPodProxy<T : Any, S : Any, ARRAY_T>(
         val pointedTo: PodKey,
         override val forPartition: Int,
         val podDiscovery: PodDiscovery = PodDiscovery.default,
         val bushCallerRepository: BushCallerRepository = BushCallerRepository.default(podDiscovery),
-        val timeToReadAtOnce: Int = 10,
-        val timeUnit: TimeUnit = TimeUnit.MILLISECONDS,
-        val converter: (PodCallResult) -> List<T>?
+        val converter: (PodCallResult) -> List<ARRAY_T>?,
+        val elementExtractor: (ARRAY_T, Int) -> T?,
+        val zeroEl: () -> T,
+        val prefetchBucketAmount: Int = DEFAULT_PREFETCH_BUCKET_AMOUNT,
+        val partitionSize: Int = DEFAULT_PARTITION_SIZE
 ) : BeanStream<T, S>, PodProxy<T, S> {
 
     override fun asSequence(sampleRate: Float): Sequence<T> {
-        return PodProxyIterator(sampleRate, pointedTo, forPartition, podDiscovery, bushCallerRepository, converter, timeToReadAtOnce).asSequence()
+        return PodProxyIterator(
+                sampleRate,
+                pointedTo,
+                forPartition,
+                podDiscovery,
+                bushCallerRepository,
+                converter,
+                elementExtractor,
+                zeroEl,
+                prefetchBucketAmount,
+                partitionSize
+        ).asSequence()
     }
 
     override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): S = throw UnsupportedOperationException("That's not required for PodProxy")

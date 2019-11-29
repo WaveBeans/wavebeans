@@ -1,12 +1,10 @@
 package io.wavebeans.execution
 
 import io.wavebeans.lib.AnyBean
-import io.wavebeans.lib.Bean
 import java.io.Closeable
 import java.lang.reflect.InvocationTargetException
 
 data class PodKey(val id: Int, val partition: Int)
-typealias AnyPodProxy = PodProxy<*, *>
 
 interface Pod : Closeable {
 
@@ -48,18 +46,12 @@ interface Pod : Closeable {
         }
     }
 
-    fun start(): Unit {}
+    fun start() {}
 
     fun iteratorStart(sampleRate: Float, partitionIdx: Int): Long
 
     fun iteratorNext(iteratorKey: Long, buckets: Int): List<Any>?
 
     fun isFinished(): Boolean
-}
-
-interface PodProxy<T : Any, S : Any> : Bean<T, S> {
-
-    val forPartition: Int
-
 }
 

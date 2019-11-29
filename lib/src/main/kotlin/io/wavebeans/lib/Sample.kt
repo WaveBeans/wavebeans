@@ -4,7 +4,6 @@ import kotlin.math.round
 
 
 const val INT_24BIT_MAX_VALUE = 8388608
-const val DEFAULT_SAMPLE_ARRAY_SIZE = 512
 
 /** Internal representation of sample. */
 typealias Sample = Double

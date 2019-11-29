@@ -16,12 +16,11 @@ import kotlin.reflect.typeOf
 object PodRegistry {
 
     private val podProxyRegistry = mutableMapOf<KType, KFunction<AnyPodProxy>>()
-    private val mergingPodProxyRegistry = mutableMapOf<KType, KFunction<MergingPodProxy<*, *>>>()
+    private val mergingPodProxyRegistry = mutableMapOf<KType, KFunction<MergingPodProxy<*, *, *>>>()
     private val podRegistry = mutableMapOf<KType, KFunction<Pod>>()
     private val splittingPodRegistry = mutableMapOf<KType, KFunction<Pod>>()
 
     init {
-        // TODO replace with runtime proxy generation
         registerPodProxy(typeOf<FiniteSampleStream>(), FiniteSampleStreamPodProxy::class.constructors.first())
         registerPodProxy(typeOf<SampleStream>(), SampleStreamPodProxy::class.constructors.first())
         registerPodProxy(typeOf<StreamInput>(), StreamInputPodProxy::class.constructors.first())
@@ -30,17 +29,17 @@ object PodRegistry {
         registerMergingPodProxy(typeOf<SampleStream>(), SampleStreamMergingPodProxy::class.constructors.first())
         registerMergingPodProxy(typeOf<StreamInput>(), StreamInputMergingPodProxy::class.constructors.first())
 
-        registerPod(typeOf<BeanStream<*, *>>(), StreamingPod::class.constructors.single { it.parameters.size == 2 })
+        registerPod(typeOf<BeanStream<Sample, *>>(), SampleStreamingPod::class.constructors.single { it.parameters.size == 2 })
         registerPod(typeOf<StreamOutput<Sample, FiniteSampleStream>>(), SampleStreamOutputPod::class.constructors.first())
 
-        registerSplittingPod(typeOf<BeanStream<*, *>>(), SplittingPod::class.constructors.single { it.parameters.size == 3 })
+        registerSplittingPod(typeOf<BeanStream<Sample, *>>(), SampleSplittingPod::class.constructors.single { it.parameters.size == 3 })
     }
 
     fun registerPodProxy(outputType: KType, constructor: KFunction<PodProxy<*, *>>) {
         podProxyRegistry[outputType] = constructor
     }
 
-    fun registerMergingPodProxy(outputType: KType, constructor: KFunction<MergingPodProxy<*, *>>) {
+    fun registerMergingPodProxy(outputType: KType, constructor: KFunction<MergingPodProxy<*, *, *>>) {
         mergingPodProxyRegistry[outputType] = constructor
     }
 
