@@ -109,8 +109,8 @@ object StreamOpSerializer {
 
     override fun serialize(encoder: Encoder, obj: SampleStreamOp) =
             when (obj) {
-                is SampleMinusStreamOp -> encoder.encodeString("-")
                 is SamplePlusStreamOp -> encoder.encodeString("+")
+                is SampleMinusStreamOp -> encoder.encodeString("-")
                 is SampleTimesStreamOp -> encoder.encodeString("*")
                 is SampleDivStreamOp -> encoder.encodeString("/")
                 else -> throw UnsupportedOperationException("${obj::class} is not supported")
@@ -118,27 +118,27 @@ object StreamOpSerializer {
 
 }
 
-@Serializer(forClass = SampleStreamOp::class)
+@Serializer(forClass = SampleScalarOp::class)
 object ScalarOpSerializer {
 
     override val descriptor: SerialDescriptor
         get() = StringDescriptor.withName("StreamOp")
 
-    override fun deserialize(decoder: Decoder): SampleStreamOp =
+    override fun deserialize(decoder: Decoder): SampleScalarOp =
             when (val operation = decoder.decodeString()) {
-                "+" -> SamplePlusStreamOp
-                "-" -> SampleMinusStreamOp
-                "*" -> SampleTimesStreamOp
-                "/" -> SampleDivStreamOp
+                "+" -> SamplePlusScalarOp
+                "-" -> SampleMinusScalarOp
+                "*" -> SampleTimesScalarOp
+                "/" -> SampleDivScalarOp
                 else -> throw UnsupportedOperationException("`$operation` is not supported")
             }
 
-    override fun serialize(encoder: Encoder, obj: SampleStreamOp) =
+    override fun serialize(encoder: Encoder, obj: SampleScalarOp) =
             when (obj) {
-                is SampleMinusStreamOp -> encoder.encodeString("-")
-                is SamplePlusStreamOp -> encoder.encodeString("+")
-                is SampleTimesStreamOp -> encoder.encodeString("*")
-                is SampleDivStreamOp -> encoder.encodeString("/")
+                is SamplePlusScalarOp -> encoder.encodeString("+")
+                is SampleMinusScalarOp -> encoder.encodeString("-")
+                is SampleTimesScalarOp -> encoder.encodeString("*")
+                is SampleDivScalarOp -> encoder.encodeString("/")
                 else -> throw UnsupportedOperationException("${obj::class} is not supported")
             }
 
