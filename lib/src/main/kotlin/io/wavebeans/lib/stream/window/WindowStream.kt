@@ -31,7 +31,7 @@ fun SampleWindowStream.sliding(step: Int): SampleWindowStream =
  * @param timeUnit what time unit is used for [start] and [end] points. If not specified [TimeUnit.MILLISECONDS] is used.
  */
 @Serializable
-data class WindowStreamParams(
+open class WindowStreamParams(
         val windowSize: Int,
         val step: Int,
         val start: Long = 0,
@@ -116,7 +116,7 @@ class SampleWindowStreamImpl(
         get() = source
 
     override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): SampleWindowStreamImpl {
-        return SampleWindowStreamImpl(source, params.copy(start = start, end = end, timeUnit = timeUnit))
+        return SampleWindowStreamImpl(source, WindowStreamParams(params.windowSize, params.step, start, end, timeUnit))
     }
 
 }

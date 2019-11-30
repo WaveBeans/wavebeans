@@ -1,13 +1,12 @@
 package io.wavebeans.lib.stream.window
 
-import assertk.Assert
 import assertk.assertThat
 import assertk.assertions.isEqualTo
-import assertk.assertions.prop
 import assertk.assertions.size
-import io.wavebeans.lib.stream.IntStream
-import io.wavebeans.lib.stream.asGroupedInts
-import io.wavebeans.lib.stream.stream
+import io.wavebeans.lib.IntStream
+import io.wavebeans.lib.asGroupedInts
+import io.wavebeans.lib.at
+import io.wavebeans.lib.stream
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 
@@ -211,5 +210,3 @@ object WindowStreamSpec : Spek({
         }
     }
 })
-
-fun <T> Assert<List<T>>.at(idx: Int): Assert<T> = this.prop("[$idx]") { it[idx] }
