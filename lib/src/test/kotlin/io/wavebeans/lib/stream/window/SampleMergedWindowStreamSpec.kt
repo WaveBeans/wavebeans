@@ -2,16 +2,13 @@ package io.wavebeans.lib.stream.window
 
 import assertk.all
 import assertk.assertThat
-import assertk.assertions.isEqualTo
-import assertk.assertions.isNotNull
-import assertk.assertions.message
-import assertk.assertions.size
+import assertk.assertions.*
 import assertk.catch
 import io.wavebeans.lib.*
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 
-object MergedWindowStreamSpec : Spek({
+object SampleMergedWindowStreamSpec : Spek({
     describe("Fixed window of size=2") {
         val stream1 = (0..3).stream().window(2)
 
@@ -34,6 +31,58 @@ object MergedWindowStreamSpec : Spek({
                 val res = (stream1 - stream2).asSequence(1.0f).asGroupedInts().toList()
                 assertThat(res).at(0).isEqualTo(listOf(-10, -10))
                 assertThat(res).at(1).isEqualTo(listOf(-10, -10))
+            }
+
+            it("should multiply corresponding elements: stream1 * stream2") {
+                val s1 = DoubleStream(listOf(0.1, 0.2, 0.3, 0.4)).window(2)
+                val s2 = DoubleStream(listOf(0.5, 0.6, 0.7, 0.8)).window(2)
+                val res = (s1 * s2).asSequence(1.0f).asGroupedDoubles().toList()
+                assertThat(res).at(0).eachIndexed(2) { v, i ->
+                    v.isCloseTo(
+                            when (i) {
+                                0 -> 0.05
+                                1 -> 0.12
+                                else -> throw UnsupportedOperationException()
+                            },
+                            1e-10
+                    )
+                }
+                assertThat(res).at(1).eachIndexed(2) { v, i ->
+                    v.isCloseTo(
+                            when (i) {
+                                0 -> 0.21
+                                1 -> 0.32
+                                else -> throw UnsupportedOperationException()
+                            },
+                            1e-10
+                    )
+                }
+            }
+
+            it("should divide corresponding elements: stream1 / stream2") {
+                val s1 = DoubleStream(listOf(0.1, 0.2, 0.3, 0.4)).window(2)
+                val s2 = DoubleStream(listOf(0.2, 0.4, 0.6, 0.8)).window(2)
+                val res = (s1 / s2).asSequence(1.0f).asGroupedDoubles().toList()
+                assertThat(res).at(0).eachIndexed(2) { v, i ->
+                    v.isCloseTo(
+                            when (i) {
+                                0 -> 0.5
+                                1 -> 0.5
+                                else -> throw UnsupportedOperationException()
+                            },
+                            1e-10
+                    )
+                }
+                assertThat(res).at(1).eachIndexed(2) { v, i ->
+                    v.isCloseTo(
+                            when (i) {
+                                0 -> 0.5
+                                1 -> 0.5
+                                else -> throw UnsupportedOperationException()
+                            },
+                            1e-10
+                    )
+                }
             }
         }
 
@@ -73,6 +122,31 @@ object MergedWindowStreamSpec : Spek({
                 assertThat(res).at(0).isListOf(0, 1)
                 assertThat(res).at(1).isListOf(2, 3)
             }
+
+            it("should multiply corresponding elements: stream1 * stream2") {
+                val s1 = DoubleStream(listOf(0.1, 0.2, 0.3, 0.4)).window(2)
+                val s2 = DoubleStream(listOf(0.0, 0.0, 0.0, 0.0)).window(2)
+                val res = (s1 * s2).asSequence(1.0f).asGroupedDoubles().toList()
+                assertThat(res).at(0).eachIndexed(2) { v, _ -> v.isCloseTo(0.0, 1e-10) }
+                assertThat(res).at(1).eachIndexed(2) { v, _ -> v.isCloseTo(0.0, 1e-10) }
+            }
+
+            it("should divide corresponding elements: stream2 / stream1") {
+                val s1 = DoubleStream(listOf(0.1, 0.2, 0.3, 0.4)).window(2)
+                val s2 = DoubleStream(listOf(0.0, 0.0, 0.0, 0.0)).window(2)
+                val res = (s2 / s1).asSequence(1.0f).asGroupedDoubles().toList()
+                assertThat(res).at(0).eachIndexed(2) { v, _ -> v.isCloseTo(0.0, 1e-10) }
+                assertThat(res).at(1).eachIndexed(2) { v, _ -> v.isCloseTo(0.0, 1e-10) }
+            }
+
+            it("should divide corresponding elements: stream1 / stream2") {
+                val s1 = DoubleStream(listOf(0.1, 0.2, 0.3, 0.4)).window(2)
+                val s2 = DoubleStream(listOf(0.0, 0.0, -0.0, -0.0)).window(2)
+                val res = (s1 / s2).asSequence(1.0f).asGroupedDoubles().toList()
+                assertThat(res).at(0).eachIndexed(2) { v, _ -> v.isCloseTo(Double.POSITIVE_INFINITY, 1e-10) }
+                assertThat(res).at(1).eachIndexed(2) { v, _ -> v.isCloseTo(Double.NEGATIVE_INFINITY, 1e-10) }
+            }
+
         }
 
         describe("Another stream the same size but longer") {

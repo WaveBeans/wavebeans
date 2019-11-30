@@ -29,6 +29,28 @@ operator fun SampleWindowStream.plus(d: SampleWindowStream): SampleWindowStream 
                 )
         )
 
+operator fun SampleWindowStream.times(d: SampleWindowStream): SampleWindowStream =
+        SampleMergedWindowStream(
+                this,
+                d,
+                SampleMergedWindowStreamParams(
+                        SampleMultiplyOperation,
+                        this.parameters.windowSize,
+                        this.parameters.step
+                )
+        )
+
+operator fun SampleWindowStream.div(d: SampleWindowStream): SampleWindowStream =
+        SampleMergedWindowStream(
+                this,
+                d,
+                SampleMergedWindowStreamParams(
+                        SampleDivideOperation,
+                        this.parameters.windowSize,
+                        this.parameters.step
+                )
+        )
+
 @Serializer(forClass = SampleMergedWindowStreamOperation::class)
 object SampleMergedWindowStreamOperationSerializer {
 
@@ -75,11 +97,18 @@ class SampleMergedWindowStreamParams(
 
 object SampleSumOperation : SampleMergedWindowStreamOperation {
     override fun apply(a: Sample, b: Sample): Sample = a + b
-
 }
 
 object SampleDiffOperation : SampleMergedWindowStreamOperation {
     override fun apply(a: Sample, b: Sample): Sample = a - b
+}
+
+object SampleMultiplyOperation : SampleMergedWindowStreamOperation {
+    override fun apply(a: Sample, b: Sample): Sample = a * b
+}
+
+object SampleDivideOperation : SampleMergedWindowStreamOperation {
+    override fun apply(a: Sample, b: Sample): Sample = a / b
 }
 
 class SampleMergedWindowStream(
