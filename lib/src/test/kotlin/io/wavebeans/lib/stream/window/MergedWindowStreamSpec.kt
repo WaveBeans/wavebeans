@@ -1,5 +1,6 @@
 package io.wavebeans.lib.stream.window
 
+import assertk.all
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
@@ -262,7 +263,7 @@ object MergedWindowStreamSpec : Spek({
 
         describe("getting sub-range of merged stream.") {
             /*
-                 1>   0  1  2  3
+                 1>    0  1  2  3
                  2>   10 11 12 13
                  +>   10 12 14 16 0
                       ^------^           - window #0 0-1499.99[9]ms
@@ -285,6 +286,66 @@ object MergedWindowStreamSpec : Spek({
                 assertThat(range).at(1).isListOf(14, 16, 0)
             }
 
+        }
+    }
+
+    describe("Complex operations") {
+        describe("Fixed window. 3-2+1") {
+            /*
+              1>      0   1   2   3
+              2>     10  11  12  13
+              3>     20  21  22
+              3-2>   10  10  10 -13
+              3-2+1> 10  11  12 -10
+                     ^---^            - window #0 0-999.99[9]ms
+                             ^---^    - window #1 1000-1999.99[9]ms
+            */
+
+            val s1 = (0..3).stream().window(2)
+            val s2 = (10..13).stream().window(2)
+            val s3 = (20..22).stream().window(2)
+
+            val res = s3 - s2 + s1
+            it("should calculate the sequence") {
+                assertThat(res.asSequence(1.0f).asGroupedInts().toList()).all {
+                    at(0).isListOf(10, 11)
+                    at(1).isListOf(12, -10)
+                }
+            }
+            it("should get range") {
+                assertThat(res.rangeProjection(1000, null).asSequence(2.0f).asGroupedInts().toList()).all {
+                    at(0).isListOf(12, -10)
+                }
+            }
+        }
+
+        describe("Sliding window. 3-2+1") {
+            /*
+              1>      0   1   2   3
+              2>     10  11  12  13
+              3>     20  21  22
+              3-2>   10  10  10 -13  0
+              3-2+1> 10  11  12 -10  0
+                     ^--------^          - window #0 0-1499.99[9]ms
+                             ^-------^   - window #1 1000-2499.99[9]ms
+            */
+
+            val s1 = (0..3).stream().window(3).sliding(2)
+            val s2 = (10..13).stream().window(3).sliding(2)
+            val s3 = (20..22).stream().window(3).sliding(2)
+
+            val res = s3 - s2 + s1
+            it("should calculate the sequence") {
+                assertThat(res.asSequence(1.0f).asGroupedInts().toList()).all {
+                    at(0).isListOf(10, 11, 12)
+                    at(1).isListOf(12, -10, 0)
+                }
+            }
+            it("should get range") {
+                assertThat(res.rangeProjection(1500, null).asSequence(2.0f).asGroupedInts().toList()).all {
+                    at(0).isListOf(12, -10, 0)
+                }
+            }
         }
     }
 })
