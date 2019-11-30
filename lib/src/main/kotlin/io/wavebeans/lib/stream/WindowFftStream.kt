@@ -8,12 +8,12 @@ import java.util.concurrent.TimeUnit
 import kotlin.math.PI
 import kotlin.math.log10
 
-fun SampleStream.fft(m: Int, window: Window): FftStream = WindowFftStream(this, WindowFftStreamParams(m, window))
+fun SampleStream.fft(m: Int, window: DeprecatedWindow): FftStream = WindowFftStream(this, WindowFftStreamParams(m, window))
 
 @Serializable
 data class WindowFftStreamParams(
         val m: Int,
-        val window: Window,
+        val window: DeprecatedWindow,
         val start: Long = 0,
         val end: Long? = null,
         val timeUnit: TimeUnit = TimeUnit.MILLISECONDS
