@@ -1,8 +1,8 @@
 package io.wavebeans.lib.stream.window
 
-import io.wavebeans.lib.Sample
-import io.wavebeans.lib.ZeroSample
+import io.wavebeans.lib.*
 import io.wavebeans.lib.stream.SampleStream
+import io.wavebeans.lib.stream.StreamOp
 import kotlinx.serialization.*
 import kotlinx.serialization.internal.StringDescriptor
 import java.util.concurrent.TimeUnit
@@ -11,67 +11,30 @@ operator fun SampleWindowStream.minus(d: SampleWindowStream): SampleWindowStream
         SampleMergedWindowStream(
                 this,
                 d,
-                SampleMergedWindowStreamParams(
-                        SampleDiffOperation,
-                        this.parameters.windowSize,
-                        this.parameters.step
-                )
+                SampleMergedWindowStreamParams(SampleMinusStreamOp, this.parameters.windowSize, this.parameters.step)
         )
 
 operator fun SampleWindowStream.plus(d: SampleWindowStream): SampleWindowStream =
         SampleMergedWindowStream(
                 this,
                 d,
-                SampleMergedWindowStreamParams(
-                        SampleSumOperation,
-                        this.parameters.windowSize,
-                        this.parameters.step
-                )
+                SampleMergedWindowStreamParams(SamplePlusStreamOp, this.parameters.windowSize, this.parameters.step)
         )
 
 operator fun SampleWindowStream.times(d: SampleWindowStream): SampleWindowStream =
         SampleMergedWindowStream(
                 this,
                 d,
-                SampleMergedWindowStreamParams(
-                        SampleMultiplyOperation,
-                        this.parameters.windowSize,
-                        this.parameters.step
-                )
+                SampleMergedWindowStreamParams(SampleTimesStreamOp, this.parameters.windowSize, this.parameters.step)
         )
 
 operator fun SampleWindowStream.div(d: SampleWindowStream): SampleWindowStream =
         SampleMergedWindowStream(
                 this,
                 d,
-                SampleMergedWindowStreamParams(
-                        SampleDivideOperation,
-                        this.parameters.windowSize,
-                        this.parameters.step
-                )
+                SampleMergedWindowStreamParams(SampleDivStreamOp, this.parameters.windowSize, this.parameters.step)
         )
 
-@Serializer(forClass = SampleMergedWindowStreamOperation::class)
-object SampleMergedWindowStreamOperationSerializer {
-
-    override val descriptor: SerialDescriptor
-        get() = StringDescriptor.withName("mergeOperation")
-
-    override fun deserialize(decoder: Decoder): SampleMergedWindowStreamOperation =
-            when (val operation = decoder.decodeString()) {
-                "+" -> SampleSumOperation
-                "-" -> SampleDiffOperation
-                else -> throw UnsupportedOperationException("`$operation` is not supported")
-            }
-
-    override fun serialize(encoder: Encoder, obj: SampleMergedWindowStreamOperation) =
-            when (obj) {
-                is SampleDiffOperation -> encoder.encodeString("-")
-                is SampleSumOperation -> encoder.encodeString("+")
-                else -> throw UnsupportedOperationException("${obj::class} is not supported")
-            }
-
-}
 
 @Serializer(forClass = SampleMergedWindowStreamParams::class)
 object SampleMergedWindowStreamParamsSerializer {
@@ -87,29 +50,13 @@ object SampleMergedWindowStreamParamsSerializer {
 
 @Serializable(with = SampleMergedWindowStreamParamsSerializer::class)
 class SampleMergedWindowStreamParams(
-        @Serializable(with = SampleMergedWindowStreamOperationSerializer::class) val operation: SampleMergedWindowStreamOperation,
+        @Serializable(with = StreamOpSerializer::class) val operation: StreamOp<Sample>,
         windowSize: Int,
         step: Int,
         start: Long = 0,
         end: Long? = null,
         timeUnit: TimeUnit = TimeUnit.MILLISECONDS
 ) : WindowStreamParams(windowSize, step, start, end, timeUnit)
-
-object SampleSumOperation : SampleMergedWindowStreamOperation {
-    override fun apply(a: Sample, b: Sample): Sample = a + b
-}
-
-object SampleDiffOperation : SampleMergedWindowStreamOperation {
-    override fun apply(a: Sample, b: Sample): Sample = a - b
-}
-
-object SampleMultiplyOperation : SampleMergedWindowStreamOperation {
-    override fun apply(a: Sample, b: Sample): Sample = a * b
-}
-
-object SampleDivideOperation : SampleMergedWindowStreamOperation {
-    override fun apply(a: Sample, b: Sample): Sample = a / b
-}
 
 class SampleMergedWindowStream(
         sourceStream: SampleWindowStream,
@@ -130,5 +77,3 @@ class SampleMergedWindowStream(
         )
     }
 }
-
-interface SampleMergedWindowStreamOperation : MergedWindowStreamOperation<Sample>

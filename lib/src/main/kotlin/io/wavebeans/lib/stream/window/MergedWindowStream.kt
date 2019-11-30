@@ -2,17 +2,13 @@ package io.wavebeans.lib.stream.window
 
 import io.wavebeans.lib.Bean
 import io.wavebeans.lib.MultiBean
+import io.wavebeans.lib.stream.StreamOp
 
-
-interface MergedWindowStreamOperation<T : Any> {
-
-    fun apply(a: T, b: T): T
-}
 
 abstract class MergedWindowStream<T : Any, WINDOWING_STREAM : Any, S : WindowStream<T, WINDOWING_STREAM, S>>(
         val sourceStream: WindowStream<T, WINDOWING_STREAM, S>,
         val mergeStream: WindowStream<T, WINDOWING_STREAM, S>,
-        val fn: MergedWindowStreamOperation<T>
+        val fn: StreamOp<T>
 ) : WindowStream<T, WINDOWING_STREAM, S>, MultiBean<Window<T>, S> {
 
     init {
