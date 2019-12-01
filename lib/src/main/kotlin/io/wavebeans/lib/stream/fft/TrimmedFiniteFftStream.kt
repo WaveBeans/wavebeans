@@ -1,8 +1,10 @@
-package io.wavebeans.lib.stream
+package io.wavebeans.lib.stream.fft
 
 import io.wavebeans.lib.AlterBean
 import io.wavebeans.lib.Bean
 import io.wavebeans.lib.BeanParams
+import io.wavebeans.lib.stream.fft.FftSample
+import io.wavebeans.lib.stream.fft.FftStream
 import io.wavebeans.lib.timeToSampleIndexFloor
 import kotlinx.serialization.Serializable
 import java.util.concurrent.TimeUnit

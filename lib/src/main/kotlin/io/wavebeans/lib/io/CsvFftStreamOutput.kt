@@ -2,8 +2,8 @@ package io.wavebeans.lib.io
 
 import io.wavebeans.lib.Bean
 import io.wavebeans.lib.BeanParams
-import io.wavebeans.lib.stream.FftSample
-import io.wavebeans.lib.stream.FiniteFftStream
+import io.wavebeans.lib.stream.fft.FftSample
+import io.wavebeans.lib.stream.fft.FiniteFftStream
 import java.net.URI
 import java.nio.charset.Charset
 
@@ -28,46 +28,40 @@ data class CsvFftStreamOutputParams(
 ) : BeanParams()
 
 class CsvFftStreamOutput(
-        stream: FiniteFftStream,
+        val stream: FiniteFftStream,
         val params: CsvFftStreamOutputParams
 ) : StreamOutput<FftSample, FiniteFftStream> {
 
     override fun writer(sampleRate: Float): Writer {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        var offset = 0L
+        return object : FileWriter<FftSample, FiniteFftStream>(params.uri, stream, sampleRate) {
+            override fun header(): ByteArray? = null
+
+            override fun footer(): ByteArray? = null
+
+            override fun serialize(element: FftSample): ByteArray {
+                val seq = if (params.isMagnitude)
+                    element.magnitude().map { it.toString() }
+                else
+                    element.phase().map { it.toString() }
+
+
+                var b = (sequenceOf(element.time / 1e+6) + seq)
+                        .joinToString(",")
+
+                if (offset++ == 0L) {
+                    b = (sequenceOf("time ms \\ freq hz") + element.frequency().map { it.toString() }).joinToString(",") +
+                            "\n$b"
+                }
+
+                return (b + "\n").toByteArray(params.encoding)
+            }
+
+        }
     }
 
     override val input: Bean<FftSample, FiniteFftStream>
-        get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+        get() = stream
 
     override val parameters: BeanParams = params
-
-//    override fun header(dataSize: Int): ByteArray? = null
-//
-//    override fun footer(dataSize: Int): ByteArray? = null
-//
-//    override fun serialize(offset: Long, sampleRate: Float, samples: List<FftSample>): ByteArray {
-//        return samples.asSequence()
-//                .mapIndexed { idx, fftSample ->
-//                    val seq = if (params.isMagnitude)
-//                        fftSample.magnitude.map { it.toString() }
-//                    else
-//                        fftSample.phase.map { it.toString() }
-//
-//
-//                    var b = (sequenceOf(fftSample.time / 10e+6) + seq)
-//                            .joinToString(",")
-//
-//                    if (offset + idx == 0L) {
-//                        b = (sequenceOf("time ms \\ freq hz") + fftSample.frequency.map { it.toString() }).joinToString(",") +
-//                                "\n$b"
-//                    }
-//
-//                    b
-//                }
-//                .joinToString(separator = "\n")
-//                .toByteArray(params.encoding)
-//    }
-
-
-
 }

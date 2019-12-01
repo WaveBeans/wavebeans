@@ -2,14 +2,16 @@ package io.wavebeans.lib.io
 
 import assertk.assertThat
 import assertk.assertions.each
+import assertk.assertions.isCloseTo
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
+import io.wavebeans.lib.eachIndexed
 import io.wavebeans.lib.stream
-import io.wavebeans.lib.stream.RectangleWindow
-import io.wavebeans.lib.stream.fft
-import io.wavebeans.lib.stream.trim
+import io.wavebeans.lib.stream.fft.fft
+import io.wavebeans.lib.stream.fft.trim
+import io.wavebeans.lib.stream.window.window
 import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.xdescribe
+import org.spekframework.spek2.style.specification.describe
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileInputStream
@@ -19,11 +21,12 @@ import kotlin.streams.toList
 
 
 class CsvFftStreamOutputSpec : Spek({
-    xdescribe("FFT of signal with sample rate 4 Hz to CSV") {
+    describe("FFT of signal with sample rate 4 Hz to CSV") {
         val sampleRate = 4.0f
         val x = (1..4)
                 .stream(sampleRate)
-                .fft(2, RectangleWindow(4))
+                .window(2)
+                .fft(4)
                 .trim(1000)
 
         val expectedFrequencies = listOf(0.0, 1.0)
@@ -38,7 +41,7 @@ class CsvFftStreamOutputSpec : Spek({
             }
 
             BufferedReader(InputStreamReader(FileInputStream(file))).use { reader ->
-                val lines = reader.lines().toList()
+                val lines = reader.lines().toList().also { println(it.joinToString("\n")) }
 
                 it("should have 3 lines") { assertThat(lines.size).isEqualTo(3) }
 
@@ -68,13 +71,15 @@ class CsvFftStreamOutputSpec : Spek({
                                     }
                                     .flatten()
                                     .sorted()
-                    ).isEqualTo(expectedTimes)
+                    ).eachIndexed(expectedTimes.size) {v, i->
+                        v.isCloseTo(expectedTimes[i], 1e-6)
+                    }
                 }
 
             }
         }
 
-        xdescribe("Generating phase") {
+        describe("Generating phase") {
             val file = File.createTempFile("test_", ".tmp")
             CsvFftStreamOutput(x, CsvFftStreamOutputParams(file.toURI(), false)).writer(sampleRate).use { w ->
                 while (w.write()) {
@@ -113,7 +118,9 @@ class CsvFftStreamOutputSpec : Spek({
                                     }
                                     .flatten()
                                     .sorted()
-                    ).isEqualTo(expectedTimes)
+                    ).eachIndexed(expectedTimes.size) {v, i->
+                        v.isCloseTo(expectedTimes[i], 1e-6)
+                    }
                 }
 
             }

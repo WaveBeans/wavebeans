@@ -1,16 +1,14 @@
-package io.wavebeans.lib
+package io.wavebeans.lib.stream.fft
 
 import assertk.assertThat
 import assertk.assertions.hasMessage
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.catch
-import io.wavebeans.lib.dft
-import io.wavebeans.lib.fft
-import io.wavebeans.lib.idft
-import io.wavebeans.lib.zeropad
+import io.wavebeans.lib.eachIndexed
 import io.wavebeans.lib.io.sine
 import io.wavebeans.lib.io.sineSweep
+import io.wavebeans.lib.isCloseTo
 import io.wavebeans.lib.math.i
 import io.wavebeans.lib.math.minus
 import io.wavebeans.lib.math.plus

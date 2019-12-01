@@ -1,7 +1,6 @@
-package io.wavebeans.lib
+package io.wavebeans.lib.stream.fft
 
 import io.wavebeans.lib.math.*
-import java.lang.IllegalArgumentException
 import kotlin.math.*
 
 fun complexSine(k: Int, n: Int): Sequence<ComplexNumber> {
@@ -56,7 +55,7 @@ fun idft(x: Sequence<ComplexNumber>, n: Int): Sequence<ComplexNumber> {
  */
 fun fft(x: Sequence<ComplexNumber>, n: Int, inversed: Boolean = false): Sequence<ComplexNumber> {
 
-    if (n == 0 || n and (n - 1) != 0) throw IllegalArgumentException("N should be power of 2 but $n found")
+    require(!(n == 0 || n and (n - 1) != 0)) { "N should be power of 2 but $n found" }
 
     val ii = x.iterator()
     val xx = Array(n) {
