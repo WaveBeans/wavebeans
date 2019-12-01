@@ -4,7 +4,7 @@ name: Build And Test
 on: 
   push:
     branches:
-      - "*/*"
+      - "*"
 
 jobs:
   test:
