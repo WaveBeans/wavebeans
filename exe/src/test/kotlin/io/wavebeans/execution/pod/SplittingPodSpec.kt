@@ -1,9 +1,10 @@
-package io.wavebeans.execution
+package io.wavebeans.execution.pod
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNull
-import io.wavebeans.lib.Sample
+import io.wavebeans.execution.medium.SampleArray
+import io.wavebeans.execution.newTestSplittingPod
 import io.wavebeans.lib.asInt
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
@@ -19,7 +20,7 @@ object SplittingPodSpec : Spek({
 
                 describe("Partition 0") {
                     val result = pod.iteratorNext(iteratorKey0, 50)
-                            ?.map {it as SampleArray}
+                            ?.map {it as SampleArray }
                             ?.flatMap { it.asList() }
                             ?.map { it.asInt() }
 
@@ -28,7 +29,7 @@ object SplittingPodSpec : Spek({
 
                 describe("Partition 1") {
                     val result = pod.iteratorNext(iteratorKey1, 50)
-                            ?.map {it as SampleArray}
+                            ?.map {it as SampleArray }
                             ?.flatMap { it.asList() }
                             ?.map { it.asInt() }
 
@@ -47,7 +48,7 @@ object SplittingPodSpec : Spek({
 
                 describe("Partition 0") {
                     val result = pod.iteratorNext(iteratorKey0, 100)
-                            ?.map {it as SampleArray}
+                            ?.map {it as SampleArray }
                             ?.flatMap { it.asList() }
                             ?.map { it.asInt() }
 
@@ -68,7 +69,7 @@ object SplittingPodSpec : Spek({
 
                 describe("Partition 0") {
                     val result = pod.iteratorNext(iteratorKey0, 34)
-                            ?.map {it as SampleArray}
+                            ?.map {it as SampleArray }
                             ?.flatMap { it.asList() }
                             ?.map { it.asInt() }
 
@@ -78,7 +79,7 @@ object SplittingPodSpec : Spek({
                 }
                 describe("Partition 1") {
                     val result = pod.iteratorNext(iteratorKey1, 33)
-                            ?.map {it as SampleArray}
+                            ?.map {it as SampleArray }
                             ?.flatMap { it.asList() }
                             ?.map { it.asInt() }
 
@@ -88,7 +89,7 @@ object SplittingPodSpec : Spek({
                 }
                 describe("Partition 2") {
                     val result = pod.iteratorNext(iteratorKey2, 33)
-                            ?.map {it as SampleArray}
+                            ?.map {it as SampleArray }
                             ?.flatMap { it.asList() }
                             ?.map { it.asInt() }
 
@@ -111,11 +112,11 @@ object SplittingPodSpec : Spek({
 
             describe("Partition 0") {
                 val result1 = pod.iteratorNext(iteratorKey1p0, 50)
-                        ?.map {it as SampleArray}
+                        ?.map {it as SampleArray }
                         ?.flatMap { it.asList() }
                         ?.map { it.asInt() }
                 val result2 = pod.iteratorNext(iteratorKey2p0, 50)
-                        ?.map {it as SampleArray}
+                        ?.map {it as SampleArray }
                         ?.flatMap { it.asList() }
                         ?.map { it.asInt() }
 
@@ -129,11 +130,11 @@ object SplittingPodSpec : Spek({
 
             describe("Partition 1") {
                 val result1 = pod.iteratorNext(iteratorKey1p1, 50)
-                        ?.map {it as SampleArray}
+                        ?.map {it as SampleArray }
                         ?.flatMap { it.asList() }
                         ?.map { it.asInt() }
                 val result2 = pod.iteratorNext(iteratorKey2p1, 50)
-                        ?.map {it as SampleArray}
+                        ?.map {it as SampleArray }
                         ?.flatMap { it.asList() }
                         ?.map { it.asInt() }
 
@@ -154,7 +155,7 @@ object SplittingPodSpec : Spek({
             val iteratorKey1 = pod.iteratorStart(100.0f, 1)
             describe("Partition 0") {
                 val e = pod.iteratorNext(iteratorKey0, 51)
-                        ?.map {it as SampleArray}
+                        ?.map {it as SampleArray }
                         ?.flatMap { it.asList() }
                         ?.map { it.asInt() }
 
@@ -165,7 +166,7 @@ object SplittingPodSpec : Spek({
 
             describe("Partition 1") {
                 val e = pod.iteratorNext(iteratorKey1, 51)
-                        ?.map {it as SampleArray}
+                        ?.map {it as SampleArray }
                         ?.flatMap { it.asList() }
                         ?.map { it.asInt() }
 
@@ -184,11 +185,11 @@ object SplittingPodSpec : Spek({
 
             describe("Partition 0") {
                 val e1 = pod.iteratorNext(iteratorKey0, 50)
-                        ?.map {it as SampleArray}
+                        ?.map {it as SampleArray }
                         ?.flatMap { it.asList() }
                         ?.map { it.asInt() }
                 val e2 = pod.iteratorNext(iteratorKey0, 1)
-                        ?.map {it as SampleArray}
+                        ?.map {it as SampleArray }
                         ?.flatMap { it.asList() }
                         ?.map { it.asInt() }
 
@@ -202,11 +203,11 @@ object SplittingPodSpec : Spek({
 
             describe("Partition 1") {
                 val e1 = pod.iteratorNext(iteratorKey1, 50)
-                        ?.map {it as SampleArray}
+                        ?.map {it as SampleArray }
                         ?.flatMap { it.asList() }
                         ?.map { it.asInt() }
                 val e2 = pod.iteratorNext(iteratorKey1, 1)
-                        ?.map {it as SampleArray}
+                        ?.map {it as SampleArray }
                         ?.flatMap { it.asList() }
                         ?.map { it.asInt() }
 

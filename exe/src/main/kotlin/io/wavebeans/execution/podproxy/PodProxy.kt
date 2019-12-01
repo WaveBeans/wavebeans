@@ -1,4 +1,4 @@
-package io.wavebeans.execution
+package io.wavebeans.execution.podproxy
 
 import io.wavebeans.lib.Bean
 

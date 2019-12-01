@@ -1,4 +1,4 @@
-package io.wavebeans.execution
+package io.wavebeans.execution.pod
 
 import io.wavebeans.lib.BeanStream
 import java.util.*
@@ -40,9 +40,9 @@ const val DEFAULT_PARTITION_SIZE = 512
  *      via instantiation of any [PodProxy]
  */
 // ThreadSafe
-abstract class AbstractPod<T : Any, ARRAY_T>(
+abstract class AbstractPod<T : Any, ARRAY_T, B : BeanStream<T, *>>(
         override val podKey: PodKey,
-        val bean: BeanStream<T, *>,
+        val bean: B,
         val partitionCount: Int,
         val converter: (List<T>) -> ARRAY_T,
         val partitionSize: Int = DEFAULT_PARTITION_SIZE

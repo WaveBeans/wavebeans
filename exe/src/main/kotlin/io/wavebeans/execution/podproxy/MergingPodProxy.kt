@@ -1,5 +1,9 @@
-package io.wavebeans.execution
+package io.wavebeans.execution.podproxy
 
+import io.wavebeans.execution.*
+import io.wavebeans.execution.medium.PodCallResult
+import io.wavebeans.execution.pod.DEFAULT_PARTITION_SIZE
+import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.lib.Bean
 import io.wavebeans.lib.BeanParams
 import io.wavebeans.lib.BeanStream

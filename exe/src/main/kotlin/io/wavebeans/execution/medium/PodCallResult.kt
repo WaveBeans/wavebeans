@@ -1,6 +1,8 @@
-package io.wavebeans.execution
+package io.wavebeans.execution.medium
 
+import io.wavebeans.execution.Call
 import io.wavebeans.lib.Sample
+import io.wavebeans.lib.stream.window.WindowStreamParams
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.ObjectInputStream
@@ -50,6 +52,14 @@ fun PodCallResult.long(): Long =
             }
 
         } ?: throw IllegalStateException("Can't decode null", this.exception)
+
+
+fun PodCallResult.windowStreamParams(): WindowStreamParams =
+    this.throwIfError().byteArray?.let { buf ->
+        val windowSize = readInt(buf, 0)
+        val step = readInt(buf, 4)
+        WindowStreamParams(windowSize, step)
+    } ?: throw IllegalStateException("Can't decode null", this.exception)
 
 
 internal fun Sample.encodeBytes(): ByteArray = this.toBits().encodeBytes()
@@ -179,4 +189,7 @@ fun PodCallResult.sampleArrayList(): List<SampleArray> =
             }
         } ?: throw IllegalStateException("Can't decode null", this.exception)
 
+fun PodCallResult.fftSampleArrayList(): List<FftSampleArray> = TODO()
+
 fun PodCallResult.nullableSampleArrayList(): List<SampleArray>? = ifNotNull { this.sampleArrayList() }
+fun PodCallResult.nullableFftSampleArrayList(): List<FftSampleArray>? = ifNotNull { this.fftSampleArrayList() }

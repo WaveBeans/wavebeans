@@ -5,10 +5,15 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThan
 import assertk.assertions.size
 import io.wavebeans.execution.TopologySerializer.jsonPretty
+import io.wavebeans.lib.io.magnitudeToCsv
+import io.wavebeans.lib.io.phaseToCsv
 import io.wavebeans.lib.io.toCsv
 import io.wavebeans.lib.stream.changeAmplitude
+import io.wavebeans.lib.stream.fft.fft
+import io.wavebeans.lib.stream.fft.trim
 import io.wavebeans.lib.stream.plus
 import io.wavebeans.lib.stream.trim
+import io.wavebeans.lib.stream.window.window
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import org.spekframework.spek2.style.specification.xdescribe
@@ -22,6 +27,8 @@ object OverseerIntegrationSpec : Spek({
     describe("Two outputs with different paths but same content") {
         val f1 = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
         val f2 = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
+        val f3 = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
+        val f4 = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
 
         val i1 = seqStream()
         val i2 = seqStream()
@@ -32,11 +39,18 @@ object OverseerIntegrationSpec : Spek({
         val o1 = p1
                 .trim(50)
                 .toCsv("file://${f1.absolutePath}")
-        val o2 = (p1 + p2)
+        val pp = p1 + p2
+        val o2 = pp
                 .trim(50)
                 .toCsv("file://${f2.absolutePath}")
+        val fft = pp
+                .window(401)
+                .fft(512)
+                .trim(50)
+        val o3 = fft.magnitudeToCsv("file://${f3.absolutePath}")
+        val o4 = fft.phaseToCsv("file://${f4.absolutePath}")
 
-        val topology = listOf(o1, o2).buildTopology()
+        val topology = listOf(o1, o2, o3, o4).buildTopology()
                 .partition(2)
                 .groupBeans()
 
@@ -59,12 +73,14 @@ object OverseerIntegrationSpec : Spek({
 
         val f1Content = f1.readLines()
         val f2Content = f2.readLines()
+        val f3Content = f3.readLines()
+        val f4Content = f4.readLines()
         it("should have non empty output. 1st file") { assertThat(f1Content).size().isGreaterThan(1) }
         it("should have non empty output. 2nd file") { assertThat(f2Content).size().isGreaterThan(1) }
         it("should have the same output") { assertThat(f1Content).isEqualTo(f2Content) }
 
         val localRunTime = measureTimeMillis {
-            listOf(o1, o2)
+            listOf(o1, o2, o3, o4)
                     .map { it.writer(44100.0f) }
                     .forEach {
                         while (it.write()) {
@@ -81,6 +97,12 @@ object OverseerIntegrationSpec : Spek({
         val f2LocalContent = f2.readLines()
         it("should have the same size as local content") { assertThat(f2Content.size).isEqualTo(f2LocalContent.size) }
         it("should have the same output as local content") { assertThat(f2Content).isEqualTo(f2LocalContent) }
+        val f3LocalContent = f3.readLines()
+        it("should have the same size as local content") { assertThat(f3Content.size).isEqualTo(f3LocalContent.size) }
+        it("should have the same output as local content") { assertThat(f3Content).isEqualTo(f3LocalContent) }
+        val f4LocalContent = f4.readLines()
+        it("should have the same size as local content") { assertThat(f4Content.size).isEqualTo(f4LocalContent.size) }
+        it("should have the same output as local content") { assertThat(f4Content).isEqualTo(f4LocalContent) }
 
         println("Deploy took $timeToDeploy ms, processing took $timeToProcess ms, " +
                 "finalizing took $timeToFinalize ms, local run time is $localRunTime ms")

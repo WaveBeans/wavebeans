@@ -1,37 +1,29 @@
-package io.wavebeans.execution
+package io.wavebeans.execution.podproxy
 
-import io.wavebeans.lib.Bean
+import io.wavebeans.execution.pod.PodKey
+import io.wavebeans.execution.medium.SampleArray
+import io.wavebeans.execution.medium.nullableSampleArrayList
 import io.wavebeans.lib.Sample
 import io.wavebeans.lib.ZeroSample
-import io.wavebeans.lib.io.StreamInput
+import io.wavebeans.lib.stream.SampleStream
 
-class StreamInputPodProxy(
+class SampleStreamPodProxy(
         podKey: PodKey,
         forPartition: Int
-) : StreamInput, StreamingPodProxy<Sample, StreamInput, SampleArray>(
+) : SampleStream, StreamingPodProxy<Sample, SampleStream, SampleArray>(
         pointedTo = podKey,
         forPartition = forPartition,
         converter = { it.nullableSampleArrayList() },
         elementExtractor = { arr, i -> if (i < arr.size) arr[i] else null },
         zeroEl = { ZeroSample }
-) {
+)
 
-    override fun inputs(): List<Bean<*, *>> {
-        return super<StreamingPodProxy>.inputs()
-    }
-}
-
-class StreamInputMergingPodProxy(
+class SampleStreamMergingPodProxy(
         override val readsFrom: List<PodKey>,
         forPartition: Int
-) : MergingPodProxy<Sample, StreamInput, SampleArray>(
+) : MergingPodProxy<Sample, SampleStream, SampleArray>(
         forPartition = forPartition,
         converter = { it.nullableSampleArrayList() },
         elementExtractor = { arr, i -> if (i < arr.size) arr[i] else null },
         zeroEl = { ZeroSample }
-), StreamInput {
-
-    override fun inputs(): List<Bean<*, *>> {
-        return super<MergingPodProxy>.inputs()
-    }
-}
+), SampleStream

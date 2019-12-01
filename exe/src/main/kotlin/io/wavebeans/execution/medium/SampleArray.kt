@@ -1,4 +1,4 @@
-package io.wavebeans.execution
+package io.wavebeans.execution.medium
 
 import io.wavebeans.lib.Sample
 

@@ -1,5 +1,7 @@
 package io.wavebeans.execution
 
+import io.wavebeans.execution.medium.PodCallResult
+import io.wavebeans.execution.pod.PodKey
 import java.util.concurrent.Future
 
 open class BushCallerRepository protected constructor(

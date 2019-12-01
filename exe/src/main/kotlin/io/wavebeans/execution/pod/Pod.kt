@@ -1,5 +1,7 @@
-package io.wavebeans.execution
+package io.wavebeans.execution.pod
 
+import io.wavebeans.execution.Call
+import io.wavebeans.execution.medium.PodCallResult
 import io.wavebeans.lib.AnyBean
 import java.io.Closeable
 import java.lang.reflect.InvocationTargetException
@@ -18,13 +20,13 @@ interface Pod : Closeable {
             val start = System.nanoTime()
             val method = this::class.members
                     .firstOrNull { it.name == call.method }
-                    ?: throw IllegalStateException("Can't find method to call: $call")
+                    ?: throw IllegalStateException("[$this] Can't find method to call: $call")
             val params = method.parameters
                     .drop(1) // drop self instance
                     .map {
                         call.param(
                                 key = it.name
-                                        ?: throw IllegalStateException("Parameter `$it` of method `$method` has no name"),
+                                        ?: throw IllegalStateException("[$this] Parameter `$it` of method `$method` has no name"),
                                 type = it.type)
                     }
                     .toTypedArray()

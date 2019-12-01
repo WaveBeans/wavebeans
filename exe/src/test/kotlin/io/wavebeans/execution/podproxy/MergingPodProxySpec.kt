@@ -1,9 +1,15 @@
-package io.wavebeans.execution
+package io.wavebeans.execution.podproxy
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import com.nhaarman.mockitokotlin2.mock
+import io.wavebeans.execution.*
+import io.wavebeans.execution.medium.PodCallResult
+import io.wavebeans.execution.medium.SampleArray
+import io.wavebeans.execution.medium.nullableSampleArrayList
+import io.wavebeans.execution.pod.Pod
+import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.lib.Sample
 import io.wavebeans.lib.asInt
 import io.wavebeans.lib.stream.SampleStream
@@ -72,7 +78,7 @@ object MergingPodProxySpec : Spek({
         val podProxyTester = MergingPodProxyTester(
                 readsFrom = listOf(
                         newTestStreamingPod((0..11).filter { it % 4 in setOf(0, 1) }, partition = 0, partitionSize = 2),
-                        newTestStreamingPod((0..11).filter { it % 4 in setOf(2, 3)  }, partition = 1, partitionSize = 2)
+                        newTestStreamingPod((0..11).filter { it % 4 in setOf(2, 3) }, partition = 1, partitionSize = 2)
                 ),
                 timeToReadAtOnce = 2,
                 partitionSize = 2

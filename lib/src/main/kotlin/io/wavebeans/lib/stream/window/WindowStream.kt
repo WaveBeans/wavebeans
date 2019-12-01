@@ -70,7 +70,7 @@ interface WindowStream<T : Any, WINDOWING_STREAM : Any, S : WindowStream<T, WIND
 abstract class AbstractWindowStream<T : Any, WINDOWING_STREAM : Any, S : WindowStream<T, WINDOWING_STREAM, S>>(
         val source: BeanStream<T, WINDOWING_STREAM>,
         val params: WindowStreamParams
-) : WindowStream<T, WINDOWING_STREAM, S>, AlterBean<T, WINDOWING_STREAM, Window<T>, S> {
+) : WindowStream<T, WINDOWING_STREAM, S>, AlterBean<T, WINDOWING_STREAM, Window<T>, S>, SinglePartitionBean {
 
     override fun asSequence(sampleRate: Float): Sequence<Window<T>> {
         val startIdx = timeToSampleIndexFloor(params.start, params.timeUnit, sampleRate).toInt() / params.step

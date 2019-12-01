@@ -10,7 +10,9 @@ import java.util.concurrent.TimeUnit
 import kotlin.math.PI
 import kotlin.math.log10
 
-fun SampleWindowStream.fft(binCount: Int): FftStream = FftStreamImpl(this, WindowFftStreamParams(binCount))
+fun SampleWindowStream.fft(binCount: Int): FftStream = FftStreamImpl(this, FftStreamParams(binCount))
+
+val ZeroFftSample = FftSample(0, 0, 0.0f, emptyList())
 
 data class FftSample(
         val time: Long,
@@ -45,7 +47,7 @@ interface FftStream : BeanStream<FftSample, FftStream> {
 }
 
 @Serializable
-data class WindowFftStreamParams(
+data class FftStreamParams(
         val n: Int,
         val start: Long = 0,
         val end: Long? = null,
@@ -54,18 +56,8 @@ data class WindowFftStreamParams(
 
 class FftStreamImpl(
         val sampleStream: SampleWindowStream,
-        val params: WindowFftStreamParams
+        val params: FftStreamParams
 ) : FftStream, AlterBean<Window<Sample>, SampleWindowStream, FftSample, FftStream> {
-
-    init {
-        require(sampleStream.parameters.windowSize <= params.n) {
-            "The window size (${sampleStream.parameters.windowSize}) " +
-                    "must be less or equal than N (${params.n})"
-        }
-        require(!(params.n == 0 || params.n and (params.n - 1) != 0)) {
-            "N should be power of 2 but ${params.n} found"
-        }
-    }
 
     override val parameters: BeanParams = params
 
@@ -74,6 +66,13 @@ class FftStreamImpl(
     override fun estimateFftSamplesCount(samplesCount: Long): Long = samplesCount / sampleStream.parameters.windowSize
 
     override fun asSequence(sampleRate: Float): Sequence<FftSample> {
+        require(sampleStream.parameters.windowSize <= params.n) {
+            "The window size (${sampleStream.parameters.windowSize}) " +
+                    "must be less or equal than N (${params.n})"
+        }
+        require(!(params.n == 0 || params.n and (params.n - 1) != 0)) {
+            "N should be power of 2 but ${params.n} found"
+        }
         return sampleStream.asSequence(sampleRate)
                 .mapIndexed { idx, fftWindow ->
                     val m = sampleStream.parameters.windowSize

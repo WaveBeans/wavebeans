@@ -1,8 +1,9 @@
-package io.wavebeans.execution
+package io.wavebeans.execution.medium
 
 import assertk.assertThat
 import assertk.assertions.*
 import assertk.catch
+import io.wavebeans.execution.Call
 import io.wavebeans.lib.Sample
 import io.wavebeans.lib.sampleOf
 import org.spekframework.spek2.Spek

@@ -1,4 +1,4 @@
-package io.wavebeans.execution
+package io.wavebeans.execution.pod
 
 /**
  * [Pod] that wait for ticks from [Bush] in order to perform some work.

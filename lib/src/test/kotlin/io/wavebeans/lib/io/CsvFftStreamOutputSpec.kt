@@ -34,7 +34,7 @@ class CsvFftStreamOutputSpec : Spek({
 
         describe("Generating magnitude") {
             val file = File.createTempFile("test_", ".tmp")
-            CsvFftStreamOutput(x, CsvFftStreamOutputParams(file.toURI(), true)).writer(sampleRate).use { w ->
+            CsvFftStreamOutput(x, CsvFftStreamOutputParams("file://${file.absolutePath}", true)).writer(sampleRate).use { w ->
                 while (w.write()) {
                     sleep(0)
                 }
@@ -81,7 +81,7 @@ class CsvFftStreamOutputSpec : Spek({
 
         describe("Generating phase") {
             val file = File.createTempFile("test_", ".tmp")
-            CsvFftStreamOutput(x, CsvFftStreamOutputParams(file.toURI(), false)).writer(sampleRate).use { w ->
+            CsvFftStreamOutput(x, CsvFftStreamOutputParams("file://${file.absolutePath}", false)).writer(sampleRate).use { w ->
                 while (w.write()) {
                     sleep(0)
                 }

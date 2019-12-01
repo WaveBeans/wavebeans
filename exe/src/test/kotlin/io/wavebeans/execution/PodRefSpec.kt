@@ -7,6 +7,11 @@ import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.prop
+import io.wavebeans.execution.pod.Pod
+import io.wavebeans.execution.pod.PodKey
+import io.wavebeans.execution.pod.SplittingPod
+import io.wavebeans.execution.pod.StreamingPod
+import io.wavebeans.execution.podproxy.*
 import io.wavebeans.lib.*
 import io.wavebeans.lib.io.StreamInput
 import io.wavebeans.lib.io.sine
@@ -228,8 +233,8 @@ private fun input2Type(bean: AnyBean) = bean.inputs().drop(1).first()::class.cre
 
 private fun Assert<Pod>.proxies() = prop("proxies") {
     when (it) {
-        is SplittingPod<*,*> -> it.bean.inputs()
-        is StreamingPod<*,*> -> it.bean.inputs()
+        is SplittingPod<*, *, *> -> it.bean.inputs()
+        is StreamingPod<*, *, *> -> it.bean.inputs()
         else -> throw UnsupportedOperationException()
     }
 }

@@ -1,14 +1,15 @@
-package io.wavebeans.execution
+package io.wavebeans.execution.pod
 
-import io.wavebeans.lib.*
+import io.wavebeans.lib.AnyBean
+import io.wavebeans.lib.BeanParams
+import io.wavebeans.lib.NoParams
+import io.wavebeans.lib.Sample
 import io.wavebeans.lib.io.StreamOutput
 import io.wavebeans.lib.io.Writer
-import io.wavebeans.lib.stream.FiniteSampleStream
 
-class SampleStreamOutputPod(
-        val bean: StreamOutput<Sample, FiniteSampleStream>,
-        override val podKey: PodKey
-) : StreamOutput<Sample, FiniteSampleStream>, TickPod {
+abstract class AbstractStreamOutputPod<T: Any, S: Any> : StreamOutput<T, S>, TickPod {
+
+    abstract val bean: StreamOutput<T, S>
 
     // TODO that should be the part of configuration
     private val sampleRate = 44100.0f
@@ -50,9 +51,6 @@ class SampleStreamOutputPod(
 
     override val parameters: BeanParams
         get() = NoParams()
-
-    override val input: Bean<Sample, FiniteSampleStream>
-        get() = bean
 
     override fun toString(): String = "[$podKey]${this::class.simpleName}"
 }

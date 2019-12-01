@@ -1,11 +1,6 @@
 package io.wavebeans.lib.stream.fft
 
-import io.wavebeans.lib.AlterBean
-import io.wavebeans.lib.Bean
-import io.wavebeans.lib.BeanParams
-import io.wavebeans.lib.stream.fft.FftSample
-import io.wavebeans.lib.stream.fft.FftStream
-import io.wavebeans.lib.timeToSampleIndexFloor
+import io.wavebeans.lib.*
 import kotlinx.serialization.Serializable
 import java.util.concurrent.TimeUnit
 
@@ -21,7 +16,7 @@ data class TrimmedFiniteFftStreamParams(
 class TrimmedFiniteFftStream(
         val fftStream: FftStream,
         val params: TrimmedFiniteFftStreamParams
-) : FiniteFftStream, AlterBean<FftSample, FftStream, FftSample, FiniteFftStream> {
+) : FiniteFftStream, AlterBean<FftSample, FftStream, FftSample, FiniteFftStream>, SinglePartitionBean {
 
     override val parameters: BeanParams = params
 
