@@ -1,5 +1,6 @@
 package io.wavebeans.execution
 
+import mu.KotlinLogging
 import java.util.concurrent.TimeUnit
 
 // TODO consider providing via Config
@@ -18,9 +19,19 @@ class PodProxyIterator<T : Any, ARRAY_T>(
         val partitionSize: Int = DEFAULT_PARTITION_SIZE
 ) : Iterator<T> {
 
+    companion object {
+        private val log = KotlinLogging.logger { }
+    }
+
     private val bush = podDiscovery.bushFor(pod)
     private val caller = bushCallerRepository.create(bush, pod)
-    private val iteratorKey = caller.call("iteratorStart?sampleRate=$sampleRate&partitionIdx=${readingPartition}").get(5000, TimeUnit.MILLISECONDS).long()
+    private val iteratorKey: Long
+
+    init {
+        iteratorKey = caller.call("iteratorStart?sampleRate=$sampleRate&partitionIdx=${readingPartition}")
+                .get(5000, TimeUnit.MILLISECONDS).long()
+        log.trace { "Created iterator [Pod=$pod] iteratorKey=$iteratorKey" }
+    }
 
     private var buckets: List<ARRAY_T>? = null
     private var bucketPointer = 0
@@ -48,6 +59,7 @@ class PodProxyIterator<T : Any, ARRAY_T>(
 
     private fun tryReadBuckets(): List<ARRAY_T>? {
         if (buckets == null || bucketPointer >= buckets?.size ?: 0) {
+            log.trace { "Calling iterator [Pod=$pod] iteratorKey=$iteratorKey" }
             buckets = converter(caller.call(
                     "iteratorNext" +
                             "?iteratorKey=$iteratorKey" +
