@@ -1,6 +1,7 @@
 package io.wavebeans.execution.pod
 
 import io.wavebeans.lib.BeanStream
+import mu.KotlinLogging
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -50,12 +51,14 @@ abstract class AbstractPod<T : Any, ARRAY_T, B : BeanStream<T, *>>(
 
     companion object {
         private val idSeq = AtomicLong(0)
+        private val log = KotlinLogging.logger { }
     }
+
 
     /**
      * Is used inside [iteratorStart] and [iteratorNext] to make sure the iterator is accessed within only one thread.
      */
-    private val iteratorMutex = Any()
+    private val iteratorLock = ReentrantLock()
 
     /**
      * [bean] iterator or `null` if it's not initialized yet. Initialized lazily during first call to [Pod]
@@ -86,11 +89,17 @@ abstract class AbstractPod<T : Any, ARRAY_T, B : BeanStream<T, *>>(
 
     override fun iteratorStart(sampleRate: Float, partitionIdx: Int): Long {
         val key = idSeq.incrementAndGet()
-        buffers[key] = Pair(partitionIdx, ConcurrentLinkedQueue())
+
+        log.trace { "[POD=$podKey] iteratorStart?sampleRate=$sampleRate&partitionIdx=$partitionIdx [key=$key]" }
+
+        buffers[key] = Pair(partitionIdx, ConcurrentLinkedQueue()) // TODO use different queue
         locks[key] = ReentrantLock()
         if (iterator == null) {
-            synchronized(iteratorMutex) {
+            iteratorLock.lock()
+            try {
                 if (iterator == null) iterator = bean.asSequence(sampleRate).iterator()
+            } finally {
+                iteratorLock.unlock()
             }
         }
         return key
@@ -101,48 +110,70 @@ abstract class AbstractPod<T : Any, ARRAY_T, B : BeanStream<T, *>>(
         val lock = locks[iteratorKey]
         check(buf != null && lock != null) { "Iterator key $iteratorKey is unknown for the pod $this" }
 
+        log.trace {
+            "Starting [POD=$podKey] iteratorNext?iteratorKey=$iteratorKey&buckets=$buckets " +
+                    "[buf.size=${buf.size}, forPartition=${buffers[iteratorKey]?.first}], " +
+                    "lock=$lock, iteratorLock=$iteratorLock"
+        }
+
         // only one thread can read from the buffer itself
         check(lock.tryLock(1000, TimeUnit.MILLISECONDS)) {
             "POD[$podKey][iteratorKey=$iteratorKey, forPartition=${buffers[iteratorKey]?.first}] Can't acquire lock"
         }
         try {
             val i = iterator!!
-            if (buf.size < buckets && i.hasNext()) { // not enough data and there is something to read
+            if (buf.size <= buckets) { // not enough data
+                // can't check if there are some elements in the iterator as it has side effect of starting fetching element
                 // avoid reading from different iterators
-                synchronized(iteratorMutex) {
-                    var iterations = buckets * partitionSize * partitionCount - buf.size // TODO should it make sure the iterations is divisible by partition size?
-                    var list = ArrayList<T>(partitionSize)
-                    var leftToReadForPartition = partitionSize
-                    while (iterations >= 0) {
-                        if (i.hasNext()) {
-                            // read the next batch from the stream and spread across consumer queues
-                            if (leftToReadForPartition == 0) {
-                                buffers
-                                        .filter { partitionCount == 1 || it.value.first == partitionIdx }
-                                        .forEach { it.value.second.add(converter(list)) }
-                                partitionIdx = (partitionIdx + 1) % partitionCount
-                                list = ArrayList(partitionSize)
-                                leftToReadForPartition = partitionSize
+                iteratorLock.lock()
+                try {
+                    if (buf.size <= buckets && i.hasNext()) { // double check, if that wasn't read before
+                        var iterations = buckets * partitionSize * partitionCount - buf.size // TODO should it make sure the iterations is divisible by partition size?
+                        log.trace { "Reading... [POD=$podKey] Doing $iterations iterations to fill the buffer [buf.size=${buf.size}]" }
+                        var list = ArrayList<T>(partitionSize)
+                        var leftToReadForPartition = partitionSize
+                        while (iterations >= 0) {
+                            if (i.hasNext()) {
+                                // read the next batch from the stream and spread across consumer queues
+                                if (leftToReadForPartition == 0) {
+                                    buffers
+                                            .filter { partitionCount == 1 || it.value.first == partitionIdx }
+                                            .forEach { it.value.second.add(converter(list)) }
+                                    partitionIdx = (partitionIdx + 1) % partitionCount
+                                    list = ArrayList(partitionSize)
+                                    leftToReadForPartition = partitionSize
+                                }
+                                // if that's not the last iteration, for the last iteration it wouldn't
+                                // have any buffer to pick it up
+                                if (iterations > 0) {
+                                    list.add(i.next())
+                                    leftToReadForPartition--
+                                }
+                            } else {
+                                if (list.isNotEmpty()) {
+                                    buffers
+                                            .filter { partitionCount == 1 || it.value.first == partitionIdx }
+                                            .forEach { it.value.second.add(converter(list)) }
+                                }
+                                break
                             }
-                            // if that's not the last iteration, for the last iteration it wouldn't have any buffer to pick it up
-                            if (iterations > 0) {
-                                list.add(i.next())
-                                leftToReadForPartition--
-                            }
-                        } else {
-                            if (list.isNotEmpty()) {
-                                buffers
-                                        .filter { partitionCount == 1 || it.value.first == partitionIdx }
-                                        .forEach { it.value.second.add(converter(list)) }
-                            }
-                            break
+                            iterations--
                         }
-                        iterations--
+                        log.trace {
+                            "Reading... [POD=$podKey] Left $iterations iterations after filling the buffer. " +
+                                    "Buffers=${buffers.map { Triple(it.key, it.value.first, it.value.second.size) }}"
+                        }
                     }
+                } finally {
+                    iteratorLock.unlock()
                 }
             }
 
             val elements = (0 until min(buckets, buf.size)).mapNotNull { buf.poll() }
+            log.trace {
+                "Returning [POD=$podKey] iteratorNext?iteratorKey=$iteratorKey&buckets=$buckets " +
+                        "[elements.size=${elements.size}]"// + "\n${elements.map { it as SampleArray }.flatMap { it.asList() }}"
+            }
             return if (elements.isEmpty()) null else elements
         } finally {
             lock.unlock()
@@ -150,8 +181,8 @@ abstract class AbstractPod<T : Any, ARRAY_T, B : BeanStream<T, *>>(
     }
 
     override fun close() {
-        println("POD[$podKey] Closed")
+        log.debug { "POD[$podKey] Closed" }
     }
 
-    override fun isFinished(): Boolean = true
+    override fun isFinished(): Boolean = true // TODO get rid of this method?
 }
