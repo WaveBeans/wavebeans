@@ -11,11 +11,11 @@ import java.util.concurrent.TimeUnit
 class SampleWindowStreamPodProxy(
         podKey: PodKey,
         forPartition: Int
-) : SampleWindowStream, StreamingPodProxy<Window<Sample>, SampleWindowStream, SampleArray>(
+) : SampleWindowStream, StreamingPodProxy<Window<Sample>, SampleWindowStream, WindowSampleArray>(
         pointedTo = podKey,
         forPartition = forPartition,
-        converter = { it.nullableSampleArrayList() },
-        elementExtractor = { arr, _ -> Window(arr.toList()) },
+        converter = { it.nullableWindowSampleArrayList() },
+        elementExtractor = { arr, i -> if (i < arr.size) Window(arr[i].toList()) else null },
         zeroEl = { Window(emptyList()) }
 ) {
     override val parameters: WindowStreamParams
@@ -30,10 +30,10 @@ class SampleWindowStreamPodProxy(
 class SampleWindowMergingPodProxy(
         override val readsFrom: List<PodKey>,
         forPartition: Int
-) : MergingPodProxy<Window<Sample>, SampleWindowStream, SampleArray>(
+) : MergingPodProxy<Window<Sample>, SampleWindowStream, WindowSampleArray>(
         forPartition = forPartition,
-        converter = { it.nullableSampleArrayList() },
-        elementExtractor = { arr, _ -> Window(arr.toList()) },
+        converter = { it.nullableWindowSampleArrayList() },
+        elementExtractor = { arr, i -> if (i < arr.size) Window(arr[i].toList()) else null },
         zeroEl = { Window(emptyList()) }
 ), SampleWindowStream {
     override val parameters: WindowStreamParams

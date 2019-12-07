@@ -9,10 +9,10 @@ import io.wavebeans.lib.stream.window.Window
 typealias WindowSampleArray = Array<SampleArray>
 
 /**
- * Creates [SampleArray] of the defined [size], initializes the array using provided [initFn] function
+ * Creates [WindowSampleArray] of the defined [size], initializes the array using provided [windowFn] function
  *
  * @param size the size of the [SampleArray] to create. Must be 1 or greater
- * @param initFn the function the initializes the array with values. The parameter of the function is 0-based index of the element i
+ * @param windowFn the function the initializes the [Window] of [Sample]s. The parameter of the function is 0-based index of the element i
  */
 fun createWindowSampleArray(size: Int, windowFn: (Int) -> Window<Sample>): WindowSampleArray {
     require(size >= 1) { "Can't create sample array of the size $size" }

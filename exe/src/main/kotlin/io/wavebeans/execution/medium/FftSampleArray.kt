@@ -1,6 +1,5 @@
 package io.wavebeans.execution.medium
 
-import io.wavebeans.lib.Sample
 import io.wavebeans.lib.stream.fft.FftSample
 
 /**

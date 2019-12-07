@@ -2,6 +2,8 @@ package io.wavebeans.execution.medium
 
 import io.wavebeans.execution.Call
 import io.wavebeans.lib.Sample
+import io.wavebeans.lib.math.ComplexNumber
+import io.wavebeans.lib.stream.fft.FftSample
 import io.wavebeans.lib.stream.window.WindowStreamParams
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -21,6 +23,7 @@ class PodCallResult(val call: Call, val byteArray: ByteArray?, val exception: Th
                         is Long -> value.encodeBytes()
                         is Sample -> value.encodeBytes()
                         is List<*> -> value.encodeBytes()
+                        is WindowStreamParams -> value.encodeBytes()
                         else -> throw UnsupportedOperationException("Value `$value` is not supported")
                     },
                     exception = null
@@ -54,12 +57,19 @@ fun PodCallResult.long(): Long =
         } ?: throw IllegalStateException("Can't decode null", this.exception)
 
 
+private fun WindowStreamParams.encodeBytes(): ByteArray {
+    val buf = ByteArray(8)
+    writeInt(this.windowSize, buf, 0)
+    writeInt(this.step, buf, 4)
+    return buf
+}
+
 fun PodCallResult.windowStreamParams(): WindowStreamParams =
-    this.throwIfError().byteArray?.let { buf ->
-        val windowSize = readInt(buf, 0)
-        val step = readInt(buf, 4)
-        WindowStreamParams(windowSize, step)
-    } ?: throw IllegalStateException("Can't decode null", this.exception)
+        this.throwIfError().byteArray?.let { buf ->
+            val windowSize = readInt(buf, 0)
+            val step = readInt(buf, 4)
+            WindowStreamParams(windowSize, step)
+        } ?: throw IllegalStateException("Can't decode null", this.exception)
 
 
 internal fun Sample.encodeBytes(): ByteArray = this.toBits().encodeBytes()
@@ -83,6 +93,7 @@ internal fun encodeEmptyList(): ByteArray {
 }
 
 
+@Suppress("unchecked")
 internal fun List<*>.encodeBytes(): ByteArray =
         if (isEmpty()) {
             encodeEmptyList()
@@ -91,11 +102,10 @@ internal fun List<*>.encodeBytes(): ByteArray =
                 is Sample -> {
                     encodeList(this as List<Sample>, 8) { buf, at, el -> writeLong(el.toBits(), buf, at) }
                 }
-                is SampleArray -> {
+                is SampleArray -> { // List<Array<Double>>
                     val seq = this.asSequence().map { (it as SampleArray) }
 
                     val contentSize = seq.map { 4 + it.size * 8 }.sum()
-
                     var pointer = 0
                     val buf = ByteArray(4 + contentSize)
                     writeInt(this.size, buf, 0)
@@ -110,9 +120,112 @@ internal fun List<*>.encodeBytes(): ByteArray =
                     }
                     buf
                 }
+                is Array<*> -> { // List<Array<*>>
+                    if (this.isEmpty()) {
+                        encodeEmptyList()
+                    } else {
+                        when (val aval = value[0]) {
+                            is SampleArray -> { //List<Array<Array<Double>>> == List<WindowSampleArray>
+                                val list = this.map { it as Array<SampleArray> }
+
+                                val contentSize = list.map {
+                                    4 + // innerArray.size
+                                            it.map { innerArr ->
+                                                4 + // elementsArray.size
+                                                        innerArr.size * 8 // elements
+                                            }.sum()
+                                }.sum()
+
+                                val buf = ByteArray(4 + contentSize)
+                                var pointer = 0
+
+                                writeInt(this.size, buf, pointer); pointer += 4
+
+                                list.forEach { innerArr ->
+                                    writeInt(innerArr.size, buf, pointer); pointer += 4
+                                    innerArr.forEach { sampleArray ->
+                                        writeInt(sampleArray.size, buf, pointer); pointer += 4
+                                        repeat(sampleArray.size) {
+                                            writeLong(sampleArray[it].toBits(), buf, pointer); pointer += 8
+                                        }
+                                    }
+                                }
+
+                                buf
+                            }
+                            is FftSample -> {
+                                val list = this.map { it as Array<FftSample> }
+
+                                val contentSize = list.map {
+                                    4 + // innerArray.size
+                                            it.map { el -> el.encodeSize() }.sum()
+                                }.sum()
+
+                                val buf = ByteArray(4 + contentSize)
+                                var pointer = 0
+
+                                writeInt(this.size, buf, pointer); pointer += 4
+
+                                list.forEach { innerArray ->
+                                    writeInt(innerArray.size, buf, pointer); pointer += 4
+                                    innerArray.forEach { fftSample ->
+                                        pointer = fftSample.encode(buf, pointer)
+                                    }
+                                }
+
+                                buf
+                            }
+                            else -> throw UnsupportedOperationException("${aval!!::class}")
+                        }
+                    }
+                }
                 else -> throw UnsupportedOperationException("${value!!::class}")
             }
         }
+
+
+internal fun FftSample.encode(buf: ByteArray, at: Int): Int {
+    var pointer = at
+    writeLong(this.time, buf, pointer); pointer += 8
+    writeInt(this.binCount, buf, pointer); pointer += 4
+    writeInt(this.sampleRate.toBits(), buf, pointer); pointer += 4
+    writeInt(this.fft.size, buf, pointer); pointer += 4
+    this.fft.forEach {
+        writeLong(it.re.toBits(), buf, pointer); pointer += 8
+        writeLong(it.im.toBits(), buf, pointer); pointer += 8
+    }
+    return pointer
+}
+
+internal fun decodeFftSample(buf: ByteArray, from: Int): Pair<FftSample, Int> {
+    var pointer = from
+    val time = readLong(buf, pointer); pointer += 8
+    val binCount = readInt(buf, pointer); pointer += 4
+    val sampleRate = Float.fromBits(readInt(buf, pointer)); pointer += 4
+    val fftSize = readInt(buf, pointer); pointer += 4
+    val fft = ArrayList<ComplexNumber>(fftSize)
+    repeat(fftSize) {
+        val re = Double.fromBits(readLong(buf, pointer)); pointer += 8
+        val im = Double.fromBits(readLong(buf, pointer)); pointer += 8
+        fft.add(ComplexNumber(re, im))
+    }
+
+    return Pair(
+            FftSample(time, binCount, sampleRate, fft),
+            pointer
+    )
+}
+
+internal fun FftSample.encodeSize(): Int =
+        8 + // time [Long]
+                4 + // binCount [Int]
+                4 + // sampleRate [Float]
+                4 + // fft.size [Int]
+                this.fft.size *
+                ( // fft [List<ComplexNumber>]
+                        8 + // re [Double]
+                                8  // im [Double]
+                        )
 
 
 fun PodCallResult.sampleList(): List<Sample> =
@@ -189,7 +302,52 @@ fun PodCallResult.sampleArrayList(): List<SampleArray> =
             }
         } ?: throw IllegalStateException("Can't decode null", this.exception)
 
-fun PodCallResult.fftSampleArrayList(): List<FftSampleArray> = TODO()
+
+fun PodCallResult.windowSampleArrayList(): List<WindowSampleArray> =
+        throwIfError().byteArray?.let { buf ->
+            var pointer = 0
+            val size = readInt(buf, pointer); pointer += 4
+            if (size > 0) {
+                val list = ArrayList<WindowSampleArray>(size)
+                repeat(size) {
+                    val innerArraySize = readInt(buf, pointer); pointer += 4
+                    list.add(Array(innerArraySize) {
+                        val sampleArraySize = readInt(buf, pointer); pointer += 4
+                        createSampleArray(sampleArraySize) {
+                            val bits = readLong(buf, pointer); pointer += 8
+                            Double.fromBits(bits)
+                        }
+                    })
+                }
+                list
+            } else {
+                emptyList<WindowSampleArray>()
+            }
+        } ?: throw IllegalStateException("Can't decode null", this.exception)
+
+
+fun PodCallResult.fftSampleArrayList(): List<FftSampleArray> =
+        throwIfError().byteArray?.let { buf ->
+            var pointer = 0
+
+            val size = readInt(buf, pointer); pointer += 4
+            if (size > 0) {
+                val list = ArrayList<FftSampleArray>(size)
+                repeat(size) {
+                    val fftSampleArraySize = readInt(buf, pointer); pointer += 4
+                    list.add(createFftSampleArray(fftSampleArraySize) {
+                        val (fftSample, newPointer) = decodeFftSample(buf, pointer)
+                        pointer = newPointer
+                        fftSample
+                    })
+                }
+                list
+            } else {
+                emptyList<FftSampleArray>()
+            }
+        } ?: throw IllegalStateException("Can't decode null", this.exception)
+
 
 fun PodCallResult.nullableSampleArrayList(): List<SampleArray>? = ifNotNull { this.sampleArrayList() }
 fun PodCallResult.nullableFftSampleArrayList(): List<FftSampleArray>? = ifNotNull { this.fftSampleArrayList() }
+fun PodCallResult.nullableWindowSampleArrayList(): List<WindowSampleArray>? = ifNotNull { this.windowSampleArrayList() }

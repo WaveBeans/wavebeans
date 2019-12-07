@@ -92,17 +92,17 @@ object OverseerIntegrationSpec : Spek({
         println("Local run finished")
 
         val f1LocalContent = f1.readLines()
-        it("should have the same size as local content") { assertThat(f1Content.size).isEqualTo(f1LocalContent.size) }
-        it("should have the same output as local content") { assertThat(f1Content).isEqualTo(f1LocalContent) }
+        it("should have the same size as local content [1]") { assertThat(f1Content.size).isEqualTo(f1LocalContent.size) }
+        it("should have the same output as local content [1]") { assertThat(f1Content).isEqualTo(f1LocalContent) }
         val f2LocalContent = f2.readLines()
-        it("should have the same size as local content") { assertThat(f2Content.size).isEqualTo(f2LocalContent.size) }
-        it("should have the same output as local content") { assertThat(f2Content).isEqualTo(f2LocalContent) }
+        it("should have the same size as local content [2]") { assertThat(f2Content.size).isEqualTo(f2LocalContent.size) }
+        it("should have the same output as local content [2]") { assertThat(f2Content).isEqualTo(f2LocalContent) }
         val f3LocalContent = f3.readLines()
-        it("should have the same size as local content") { assertThat(f3Content.size).isEqualTo(f3LocalContent.size) }
-        it("should have the same output as local content") { assertThat(f3Content).isEqualTo(f3LocalContent) }
+        it("should have the same size as local content [3]") { assertThat(f3Content.size).isEqualTo(f3LocalContent.size) }
+        it("should have the same output as local content [3]") { assertThat(f3Content).isEqualTo(f3LocalContent) }
         val f4LocalContent = f4.readLines()
-        it("should have the same size as local content") { assertThat(f4Content.size).isEqualTo(f4LocalContent.size) }
-        it("should have the same output as local content") { assertThat(f4Content).isEqualTo(f4LocalContent) }
+        it("should have the same size as local content [4]") { assertThat(f4Content.size).isEqualTo(f4LocalContent.size) }
+        it("should have the same output as local content [4]") { assertThat(f4Content).isEqualTo(f4LocalContent) }
 
         println("Deploy took $timeToDeploy ms, processing took $timeToProcess ms, " +
                 "finalizing took $timeToFinalize ms, local run time is $localRunTime ms")

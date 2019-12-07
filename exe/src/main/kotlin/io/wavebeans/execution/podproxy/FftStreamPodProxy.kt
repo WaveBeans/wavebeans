@@ -1,16 +1,13 @@
 package io.wavebeans.execution.podproxy
 
 import io.wavebeans.execution.medium.FftSampleArray
-import io.wavebeans.execution.pod.PodKey
-import io.wavebeans.execution.medium.SampleArray
+import io.wavebeans.execution.medium.long
 import io.wavebeans.execution.medium.nullableFftSampleArrayList
-import io.wavebeans.execution.medium.nullableSampleArrayList
-import io.wavebeans.lib.Sample
-import io.wavebeans.lib.ZeroSample
-import io.wavebeans.lib.stream.SampleStream
+import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.lib.stream.fft.FftSample
 import io.wavebeans.lib.stream.fft.FftStream
 import io.wavebeans.lib.stream.fft.ZeroFftSample
+import java.util.concurrent.TimeUnit.MILLISECONDS
 
 class FftStreamPodProxy(
         podKey: PodKey,
@@ -22,7 +19,13 @@ class FftStreamPodProxy(
         elementExtractor = { arr, i -> if (i < arr.size) arr[i] else null },
         zeroEl = { ZeroFftSample }
 ) {
-    override fun estimateFftSamplesCount(samplesCount: Long): Long = throw UnsupportedOperationException("not required")
+    override fun estimateFftSamplesCount(samplesCount: Long): Long {
+        val podKey = pointedTo
+        val bush = podDiscovery.bushFor(podKey)
+        val caller = bushCallerRepository.create(bush, podKey)
+
+        return caller.call("estimateFftSamplesCount?samplesCount=${samplesCount}").get(5000, MILLISECONDS).long()
+    }
 }
 
 class FftStreamMergingPodProxy(
@@ -34,5 +37,11 @@ class FftStreamMergingPodProxy(
         elementExtractor = { arr, i -> if (i < arr.size) arr[i] else null },
         zeroEl = { ZeroFftSample }
 ), FftStream {
-    override fun estimateFftSamplesCount(samplesCount: Long): Long = throw UnsupportedOperationException("not required")
+    override fun estimateFftSamplesCount(samplesCount: Long): Long {
+        val podKey = readsFrom.first()
+        val bush = podDiscovery.bushFor(podKey)
+        val caller = bushCallerRepository.create(bush, podKey)
+
+        return caller.call("estimateFftSamplesCount?samplesCount=${samplesCount}").get(5000, MILLISECONDS).long()
+    }
 }

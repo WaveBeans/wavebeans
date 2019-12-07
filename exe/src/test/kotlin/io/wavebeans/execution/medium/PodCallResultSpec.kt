@@ -1,11 +1,17 @@
 package io.wavebeans.execution.medium
 
+import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
 import assertk.catch
 import io.wavebeans.execution.Call
 import io.wavebeans.lib.Sample
+import io.wavebeans.lib.math.i
+import io.wavebeans.lib.math.r
 import io.wavebeans.lib.sampleOf
+import io.wavebeans.lib.stream.fft.FftSample
+import io.wavebeans.lib.stream.window.Window
+import io.wavebeans.lib.stream.window.WindowStreamParams
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 
@@ -97,6 +103,62 @@ object PodCallResultSpec : Spek({
             it("should have non empty byteArray") { assertThat(result.byteArray).isNotNull() }
             it("should have empty exception") { assertThat(result.exception).isNull() }
             it("should return valid value") { assertThat(result.sampleList()).isEqualTo(sampleList) }
+        }
+
+        describe("Wrapping WindowStreamParams") {
+            val params = WindowStreamParams(windowSize = 2, step = 3)
+            val result = result(params)
+
+            it("should have non empty byteArray") { assertThat(result.byteArray).isNotNull() }
+            it("should have empty exception") { assertThat(result.exception).isNull() }
+            it("should return valid value") {
+                assertThat(result.windowStreamParams()).all {
+                    prop("windowSize") { it.windowSize }.isEqualTo(params.windowSize)
+                    prop("step") { it.step }.isEqualTo(params.step)
+                }
+            }
+        }
+
+        describe("Wrapping List of WindowSampleArray") {
+            val obj = listOf(
+                    createWindowSampleArray(2) { i -> Window((0..9).map { sampleOf(it * i) }) },
+                    createWindowSampleArray(2) { i -> Window((0..9).map { sampleOf(it * i) }) }
+            )
+            val result = result(obj)
+
+            it("should have non empty byteArray") { assertThat(result.byteArray).isNotNull() }
+            it("should have empty exception") { assertThat(result.exception).isNull() }
+            it("should return valid value") {
+                assertThat(result.nullableWindowSampleArrayList())
+                        .isNotNull()
+                        .all {
+                            prop("window @ [0,0]") { it[0][0] }.isEqualTo(obj[0][0])
+                            prop("window @ [0,1]") { it[0][1] }.isEqualTo(obj[0][1])
+                            prop("window @ [1,0]") { it[1][0] }.isEqualTo(obj[1][0])
+                            prop("window @ [1,1]") { it[1][1] }.isEqualTo(obj[1][1])
+                        }
+            }
+        }
+
+        describe("Wrapping List<FftSampleArray>") {
+            val obj = listOf(
+                    createFftSampleArray(2) { i -> FftSample(i.toLong(), i, i * 123.0f, listOf(i.r, i.i)) },
+                    createFftSampleArray(2) { i -> FftSample(i.toLong(), i, i * 123.0f, listOf(i.r, i.i)) }
+            )
+            val result = result(obj)
+
+            it("should have non empty byteArray") { assertThat(result.byteArray).isNotNull() }
+            it("should have empty exception") { assertThat(result.exception).isNull() }
+            it("should return valid value") {
+                assertThat(result.nullableFftSampleArrayList())
+                        .isNotNull()
+                        .all {
+                            prop("fft @ [0,0]") { it[0][0] }.isEqualTo(obj[0][0])
+                            prop("fft @ [0,1]") { it[0][1] }.isEqualTo(obj[0][1])
+                            prop("fft @ [1,0]") { it[1][0] }.isEqualTo(obj[1][0])
+                            prop("fft @ [1,1]") { it[1][1] }.isEqualTo(obj[1][1])
+                        }
+            }
         }
     }
 
