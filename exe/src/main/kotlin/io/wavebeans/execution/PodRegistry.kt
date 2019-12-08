@@ -44,7 +44,6 @@ object PodRegistry {
 
         registerPod(typeOf<BeanStream<Sample, *>>(), SampleStreamingPod::class.constructors.single { it.parameters.size == 2 })
         registerPod(typeOf<BeanStream<FftSample, *>>(), FftSampleStreamingPod::class.constructors.single { it.parameters.size == 2 })
-        registerPod(typeOf<FftStream>(), FftStreamingPod::class.constructors.single { it.parameters.size == 2 })
         registerPod(typeOf<StreamOutput<Sample, FiniteSampleStream>>(), SampleStreamOutputPod::class.constructors.first())
         registerPod(typeOf<StreamOutput<FftSample, FiniteFftStream>>(), FftSampleStreamOutputPod::class.constructors.first())
 
