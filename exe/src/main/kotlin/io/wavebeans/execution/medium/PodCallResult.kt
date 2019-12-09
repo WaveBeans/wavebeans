@@ -33,6 +33,8 @@ class PodCallResult(val call: Call, val byteArray: ByteArray?, val exception: Th
         fun wrap(call: Call, exception: Throwable): PodCallResult = PodCallResult(call, null, exception)
     }
 
+    fun isNull(): Boolean = this.byteArray == null && this.exception == null
+
     override fun toString(): String {
         return "PodCallResult(call=$call, byteArray[${byteArray?.size}]=${byteArray?.take(10).toString()}, exception=$exception)"
     }
