@@ -4,7 +4,6 @@ import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.execution.medium.*
 import io.wavebeans.lib.stream.fft.FftSample
 import io.wavebeans.lib.stream.fft.FiniteFftStream
-import io.wavebeans.lib.stream.fft.ZeroFftSample
 import java.util.concurrent.TimeUnit
 
 @ExperimentalStdlibApi
@@ -15,8 +14,7 @@ class FiniteFftStreamPodProxy(
         pointedTo = pointedTo,
         forPartition = forPartition,
         converter = { it.nullableFftSampleArrayList() },
-        elementExtractor = { arr, i -> if (i < arr.size) arr[i] else null },
-        zeroEl = { ZeroFftSample }
+        elementExtractor = { arr, i -> if (i < arr.size) arr[i] else null }
 ), FiniteFftStream {
 
     override fun length(timeUnit: TimeUnit): Long {
@@ -33,8 +31,7 @@ class FiniteFftStreamMergingPodProxy(
 ) : MergingPodProxy<FftSample, FiniteFftStream, FftSampleArray>(
         forPartition = forPartition,
         converter = { it.nullableFftSampleArrayList() },
-        elementExtractor = { arr, i -> if (i < arr.size) arr[i] else null },
-        zeroEl = { ZeroFftSample }
+        elementExtractor = { arr, i -> if (i < arr.size) arr[i] else null }
 ), FiniteFftStream {
 
     override fun length(timeUnit: TimeUnit): Long {

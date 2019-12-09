@@ -12,8 +12,6 @@ import kotlin.math.log10
 
 fun SampleWindowStream.fft(binCount: Int): FftStream = FftStreamImpl(this, FftStreamParams(binCount))
 
-val ZeroFftSample = FftSample(0, 0, 0.0f, emptyList())
-
 data class FftSample(
         val time: Long,
         val binCount: Int,

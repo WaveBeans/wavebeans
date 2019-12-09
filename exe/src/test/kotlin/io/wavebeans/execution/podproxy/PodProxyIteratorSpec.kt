@@ -22,7 +22,6 @@ class PodProxyIteratorTester<T : Any, ARRAY_T : Any>(
         val pointedTo: Pod,
         converter: (PodCallResult) -> List<ARRAY_T>?,
         elementExtractor: (ARRAY_T, Int) -> T?,
-        zeroEl: () -> T,
         partitionSize: Int = 1,
         prefetchBucketAmount: Int = 1
 ) {
@@ -65,7 +64,6 @@ class PodProxyIteratorTester<T : Any, ARRAY_T : Any>(
             bushCallerRepository = bushCallerRepository,
             converter = converter,
             elementExtractor = elementExtractor,
-            zeroEl = zeroEl,
             partitionSize = partitionSize,
             prefetchBucketAmount = prefetchBucketAmount
     )
@@ -77,8 +75,7 @@ object PodProxyIteratorSpec : Spek({
         val iterator = PodProxyIteratorTester(
                 pointedTo = newTestStreamingPod((1..2).toList()),
                 converter = { r -> r.sampleArrayList() },
-                elementExtractor = { arr, i -> if (i < arr.size) arr[i] else null },
-                zeroEl = { ZeroSample }
+                elementExtractor = { arr, i -> if (i < arr.size) arr[i] else null }
         )
 
         it("should have some elements") { assertThat(iterator.iterator.hasNext()).isTrue() }
@@ -92,7 +89,6 @@ object PodProxyIteratorSpec : Spek({
                 pointedTo = newTestStreamingPod((1..4).toList(), partitionSize = 2),
                 converter = { r -> r.sampleArrayList() },
                 elementExtractor = { arr, i -> if (i < arr.size) arr[i] else null },
-                zeroEl = { ZeroSample },
                 partitionSize = 2
         )
 
@@ -112,7 +108,6 @@ object PodProxyIteratorSpec : Spek({
                 pointedTo = newTestStreamingPod((1..3).toList(), partitionSize = 2),
                 converter = { r -> r.sampleArrayList() },
                 elementExtractor = { arr, i -> if (i < arr.size) arr[i] else null },
-                zeroEl = { ZeroSample },
                 partitionSize = 2
         )
 

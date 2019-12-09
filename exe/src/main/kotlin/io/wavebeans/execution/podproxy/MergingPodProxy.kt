@@ -12,7 +12,6 @@ import java.util.concurrent.TimeUnit
 abstract class MergingPodProxy<T : Any, S : Any, ARRAY_T>(
         val converter: (PodCallResult) -> List<ARRAY_T>?,
         val elementExtractor: (ARRAY_T, Int) -> T?,
-        val zeroEl: () -> T,
         override val forPartition: Int,
         val podDiscovery: PodDiscovery = PodDiscovery.default,
         val bushCallerRepository: BushCallerRepository = BushCallerRepository.default(podDiscovery),
@@ -32,7 +31,6 @@ abstract class MergingPodProxy<T : Any, S : Any, ARRAY_T>(
                                 pod = it,
                                 converter = converter,
                                 elementExtractor = elementExtractor,
-                                zeroEl = zeroEl,
                                 readingPartition = forPartition,
                                 podDiscovery = podDiscovery,
                                 bushCallerRepository = bushCallerRepository,

@@ -15,8 +15,7 @@ class StreamInputPodProxy(
         pointedTo = podKey,
         forPartition = forPartition,
         converter = { it.nullableSampleArrayList() },
-        elementExtractor = { arr, i -> if (i < arr.size) arr[i] else null },
-        zeroEl = { ZeroSample }
+        elementExtractor = { arr, i -> if (i < arr.size) arr[i] else null }
 ) {
 
     override fun inputs(): List<Bean<*, *>> {
@@ -30,8 +29,7 @@ class StreamInputMergingPodProxy(
 ) : MergingPodProxy<Sample, StreamInput, SampleArray>(
         forPartition = forPartition,
         converter = { it.nullableSampleArrayList() },
-        elementExtractor = { arr, i -> if (i < arr.size) arr[i] else null },
-        zeroEl = { ZeroSample }
+        elementExtractor = { arr, i -> if (i < arr.size) arr[i] else null }
 ), StreamInput {
 
     override fun inputs(): List<Bean<*, *>> {

@@ -6,7 +6,6 @@ import io.wavebeans.execution.medium.nullableFftSampleArrayList
 import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.lib.stream.fft.FftSample
 import io.wavebeans.lib.stream.fft.FftStream
-import io.wavebeans.lib.stream.fft.ZeroFftSample
 import java.util.concurrent.TimeUnit.MILLISECONDS
 
 class FftStreamPodProxy(
@@ -16,8 +15,7 @@ class FftStreamPodProxy(
         pointedTo = podKey,
         forPartition = forPartition,
         converter = { it.nullableFftSampleArrayList() },
-        elementExtractor = { arr, i -> if (i < arr.size) arr[i] else null },
-        zeroEl = { ZeroFftSample }
+        elementExtractor = { arr, i -> if (i < arr.size) arr[i] else null }
 ) {
     override fun estimateFftSamplesCount(samplesCount: Long): Long {
         val podKey = pointedTo
@@ -34,8 +32,7 @@ class FftStreamMergingPodProxy(
 ) : MergingPodProxy<FftSample, FftStream, FftSampleArray>(
         forPartition = forPartition,
         converter = { it.nullableFftSampleArrayList() },
-        elementExtractor = { arr, i -> if (i < arr.size) arr[i] else null },
-        zeroEl = { ZeroFftSample }
+        elementExtractor = { arr, i -> if (i < arr.size) arr[i] else null }
 ), FftStream {
     override fun estimateFftSamplesCount(samplesCount: Long): Long {
         val podKey = readsFrom.first()

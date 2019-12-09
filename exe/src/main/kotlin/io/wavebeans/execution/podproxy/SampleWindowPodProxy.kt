@@ -15,8 +15,7 @@ class SampleWindowStreamPodProxy(
         pointedTo = podKey,
         forPartition = forPartition,
         converter = { it.nullableWindowSampleArrayList() },
-        elementExtractor = { arr, i -> if (i < arr.size) Window(arr[i].toList()) else null },
-        zeroEl = { Window(emptyList()) }
+        elementExtractor = { arr, i -> if (i < arr.size) Window(arr[i].toList()) else null }
 ) {
     override val parameters: WindowStreamParams
         get() {
@@ -33,8 +32,7 @@ class SampleWindowMergingPodProxy(
 ) : MergingPodProxy<Window<Sample>, SampleWindowStream, WindowSampleArray>(
         forPartition = forPartition,
         converter = { it.nullableWindowSampleArrayList() },
-        elementExtractor = { arr, i -> if (i < arr.size) Window(arr[i].toList()) else null },
-        zeroEl = { Window(emptyList()) }
+        elementExtractor = { arr, i -> if (i < arr.size) Window(arr[i].toList()) else null }
 ), SampleWindowStream {
     override val parameters: WindowStreamParams
         get() {

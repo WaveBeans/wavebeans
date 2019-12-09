@@ -11,12 +11,10 @@ import io.wavebeans.lib.io.toCsv
 import io.wavebeans.lib.stream.changeAmplitude
 import io.wavebeans.lib.stream.fft.fft
 import io.wavebeans.lib.stream.fft.trim
-import io.wavebeans.lib.stream.plus
 import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.stream.window.window
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
-import org.spekframework.spek2.style.specification.xdescribe
 import java.io.File
 import java.lang.Thread.sleep
 import kotlin.system.measureTimeMillis
@@ -25,10 +23,10 @@ import kotlin.system.measureTimeMillis
 object OverseerIntegrationSpec : Spek({
 
     describe("Two outputs with different paths but same content") {
-        val f1 = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
-        val f2 = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
-        val f3 = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
-        val f4 = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
+        val f1 = File.createTempFile("test", ".csv")//.also { it.deleteOnExit() }
+        val f2 = File.createTempFile("test", ".csv")//.also { it.deleteOnExit() }
+        val f3 = File.createTempFile("test", ".csv")//.also { it.deleteOnExit() }
+        val f4 = File.createTempFile("test", ".csv")//.also { it.deleteOnExit() }
 
         val i1 = seqStream()
         val i2 = seqStream()
@@ -39,7 +37,7 @@ object OverseerIntegrationSpec : Spek({
         val o1 = p1
                 .trim(50)
                 .toCsv("file://${f1.absolutePath}")
-        val pp = p1 + p2
+        val pp = p1//p1 + p2
         val o2 = pp
                 .trim(50)
                 .toCsv("file://${f2.absolutePath}")

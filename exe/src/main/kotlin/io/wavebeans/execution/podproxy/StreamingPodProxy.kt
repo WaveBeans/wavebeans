@@ -16,7 +16,6 @@ abstract class StreamingPodProxy<T : Any, S : Any, ARRAY_T>(
         val bushCallerRepository: BushCallerRepository = BushCallerRepository.default(podDiscovery),
         val converter: (PodCallResult) -> List<ARRAY_T>?,
         val elementExtractor: (ARRAY_T, Int) -> T?,
-        val zeroEl: () -> T,
         val prefetchBucketAmount: Int = DEFAULT_PREFETCH_BUCKET_AMOUNT,
         val partitionSize: Int = DEFAULT_PARTITION_SIZE
 ) : BeanStream<T, S>, PodProxy<T, S> {
@@ -30,7 +29,6 @@ abstract class StreamingPodProxy<T : Any, S : Any, ARRAY_T>(
                 bushCallerRepository,
                 converter,
                 elementExtractor,
-                zeroEl,
                 prefetchBucketAmount,
                 partitionSize
         ).asSequence()

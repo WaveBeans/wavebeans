@@ -17,8 +17,7 @@ class FiniteSampleStreamPodProxy(
         pointedTo = pointedTo,
         forPartition = forPartition,
         converter = { it.nullableSampleArrayList() },
-        elementExtractor = { arr, i -> if (i < arr.size) arr[i] else null },
-        zeroEl = { ZeroSample }
+        elementExtractor = { arr, i -> if (i < arr.size) arr[i] else null }
 ), FiniteSampleStream {
 
     override fun length(timeUnit: TimeUnit): Long {
@@ -35,8 +34,7 @@ class FiniteSampleStreamMergingPodProxy(
 ) : MergingPodProxy<Sample, FiniteSampleStream, SampleArray>(
         forPartition = forPartition,
         converter = { it.nullableSampleArrayList() },
-        elementExtractor = { arr, i -> if (i < arr.size) arr[i] else null },
-        zeroEl = { ZeroSample }
+        elementExtractor = { arr, i -> if (i < arr.size) arr[i] else null }
 ), FiniteSampleStream {
 
     override fun length(timeUnit: TimeUnit): Long {

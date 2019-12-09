@@ -61,7 +61,6 @@ class MergingPodProxyTester(
             podDiscovery = podDiscovery,
             converter = { it.nullableSampleArrayList() },
             elementExtractor = { arr, i -> if (i < arr.size) arr[i] else null },
-            zeroEl = { io.wavebeans.lib.ZeroSample },
             prefetchBucketAmount = timeToReadAtOnce,
             partitionSize = partitionSize
     ) {
