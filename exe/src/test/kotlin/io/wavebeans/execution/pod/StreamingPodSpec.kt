@@ -17,10 +17,7 @@ object StreamingPodSpec : Spek({
             newTestStreamingPod(seq).use { pod ->
 
                 val iteratorKey = pod.iteratorStart(100.0f, 0)
-                val result = pod.iteratorNext(iteratorKey, 100)
-                        ?.map {it as SampleArray }
-                        ?.flatMap { it.asList() }
-                        ?.map { it.asInt() }
+                val result = pod.iteratorNext(iteratorKey, 100).toIntSamples()
 
                 it("should be the same as defined sequence") { assertThat(result).isEqualTo(seq) }
             }
@@ -32,14 +29,8 @@ object StreamingPodSpec : Spek({
 
                 val iteratorKey1 = pod.iteratorStart(100.0f, 0)
                 val iteratorKey2 = pod.iteratorStart(100.0f, 0)
-                val result1 = pod.iteratorNext(iteratorKey1, 100)
-                        ?.map {it as SampleArray }
-                        ?.flatMap { it.asList() }
-                        ?.map { it.asInt() }
-                val result2 = pod.iteratorNext(iteratorKey2, 100)
-                        ?.map {it as SampleArray }
-                        ?.flatMap { it.asList() }
-                        ?.map { it.asInt() }
+                val result1 = pod.iteratorNext(iteratorKey1, 100).toIntSamples()
+                val result2 = pod.iteratorNext(iteratorKey2, 100).toIntSamples()
 
                 it("first should be the same as defined sequence") { assertThat(result1).isEqualTo(seq) }
                 it("second should be the same as defined sequence") { assertThat(result2).isEqualTo(seq) }
@@ -51,10 +42,7 @@ object StreamingPodSpec : Spek({
             newTestStreamingPod(seq).use { pod ->
 
                 val iteratorKey1 = pod.iteratorStart(100.0f, 0)
-                val e = pod.iteratorNext(iteratorKey1, 101)
-                        ?.map {it as SampleArray }
-                        ?.flatMap { it.asList() }
-                        ?.map { it.asInt() }
+                val e = pod.iteratorNext(iteratorKey1, 101).toIntSamples()
 
                 it("should be the same as defined sequence") {
                     assertThat(e).isEqualTo(seq)
@@ -66,14 +54,8 @@ object StreamingPodSpec : Spek({
             newTestStreamingPod(seq).use { pod ->
 
                 val iteratorKey1 = pod.iteratorStart(100.0f, 0)
-                val e1 = pod.iteratorNext(iteratorKey1, 100)
-                        ?.map {it as SampleArray }
-                        ?.flatMap { it.asList() }
-                        ?.map { it.asInt() }
-                val e2 = pod.iteratorNext(iteratorKey1, 1)
-                        ?.map {it as SampleArray }
-                        ?.flatMap { it.asList() }
-                        ?.map { it.asInt() }
+                val e1 = pod.iteratorNext(iteratorKey1, 100).toIntSamples()
+                val e2 = pod.iteratorNext(iteratorKey1, 1).toIntSamples()
 
                 it("first attempt should be the same as defined sequence") {
                     assertThat(e1).isEqualTo(seq)
@@ -88,14 +70,8 @@ object StreamingPodSpec : Spek({
             newTestStreamingPod(seq).use { pod ->
 
                 val iteratorKey1 = pod.iteratorStart(100.0f, 0)
-                val e1 = pod.iteratorNext(iteratorKey1, 50)
-                        ?.map {it as SampleArray }
-                        ?.flatMap { it.asList() }
-                        ?.map { it.asInt() }
-                val e2 = pod.iteratorNext(iteratorKey1, 50)
-                        ?.map {it as SampleArray }
-                        ?.flatMap { it.asList() }
-                        ?.map { it.asInt() }
+                val e1 = pod.iteratorNext(iteratorKey1, 50).toIntSamples()
+                val e2 = pod.iteratorNext(iteratorKey1, 50).toIntSamples()
 
                 it("first attempt should be the same as defined sequence first half") {
                     assertThat(e1).isEqualTo(seq.take(50))
@@ -105,5 +81,27 @@ object StreamingPodSpec : Spek({
                 }
             }
         }
+
+        describe("Iterate over pod sequence with two consumers. Partition size > 1") {
+            newTestStreamingPod(seq, partitionSize = 2).use { pod ->
+                val key1 = pod.iteratorStart(1.0f, 0)
+                val key2 = pod.iteratorStart(1.0f, 0)
+
+                val e1 = pod.iteratorNext(key1, 2).toIntSamples() ?: emptyList()
+                pod.iteratorNext(key2, 2).toIntSamples() ?: emptyList() // should read something
+
+                val e11 = pod.iteratorNext(key1, 2).toIntSamples() ?: emptyList()
+                val e12 = pod.iteratorNext(key1, 2).toIntSamples() ?: emptyList()
+
+                it("should generate correct output") {
+                    assertThat(e1 + e11 + e12).isEqualTo(seq.take(12))
+                }
+            }
+        }
     }
 })
+
+private fun List<Any>?.toIntSamples(): List<Int>? = this
+        ?.map { it as SampleArray }
+        ?.flatMap { it.asList() }
+        ?.map { it.asInt() }

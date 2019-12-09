@@ -122,20 +122,21 @@ abstract class AbstractPod<T : Any, ARRAY_T, B : BeanStream<T, *>>(
         }
         try {
             val i = iterator!!
-            if (buf.size <= buckets) { // not enough data
+            if (buf.size < buckets) { // not enough data
                 // can't check if there are some elements in the iterator as it has side effect of starting fetching element
                 // avoid reading from different iterators
                 iteratorLock.lock()
                 try {
-                    if (buf.size <= buckets && i.hasNext()) { // double check, if that wasn't read before
-                        var iterations = buckets * partitionSize * partitionCount - buf.size // TODO should it make sure the iterations is divisible by partition size?
+                    if (buf.size < buckets && i.hasNext()) { // double check, if that wasn't read before
+                        var iterations = buckets * partitionSize * partitionCount - buf.size * partitionSize // TODO should it make sure the iterations is divisible by partition size?
                         log.trace { "Reading... [POD=$podKey] Doing $iterations iterations to fill the buffer [buf.size=${buf.size}]" }
                         var list = ArrayList<T>(partitionSize)
                         var leftToReadForPartition = partitionSize
                         while (iterations >= 0) {
                             if (i.hasNext()) {
                                 // read the next batch from the stream and spread across consumer queues
-                                if (leftToReadForPartition == 0) {
+                                if (leftToReadForPartition == 0 || iterations == 0) {
+                                    // if partition is full or no iterations left -- dump the partition to the buffer
                                     buffers
                                             .filter { partitionCount == 1 || it.value.first == partitionIdx }
                                             .forEach { it.value.second.add(converter(list)) }
