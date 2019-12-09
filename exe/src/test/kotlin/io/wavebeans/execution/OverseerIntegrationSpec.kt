@@ -7,6 +7,7 @@ import assertk.assertions.size
 import io.wavebeans.execution.TopologySerializer.jsonPretty
 import io.wavebeans.lib.io.magnitudeToCsv
 import io.wavebeans.lib.io.phaseToCsv
+import io.wavebeans.lib.io.sine
 import io.wavebeans.lib.io.toCsv
 import io.wavebeans.lib.stream.changeAmplitude
 import io.wavebeans.lib.stream.fft.fft

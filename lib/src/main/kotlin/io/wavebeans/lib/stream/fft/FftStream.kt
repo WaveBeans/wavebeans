@@ -55,7 +55,7 @@ data class FftStreamParams(
 class FftStreamImpl(
         val sampleStream: SampleWindowStream,
         val params: FftStreamParams
-) : FftStream, AlterBean<Window<Sample>, SampleWindowStream, FftSample, FftStream> {
+) : FftStream, AlterBean<Window<Sample>, SampleWindowStream, FftSample, FftStream>, SinglePartitionBean {
 
     override val parameters: BeanParams = params
 
@@ -82,7 +82,7 @@ class FftStreamImpl(
                     )
 
                     FftSample(
-                            time = (idx * m / (sampleRate / 1e+9)).toLong(),
+                            time = (idx.toDouble() * m.toDouble() / (sampleRate.toDouble() / 1e+9)).toLong(),
                             binCount = params.n,
                             fft = fft.toList(),
                             sampleRate = sampleRate
