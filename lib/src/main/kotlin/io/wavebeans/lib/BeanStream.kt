@@ -4,7 +4,7 @@ import java.util.concurrent.TimeUnit
 
 /**
  * Main interface for all [Bean]s that may stream data. Streams data as sequence with defined sample rate.
- * Objects it is streaming will often be referred as sample, but usually it in that context it doesn't refer to object [Sample],
+ * Objects it is streaming will often be referred as sample, but usually in that context it doesn't refer to object [Sample],
  * however sometimes it may be the same thing.
  *
  * @param T the type of the streaming sample.
