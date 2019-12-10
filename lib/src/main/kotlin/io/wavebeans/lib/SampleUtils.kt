@@ -29,3 +29,4 @@ fun timeToSampleIndex(timePoint: Long, timeUnit: TimeUnit, sampleRate: Float, ro
             RoundingMode.FLOOR -> timeToSampleIndexFloor(timePoint, timeUnit, sampleRate)
             else -> throw UnsupportedOperationException("Rounding mode $roundingMode is unsupported")
         }
+        
