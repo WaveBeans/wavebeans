@@ -1,5 +1,7 @@
 package io.wavebeans.execution
 
+import io.wavebeans.execution.pod.Pod
+import io.wavebeans.execution.pod.PodKey
 import java.util.concurrent.ConcurrentHashMap
 
 data class PodInfo(

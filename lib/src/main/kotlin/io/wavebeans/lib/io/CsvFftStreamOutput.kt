@@ -2,72 +2,68 @@ package io.wavebeans.lib.io
 
 import io.wavebeans.lib.Bean
 import io.wavebeans.lib.BeanParams
-import io.wavebeans.lib.stream.FftSample
-import io.wavebeans.lib.stream.FiniteFftStream
+import io.wavebeans.lib.SinglePartitionBean
+import io.wavebeans.lib.SinkBean
+import io.wavebeans.lib.stream.fft.FftSample
+import io.wavebeans.lib.stream.fft.FiniteFftStream
+import kotlinx.serialization.Serializable
 import java.net.URI
 import java.nio.charset.Charset
 
 fun FiniteFftStream.magnitudeToCsv(
-        uri: String,
-        encoding: Charset = Charset.forName("UTF-8")
+        uri: String
 ): StreamOutput<FftSample, FiniteFftStream> {
-    return CsvFftStreamOutput(this, CsvFftStreamOutputParams(URI(uri), true, encoding))
+    return CsvFftStreamOutput(this, CsvFftStreamOutputParams(uri, true))
 }
 
 fun FiniteFftStream.phaseToCsv(
-        uri: String,
-        encoding: Charset = Charset.forName("UTF-8")
+        uri: String
 ): StreamOutput<FftSample, FiniteFftStream> {
-    return CsvFftStreamOutput(this, CsvFftStreamOutputParams(URI(uri), false, encoding))
+    return CsvFftStreamOutput(this, CsvFftStreamOutputParams(uri, false))
 }
 
+@Serializable
 data class CsvFftStreamOutputParams(
-        val uri: URI,
+        val uri: String,
         val isMagnitude: Boolean,
-        val encoding: Charset = Charset.forName("UTF-8")
+        val encoding: String = "UTF-8"
 ) : BeanParams()
 
 class CsvFftStreamOutput(
-        stream: FiniteFftStream,
+        val stream: FiniteFftStream,
         val params: CsvFftStreamOutputParams
-) : StreamOutput<FftSample, FiniteFftStream> {
+) : StreamOutput<FftSample, FiniteFftStream>, SinkBean<FftSample, FiniteFftStream>, SinglePartitionBean {
 
     override fun writer(sampleRate: Float): Writer {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        var offset = 0L
+        return object : FileWriter<FftSample, FiniteFftStream>(URI(params.uri), stream, sampleRate) {
+            override fun header(): ByteArray? = null
+
+            override fun footer(): ByteArray? = null
+
+            override fun serialize(element: FftSample): ByteArray {
+                val seq = if (params.isMagnitude)
+                    element.magnitude().map { it.toString() }
+                else
+                    element.phase().map { it.toString() }
+
+
+                var b = (sequenceOf(element.time / 1e+6) + seq)
+                        .joinToString(",")
+
+                if (offset++ == 0L) {
+                    b = (sequenceOf("time ms \\ freq hz") + element.frequency().map { it.toString() }).joinToString(",") +
+                            "\n$b"
+                }
+
+                return (b + "\n").toByteArray(Charset.forName(params.encoding))
+            }
+
+        }
     }
 
     override val input: Bean<FftSample, FiniteFftStream>
-        get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+        get() = stream
 
     override val parameters: BeanParams = params
-
-//    override fun header(dataSize: Int): ByteArray? = null
-//
-//    override fun footer(dataSize: Int): ByteArray? = null
-//
-//    override fun serialize(offset: Long, sampleRate: Float, samples: List<FftSample>): ByteArray {
-//        return samples.asSequence()
-//                .mapIndexed { idx, fftSample ->
-//                    val seq = if (params.isMagnitude)
-//                        fftSample.magnitude.map { it.toString() }
-//                    else
-//                        fftSample.phase.map { it.toString() }
-//
-//
-//                    var b = (sequenceOf(fftSample.time / 10e+6) + seq)
-//                            .joinToString(",")
-//
-//                    if (offset + idx == 0L) {
-//                        b = (sequenceOf("time ms \\ freq hz") + fftSample.frequency.map { it.toString() }).joinToString(",") +
-//                                "\n$b"
-//                    }
-//
-//                    b
-//                }
-//                .joinToString(separator = "\n")
-//                .toByteArray(params.encoding)
-//    }
-
-
-
 }

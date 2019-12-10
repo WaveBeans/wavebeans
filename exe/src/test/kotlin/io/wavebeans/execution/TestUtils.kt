@@ -5,6 +5,11 @@ import assertk.all
 import assertk.assertions.isEqualTo
 import assertk.assertions.support.fail
 import assertk.assertions.support.show
+import io.wavebeans.execution.medium.SampleArray
+import io.wavebeans.execution.medium.createSampleArray
+import io.wavebeans.execution.pod.PodKey
+import io.wavebeans.execution.pod.SplittingPod
+import io.wavebeans.execution.pod.StreamingPod
 import io.wavebeans.lib.*
 import io.wavebeans.lib.io.StreamInput
 import io.wavebeans.lib.io.StreamOutput
@@ -27,8 +32,8 @@ class IntStream(
 
 }
 
-fun newTestStreamingPod(seq: List<Int>, partition: Int = 0, partitionSize: Int = 1): StreamingPod<Sample, SampleArray> {
-    return object : StreamingPod<Sample, SampleArray>(
+fun newTestStreamingPod(seq: List<Int>, partition: Int = 0, partitionSize: Int = 1): StreamingPod<Sample, SampleArray, IntStream> {
+    return object : StreamingPod<Sample, SampleArray, IntStream>(
             bean = IntStream(seq),
             podKey = PodKey(1, partition),
             partitionSize = partitionSize,
@@ -39,8 +44,8 @@ fun newTestStreamingPod(seq: List<Int>, partition: Int = 0, partitionSize: Int =
     ) {}
 }
 
-fun newTestSplittingPod(seq: List<Int>, partitionCount: Int): SplittingPod<Sample, SampleArray> {
-    return object : SplittingPod<Sample, SampleArray>(
+fun newTestSplittingPod(seq: List<Int>, partitionCount: Int): SplittingPod<Sample, SampleArray, IntStream> {
+    return object : SplittingPod<Sample, SampleArray, IntStream>(
             bean = IntStream(seq),
             podKey = PodKey(1, 0),
             partitionCount = partitionCount,

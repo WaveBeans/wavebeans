@@ -3,6 +3,9 @@ package io.wavebeans.execution
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
+import io.wavebeans.execution.medium.long
+import io.wavebeans.execution.pod.Pod
+import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.lib.AnyBean
 import io.wavebeans.lib.Sample
 import org.spekframework.spek2.Spek
@@ -16,7 +19,7 @@ object BushSpec : Spek({
 
     describe("Bush should call pod method. 1 pod per bush") {
 
-        val podKey = PodKey(random.nextInt(), 0)
+        val podKey = PodKey(random.nextInt() + 2, 0)
         val pod = object : Pod {
 
             override fun isFinished(): Boolean = throw UnsupportedOperationException()
