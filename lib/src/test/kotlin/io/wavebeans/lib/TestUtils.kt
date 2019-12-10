@@ -143,6 +143,3 @@ class DoubleStream(
 }
 
 fun <T> Assert<List<T>>.at(idx: Int): Assert<T> = this.prop("[$idx]") { it[idx] }
-
-
-fun <T> T.rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit = TimeUnit.MILLISECONDS): T = TODO()
