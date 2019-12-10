@@ -3,8 +3,10 @@ package io.wavebeans.lib
 import io.wavebeans.lib.stream.window.Window
 import io.wavebeans.lib.stream.window.WindowStream
 import io.wavebeans.lib.stream.window.WindowStreamParams
+import kotlinx.serialization.Serializable
 import java.util.concurrent.TimeUnit
 
+@Serializable
 data class ProjectionBeanStreamParams(
         val start: Long,
         val end: Long?,
@@ -15,23 +17,19 @@ data class ProjectionBeanStreamParams(
  * Allows to read only specific time projection of the [BeanStream] with type of [Sample].
  */
 class SampleProjectionBeanStream(
-        val input: BeanStream<Sample>,
-        val params: ProjectionBeanStreamParams
-) : BeanStream<Sample> {
+        override val input: BeanStream<Sample>,
+        override val parameters: ProjectionBeanStreamParams
+) : BeanStream<Sample>, SingleBean<Sample> {
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> {
-        val start = timeToSampleIndexFloor(params.start, params.timeUnit, sampleRate)
+        val start = timeToSampleIndexFloor(parameters.start, parameters.timeUnit, sampleRate)
                 .let { if (it < 0) 0 else it }
-        val end = params.end?.let { timeToSampleIndexCeil(it, params.timeUnit, sampleRate) } ?: Long.MAX_VALUE
+        val end = parameters.end?.let { timeToSampleIndexCeil(it, parameters.timeUnit, sampleRate) } ?: Long.MAX_VALUE
         val length = end - start
         return input.asSequence(sampleRate).drop(start.toInt()).take(length.toInt()) // TODO add support for Long?
     }
 
     override fun inputs(): List<AnyBean> = listOf(input)
-
-    override val parameters: BeanParams
-        get() = params
-
 }
 
 class WindowSampleProjectionBeanStreamParams(
@@ -51,14 +49,14 @@ class WindowSampleProjectionBeanStreamParams(
  * Allows to read only specific time projection of the [WindowStream] with type of [Sample].
  */
 class WindowSampleProjectionBeanStream(
-        val input: WindowStream<Sample>,
-        val params: WindowSampleProjectionBeanStreamParams
-) : WindowStream<Sample> {
+        override val input: WindowStream<Sample>,
+        override val parameters: WindowSampleProjectionBeanStreamParams
+) : WindowStream<Sample>, SingleBean<Window<Sample>> {
 
     override fun asSequence(sampleRate: Float): Sequence<Window<Sample>> {
-        val startIdx = timeToSampleIndexFloor(params.start, params.timeUnit, sampleRate).toInt() / params.step
-        val endIdx = params.end?.let { timeToSampleIndexCeil(it, params.timeUnit, sampleRate).toInt() }
-                ?.let { it / params.step + if (it % params.step == 0) 0 else 1 }
+        val startIdx = timeToSampleIndexFloor(parameters.start, parameters.timeUnit, sampleRate).toInt() / parameters.step
+        val endIdx = parameters.end?.let { timeToSampleIndexCeil(it, parameters.timeUnit, sampleRate).toInt() }
+                ?.let { it / parameters.step + if (it % parameters.step == 0) 0 else 1 }
                 ?: Int.MAX_VALUE
 
         return input.asSequence(sampleRate)
@@ -67,9 +65,6 @@ class WindowSampleProjectionBeanStream(
     }
 
     override fun inputs(): List<AnyBean> = listOf(input)
-
-    override val parameters: WindowStreamParams
-        get() = params
 
 }
 
