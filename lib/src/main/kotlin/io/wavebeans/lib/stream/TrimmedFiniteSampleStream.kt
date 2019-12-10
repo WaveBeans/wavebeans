@@ -17,7 +17,7 @@ data class TrimmedFiniteSampleStreamParams(
 class TrimmedFiniteSampleStream(
         val sampleStream: BeanStream<Sample>,
         val params: TrimmedFiniteSampleStreamParams
-) : FiniteSampleStream, SingleBean<Sample>, SinglePartitionBean, SampleTimeBeanStream {
+) : FiniteSampleStream, SingleBean<Sample>, SinglePartitionBean {
 
     override val parameters: BeanParams = params
 

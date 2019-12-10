@@ -1,5 +1,7 @@
 package io.wavebeans.lib
 
+import java.util.concurrent.TimeUnit
+
 interface BeanStream<T : Any> : Bean<T> {
 
     /**
@@ -10,4 +12,16 @@ interface BeanStream<T : Any> : Bean<T> {
      *  @throws UnsupportedOperationException if input doesn't support resampling
      **/
     fun asSequence(sampleRate: Float): Sequence<T>
+
+    /**
+     * Counts number of occurrences of [T] objects in the sequence.
+     * **Caution: it reads the whole stream, do not expect execution to end on infinite streams**
+     */
+    fun samplesCount(sampleRate: Float): Long = asSequence(sampleRate).count().toLong()
+
+    /**
+     * Measures the length in the sequence
+     * **Caution: it reads the whole stream, do not expect execution to end on infinite streams**
+     */
+    fun length(sampleRate: Float, timeUnit: TimeUnit = TimeUnit.MILLISECONDS): Long = samplesCountToLength(samplesCount(sampleRate), sampleRate, timeUnit)
 }

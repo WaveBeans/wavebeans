@@ -25,7 +25,7 @@ data class SineGeneratedInputParams(
 
 class SineGeneratedInput constructor(
         val params: SineGeneratedInputParams
-) : StreamInput, SinglePartitionBean, SampleTimeBeanStream {
+) : StreamInput, SinglePartitionBean {
     override val parameters: BeanParams = params
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> {

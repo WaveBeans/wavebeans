@@ -72,10 +72,10 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
         describe("Projected range 0.0s..1.0s") {
             val projection = input.rangeProjection(0, 1000, MILLISECONDS)
 
-            itShouldHave("number of samples 50") { assertThat(projection.samplesCount()).isEqualTo(50) }
-            itShouldHave("Length should be 1000ms for sample rate 50Hz") { assertThat(projection.length(MILLISECONDS)).isEqualTo(1000L) }
+            itShouldHave("number of samples 50") { assertThat(projection.samplesCount(sampleRate)).isEqualTo(50L) }
+            itShouldHave("Length should be 1000ms for sample rate 50Hz") { assertThat(projection.length(sampleRate, MILLISECONDS)).isEqualTo(1000L) }
             itShouldHave("Samples should be [0,50)") {
-                assertThat(projection.listOfBytesAsInts(50.0f, 50)).isEqualTo(
+                assertThat(projection.listOfBytesAsInts(sampleRate, 50)).isEqualTo(
                         (0 until 50).toList()
                 )
             }
@@ -84,10 +84,10 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
         describe("Projected range 0.5s..1.0s") {
             val projection = input.rangeProjection(500, 1000, MILLISECONDS)
 
-            itShouldHave("number of samples 25") { assertThat(projection.samplesCount()).isEqualTo(25) }
-            itShouldHave("length 500ms for sample rate 50Hz") { assertThat(projection.length(MILLISECONDS)).isEqualTo(500L) }
+            itShouldHave("number of samples 25") { assertThat(projection.samplesCount(sampleRate)).isEqualTo(25L) }
+            itShouldHave("length 500ms for sample rate 50Hz") { assertThat(projection.length(sampleRate, MILLISECONDS)).isEqualTo(500L) }
             itShouldHave("samples with values [25,50)") {
-                assertThat(projection.listOfBytesAsInts(50.0f)).isEqualTo(
+                assertThat(projection.listOfBytesAsInts(sampleRate)).isEqualTo(
                         (25 until 50).toList()
                 )
             }
@@ -96,10 +96,10 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
         describe("Projected range 0.1s..0.2s") {
             val projection = input.rangeProjection(100, 200, MILLISECONDS)
 
-            itShouldHave("number of samples 5") { assertThat(projection.samplesCount()).isEqualTo(5) }
-            itShouldHave("length 100ms for sample rate 50Hz") { assertThat(projection.length(MILLISECONDS)).isEqualTo(100L) }
+            itShouldHave("number of samples 5") { assertThat(projection.samplesCount(sampleRate)).isEqualTo(5L) }
+            itShouldHave("length 100ms for sample rate 50Hz") { assertThat(projection.length(sampleRate, MILLISECONDS)).isEqualTo(100L) }
             itShouldHave("samples with values [5,10)") {
-                assertThat(projection.listOfBytesAsInts(50.0f)).isEqualTo(
+                assertThat(projection.listOfBytesAsInts(sampleRate)).isEqualTo(
                         (5 until 10).toList()
                 )
             }
@@ -108,10 +108,10 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
         describe("Projected range 1.5s..2.5s") {
             val projection = input.rangeProjection(1500, 2500, MILLISECONDS)
 
-            itShouldHave("number of samples 25") { assertThat(projection.samplesCount()).isEqualTo(25) }
-            itShouldHave("length 500ms for sample rate 50Hz") { assertThat(projection.length(MILLISECONDS)).isEqualTo(500L) }
+            itShouldHave("number of samples 25") { assertThat(projection.samplesCount(sampleRate)).isEqualTo(25L) }
+            itShouldHave("length 500ms for sample rate 50Hz") { assertThat(projection.length(sampleRate, MILLISECONDS)).isEqualTo(500L) }
             itShouldHave("samples with values [75,100)") {
-                assertThat(projection.listOfBytesAsInts(50.0f)).isEqualTo(
+                assertThat(projection.listOfBytesAsInts(sampleRate)).isEqualTo(
                         (75 until 100).toList()
                 )
             }
@@ -120,10 +120,10 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
         describe("Projected range -1.5s..2.5s") {
             val projection = input.rangeProjection(-1500, 2500, MILLISECONDS)
 
-            itShouldHave("number of samples 100") { assertThat(projection.samplesCount()).isEqualTo(100) }
-            itShouldHave("length 2000ms for sample rate 50Hz") { assertThat(projection.length(MILLISECONDS)).isEqualTo(2000L) }
+            itShouldHave("number of samples 100") { assertThat(projection.samplesCount(sampleRate)).isEqualTo(100L) }
+            itShouldHave("length 2000ms for sample rate 50Hz") { assertThat(projection.length(sampleRate, MILLISECONDS)).isEqualTo(2000L) }
             itShouldHave("samples with values [0,100)") {
-                assertThat(projection.listOfBytesAsInts(50.0f)).isEqualTo(
+                assertThat(projection.listOfBytesAsInts(sampleRate)).isEqualTo(
                         (0 until 100).toList()
                 )
             }
@@ -159,10 +159,10 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
         describe("Projected range 1.0s..2.0s") {
             val projection = input.rangeProjection(1000, 2000, MILLISECONDS)
 
-            itShouldHave("number of samples 25") { assertThat(projection.samplesCount()).isEqualTo(50) }
-            itShouldHave("length 1000ms for sample rate 50Hz") { assertThat(projection.length(MILLISECONDS)).isEqualTo(1000L) }
+            itShouldHave("number of samples 25") { assertThat(projection.samplesCount(sampleRate)).isEqualTo(50L) }
+            itShouldHave("length 1000ms for sample rate 50Hz") { assertThat(projection.length(sampleRate, MILLISECONDS)).isEqualTo(1000L) }
             itShouldHave("samples with samples made of byte range [100,200)") {
-                assertThat(projection.listOfShortsAsInts(50.0f)).isEqualTo(
+                assertThat(projection.listOfShortsAsInts(sampleRate)).isEqualTo(
                         (100 until 200)
                                 .windowed(2, 2)
                                 .map { it[0] or (it[1] shl 8) }

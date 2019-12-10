@@ -2,7 +2,6 @@ package io.wavebeans.lib.stream
 
 import io.wavebeans.lib.*
 import kotlinx.serialization.Serializable
-import java.util.concurrent.TimeUnit
 
 operator fun BeanStream<Sample>.times(multiplier: Double): BeanStream<Sample> = this.changeAmplitude(multiplier)
 operator fun BeanStream<Sample>.div(divisor: Double): BeanStream<Sample> = this.changeAmplitude(1.0 / divisor)
@@ -18,7 +17,7 @@ data class ChangeAmplitudeSampleStreamParams(
 class ChangeAmplitudeSampleStream(
         val source: BeanStream<Sample>,
         val params: ChangeAmplitudeSampleStreamParams
-) : BeanStream<Sample>, SingleBean<Sample>, SampleTimeBeanStream {
+) : BeanStream<Sample>, SingleBean<Sample> {
 
     override val parameters: BeanParams = params
 

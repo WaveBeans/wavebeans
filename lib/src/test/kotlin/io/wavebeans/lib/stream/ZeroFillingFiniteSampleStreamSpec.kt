@@ -1,6 +1,7 @@
 package io.wavebeans.lib.stream
 
 import assertk.assertThat
+import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import io.wavebeans.lib.*
 import org.spekframework.spek2.Spek
@@ -81,13 +82,13 @@ object ZeroFillingFiniteSampleStreamSpec : Spek({
             ).isEqualTo(seq.take(5))
         }
 
-        it("should return 0 after first 5 elements") {
+        it("should return nothing after first 5 elements") {
             assertThat(
                     getZeroFillSeq(zeroFilling)
                             .drop(5)
                             .take(10)
                             .toList()
-            ).isEqualTo(10.repeat { 0 })
+            ).isEmpty()
         }
 
     }
@@ -104,13 +105,13 @@ object ZeroFillingFiniteSampleStreamSpec : Spek({
             ).isEqualTo(seq.drop(5).take(5))
         }
 
-        it("should return 0 after first 5 elements") {
+        it("should return nothing after first 5 elements") {
             assertThat(
                     getZeroFillSeq(zeroFilling)
                             .drop(5)
                             .take(10)
                             .toList()
-            ).isEqualTo(10.repeat { 0 })
+            ).isEmpty()
         }
 
     }

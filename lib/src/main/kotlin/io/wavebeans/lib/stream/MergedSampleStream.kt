@@ -30,7 +30,7 @@ class MergedSampleStream(
         val sourceStream: BeanStream<Sample>,
         val mergingStream: BeanStream<Sample>,
         val params: MergedSampleStreamParams
-) : BeanStream<Sample>, MultiBean<Sample>, SinglePartitionBean, SampleTimeBeanStream {
+) : BeanStream<Sample>, MultiBean<Sample>, SinglePartitionBean {
 
     override val parameters: BeanParams = params
 
