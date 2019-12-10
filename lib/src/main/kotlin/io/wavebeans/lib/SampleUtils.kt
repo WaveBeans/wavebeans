@@ -1,5 +1,6 @@
 package io.wavebeans.lib
 
+import java.math.RoundingMode
 import java.util.concurrent.TimeUnit
 import kotlin.math.ceil
 import kotlin.math.floor
@@ -21,3 +22,10 @@ fun timeToSampleIndexFloor(timePoint: Long, timeUnit: TimeUnit, sampleRate: Floa
 
 fun timeToSampleIndexCeil(timePoint: Long, timeUnit: TimeUnit, sampleRate: Float): Long =
         ceil(timeUnit.toNanos(timePoint).toDouble() / 1_000_000_000.0 * sampleRate).toLong()
+
+fun timeToSampleIndex(timePoint: Long, timeUnit: TimeUnit, sampleRate: Float, roundingMode: RoundingMode): Long=
+        when (roundingMode) {
+            RoundingMode.CEILING -> timeToSampleIndexCeil(timePoint, timeUnit, sampleRate)
+            RoundingMode.FLOOR -> timeToSampleIndexFloor(timePoint, timeUnit, sampleRate)
+            else -> throw UnsupportedOperationException("Rounding mode $roundingMode is unsupported")
+        }

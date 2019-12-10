@@ -6,10 +6,10 @@ import io.wavebeans.lib.BeanStream
 import io.wavebeans.lib.Sample
 
 class SampleSplittingPod(
-        bean: BeanStream<Sample, *>,
+        bean: BeanStream<Sample>,
         podKey: PodKey,
         partitionCount: Int
-) : SplittingPod<Sample, SampleArray, BeanStream<Sample, *>>(
+) : SplittingPod<Sample, SampleArray, BeanStream<Sample>>(
         bean = bean,
         podKey = podKey,
         partitionCount = partitionCount,

@@ -3,9 +3,7 @@ package io.wavebeans.lib.stream
 import assertk.Assert
 import assertk.assertThat
 import assertk.assertions.support.fail
-import io.wavebeans.lib.BitDepth
-import io.wavebeans.lib.asInt
-import io.wavebeans.lib.stream
+import io.wavebeans.lib.*
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 
@@ -21,7 +19,7 @@ object ChangeAmplitudeSampleStreamSpec : Spek({
         val sampleRate = 10.0f
         fun stream(range: IntProgression) = range.stream(sampleRate, BitDepth.BIT_32)
 
-        fun SampleStream.take(amount: Int) = this.asSequence(sampleRate)
+        fun BeanStream<Sample>.take(amount: Int) = this.asSequence(sampleRate)
                 .map { it.asInt() }
                 .take(amount)
                 .toList()

@@ -4,7 +4,7 @@ import io.wavebeans.lib.*
 import kotlinx.serialization.Serializable
 import java.util.concurrent.TimeUnit
 
-fun SampleStream.trim(length: Long, timeUnit: TimeUnit = TimeUnit.MILLISECONDS): FiniteSampleStream =
+fun BeanStream<Sample>.trim(length: Long, timeUnit: TimeUnit = TimeUnit.MILLISECONDS): FiniteSampleStream =
         TrimmedFiniteSampleStream(this, TrimmedFiniteSampleStreamParams(length, timeUnit))
 
 @Serializable
@@ -15,13 +15,13 @@ data class TrimmedFiniteSampleStreamParams(
 
 // TODO move this functionality to output and perhaps get rid of FiniteSampleStream. This functionality looks fishy overall
 class TrimmedFiniteSampleStream(
-        val sampleStream: SampleStream,
+        val sampleStream: BeanStream<Sample>,
         val params: TrimmedFiniteSampleStreamParams
-) : FiniteSampleStream, AlterBean<Sample, SampleStream, Sample, FiniteSampleStream>, SinglePartitionBean {
+) : FiniteSampleStream, SingleBean<Sample>, SinglePartitionBean, SampleTimeBeanStream {
 
     override val parameters: BeanParams = params
 
-    override val input: Bean<Sample, SampleStream> = sampleStream
+    override val input: Bean<Sample> = sampleStream
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> {
         var samplesToTake = timeToSampleIndexFloor(TimeUnit.NANOSECONDS.convert(params.length, params.timeUnit), TimeUnit.NANOSECONDS, sampleRate)
@@ -39,14 +39,6 @@ class TrimmedFiniteSampleStream(
 
         }.asSequence()
     }
-
-    override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): TrimmedFiniteSampleStream =
-            TrimmedFiniteSampleStream(
-                    sampleStream.rangeProjection(start, end, timeUnit),
-                    params.copy(
-                            length = end?.minus(start) ?: (timeUnit.convert(params.length, params.timeUnit) - start)
-                    )
-            )
 
     override fun length(timeUnit: TimeUnit): Long = timeUnit.convert(params.length, params.timeUnit)
 

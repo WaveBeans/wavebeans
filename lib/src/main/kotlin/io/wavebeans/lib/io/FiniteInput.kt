@@ -5,7 +5,7 @@ import io.wavebeans.lib.Sample
 import io.wavebeans.lib.SourceBean
 import java.util.concurrent.TimeUnit
 
-interface FiniteInput : BeanStream<Sample, FiniteInput>, SourceBean<Sample, FiniteInput> {
+interface FiniteInput : BeanStream<Sample>, SourceBean<Sample> {
 
     /** Amount of samples available */
     fun samplesCount(): Int

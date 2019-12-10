@@ -16,11 +16,11 @@ data class TrimmedFiniteFftStreamParams(
 class TrimmedFiniteFftStream(
         val fftStream: FftStream,
         val params: TrimmedFiniteFftStreamParams
-) : FiniteFftStream, AlterBean<FftSample, FftStream, FftSample, FiniteFftStream>, SinglePartitionBean {
+) : FiniteFftStream, SingleBean<FftSample>, SinglePartitionBean {
 
     override val parameters: BeanParams = params
 
-    override val input: Bean<FftSample, FftStream> = fftStream
+    override val input: Bean<FftSample> = fftStream
 
     override fun asSequence(sampleRate: Float): Sequence<FftSample> =
             fftStream
@@ -30,14 +30,6 @@ class TrimmedFiniteFftStream(
                                     timeToSampleIndexFloor(this.length(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS, sampleRate)
                             ).toInt()
                     )
-
-    override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): FiniteFftStream =
-            TrimmedFiniteFftStream(
-                    fftStream.rangeProjection(start, end, timeUnit),
-                    params.copy(
-                            length = end?.minus(start) ?: (params.timeUnit.convert(params.length, timeUnit) - start)
-                    )
-            )
 
     override fun length(timeUnit: TimeUnit): Long = timeUnit.convert(params.length, params.timeUnit)
 

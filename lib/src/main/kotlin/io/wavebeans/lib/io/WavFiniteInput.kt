@@ -2,17 +2,14 @@ package io.wavebeans.lib.io
 
 import io.wavebeans.lib.*
 import io.wavebeans.lib.stream.FiniteToStream
-import io.wavebeans.lib.stream.SampleStream
 import io.wavebeans.lib.stream.sampleStream
 import java.io.*
 import java.net.URI
 import java.util.concurrent.TimeUnit
-import kotlin.math.max
-import kotlin.math.min
 
 fun wave(uri: String): FiniteInput = WavFiniteInput(WavFiniteInputParams(URI(uri)))
 
-fun wave(uri: String, converter: FiniteToStream): SampleStream = wave(uri).sampleStream(converter)
+fun wave(uri: String, converter: FiniteToStream): BeanStream<Sample> = wave(uri).sampleStream(converter)
 
 data class WavFiniteInputParams(
         val uri: URI
@@ -21,7 +18,7 @@ data class WavFiniteInputParams(
 class WavFiniteInput(
         val params: WavFiniteInputParams,
         private val content: Content? = null
-) : FiniteInput, SinglePartitionBean {
+) : FiniteInput, SinglePartitionBean, SampleTimeBeanStream {
 
     override val parameters: BeanParams = params
 
@@ -67,22 +64,6 @@ class WavFiniteInput(
     override fun length(timeUnit: TimeUnit): Long = samplesCountToLength(samplesCount().toLong(), cnt.sampleRate, timeUnit)
 
     override fun samplesCount(): Int = cnt.size / cnt.bitDepth.bytesPerSample
-
-    override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): FiniteInput {
-        val s = max(timeToSampleIndexFloor(start, timeUnit, cnt.sampleRate), 0).toInt()
-        val e = end?.let { min(timeToSampleIndexCeil(end, timeUnit, cnt.sampleRate).toInt(), samplesCount()) }
-                ?: samplesCount()
-        return WavFiniteInput(
-                params,
-                cnt.copy( // TODO this should be done without copying of underlying buffer
-                        buffer = cnt.buffer.copyOfRange(
-                                s * cnt.bitDepth.bytesPerSample,
-                                e * cnt.bitDepth.bytesPerSample
-                        )
-                )
-
-        )
-    }
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> =
             ByteArrayLittleEndianDecoder(cnt.sampleRate, cnt.bitDepth).sequence(sampleRate, cnt.buffer)

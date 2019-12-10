@@ -16,9 +16,7 @@ object ZeroFillingFiniteSampleStreamSpec : Spek({
             return seq.asSequence().map { sampleOf(it) }
         }
 
-        override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): FiniteSampleStream = throw UnsupportedOperationException()
-
-        override fun inputs(): List<Bean<*, *>> = throw UnsupportedOperationException()
+        override fun inputs(): List<AnyBean> = throw UnsupportedOperationException()
 
         override val parameters: BeanParams
             get() = throw UnsupportedOperationException()
@@ -118,5 +116,5 @@ object ZeroFillingFiniteSampleStreamSpec : Spek({
     }
 })
 
-private fun getZeroFillSeq(zeroFilling: SampleStream) =
+private fun getZeroFillSeq(zeroFilling: BeanStream<Sample>) =
         zeroFilling.asSequence(10.0f).map { it.asInt() }

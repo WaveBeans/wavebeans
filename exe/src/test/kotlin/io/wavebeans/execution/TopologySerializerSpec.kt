@@ -5,7 +5,6 @@ import assertk.assertThat
 import assertk.assertions.*
 import io.wavebeans.lib.NoParams
 import io.wavebeans.lib.io.*
-import io.wavebeans.lib.stream.InfiniteSampleStream
 import io.wavebeans.lib.stream.TrimmedFiniteSampleStream
 import io.wavebeans.lib.stream.TrimmedFiniteSampleStreamParams
 import io.wavebeans.lib.stream.trim
@@ -42,8 +41,7 @@ object TopologySerializerSpec : Spek({
                     nodeRef.prop("type") { it.type }.isIn(*listOf(
                             SineGeneratedInput::class,
                             CsvSampleStreamOutput::class,
-                            TrimmedFiniteSampleStream::class,
-                            InfiniteSampleStream::class
+                            TrimmedFiniteSampleStream::class
                     ).map { it.qualifiedName }.toTypedArray())
 
                     nodeRef.prop("params") { it.params }.kClass().isIn(*listOf(

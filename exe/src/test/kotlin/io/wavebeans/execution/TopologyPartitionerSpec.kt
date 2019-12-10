@@ -5,6 +5,7 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.prop
 import assertk.assertions.size
+import io.wavebeans.lib.AnyBean
 import io.wavebeans.lib.Bean
 import io.wavebeans.lib.io.sine
 import io.wavebeans.lib.io.toCsv
@@ -17,22 +18,22 @@ import org.spekframework.spek2.style.specification.describe
 
 object TopologyPartitionerSpec : Spek({
 
-    val ids = mutableMapOf<Bean<*, *>, Int>()
+    val ids = mutableMapOf<AnyBean, Int>()
 
     val idResolver = object : IdResolver {
-        override fun id(node: Bean<*, *>): Int = ids[node] ?: throw IllegalStateException("$node is not found")
+        override fun id(node: AnyBean): Int = ids[node] ?: throw IllegalStateException("$node is not found")
     }
 
     beforeGroup {
         ids.clear()
     }
 
-    fun <T : Bean<*, *>> T.n(id: Int): T {
+    fun <T : AnyBean> T.n(id: Int): T {
         ids[this] = id
         return this
     }
 
-    fun <T : Bean<*, *>> T.i(id1: Int, id2: Int): T {
+    fun <T : AnyBean> T.i(id1: Int, id2: Int): T {
         ids[this.inputs().first()] = id1
         ids[this] = id2
         return this

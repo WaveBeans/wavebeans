@@ -4,7 +4,7 @@ import io.wavebeans.lib.BeanStream
 import io.wavebeans.lib.stream.fft.FftSample
 import java.util.concurrent.TimeUnit
 
-interface FiniteFftStream : BeanStream<FftSample, FiniteFftStream> {
+interface FiniteFftStream : BeanStream<FftSample> {
 
     fun length(timeUnit: TimeUnit = TimeUnit.MILLISECONDS): Long
 }

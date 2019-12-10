@@ -16,11 +16,11 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
 private class ByteArrayFileOutputMock(
         val stream: FiniteSampleStream,
         val bitDepth: BitDepth
-) : StreamOutput<Sample, FiniteSampleStream> {
+) : StreamOutput<Sample> {
 
     private val file = File.createTempFile("test", ".tmp").also { it.deleteOnExit() }
 
-    override val input: Bean<Sample, FiniteSampleStream>
+    override val input: Bean<Sample>
         get() = throw UnsupportedOperationException()
 
     override val parameters: BeanParams
@@ -189,9 +189,6 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
 
                     override fun samplesCount(): Int = throw UnsupportedOperationException()
 
-                    override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): FiniteInput =
-                            throw UnsupportedOperationException()
-
                     override fun asSequence(sampleRate: Float): Sequence<Sample> =
                             signal.asSequence().map { el -> sampleOf(el.toShort()) }
 
@@ -215,9 +212,6 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
                     override fun length(timeUnit: TimeUnit): Long = Long.MAX_VALUE
 
                     override fun samplesCount(): Int = throw UnsupportedOperationException()
-
-                    override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): FiniteInput =
-                            throw UnsupportedOperationException()
 
                     override fun asSequence(sampleRate: Float): Sequence<Sample> =
                             signal.asSequence()

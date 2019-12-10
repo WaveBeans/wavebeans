@@ -1,31 +1,29 @@
 package io.wavebeans.lib.stream.window
 
 import io.wavebeans.lib.*
-import io.wavebeans.lib.stream.SampleStream
 import io.wavebeans.lib.stream.ScalarOp
 import kotlinx.serialization.*
 import kotlinx.serialization.internal.StringDescriptor
-import java.util.concurrent.TimeUnit
 
-operator fun SampleWindowStream.minus(d: Number): SampleWindowStream =
+operator fun WindowStream<Sample>.minus(d: Number): WindowStream<Sample> =
         SampleScalarWindowStream(
                 this,
                 SampleScalarWindowStreamParams(SampleMinusScalarOp, d.toDouble(), this.parameters.windowSize, this.parameters.step)
         )
 
-operator fun SampleWindowStream.plus(d: Number): SampleWindowStream =
+operator fun WindowStream<Sample>.plus(d: Number): WindowStream<Sample> =
         SampleScalarWindowStream(
                 this,
                 SampleScalarWindowStreamParams(SamplePlusScalarOp, d.toDouble(), this.parameters.windowSize, this.parameters.step)
         )
 
-operator fun SampleWindowStream.times(d: Number): SampleWindowStream =
+operator fun WindowStream<Sample>.times(d: Number): WindowStream<Sample> =
         SampleScalarWindowStream(
                 this,
                 SampleScalarWindowStreamParams(SampleTimesScalarOp, d.toDouble(), this.parameters.windowSize, this.parameters.step)
         )
 
-operator fun SampleWindowStream.div(d: Number): SampleWindowStream =
+operator fun WindowStream<Sample>.div(d: Number): WindowStream<Sample> =
         SampleScalarWindowStream(
                 this,
                 SampleScalarWindowStreamParams(SampleDivScalarOp, d.toDouble(), this.parameters.windowSize, this.parameters.step)
@@ -44,33 +42,26 @@ object SampleScalarWindowStreamParamsSerializer {
 
 }
 
-@Serializable(with = SampleMergedWindowStreamParamsSerializer::class)
+@Serializable(with = SampleScalarWindowStreamParamsSerializer::class)
 class SampleScalarWindowStreamParams(
         @Serializable(with = ScalarOpSerializer::class) val operation: ScalarOp<Double, Sample>,
         val scalar: Double,
         windowSize: Int,
-        step: Int,
-        start: Long = 0,
-        end: Long? = null,
-        timeUnit: TimeUnit = TimeUnit.MILLISECONDS
-) : WindowStreamParams(windowSize, step, start, end, timeUnit)
+        step: Int
+) : WindowStreamParams(windowSize, step)
 
 class SampleScalarWindowStream(
-        sourceStream: SampleWindowStream,
+        sourceStream: WindowStream<Sample>,
         val params: SampleScalarWindowStreamParams
-) : ScalarOpWindowStream<Double, Sample, SampleStream, SampleWindowStream>(
+) : ScalarOpWindowStream<Double, Sample>(
         sourceStream,
         params.operation,
         params.scalar
-), SampleWindowStream {
+), WindowStream<Sample> {
 
-    override val input: Bean<Window<Sample>, SampleWindowStream>
+    override val input: Bean<Window<Sample>>
         get() = sourceStream
 
     override val parameters: WindowStreamParams
         get() = params
-
-    override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): SampleWindowStream {
-        return SampleScalarWindowStream(sourceStream.rangeProjection(start, end, timeUnit), params)
-    }
 }

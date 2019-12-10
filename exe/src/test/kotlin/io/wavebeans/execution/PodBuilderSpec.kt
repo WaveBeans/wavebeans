@@ -7,6 +7,7 @@ import assertk.assertions.*
 import io.wavebeans.lib.Bean
 import io.wavebeans.execution.TopologySerializer.jsonPretty
 import io.wavebeans.execution.pod.PodKey
+import io.wavebeans.lib.AnyBean
 import io.wavebeans.lib.io.sine
 import io.wavebeans.lib.io.toCsv
 import io.wavebeans.lib.stream.*
@@ -15,10 +16,10 @@ import org.spekframework.spek2.style.specification.describe
 
 @ExperimentalStdlibApi
 class PodBuilderSpec : Spek({
-    val ids = mutableMapOf<Bean<*, *>, Int>()
+    val ids = mutableMapOf<AnyBean, Int>()
 
     val idResolver = object : IdResolver {
-        override fun id(node: Bean<*, *>): Int = ids[node] ?: throw IllegalStateException("$node is not found")
+        override fun id(node: AnyBean): Int = ids[node] ?: throw IllegalStateException("$node is not found")
     }
 
     beforeGroup {
@@ -26,12 +27,12 @@ class PodBuilderSpec : Spek({
     }
 
 
-    fun <T : Bean<*, *>> T.n(id: Int): T {
+    fun <T : AnyBean> T.n(id: Int): T {
         ids[this] = id
         return this
     }
 
-    fun <T : Bean<*, *>> T.i(id1: Int, id2: Int): T {
+    fun <T : AnyBean> T.i(id1: Int, id2: Int): T {
         ids[this.inputs().first()] = id1
         ids[this] = id2
         return this

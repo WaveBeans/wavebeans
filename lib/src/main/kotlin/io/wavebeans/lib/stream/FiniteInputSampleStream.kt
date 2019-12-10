@@ -6,21 +6,18 @@ import java.util.concurrent.TimeUnit
 
 fun FiniteInput.finiteSampleStream(): FiniteSampleStream = FiniteInputSampleStream(this, NoParams())
 
-fun FiniteInput.sampleStream(converter: FiniteToStream): SampleStream = this.finiteSampleStream().sampleStream(converter)
+fun FiniteInput.sampleStream(converter: FiniteToStream): BeanStream<Sample> = this.finiteSampleStream().sampleStream(converter)
 
 class FiniteInputSampleStream(
         val finiteInput: FiniteInput,
         val params: NoParams
-) : FiniteSampleStream, AlterBean<Sample, FiniteInput, Sample, FiniteSampleStream> {
+) : FiniteSampleStream, SingleBean<Sample> {
 
     override val parameters: BeanParams = params
 
-    override val input: Bean<Sample, FiniteInput> = finiteInput
+    override val input: Bean<Sample> = finiteInput
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> = finiteInput.asSequence(sampleRate)
-
-    override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): FiniteInputSampleStream =
-            FiniteInputSampleStream(finiteInput.rangeProjection(start, end, timeUnit), params)
 
     override fun length(timeUnit: TimeUnit): Long = finiteInput.length(timeUnit)
 

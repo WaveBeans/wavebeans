@@ -11,7 +11,7 @@ fun FiniteSampleStream.toCsv(
         uri: String,
         timeUnit: TimeUnit = TimeUnit.MILLISECONDS,
         encoding: String = "UTF-8"
-): StreamOutput<Sample, FiniteSampleStream> {
+): StreamOutput<Sample> {
     return CsvSampleStreamOutput(this, CsvSampleStreamOutputParams(uri, timeUnit, encoding))
 }
 
@@ -43,12 +43,12 @@ data class CsvSampleStreamOutputParams(
 class CsvSampleStreamOutput(
         val stream: FiniteSampleStream,
         val params: CsvSampleStreamOutputParams
-) : StreamOutput<Sample, FiniteSampleStream>, SinglePartitionBean {
+) : StreamOutput<Sample>, SinglePartitionBean {
 
     override fun writer(sampleRate: Float): Writer {
         var offset = 0L
 
-        return object : FileWriter<Sample, FiniteSampleStream>(params.uri(), stream, sampleRate) {
+        return object : FileWriter<Sample>(params.uri(), stream, sampleRate) {
 
             override fun header(): ByteArray? = "time ${params.outputTimeUnit.abbreviation()}, value\n".toByteArray(params.encoding())
 
@@ -65,7 +65,7 @@ class CsvSampleStreamOutput(
         }
     }
 
-    override val input: Bean<Sample, FiniteSampleStream>
+    override val input: Bean<Sample>
         get() = stream
 
     override val parameters: BeanParams = params

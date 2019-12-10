@@ -6,7 +6,7 @@ import java.io.Closeable
 /**
  * The type of [SinkBean] that outputs the stream somewhere.
  */
-interface StreamOutput<T : Any, S : Any> : SinkBean<T, S> {
+interface StreamOutput<T : Any> : SinkBean<T> {
 
     /**
      * Gets the [Writer] to perform iterative writes with specified [sampleRate].

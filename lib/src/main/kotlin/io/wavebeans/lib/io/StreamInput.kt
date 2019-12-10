@@ -4,4 +4,4 @@ import io.wavebeans.lib.BeanStream
 import io.wavebeans.lib.Sample
 import io.wavebeans.lib.SourceBean
 
-interface StreamInput : BeanStream<Sample, StreamInput>, SourceBean<Sample, StreamInput>
+interface StreamInput : BeanStream<Sample>, SourceBean<Sample>

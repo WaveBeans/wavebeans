@@ -2,7 +2,7 @@ package io.wavebeans.execution.pod
 
 import io.wavebeans.lib.*
 
-abstract class SplittingPod<T : Any, ARRAY_T : Any, B : BeanStream<T, *>>(
+abstract class SplittingPod<T : Any, ARRAY_T : Any, B : BeanStream<T>>(
         bean: B,
         podKey: PodKey,
         partitionCount: Int,

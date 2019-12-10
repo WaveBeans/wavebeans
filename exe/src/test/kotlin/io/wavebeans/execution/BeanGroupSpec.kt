@@ -6,6 +6,7 @@ import assertk.assertThat
 import assertk.assertions.*
 import io.wavebeans.lib.Bean
 import io.wavebeans.execution.TopologySerializer.jsonPretty
+import io.wavebeans.lib.AnyBean
 import io.wavebeans.lib.io.sine
 import io.wavebeans.lib.io.toCsv
 import io.wavebeans.lib.stream.div
@@ -304,18 +305,18 @@ object BeanGroupSpec : Spek({
 
 })
 
-private val ids = mutableMapOf<Bean<*, *>, Int>()
+private val ids = mutableMapOf<AnyBean, Int>()
 
 private val idResolver = object : IdResolver {
-    override fun id(bean: Bean<*, *>): Int = ids[bean] ?: throw IllegalStateException("$bean is not found")
+    override fun id(bean: AnyBean): Int = ids[bean] ?: throw IllegalStateException("$bean is not found")
 }
 
-private fun <T : Bean<*, *>> T.n(id: Int): T {
+private fun <T : AnyBean> T.n(id: Int): T {
     ids[this] = id
     return this
 }
 
-private fun <T : Bean<*, *>> T.i(id1: Int, id2: Int): T {
+private fun <T : AnyBean> T.i(id1: Int, id2: Int): T {
     ids[this.inputs().first()] = id1
     ids[this] = id2
     return this

@@ -3,6 +3,7 @@ package io.wavebeans.execution
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
+import io.wavebeans.lib.AnyBean
 import io.wavebeans.lib.Bean
 import io.wavebeans.lib.io.CsvSampleStreamOutputParams
 import io.wavebeans.lib.io.SineGeneratedInputParams
@@ -13,10 +14,10 @@ import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 
 object TopologySpec : Spek({
-    val ids = mutableMapOf<Bean<*, *>, Int>()
+    val ids = mutableMapOf<AnyBean, Int>()
 
     val idResolver = object : IdResolver {
-        override fun id(node: Bean<*, *>): Int = ids[node] ?: throw IllegalStateException("$node is not found")
+        override fun id(node: AnyBean): Int = ids[node] ?: throw IllegalStateException("$node is not found")
     }
 
     beforeGroup {
@@ -24,12 +25,12 @@ object TopologySpec : Spek({
     }
 
 
-    fun <T : Bean<*, *>> T.n(id: Int): T {
+    fun <T : AnyBean> T.n(id: Int): T {
         ids[this] = id
         return this
     }
 
-    fun <T : Bean<*, *>> T.i(id1: Int, id2: Int): T {
+    fun <T : AnyBean> T.i(id1: Int, id2: Int): T {
         ids[this.inputs().first()] = id1
         ids[this] = id2
         return this

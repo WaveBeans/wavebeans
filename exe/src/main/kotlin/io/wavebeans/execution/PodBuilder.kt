@@ -66,7 +66,7 @@ class PodBuilder(val topology: Topology) {
 
                 val podProxyType = classForProxy.constructors.first {
                     it.parameters.size == 2 &&
-                            it.parameters[0].type.isSubtypeOf(typeOf<Bean<*, *>>()) &&
+                            it.parameters[0].type.isSubtypeOf(typeOf<AnyBean>()) &&
                             it.parameters[1].type.isSubtypeOf(typeOf<BeanParams>())
                 }.parameters[0].type
 
@@ -88,8 +88,8 @@ class PodBuilder(val topology: Topology) {
                 // TODO add support for 2+
                 val constructor = classForProxy.constructors.first {
                     it.parameters.size == 3 &&
-                            it.parameters[0].type.isSubtypeOf(typeOf<Bean<*, *>>()) &&
-                            it.parameters[1].type.isSubtypeOf(typeOf<Bean<*, *>>()) &&
+                            it.parameters[0].type.isSubtypeOf(typeOf<AnyBean>()) &&
+                            it.parameters[1].type.isSubtypeOf(typeOf<AnyBean>()) &&
                             it.parameters[2].type.isSubtypeOf(typeOf<BeanParams>())
                 }
                 val podProxyType1 = constructor.parameters[0].type

@@ -1,8 +1,11 @@
 package io.wavebeans.lib.stream
 
-fun FiniteSampleStream.sampleStream(converter: FiniteToStream): SampleStream = converter.convert(this)
+import io.wavebeans.lib.BeanStream
+import io.wavebeans.lib.Sample
+
+fun FiniteSampleStream.sampleStream(converter: FiniteToStream): BeanStream<Sample> = converter.convert(this)
 
 interface FiniteToStream {
 
-    fun convert(finiteSampleStream: FiniteSampleStream): SampleStream
+    fun convert(finiteSampleStream: FiniteSampleStream): BeanStream<Sample>
 }

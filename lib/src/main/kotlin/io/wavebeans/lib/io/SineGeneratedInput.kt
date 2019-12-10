@@ -2,19 +2,13 @@ package io.wavebeans.lib.io
 
 import io.wavebeans.lib.*
 import kotlinx.serialization.Serializable
-import io.wavebeans.lib.stream.SampleStream
-import io.wavebeans.lib.stream.SampleStreamException
-import io.wavebeans.lib.stream.sampleStream
-import java.util.concurrent.TimeUnit
 import kotlin.math.cos
-import kotlin.math.max
-import kotlin.math.min
 
 fun Number.sine(
         amplitude: Double = 1.0,
         timeOffset: Double = 0.0
-): SampleStream {
-    return SineGeneratedInput(SineGeneratedInputParams(this.toDouble(), amplitude, timeOffset)).sampleStream()
+): BeanStream<Sample> {
+    return SineGeneratedInput(SineGeneratedInputParams(this.toDouble(), amplitude, timeOffset))
 }
 
 @Serializable
@@ -31,18 +25,8 @@ data class SineGeneratedInputParams(
 
 class SineGeneratedInput constructor(
         val params: SineGeneratedInputParams
-) : StreamInput, SinglePartitionBean {
+) : StreamInput, SinglePartitionBean, SampleTimeBeanStream {
     override val parameters: BeanParams = params
-
-    override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): StreamInput {
-        if (end != null && end <= start) throw SampleStreamException("End=[$end] should be greater than start=[$start]")
-        val s = max(timeUnit.toNanos(start) / 1_000_000_000.0, 0.0)
-        val e = end?.let { min(timeUnit.toNanos(end) / 1_000_000_000.0, params.time ?: Double.MAX_VALUE) }
-        return if (e != null)
-            SineGeneratedInput(params.copy(timeOffset = s + params.timeOffset, time = e - s))
-        else
-            SineGeneratedInput(params.copy(timeOffset = s + params.timeOffset))
-    }
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> {
         return object : Iterator<Sample> {

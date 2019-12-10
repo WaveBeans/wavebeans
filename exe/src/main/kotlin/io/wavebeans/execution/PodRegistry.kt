@@ -2,13 +2,13 @@ package io.wavebeans.execution
 
 import io.wavebeans.execution.pod.*
 import io.wavebeans.execution.podproxy.*
+import io.wavebeans.lib.AnyBean
 import io.wavebeans.lib.Bean
 import io.wavebeans.lib.BeanStream
 import io.wavebeans.lib.Sample
 import io.wavebeans.lib.io.StreamInput
 import io.wavebeans.lib.io.StreamOutput
 import io.wavebeans.lib.stream.FiniteSampleStream
-import io.wavebeans.lib.stream.SampleStream
 import io.wavebeans.lib.stream.fft.FftSample
 import io.wavebeans.lib.stream.fft.FftStream
 import io.wavebeans.lib.stream.fft.FiniteFftStream
@@ -23,7 +23,7 @@ import kotlin.reflect.typeOf
 object PodRegistry {
 
     private val podProxyRegistry = mutableMapOf<KType, KFunction<AnyPodProxy>>()
-    private val mergingPodProxyRegistry = mutableMapOf<KType, KFunction<MergingPodProxy<*, *, *>>>()
+    private val mergingPodProxyRegistry = mutableMapOf<KType, KFunction<MergingPodProxy<*, *>>>()
     private val podRegistry = mutableMapOf<KType, KFunction<Pod>>()
     private val splittingPodRegistry = mutableMapOf<KType, KFunction<Pod>>()
 
@@ -31,31 +31,31 @@ object PodRegistry {
         registerPodProxy(typeOf<FiniteSampleStream>(), FiniteSampleStreamPodProxy::class.constructors.first())
         registerPodProxy(typeOf<SampleWindowStream>(), SampleWindowStreamPodProxy::class.constructors.first())
         registerPodProxy(typeOf<FiniteFftStream>(), FiniteFftStreamPodProxy::class.constructors.first())
-        registerPodProxy(typeOf<BeanStream<Sample, SampleStream>>(), SampleStreamPodProxy::class.constructors.first())
+        registerPodProxy(typeOf<BeanStream<Sample>>(), SampleStreamPodProxy::class.constructors.first())
         registerPodProxy(typeOf<StreamInput>(), StreamInputPodProxy::class.constructors.first())
         registerPodProxy(typeOf<FftStream>(), FftStreamPodProxy::class.constructors.first())
 
         registerMergingPodProxy(typeOf<FiniteSampleStream>(), FiniteFftStreamMergingPodProxy::class.constructors.first())
         registerMergingPodProxy(typeOf<SampleWindowStream>(), SampleWindowMergingPodProxy::class.constructors.first())
         registerMergingPodProxy(typeOf<FiniteFftStream>(), FiniteFftStreamMergingPodProxy::class.constructors.first())
-        registerMergingPodProxy(typeOf<BeanStream<Sample, SampleStream>>(), SampleStreamMergingPodProxy::class.constructors.first())
+        registerMergingPodProxy(typeOf<BeanStream<Sample>>(), SampleStreamMergingPodProxy::class.constructors.first())
         registerMergingPodProxy(typeOf<StreamInput>(), StreamInputMergingPodProxy::class.constructors.first())
         registerMergingPodProxy(typeOf<FftStream>(), FftStreamMergingPodProxy::class.constructors.first())
 
-        registerPod(typeOf<BeanStream<Sample, *>>(), SampleStreamingPod::class.constructors.single { it.parameters.size == 2 })
-        registerPod(typeOf<BeanStream<FftSample, *>>(), FftSampleStreamingPod::class.constructors.single { it.parameters.size == 2 })
-        registerPod(typeOf<StreamOutput<Sample, FiniteSampleStream>>(), SampleStreamOutputPod::class.constructors.first())
-        registerPod(typeOf<StreamOutput<FftSample, FiniteFftStream>>(), FftSampleStreamOutputPod::class.constructors.first())
+        registerPod(typeOf<BeanStream<Sample>>(), SampleStreamingPod::class.constructors.single { it.parameters.size == 2 })
+        registerPod(typeOf<BeanStream<FftSample>>(), FftSampleStreamingPod::class.constructors.single { it.parameters.size == 2 })
+        registerPod(typeOf<StreamOutput<Sample>>(), SampleStreamOutputPod::class.constructors.first())
+        registerPod(typeOf<StreamOutput<FftSample>>(), FftSampleStreamOutputPod::class.constructors.first())
 
-        registerSplittingPod(typeOf<BeanStream<Sample, *>>(), SampleSplittingPod::class.constructors.single { it.parameters.size == 3 })
-        registerSplittingPod(typeOf<WindowStream<Sample, *, *>>(), WindowSampleSplittingPod::class.constructors.single { it.parameters.size == 3 })
+        registerSplittingPod(typeOf<BeanStream<Sample>>(), SampleSplittingPod::class.constructors.single { it.parameters.size == 3 })
+        registerSplittingPod(typeOf<WindowStream<Sample>>(), WindowSampleSplittingPod::class.constructors.single { it.parameters.size == 3 })
     }
 
-    fun registerPodProxy(outputType: KType, constructor: KFunction<PodProxy<*, *>>) {
+    fun registerPodProxy(outputType: KType, constructor: KFunction<PodProxy<*>>) {
         podProxyRegistry[outputType] = constructor
     }
 
-    fun registerMergingPodProxy(outputType: KType, constructor: KFunction<MergingPodProxy<*, *, *>>) {
+    fun registerMergingPodProxy(outputType: KType, constructor: KFunction<MergingPodProxy<*, *>>) {
         mergingPodProxyRegistry[outputType] = constructor
     }
 
@@ -75,11 +75,11 @@ object PodRegistry {
             mergingPodProxyRegistry[findRegisteredType(beanType, mergingPodProxyRegistry.keys)]?.call(podKeys, forPartition)
                     ?: throw IllegalStateException("PodProxy for `$beanType` is not found")
 
-    fun createPod(beanType: KType, podKey: PodKey, bean: Bean<*, *>): Pod =
+    fun createPod(beanType: KType, podKey: PodKey, bean: AnyBean): Pod =
             podRegistry[findRegisteredType(beanType, podRegistry.keys)]?.call(bean, podKey)
                     ?: throw IllegalStateException("Pod for `$beanType` is not found")
 
-    fun createSplittingPod(beanType: KType, podKey: PodKey, bean: Bean<*, *>, partitionCount: Int): Pod =
+    fun createSplittingPod(beanType: KType, podKey: PodKey, bean: AnyBean, partitionCount: Int): Pod =
             splittingPodRegistry[findRegisteredType(beanType, splittingPodRegistry.keys)]?.call(bean, podKey, partitionCount)
                     ?: throw IllegalStateException("Pod for `$beanType` is not found")
 

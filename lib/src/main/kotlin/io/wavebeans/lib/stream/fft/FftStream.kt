@@ -5,12 +5,13 @@ import io.wavebeans.lib.math.ComplexNumber
 import io.wavebeans.lib.math.r
 import io.wavebeans.lib.stream.window.SampleWindowStream
 import io.wavebeans.lib.stream.window.Window
+import io.wavebeans.lib.stream.window.WindowStream
 import kotlinx.serialization.Serializable
 import java.util.concurrent.TimeUnit
 import kotlin.math.PI
 import kotlin.math.log10
 
-fun SampleWindowStream.fft(binCount: Int): FftStream = FftStreamImpl(this, FftStreamParams(binCount))
+fun WindowStream<Sample>.fft(binCount: Int): FftStream = FftStreamImpl(this, FftStreamParams(binCount))
 
 data class FftSample(
         val time: Long,
@@ -35,7 +36,7 @@ data class FftSample(
 }
 
 
-interface FftStream : BeanStream<FftSample, FftStream> {
+interface FftStream : BeanStream<FftSample> {
     /***
      * Estimate number of FFT samples will be produced based on source samples count.
      *
@@ -53,13 +54,13 @@ data class FftStreamParams(
 ) : BeanParams()
 
 class FftStreamImpl(
-        val sampleStream: SampleWindowStream,
+        val sampleStream: WindowStream<Sample>,
         val params: FftStreamParams
-) : FftStream, AlterBean<Window<Sample>, SampleWindowStream, FftSample, FftStream>, SinglePartitionBean {
+) : FftStream, AlterBean<Window<Sample>, FftSample>, SinglePartitionBean {
 
     override val parameters: BeanParams = params
 
-    override val input: Bean<Window<Sample>, SampleWindowStream> = sampleStream
+    override val input: Bean<Window<Sample>> = sampleStream
 
     override fun estimateFftSamplesCount(samplesCount: Long): Long = samplesCount / sampleStream.parameters.windowSize
 
@@ -88,9 +89,5 @@ class FftStreamImpl(
                             sampleRate = sampleRate
                     )
                 }
-    }
-
-    override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): FftStream {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 }

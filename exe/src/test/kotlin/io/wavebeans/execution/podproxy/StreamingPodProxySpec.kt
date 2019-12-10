@@ -13,7 +13,6 @@ import io.wavebeans.execution.pod.Pod
 import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.lib.Sample
 import io.wavebeans.lib.asInt
-import io.wavebeans.lib.stream.SampleStream
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.util.concurrent.CompletableFuture
@@ -55,7 +54,7 @@ class PodProxyTester(
         override fun create(bushKey: BushKey, podKey: PodKey): BushCaller = bushCaller
     }
 
-    val podProxy = object : StreamingPodProxy<Sample, SampleStream, SampleArray>(
+    val podProxy = object : StreamingPodProxy<Sample, SampleArray>(
             pointedTo = pointedTo.podKey,
             forPartition = 0,
             bushCallerRepository = bushCallerRepository,

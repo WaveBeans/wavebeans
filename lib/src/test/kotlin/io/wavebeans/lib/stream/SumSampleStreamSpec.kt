@@ -4,6 +4,7 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotSameAs
 import io.wavebeans.lib.listOfBytesAsInts
+import io.wavebeans.lib.rangeProjection
 import io.wavebeans.lib.stream
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
@@ -116,7 +117,7 @@ object SumSampleStreamSpec : Spek({
 
                 it("should be array of values: [50] + [51..147] step 2 + [49]  ") {
                     assertThat(mixed.listOfBytesAsInts(50.0f, 51)).isEqualTo(
-                            (listOf(50) + (51 .. 147 step 2) + listOf(49)).toList()
+                            (listOf(50) + (51..147 step 2) + listOf(49)).toList()
                     )
                 }
             }
@@ -144,7 +145,7 @@ object SumSampleStreamSpec : Spek({
             describe("On 10th position (10 samples shift)") {
                 val mixed = sum(sourceSampleStream, sampleStream, 10)
                 it("should be array of values  [0, 10) + [60, 78) step 2 + [20, 50)") {
-                    assertThat(mixed.listOfBytesAsInts(50.0f, 50 )).isEqualTo(
+                    assertThat(mixed.listOfBytesAsInts(50.0f, 50)).isEqualTo(
                             ((0 until 10) + (60..78 step 2) + (20 until 50)).toList()
                     )
                 }

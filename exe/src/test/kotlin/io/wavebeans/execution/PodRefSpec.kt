@@ -15,7 +15,6 @@ import io.wavebeans.execution.podproxy.*
 import io.wavebeans.lib.*
 import io.wavebeans.lib.io.StreamInput
 import io.wavebeans.lib.io.sine
-import io.wavebeans.lib.stream.SampleStream
 import io.wavebeans.lib.stream.trim
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
@@ -241,36 +240,30 @@ private fun Assert<Pod>.proxies() = prop("proxies") {
 
 private fun Assert<Pod>.podKey() = prop("podKey") { it.podKey }
 
-private fun Assert<StreamingPodProxy<*, *, *>>.pointedTo() = prop("pointedTo") { it.pointedTo }
-private fun Assert<MergingPodProxy<*, *, *>>.readsFrom() = prop("pointedTo") { it.readsFrom }
-private fun Assert<PodProxy<*, *>>.forPartition() = prop("forPartition") { it.forPartition }
+private fun Assert<StreamingPodProxy<*, *>>.pointedTo() = prop("pointedTo") { it.pointedTo }
+private fun Assert<MergingPodProxy<*, *>>.readsFrom() = prop("pointedTo") { it.readsFrom }
+private fun Assert<PodProxy<*>>.forPartition() = prop("forPartition") { it.forPartition }
 
 internal class TestPartitionableStreamingInput(
         override val parameters: BeanParams
 ) : StreamInput {
     override fun asSequence(sampleRate: Float): Sequence<Sample> = throw UnsupportedOperationException()
-
-    override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): StreamInput = throw UnsupportedOperationException()
 }
 
 internal class TestSinglePartitionStreamingInput(
         override val parameters: BeanParams
 ) : StreamInput, SinglePartitionBean {
     override fun asSequence(sampleRate: Float): Sequence<Sample> = throw UnsupportedOperationException()
-
-    override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): StreamInput = throw UnsupportedOperationException()
 }
 
 internal class TestMultiBean(
-        val input1: BeanStream<Sample, SampleStream>,
-        val input2: BeanStream<Sample, SampleStream>,
+        val input1: BeanStream<Sample>,
+        val input2: BeanStream<Sample>,
         override val parameters: BeanParams
-) : SampleStream, MultiBean<Sample, SampleStream> {
+) : BeanStream<Sample>, MultiBean<Sample> {
 
-    override val inputs: List<Bean<Sample, SampleStream>>
+    override val inputs: List<Bean<Sample>>
         get() = listOf(input1, input2)
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> = throw UnsupportedOperationException()
-
-    override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): SampleStream = throw UnsupportedOperationException()
 }

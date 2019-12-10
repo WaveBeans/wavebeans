@@ -2,9 +2,9 @@ package io.wavebeans.execution.podproxy
 
 import io.wavebeans.lib.Bean
 
-typealias AnyPodProxy = PodProxy<*, *>
+typealias AnyPodProxy = PodProxy<*>
 
-interface PodProxy<T : Any, S : Any> : Bean<T, S> {
+interface PodProxy<T : Any> : Bean<T> {
 
     val forPartition: Int
 

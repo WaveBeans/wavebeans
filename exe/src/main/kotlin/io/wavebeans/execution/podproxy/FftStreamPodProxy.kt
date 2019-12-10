@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
 class FftStreamPodProxy(
         podKey: PodKey,
         forPartition: Int
-) : FftStream, StreamingPodProxy<FftSample, FftStream, FftSampleArray>(
+) : FftStream, StreamingPodProxy<FftSample, FftSampleArray>(
         pointedTo = podKey,
         forPartition = forPartition,
         converter = { it.nullableFftSampleArrayList() },
@@ -29,7 +29,7 @@ class FftStreamPodProxy(
 class FftStreamMergingPodProxy(
         override val readsFrom: List<PodKey>,
         forPartition: Int
-) : MergingPodProxy<FftSample, FftStream, FftSampleArray>(
+) : MergingPodProxy<FftSample, FftSampleArray>(
         forPartition = forPartition,
         converter = { it.nullableFftSampleArrayList() },
         elementExtractor = { arr, i -> if (i < arr.size) arr[i] else null }

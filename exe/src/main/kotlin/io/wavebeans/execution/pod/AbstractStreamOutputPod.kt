@@ -7,9 +7,9 @@ import io.wavebeans.lib.Sample
 import io.wavebeans.lib.io.StreamOutput
 import io.wavebeans.lib.io.Writer
 
-abstract class AbstractStreamOutputPod<T: Any, S: Any> : StreamOutput<T, S>, TickPod {
+abstract class AbstractStreamOutputPod<T: Any> : StreamOutput<T>, TickPod {
 
-    abstract val bean: StreamOutput<T, S>
+    abstract val bean: StreamOutput<T>
 
     // TODO that should be the part of configuration
     private val sampleRate = 44100.0f
