@@ -12,13 +12,13 @@ import java.nio.charset.Charset
 
 fun FiniteFftStream.magnitudeToCsv(
         uri: String
-): StreamOutput<FftSample, FiniteFftStream> {
+): StreamOutput<FftSample> {
     return CsvFftStreamOutput(this, CsvFftStreamOutputParams(uri, true))
 }
 
 fun FiniteFftStream.phaseToCsv(
         uri: String
-): StreamOutput<FftSample, FiniteFftStream> {
+): StreamOutput<FftSample> {
     return CsvFftStreamOutput(this, CsvFftStreamOutputParams(uri, false))
 }
 
@@ -32,11 +32,11 @@ data class CsvFftStreamOutputParams(
 class CsvFftStreamOutput(
         val stream: FiniteFftStream,
         val params: CsvFftStreamOutputParams
-) : StreamOutput<FftSample, FiniteFftStream>, SinkBean<FftSample, FiniteFftStream>, SinglePartitionBean {
+) : StreamOutput<FftSample>, SinkBean<FftSample>, SinglePartitionBean {
 
     override fun writer(sampleRate: Float): Writer {
         var offset = 0L
-        return object : FileWriter<FftSample, FiniteFftStream>(URI(params.uri), stream, sampleRate) {
+        return object : FileWriter<FftSample>(URI(params.uri), stream, sampleRate) {
             override fun header(): ByteArray? = null
 
             override fun footer(): ByteArray? = null
@@ -62,7 +62,7 @@ class CsvFftStreamOutput(
         }
     }
 
-    override val input: Bean<FftSample, FiniteFftStream>
+    override val input: Bean<FftSample>
         get() = stream
 
     override val parameters: BeanParams = params

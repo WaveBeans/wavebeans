@@ -38,15 +38,6 @@ class SineSweepGeneratedInput(
 
     override val parameters: BeanParams = params
 
-    override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): StreamInput {
-        TODO()
-//        if (end != null && end <= start) throw SampleStreamException("End=[$end] should be greater than start=[$start]")
-//        val s = max(timeUnit.toNanos(start) / 1_000_000_000.0, 0.0)
-//        val e = end?.let { min(timeUnit.toNanos(end) / 1_000_000_000.0, time) } ?: time
-//        val newLength = e - s
-//        return SineSweepGeneratedInput(sampleRate, frequency, amplitude, newLength, s + timeOffset)
-    }
-
     override fun asSequence(sampleRate: Float): Sequence<Sample> {
         return object : Iterator<Sample> {
 

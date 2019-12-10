@@ -15,17 +15,13 @@ import io.wavebeans.lib.io.StreamInput
 import io.wavebeans.lib.io.StreamOutput
 import io.wavebeans.lib.io.Writer
 import io.wavebeans.lib.stream.FiniteSampleStream
-import io.wavebeans.lib.stream.InfiniteSampleStream
-import java.util.concurrent.TimeUnit
 
 class IntStream(
         val seq: List<Int>
-) : BeanStream<Sample, IntStream> {
+) : BeanStream<Sample> {
     override fun asSequence(sampleRate: Float): Sequence<Sample> = seq.asSequence().map { sampleOf(it) }
 
-    override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): IntStream = throw UnsupportedOperationException()
-
-    override fun inputs(): List<Bean<*, *>> = throw UnsupportedOperationException()
+    override fun inputs(): List<AnyBean> = throw UnsupportedOperationException()
 
     override val parameters: BeanParams
         get() = throw UnsupportedOperationException()
@@ -74,14 +70,14 @@ fun <T> Assert<List<T>>.isListOf(vararg expected: Any?) = given { actual ->
 }
 
 fun FiniteSampleStream.toDevNull(
-): StreamOutput<Sample, FiniteSampleStream> {
+): StreamOutput<Sample> {
     return DevNullSampleStreamOutput(this, NoParams())
 }
 
 class DevNullSampleStreamOutput(
         val stream: FiniteSampleStream,
         params: NoParams
-) : StreamOutput<Sample, FiniteSampleStream>, SinglePartitionBean {
+) : StreamOutput<Sample>, SinglePartitionBean {
 
     override fun writer(sampleRate: Float): Writer {
 
@@ -105,7 +101,7 @@ class DevNullSampleStreamOutput(
         }
     }
 
-    override val input: Bean<Sample, FiniteSampleStream>
+    override val input: Bean<Sample>
         get() = stream
 
     override val parameters: BeanParams = params
@@ -113,17 +109,15 @@ class DevNullSampleStreamOutput(
 }
 
 
-fun seqStream() = InfiniteSampleStream(SeqInput(NoParams()), NoParams())
+fun seqStream() = SeqInput()
 
 class SeqInput constructor(
-        val params: NoParams
+        val params: NoParams = NoParams()
 ) : StreamInput, SinglePartitionBean {
 
     private val seq = (0..10_000_000_000).asSequence().map { 1e-10 * it }
 
     override val parameters: BeanParams = params
-
-    override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): StreamInput = throw UnsupportedOperationException()
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> = seq
 

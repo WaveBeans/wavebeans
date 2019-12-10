@@ -2,11 +2,8 @@ package io.wavebeans.lib.stream
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
-import io.wavebeans.lib.asByte
+import io.wavebeans.lib.*
 import io.wavebeans.lib.io.sine
-import io.wavebeans.lib.isCloseTo
-import io.wavebeans.lib.listOfBytesAsInts
-import io.wavebeans.lib.stream
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.util.concurrent.TimeUnit.MILLISECONDS
@@ -14,7 +11,7 @@ import java.util.concurrent.TimeUnit.SECONDS
 
 private fun Number.repeat(times: Int): List<Number> = (1..times).map { this }
 
-private fun SampleStream.listOfSignedBytesAsInts(sampleRate: Float, samplesToRead: Int): List<Int> =
+private fun BeanStream<Sample>.listOfSignedBytesAsInts(sampleRate: Float, samplesToRead: Int): List<Int> =
         this.asSequence(sampleRate)
                 .take(samplesToRead)
                 .map { it.asByte().toInt() and 0xFF }

@@ -2,8 +2,6 @@ package io.wavebeans.lib.io
 
 import io.wavebeans.lib.*
 import java.util.concurrent.TimeUnit
-import kotlin.math.max
-import kotlin.math.min
 
 class ByteArrayLittleEndianDecoder(val sampleRate: Float, val bitDepth: BitDepth) {
 
@@ -52,21 +50,6 @@ class ByteArrayLittleEndianInput(val params: ByteArrayLittleEndianInputParams) :
     override fun length(timeUnit: TimeUnit): Long = samplesCountToLength(samplesCount().toLong(), params.sampleRate, timeUnit)
 
     override fun samplesCount(): Int = params.buffer.size / params.bitDepth.bytesPerSample
-
-    override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): FiniteInput {
-        val s = max(timeToSampleIndexFloor(start, timeUnit, params.sampleRate), 0).toInt()
-        val e = end?.let { min(timeToSampleIndexCeil(end, timeUnit, params.sampleRate).toInt(), samplesCount()) }
-                ?: samplesCount()
-        return ByteArrayLittleEndianInput(
-                params.copy(
-                        // TODO this should be done without copying of underlying buffer
-                        buffer = params.buffer.copyOfRange(
-                                s * params.bitDepth.bytesPerSample,
-                                e * params.bitDepth.bytesPerSample
-                        )
-                )
-        )
-    }
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> =
             ByteArrayLittleEndianDecoder(params.sampleRate, params.bitDepth).sequence(sampleRate, params.buffer)

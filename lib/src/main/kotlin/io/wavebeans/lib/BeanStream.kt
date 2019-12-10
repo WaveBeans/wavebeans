@@ -2,7 +2,14 @@ package io.wavebeans.lib
 
 import java.util.concurrent.TimeUnit
 
-interface BeanStream<T : Any, S : Any> : Bean<T, S> {
+/**
+ * Main interface for all [Bean]s that may stream data. Streams data as sequence with defined sample rate.
+ * Objects it is streaming will often be referred as sample, but usually in that context it doesn't refer to object [Sample],
+ * however sometimes it may be the same thing.
+ *
+ * @param T the type of the streaming sample.
+ */
+interface BeanStream<T : Any> : Bean<T> {
 
     /**
      *  Gets the input as a sequence of samples.
@@ -14,13 +21,14 @@ interface BeanStream<T : Any, S : Any> : Bean<T, S> {
     fun asSequence(sampleRate: Float): Sequence<T>
 
     /**
-     * Gets a projection of the object in the specified time range.
-     *
-     * @param start starting point of the projection in time units.
-     * @param end ending point of the projection (including) in time units. Null if till the end
-     * @param timeUnit the units the projection is defined in (i.e seconds, milliseconds, microseconds). TODO: replace TimeUnit with non-java.util.concurrent one
-     *
-     * @return the projection of specific time interval
+     * Counts number of occurrences of [T] objects in the sequence.
+     * **Caution: it reads the whole stream, do not expect execution to end on infinite streams**
      */
-    fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit = TimeUnit.MILLISECONDS): S
+    fun samplesCount(sampleRate: Float): Long = asSequence(sampleRate).count().toLong()
+
+    /**
+     * Measures the length in the sequence
+     * **Caution: it reads the whole stream, do not expect execution to end on infinite streams**
+     */
+    fun length(sampleRate: Float, timeUnit: TimeUnit = TimeUnit.MILLISECONDS): Long = samplesCountToLength(samplesCount(sampleRate), sampleRate, timeUnit)
 }

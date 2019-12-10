@@ -9,6 +9,7 @@ import io.wavebeans.lib.io.magnitudeToCsv
 import io.wavebeans.lib.io.phaseToCsv
 import io.wavebeans.lib.io.sine
 import io.wavebeans.lib.io.toCsv
+import io.wavebeans.lib.rangeProjection
 import io.wavebeans.lib.stream.changeAmplitude
 import io.wavebeans.lib.stream.fft.fft
 import io.wavebeans.lib.stream.fft.trim
@@ -33,20 +34,22 @@ object OverseerIntegrationSpec : Spek({
         val i1 = seqStream()
         val i2 = seqStream()
 
-        val p1 = i1.changeAmplitude(1.0)
+        val length = 50L
+
+        val p1 = i1.changeAmplitude(1.0).rangeProjection(-100, length)
         val p2 = i2.changeAmplitude(0.0)
 
         val o1 = p1
-                .trim(50)
+                .trim(length)
                 .toCsv("file://${f1.absolutePath}")
         val pp = p1 + p2
         val o2 = pp
-                .trim(50)
+                .trim(length)
                 .toCsv("file://${f2.absolutePath}")
         val fft = pp
                 .window(401)
                 .fft(512)
-                .trim(50)
+                .trim(length)
         val o3 = fft.magnitudeToCsv("file://${f3.absolutePath}")
         val o4 = fft.phaseToCsv("file://${f4.absolutePath}")
 

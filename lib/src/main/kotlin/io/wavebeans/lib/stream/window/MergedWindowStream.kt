@@ -5,11 +5,11 @@ import io.wavebeans.lib.MultiBean
 import io.wavebeans.lib.stream.StreamOp
 
 
-abstract class MergedWindowStream<T : Any, WINDOWING_STREAM : Any, S : WindowStream<T, WINDOWING_STREAM, S>>(
-        val sourceStream: WindowStream<T, WINDOWING_STREAM, S>,
-        val mergeStream: WindowStream<T, WINDOWING_STREAM, S>,
+abstract class MergedWindowStream<T : Any>(
+        val sourceStream: WindowStream<T>,
+        val mergeStream: WindowStream<T>,
         val fn: StreamOp<T>
-) : WindowStream<T, WINDOWING_STREAM, S>, MultiBean<Window<T>, S> {
+) : WindowStream<T>, MultiBean<Window<T>> {
 
     init {
         require(sourceStream.parameters.windowSize == mergeStream.parameters.windowSize
@@ -19,7 +19,7 @@ abstract class MergedWindowStream<T : Any, WINDOWING_STREAM : Any, S : WindowStr
 
     protected abstract val zeroEl: T
 
-    override val inputs: List<Bean<Window<T>, S>>
+    override val inputs: List<Bean<Window<T>>>
         get() = listOf(sourceStream, mergeStream)
 
     override fun asSequence(sampleRate: Float): Sequence<Window<T>> {

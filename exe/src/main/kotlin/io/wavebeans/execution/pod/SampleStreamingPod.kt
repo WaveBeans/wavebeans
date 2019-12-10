@@ -6,9 +6,9 @@ import io.wavebeans.lib.BeanStream
 import io.wavebeans.lib.Sample
 
 class SampleStreamingPod(
-        bean: BeanStream<Sample, *>,
+        bean: BeanStream<Sample>,
         podKey: PodKey
-) : StreamingPod<Sample, SampleArray, BeanStream<Sample, *>>(
+) : StreamingPod<Sample, SampleArray, BeanStream<Sample>>(
         bean = bean,
         podKey = podKey,
         converter = { list ->

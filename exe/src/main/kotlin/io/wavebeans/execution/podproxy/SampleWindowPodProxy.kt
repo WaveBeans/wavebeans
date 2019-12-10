@@ -5,13 +5,14 @@ import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.lib.Sample
 import io.wavebeans.lib.stream.window.SampleWindowStream
 import io.wavebeans.lib.stream.window.Window
+import io.wavebeans.lib.stream.window.WindowStream
 import io.wavebeans.lib.stream.window.WindowStreamParams
 import java.util.concurrent.TimeUnit
 
 class SampleWindowStreamPodProxy(
         podKey: PodKey,
         forPartition: Int
-) : SampleWindowStream, StreamingPodProxy<Window<Sample>, SampleWindowStream, WindowSampleArray>(
+) : WindowStream<Sample>, StreamingPodProxy<Window<Sample>, WindowSampleArray>(
         pointedTo = podKey,
         forPartition = forPartition,
         converter = { it.nullableWindowSampleArrayList() },
@@ -29,11 +30,11 @@ class SampleWindowStreamPodProxy(
 class SampleWindowMergingPodProxy(
         override val readsFrom: List<PodKey>,
         forPartition: Int
-) : MergingPodProxy<Window<Sample>, SampleWindowStream, WindowSampleArray>(
+) : MergingPodProxy<Window<Sample>, WindowSampleArray>(
         forPartition = forPartition,
         converter = { it.nullableWindowSampleArrayList() },
         elementExtractor = { arr, i -> if (i < arr.size) Window(arr[i].toList()) else null }
-), SampleWindowStream {
+), WindowStream<Sample> {
     override val parameters: WindowStreamParams
         get() {
             val pod = readsFrom.first()

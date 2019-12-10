@@ -1,5 +1,6 @@
 package io.wavebeans.execution
 
+import io.wavebeans.lib.AnyBean
 import kotlinx.serialization.PolymorphicSerializer
 import kotlinx.serialization.Serializable
 import io.wavebeans.lib.Bean
@@ -37,10 +38,10 @@ data class Topology(
 ) {
     companion object {
 
-        internal fun build(outputs: List<StreamOutput<*, *>>, idResolver: IdResolver): Topology {
+        internal fun build(outputs: List<StreamOutput<*>>, idResolver: IdResolver): Topology {
             val refs = mutableListOf<BeanRef>()
             val links = mutableListOf<BeanLink>()
-            fun iterateOverNodes(node: Bean<*, *>, sourceNodeId: Int?, order: Int) {
+            fun iterateOverNodes(node: AnyBean, sourceNodeId: Int?, order: Int) {
                 val id = idResolver.id(node)
 
                 refs += BeanRef.create(id, node::class, node.parameters)
@@ -64,20 +65,20 @@ data class Topology(
     }
 }
 
-fun List<StreamOutput<*, *>>.buildTopology(idResolver: IdResolver = IntSequenceIdResolver()): Topology = Topology.build(this, idResolver)
+fun List<StreamOutput<*>>.buildTopology(idResolver: IdResolver = IntSequenceIdResolver()): Topology = Topology.build(this, idResolver)
 
 interface IdResolver {
-    fun id(node: Bean<*, *>): Int
+    fun id(bean: AnyBean): Int
 }
 
 internal class IntSequenceIdResolver : IdResolver {
 
     private var idSeq = 0
-    private val nodesRef = mutableMapOf<Int, Bean<*, *>>()
+    private val nodesRef = mutableMapOf<Int, Bean<*>>()
 
-    override fun id(node: Bean<*, *>): Int {
-        val id = nodesRef.entries.firstOrNull { it.value == node }?.key ?: ++idSeq
-        nodesRef[id] = node
+    override fun id(bean: AnyBean): Int {
+        val id = nodesRef.entries.firstOrNull { it.value == bean }?.key ?: ++idSeq
+        nodesRef[id] = bean
         return id
     }
 

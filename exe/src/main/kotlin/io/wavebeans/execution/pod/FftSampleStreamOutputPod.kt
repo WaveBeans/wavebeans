@@ -6,10 +6,10 @@ import io.wavebeans.lib.stream.fft.FftSample
 import io.wavebeans.lib.stream.fft.FiniteFftStream
 
 class FftSampleStreamOutputPod(
-        override val bean: StreamOutput<FftSample, FiniteFftStream>,
+        override val bean: StreamOutput<FftSample>,
         override val podKey: PodKey
-) : AbstractStreamOutputPod<FftSample, FiniteFftStream>() {
+) : AbstractStreamOutputPod<FftSample>() {
 
-    override val input: Bean<FftSample, FiniteFftStream>
+    override val input: Bean<FftSample>
         get() = bean
 }

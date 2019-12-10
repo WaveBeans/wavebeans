@@ -9,10 +9,10 @@ import io.wavebeans.lib.stream.window.WindowStream
 import io.wavebeans.lib.stream.window.WindowStreamParams
 
 class WindowSampleSplittingPod(
-        bean: WindowStream<Sample, *, *>,
+        bean: WindowStream<Sample>,
         podKey: PodKey,
         partitionCount: Int
-) : SplittingPod<Window<Sample>, WindowSampleArray, WindowStream<Sample, *, *>>(
+) : SplittingPod<Window<Sample>, WindowSampleArray, WindowStream<Sample>>(
         bean = bean,
         podKey = podKey,
         partitionCount = partitionCount,

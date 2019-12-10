@@ -9,7 +9,7 @@ abstract class ByteArrayLEFileOutputWriter(
         stream: FiniteSampleStream,
         val bitDepth: BitDepth,
         sampleRate: Float
-) : FileWriter<Sample, FiniteSampleStream>(uri, stream, sampleRate), SinglePartitionBean {
+) : FileWriter<Sample>(uri, stream, sampleRate), SinglePartitionBean {
 
     protected var dataSize = 0
         private set

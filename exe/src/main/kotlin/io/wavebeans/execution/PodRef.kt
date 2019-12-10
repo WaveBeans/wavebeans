@@ -69,18 +69,18 @@ data class PodRef(
                         inputs.isEmpty() -> beanClazz.constructors.first {
                             it.parameters.size == 1 &&
                                     it.parameters[0].type.isSubtypeOf(typeOf<BeanParams>())
-                        }.call(beanRef.params) as Bean<*, *>
+                        }.call(beanRef.params) as AnyBean
                         inputs.size == 1 -> beanClazz.constructors.first {
                             it.parameters.size == 2 &&
-                                    it.parameters[0].type.isSubtypeOf(typeOf<Bean<*, *>>()) &&
+                                    it.parameters[0].type.isSubtypeOf(typeOf<AnyBean>()) &&
                                     it.parameters[1].type.isSubtypeOf(typeOf<BeanParams>())
-                        }.call(inputs[0], beanRef.params) as Bean<*, *>
+                        }.call(inputs[0], beanRef.params) as AnyBean
                         inputs.size == 2 -> beanClazz.constructors.first {
                             it.parameters.size == 3 &&
-                                    it.parameters[0].type.isSubtypeOf(typeOf<Bean<*, *>>()) &&
-                                    it.parameters[1].type.isSubtypeOf(typeOf<Bean<*, *>>()) &&
+                                    it.parameters[0].type.isSubtypeOf(typeOf<AnyBean>()) &&
+                                    it.parameters[1].type.isSubtypeOf(typeOf<AnyBean>()) &&
                                     it.parameters[2].type.isSubtypeOf(typeOf<BeanParams>())
-                        }.call(inputs[0], inputs[1], beanRef.params) as Bean<*, *>
+                        }.call(inputs[0], inputs[1], beanRef.params) as AnyBean
                         else -> throw UnsupportedOperationException("Too much input for the bean: ${inputs.size}")
                     }
 

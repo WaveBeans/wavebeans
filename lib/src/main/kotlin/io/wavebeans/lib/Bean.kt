@@ -4,11 +4,11 @@ package io.wavebeans.lib
 
 import kotlinx.serialization.Serializable
 
-typealias AnyBean = Bean<*, *>
+typealias AnyBean = Bean<*>
 
-interface Bean<T : Any, S : Any> {
+interface Bean<T : Any> {
 
-    fun inputs(): List<Bean<*, *>>
+    fun inputs(): List<AnyBean>
 
     val parameters: BeanParams
 
@@ -17,33 +17,33 @@ interface Bean<T : Any, S : Any> {
 
 }
 
-interface SourceBean<T : Any, S : Any> : Bean<T, S> {
+interface SourceBean<T : Any> : Bean<T> {
 
-    override fun inputs(): List<Bean<*, *>> = emptyList()
+    override fun inputs(): List<AnyBean> = emptyList()
 }
 
-interface SingleBean<T : Any, S : Any> : Bean<T, S> {
+interface SingleBean<T : Any> : Bean<T> {
 
-    val input: Bean<T, S>
+    val input: Bean<T>
 
-    override fun inputs(): List<Bean<*, *>> = listOf(input)
+    override fun inputs(): List<AnyBean> = listOf(input)
 }
 
-interface AlterBean<IT : Any, IS : Any, OT : Any, OS : Any> : Bean<OT, OS> {
+interface AlterBean<IT : Any, OT : Any> : Bean<OT> {
 
-    val input: Bean<IT, IS>
+    val input: Bean<IT>
 
-    override fun inputs(): List<Bean<*, *>> = listOf(input)
+    override fun inputs(): List<AnyBean> = listOf(input)
 }
 
-interface MultiBean<T : Any, S : Any> : Bean<T, S> {
+interface MultiBean<T : Any> : Bean<T> {
 
-    val inputs: List<Bean<T, S>>
+    val inputs: List<Bean<T>>
 
-    override fun inputs(): List<Bean<*, *>> = inputs
+    override fun inputs(): List<AnyBean> = inputs
 }
 
-interface SinkBean<T : Any, S : Any> : SingleBean<T, S>
+interface SinkBean<T : Any> : SingleBean<T>
 
 interface SinglePartitionBean
 

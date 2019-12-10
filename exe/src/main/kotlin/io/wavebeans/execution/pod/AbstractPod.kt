@@ -41,7 +41,7 @@ const val DEFAULT_PARTITION_SIZE = 512
  *      via instantiation of any [PodProxy]
  */
 // ThreadSafe
-abstract class AbstractPod<T : Any, ARRAY_T, B : BeanStream<T, *>>(
+abstract class AbstractPod<T : Any, ARRAY_T, B : BeanStream<T>>(
         override val podKey: PodKey,
         val bean: B,
         val partitionCount: Int,

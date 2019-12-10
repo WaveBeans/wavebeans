@@ -7,9 +7,9 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.net.URI
 
-abstract class FileWriter<T : Any, S : BeanStream<T, S>>(
+abstract class FileWriter<T : Any>(
         val uri: URI,
-        val stream: S,
+        val stream: BeanStream<T>,
         val sampleRate: Float
 ) : Writer {
 

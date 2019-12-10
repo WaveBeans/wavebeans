@@ -1,34 +1,32 @@
 package io.wavebeans.lib.stream.window
 
 import io.wavebeans.lib.*
-import io.wavebeans.lib.stream.SampleStream
 import io.wavebeans.lib.stream.StreamOp
 import kotlinx.serialization.*
 import kotlinx.serialization.internal.StringDescriptor
-import java.util.concurrent.TimeUnit
 
-operator fun SampleWindowStream.minus(d: SampleWindowStream): SampleWindowStream =
+operator fun WindowStream<Sample>.minus(d: WindowStream<Sample>): WindowStream<Sample> =
         SampleMergedWindowStream(
                 this,
                 d,
                 SampleMergedWindowStreamParams(SampleMinusStreamOp, this.parameters.windowSize, this.parameters.step)
         )
 
-operator fun SampleWindowStream.plus(d: SampleWindowStream): SampleWindowStream =
+operator fun WindowStream<Sample>.plus(d: WindowStream<Sample>): WindowStream<Sample> =
         SampleMergedWindowStream(
                 this,
                 d,
                 SampleMergedWindowStreamParams(SamplePlusStreamOp, this.parameters.windowSize, this.parameters.step)
         )
 
-operator fun SampleWindowStream.times(d: SampleWindowStream): SampleWindowStream =
+operator fun WindowStream<Sample>.times(d: WindowStream<Sample>): WindowStream<Sample> =
         SampleMergedWindowStream(
                 this,
                 d,
                 SampleMergedWindowStreamParams(SampleTimesStreamOp, this.parameters.windowSize, this.parameters.step)
         )
 
-operator fun SampleWindowStream.div(d: SampleWindowStream): SampleWindowStream =
+operator fun WindowStream<Sample>.div(d: WindowStream<Sample>): WindowStream<Sample> =
         SampleMergedWindowStream(
                 this,
                 d,
@@ -52,28 +50,17 @@ object SampleMergedWindowStreamParamsSerializer {
 class SampleMergedWindowStreamParams(
         @Serializable(with = StreamOpSerializer::class) val operation: StreamOp<Sample>,
         windowSize: Int,
-        step: Int,
-        start: Long = 0,
-        end: Long? = null,
-        timeUnit: TimeUnit = TimeUnit.MILLISECONDS
-) : WindowStreamParams(windowSize, step, start, end, timeUnit)
+        step: Int
+) : WindowStreamParams(windowSize, step)
 
 class SampleMergedWindowStream(
-        sourceStream: SampleWindowStream,
-        mergeStream: SampleWindowStream,
+        sourceStream: WindowStream<Sample>,
+        mergeStream: WindowStream<Sample>,
         val params: SampleMergedWindowStreamParams
-) : MergedWindowStream<Sample, SampleStream, SampleWindowStream>(sourceStream, mergeStream, params.operation), SampleWindowStream {
+) : MergedWindowStream<Sample>(sourceStream, mergeStream, params.operation), WindowStream<Sample> {
     override val zeroEl: Sample
         get() = ZeroSample
 
     override val parameters: WindowStreamParams
         get() = params
-
-    override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): SampleWindowStream {
-        return SampleMergedWindowStream(
-                sourceStream.rangeProjection(start, end, timeUnit),
-                mergeStream.rangeProjection(start, end, timeUnit),
-                params
-        )
-    }
 }

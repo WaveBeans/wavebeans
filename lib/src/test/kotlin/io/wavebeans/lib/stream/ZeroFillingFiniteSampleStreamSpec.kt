@@ -1,6 +1,7 @@
 package io.wavebeans.lib.stream
 
 import assertk.assertThat
+import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import io.wavebeans.lib.*
 import org.spekframework.spek2.Spek
@@ -16,9 +17,7 @@ object ZeroFillingFiniteSampleStreamSpec : Spek({
             return seq.asSequence().map { sampleOf(it) }
         }
 
-        override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): FiniteSampleStream = throw UnsupportedOperationException()
-
-        override fun inputs(): List<Bean<*, *>> = throw UnsupportedOperationException()
+        override fun inputs(): List<AnyBean> = throw UnsupportedOperationException()
 
         override val parameters: BeanParams
             get() = throw UnsupportedOperationException()
@@ -83,13 +82,13 @@ object ZeroFillingFiniteSampleStreamSpec : Spek({
             ).isEqualTo(seq.take(5))
         }
 
-        it("should return 0 after first 5 elements") {
+        it("should return nothing after first 5 elements") {
             assertThat(
                     getZeroFillSeq(zeroFilling)
                             .drop(5)
                             .take(10)
                             .toList()
-            ).isEqualTo(10.repeat { 0 })
+            ).isEmpty()
         }
 
     }
@@ -106,17 +105,17 @@ object ZeroFillingFiniteSampleStreamSpec : Spek({
             ).isEqualTo(seq.drop(5).take(5))
         }
 
-        it("should return 0 after first 5 elements") {
+        it("should return nothing after first 5 elements") {
             assertThat(
                     getZeroFillSeq(zeroFilling)
                             .drop(5)
                             .take(10)
                             .toList()
-            ).isEqualTo(10.repeat { 0 })
+            ).isEmpty()
         }
 
     }
 })
 
-private fun getZeroFillSeq(zeroFilling: SampleStream) =
+private fun getZeroFillSeq(zeroFilling: BeanStream<Sample>) =
         zeroFilling.asSequence(10.0f).map { it.asInt() }

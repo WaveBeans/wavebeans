@@ -12,7 +12,6 @@ import io.wavebeans.execution.pod.Pod
 import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.lib.Sample
 import io.wavebeans.lib.asInt
-import io.wavebeans.lib.stream.SampleStream
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.util.concurrent.CompletableFuture
@@ -55,7 +54,7 @@ class MergingPodProxyTester(
         override fun create(bushKey: BushKey, podKey: PodKey): BushCaller = bushCaller(podKey)
     }
 
-    val podProxy = object : MergingPodProxy<Sample, SampleStream, SampleArray>(
+    val podProxy = object : MergingPodProxy<Sample, SampleArray>(
             forPartition = 0,
             bushCallerRepository = bushCallerRepository,
             podDiscovery = podDiscovery,

@@ -4,12 +4,13 @@ import io.wavebeans.execution.*
 import io.wavebeans.execution.medium.PodCallResult
 import io.wavebeans.execution.pod.DEFAULT_PARTITION_SIZE
 import io.wavebeans.execution.pod.PodKey
+import io.wavebeans.lib.AnyBean
 import io.wavebeans.lib.Bean
 import io.wavebeans.lib.BeanParams
 import io.wavebeans.lib.BeanStream
 import java.util.concurrent.TimeUnit
 
-abstract class MergingPodProxy<T : Any, S : Any, ARRAY_T>(
+abstract class MergingPodProxy<T : Any, ARRAY_T>(
         val converter: (PodCallResult) -> List<ARRAY_T>?,
         val elementExtractor: (ARRAY_T, Int) -> T?,
         override val forPartition: Int,
@@ -17,7 +18,7 @@ abstract class MergingPodProxy<T : Any, S : Any, ARRAY_T>(
         val bushCallerRepository: BushCallerRepository = BushCallerRepository.default(podDiscovery),
         val prefetchBucketAmount: Int = DEFAULT_PREFETCH_BUCKET_AMOUNT,
         val partitionSize: Int = DEFAULT_PARTITION_SIZE
-) : BeanStream<T, S>, PodProxy<T, S> {
+) : BeanStream<T>, PodProxy<T> {
 
     abstract val readsFrom: List<PodKey>
 
@@ -58,16 +59,10 @@ abstract class MergingPodProxy<T : Any, S : Any, ARRAY_T>(
         }.asSequence()
     }
 
-    override fun rangeProjection(start: Long, end: Long?, timeUnit: TimeUnit): S {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun inputs(): List<Bean<*, *>> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    override fun inputs(): List<AnyBean> = throw UnsupportedOperationException("Not required")
 
     override val parameters: BeanParams
-        get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+        get() = throw UnsupportedOperationException("Not required")
 
     override fun toString(): String {
         return "${this::class.simpleName}->$readsFrom for $forPartition"
