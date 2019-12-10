@@ -11,6 +11,7 @@ import io.wavebeans.lib.io.sine
 import io.wavebeans.lib.io.toCsv
 import io.wavebeans.lib.stream.div
 import io.wavebeans.lib.stream.plus
+import io.wavebeans.lib.stream.times
 import io.wavebeans.lib.stream.trim
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
@@ -24,7 +25,7 @@ object BeanGroupSpec : Spek({
 
     describe("Single line topology") {
         val topology = listOf(
-                440.sine().i(1, 2)
+                440.sine().n(1)
                         .div(2.0).n(3)
                         .trim(1).n(4)
                         .toCsv("file:///some.csv").n(5)
@@ -36,8 +37,8 @@ object BeanGroupSpec : Spek({
             assertThat(topology.refs).all {
                 size().isEqualTo(1)
                 group(100).all {
-                    groupRefs().ids().isListOf(5, 4, 3, 2, 1)
-                    groupLinks().isListOf(5 to 4, 4 to 3, 3 to 2, 2 to 1)
+                    groupRefs().ids().isListOf(5, 4, 3, 1)
+                    groupLinks().isListOf(5 to 4, 4 to 3, 3 to 1)
                 }
             }
         }
@@ -45,10 +46,19 @@ object BeanGroupSpec : Spek({
     }
 
     describe("Topology with merge") {
+        //-----------------------------------------------------------------------
+        // (i1)<--(div3)<-       v---(trim7)<--(o8)
+        //               |-(plus6)
+        // (i4)<--(div5)--
+        //-----------------------------------------------------------------------
+        // [100        ]<-
+        //               |-[   101                ]
+        // [102        ]<-
+        //-----------------------------------------------------------------------
         val topology = listOf(
-                440.sine().i(1, 2)
+                440.sine().n(1)
                         .div(2.0).n(3)
-                        .plus(880.sine().i(4, 5)).n(6)
+                        .plus(880.sine().n(4).div(2.0).n(5)).n(6)
                         .trim(1).n(7)
                         .toCsv("file:///some.csv").n(8)
         )
@@ -63,8 +73,8 @@ object BeanGroupSpec : Spek({
                     groupLinks().isListOf(8 to 7, 7 to 6)
                 }
                 group(101).all {
-                    groupRefs().ids().isListOf(3, 2, 1)
-                    groupLinks().isListOf(3 to 2, 2 to 1)
+                    groupRefs().ids().isListOf(3, 1)
+                    groupLinks().isListOf(3 to 1)
                 }
                 group(102).all {
                     groupRefs().ids().isListOf(5, 4)
@@ -83,22 +93,22 @@ object BeanGroupSpec : Spek({
 
     describe("Topology with multiple outputs. Single line.") {
         val topology = listOf(
-                440.sine().i(1, 2).trim(1).n(3).toCsv("file:///some.csv").n(4),
-                880.sine().i(5, 6).trim(1).n(7).toCsv("file:///some.csv").n(8)
+                440.sine().n(1).trim(1).n(3).toCsv("file:///some.csv").n(4),
+                880.sine().n(5).trim(1).n(7).toCsv("file:///some.csv").n(8)
         )
                 .buildTopology(idResolver)
                 .groupBeans(groupIdResolver())
 
-        it("should have three group beans") {
+        it("should have two group beans") {
             assertThat(topology.refs).all {
                 size().isEqualTo(2)
                 group(100).all {
-                    groupRefs().ids().isListOf(4, 3, 2, 1)
-                    groupLinks().isListOf(4 to 3, 3 to 2, 2 to 1)
+                    groupRefs().ids().isListOf(4, 3, 1)
+                    groupLinks().isListOf(4 to 3, 3 to 1)
                 }
                 group(101).all {
-                    groupRefs().ids().isListOf(8, 7, 6, 5)
-                    groupLinks().isListOf(8 to 7, 7 to 6, 6 to 5)
+                    groupRefs().ids().isListOf(8, 7, 5)
+                    groupLinks().isListOf(8 to 7, 7 to 5)
                 }
             }
         }
@@ -109,7 +119,7 @@ object BeanGroupSpec : Spek({
     }
 
     describe("Topology with multiple outputs. Shared parts") {
-        val shared = 440.sine().i(1, 2)
+        val shared = 440.sine().n(1).div(2.0).n(2)
         val topology = listOf(
                 shared.trim(1).n(3).toCsv("file:///some.csv").n(4),
                 shared.trim(1).n(5).toCsv("file:///some.csv").n(6)
@@ -145,12 +155,12 @@ object BeanGroupSpec : Spek({
 
     describe("Topology with split-merge in the middle") {
         //-----------------------------------------------------------------------
-        // (i1)<-(inf2)<---        v---(trim6)<--(o7)
+        // (i1)<-(div2)<---        v---(trim6)<--(o7)
         //                 |-(plus5)
-        // (i3)<-(inf4)<---        ^---(trim8)<--(o9)
+        // (i3)<-(div4)<---        ^---(trim8)<--(o9)
         //-----------------------------------------------------------------------
-        val i1 = 440.sine().i(1, 2)
-        val i2 = 880.sine().i(3, 4)
+        val i1 = 440.sine().n(1).div(2.0).n(2)
+        val i2 = 880.sine().n(3).div(2.0).n(4)
         val plus = (i1 + i2).n(5)
         val o1 = plus.trim(1).n(6).toCsv("file:///some1.csv").n(7)
         val o2 = plus.trim(1).n(8).toCsv("file:///some2.csv").n(9)
@@ -200,7 +210,7 @@ object BeanGroupSpec : Spek({
 
     describe("Single line topology. Two partitions") {
         val topology = listOf(
-                440.sine().i(1, 2)                     // (i1.0) <-(inf2.0) <-(inf2.1)
+                440.sine().n(1).times(0.2).n(2)      // (i1.0) <-(times.0) <-(times2.1)
                         .div(2.0).n(3)               //             ^-(div3.0)  ^-(div3.1)
                         .trim(1).n(4)                //                  ^-----------^---(trim4.0)
                         .toCsv("file:///some.csv").n(5) //                                     ^-(o5.0)
@@ -239,19 +249,19 @@ object BeanGroupSpec : Spek({
 
     describe("Topology with merge. Two partitions") {
         //-----------------------------------------------------------------------
-        // (i1.0) <-(inf2.0) <-(inf2.1)                       <| [101.0] <|
+        // (i1.0) <-(div2.0) <-(div2.1)                       <| [101.0] <|
         //             ^-------------------(div3.0)           <|          | [101.1]
         //                       ^----------------(div3.1)               <|
-        // (i4.0) <-(inf5.0) <-(inf5.1)
+        // (i4.0) <-(div5.0) <-(div5.1)
         //            ^---------^-(plus6.0)--^------^                  <|
         //                           ^-(trim7.0)                       <| [100.0]
         //                                 ^-(o8.0)                    <|
         //-----------------------------------------------------------------------
         val topology = listOf(
-                440.sine().i(1, 2)
+                440.sine().n(1).div(0.5).n(2)
                         .div(2.0).n(3)
                         .plus(
-                                880.sine().i(4, 5)
+                                880.sine().n(4).div(0.5).n(5)
                         ).n(6)
                         .trim(1).n(7)
                         .toCsv("file:///some.csv").n(8)
@@ -313,12 +323,6 @@ private val idResolver = object : IdResolver {
 
 private fun <T : AnyBean> T.n(id: Int): T {
     ids[this] = id
-    return this
-}
-
-private fun <T : AnyBean> T.i(id1: Int, id2: Int): T {
-    ids[this.inputs().first()] = id1
-    ids[this] = id2
     return this
 }
 

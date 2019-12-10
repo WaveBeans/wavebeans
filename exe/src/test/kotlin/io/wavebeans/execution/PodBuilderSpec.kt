@@ -4,7 +4,6 @@ import assertk.Assert
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
-import io.wavebeans.lib.Bean
 import io.wavebeans.execution.TopologySerializer.jsonPretty
 import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.lib.AnyBean
@@ -19,7 +18,7 @@ class PodBuilderSpec : Spek({
     val ids = mutableMapOf<AnyBean, Int>()
 
     val idResolver = object : IdResolver {
-        override fun id(node: AnyBean): Int = ids[node] ?: throw IllegalStateException("$node is not found")
+        override fun id(bean: AnyBean): Int = ids[bean] ?: throw IllegalStateException("$bean is not found")
     }
 
     beforeGroup {
@@ -32,16 +31,9 @@ class PodBuilderSpec : Spek({
         return this
     }
 
-    fun <T : AnyBean> T.i(id1: Int, id2: Int): T {
-        ids[this.inputs().first()] = id1
-        ids[this] = id2
-        return this
-    }
-
-
     describe("Building pods on simple topology") {
-        val i1 = 440.sine(0.5).i(1, 2)
-        val i2 = 800.sine(0.0).i(3, 4)
+        val i1 = 440.sine(0.5).n(1).div(2.0).n(2)
+        val i2 = 800.sine(0.0).n(3).div(2.0).n(4)
 
         val o1 = i1.trim(5000).n(5)
                 .toCsv("file:///some1.csv").n(6)
@@ -60,7 +52,7 @@ class PodBuilderSpec : Spek({
     }
 
     describe("Building pods on topology with shared parts") {
-        val i = 440.sine().i(1, 2)
+        val i = 440.sine().n(1).div(2.0).n(2)
         val p1 = (i * 2.0).n(3)
         val p2 = (i * 3.0).n(4)
         val o1 = p1.trim(3000).n(5).toCsv("file:///some1.csv").n(6)
@@ -78,7 +70,7 @@ class PodBuilderSpec : Spek({
 
     describe("Building pods on partitioned topology. Linear topology") {
         val o1 =
-                440.sine().i(1, 2) // 1 + partitionCount
+                440.sine().n(1).div(2.0).n(2) // 1 + partitionCount
                         .div(3.0).n(3) // partitionCount
                         .trim(3000).n(4) // 1
                         .toCsv("file:///some1.csv").n(5) // 1
@@ -96,10 +88,10 @@ class PodBuilderSpec : Spek({
 
     describe("Building pods on partitioned topology. Merging topology") {
         val o1 =
-                440.sine().i(1, 2) // 1 + partitionCount
+                440.sine().n(1).div(2.0).n(2) // 1 + partitionCount
                         .div(3.0).n(3) // partitionCount
                         .plus(
-                                880.sine().i(4, 5) // 1 + partitionCount
+                                880.sine().n(4).div(2.0).n(5) // 1 + partitionCount
                         ).n(6) // 1
                         .trim(3000).n(7) // 1
                         .toCsv("file:///some1.csv").n(8) // 1
@@ -213,7 +205,7 @@ class PodBuilderSpec : Spek({
     }
 
     describe("Building pods on partitioned topology. Two outputs") {
-        val i = 440.sine().i(1, 2)
+        val i = 440.sine().n(1).div(2.0).n(2)
         val o1 = i.trim(1).n(3).toCsv("file:///some.csv").n(4)
         val o2 = i.trim(1).n(5).toCsv("file:///some.csv").n(6)
         val pods = listOf(o1, o2)
@@ -273,7 +265,7 @@ class PodBuilderSpec : Spek({
                     }
                 }
                 podWithKey("sine", 1).all {
-                    eachIndexed(1) { p, i ->
+                    eachIndexed(1) { p, _ ->
                         p.splitToPartitions().isEqualTo(2)
                         p.podProxies().isEmpty()
                     }
@@ -286,7 +278,7 @@ class PodBuilderSpec : Spek({
 
         describe("Single line topology that fits into 1 group.") {
             val pods = listOf(
-                    440.sine().i(1, 2)
+                    440.sine().n(1).div(2.0).n(2)
                             .trim(1).n(3)
                             .toCsv("file:///some.csv").n(4)
             )
@@ -312,7 +304,7 @@ class PodBuilderSpec : Spek({
 
         describe("Partitioned single line topology") {
             val pods = listOf(
-                    440.sine().i(1, 2)                       // (1.0) <| (2.0) (2.1)
+                    440.sine().n(1).div(2.0).n(2)            // (1.0) <| (2.0) (2.1)
                             .trim(1).n(3)                    // <| [100.0]
                             .toCsv("file:///some.csv").n(4)  // <|
             )
@@ -355,12 +347,12 @@ class PodBuilderSpec : Spek({
 
         describe("Merging topology") {
             val pods = listOf(
-                    440.sine().i(1, 2)                         // <| [101]
-                            .plus(
-                                    440.sine().i(3, 4)         //   <|[102]
-                            ).n(5)                             // <|
-                            .trim(1).n(6)                      // <| [100]
-                            .toCsv("file:///some.csv").n(7)    // <|
+                    440.sine().n(1).div(2.0).n(2)                 // <| [101]
+                            .plus(                                //
+                                    440.sine().n(3).div(2.0).n(4) //   <|[102]
+                            ).n(5)                                // <|
+                            .trim(1).n(6)                         // <| [100]
+                            .toCsv("file:///some.csv").n(7)       // <|
             )
                     .buildTopology(idResolver)
                     .groupBeans(groupIdResolver())
@@ -400,10 +392,10 @@ class PodBuilderSpec : Spek({
         }
 
         describe("Merging topology with shared parts. Partitioned") {
-            val i = 440.sine().i(1, 2)                          // (1) <| [101.0] [101.1]
+            val i = 440.sine().n(1).div(2.0).n(2)               // (1) <| [101.0] [101.1]
                     .changeAmplitude(0.5).n(3)                  //
                     .plus(                                      //
-                            440.sine().i(4, 5)                  // (4) <|[102.0] [102.1]
+                            440.sine().n(4).div(2.0).n(5)       // (4) <|[102.0] [102.1]
                                     .changeAmplitude(1.3).n(6)  //     <|
                     ).n(7)                                      // (7)
 

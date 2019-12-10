@@ -15,6 +15,7 @@ import io.wavebeans.execution.podproxy.*
 import io.wavebeans.lib.*
 import io.wavebeans.lib.io.StreamInput
 import io.wavebeans.lib.io.sine
+import io.wavebeans.lib.stream.div
 import io.wavebeans.lib.stream.trim
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
@@ -29,7 +30,7 @@ class PodRefSpec : Spek({
         describe("Single input bean (Single or Alter)") {
 
             describe("Single Link to another pod. I.e. non-partitioned infinite bean.") {
-                val bean = 440.sine() // sine(0) <- inf(1)
+                val bean = 440.sine().div(2.0) // sine(0) <- div(1)
                 val podProxy = PodProxyRef(
                         input1Type(bean),
                         listOf(PodKey(0, 0)),
@@ -47,7 +48,7 @@ class PodRefSpec : Spek({
                             .isInstanceOf(StreamingPod::class).all {
                                 proxies()
                                         .eachIndexed(1) { proxy, _ ->
-                                            proxy.isInstanceOf(StreamInputPodProxy::class).all {
+                                            proxy.isInstanceOf(SampleStreamPodProxy::class).all {
                                                 pointedTo().isEqualTo(PodKey(0, 0))
                                                 forPartition().isEqualTo(0)
                                             }
@@ -60,8 +61,8 @@ class PodRefSpec : Spek({
             describe("Multiple Links to another pods. Merging behavior.") {
 
                 describe("non-single partition bean. I.e. partitioned trim bean") {
-                    // sine(0) <- inf(1.0, 1.1) <- trim(2)
-                    val bean = 440.sine().trim(1)
+                    // sine(0) <- div(1.0, 1.1) <- trim(2)
+                    val bean = 440.sine().div(2.0).trim(1)
                     val podProxy = PodProxyRef(
                             input1Type(bean),
                             listOf(PodKey(1, 0), PodKey(1, 1)),

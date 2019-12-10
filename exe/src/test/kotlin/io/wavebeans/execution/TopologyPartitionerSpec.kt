@@ -6,7 +6,6 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.prop
 import assertk.assertions.size
 import io.wavebeans.lib.AnyBean
-import io.wavebeans.lib.Bean
 import io.wavebeans.lib.io.sine
 import io.wavebeans.lib.io.toCsv
 import io.wavebeans.lib.stream.div
@@ -21,7 +20,7 @@ object TopologyPartitionerSpec : Spek({
     val ids = mutableMapOf<AnyBean, Int>()
 
     val idResolver = object : IdResolver {
-        override fun id(node: AnyBean): Int = ids[node] ?: throw IllegalStateException("$node is not found")
+        override fun id(bean: AnyBean): Int = ids[bean] ?: throw IllegalStateException("$bean is not found")
     }
 
     beforeGroup {
@@ -30,12 +29,6 @@ object TopologyPartitionerSpec : Spek({
 
     fun <T : AnyBean> T.n(id: Int): T {
         ids[this] = id
-        return this
-    }
-
-    fun <T : AnyBean> T.i(id1: Int, id2: Int): T {
-        ids[this.inputs().first()] = id1
-        ids[this] = id2
         return this
     }
 
@@ -51,7 +44,7 @@ object TopologyPartitionerSpec : Spek({
     }
 
     describe("Simple one-line topology") {
-        val i1 = 440.sine(0.5).i(1, 2)
+        val i1 = 440.sine(0.5).n(1).div(2.0).n(2)
         val o1 = i1.trim(5000).n(3).toCsv("file:///some1.csv").n(4)
 
         val topology = listOf(o1).buildTopology(idResolver)
@@ -111,8 +104,8 @@ object TopologyPartitionerSpec : Spek({
     }
 
     describe("Merging topology") {
-        val i1 = 440.sine(0.5).i(1, 2)
-        val i2 = 880.sine(0.5).i(3, 4)
+        val i1 = 440.sine(0.5).n(1).div(2.0).n(2)
+        val i2 = 880.sine(0.5).n(3).div(2.0).n(4)
         val o1 = (i1 + i2).n(5).trim(5000).n(6).toCsv("file:///some1.csv").n(7)
 
         val topology = listOf(o1).buildTopology(idResolver)
@@ -159,7 +152,7 @@ object TopologyPartitionerSpec : Spek({
     }
 
     describe("Topology with shared parts") {
-        val i = 440.sine().i(1, 2)
+        val i = 440.sine().n(1).div(2.0).n(2)
         val p1 = (i * 2.0).n(3)
         val p2 = (i / 3.0).n(4)
         val o1 = (p1 + p2).n(5)
@@ -210,7 +203,7 @@ object TopologyPartitionerSpec : Spek({
     }
 
     describe("Topology where order of links matters") {
-        val o1 = (440.sine().i(1, 2) + 880.sine().i(3, 4)).n(5)
+        val o1 = (440.sine().n(1).div(2.0).n(2) + 880.sine().n(3).div(2.0).n(4)).n(5)
                 .trim(1).n(6)
                 .toCsv("file:///some.csv").n(7)
         val topology = listOf(o1).buildTopology(idResolver)

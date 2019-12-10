@@ -68,7 +68,7 @@ data class Topology(
 fun List<StreamOutput<*>>.buildTopology(idResolver: IdResolver = IntSequenceIdResolver()): Topology = Topology.build(this, idResolver)
 
 interface IdResolver {
-    fun id(node: AnyBean): Int
+    fun id(bean: AnyBean): Int
 }
 
 internal class IntSequenceIdResolver : IdResolver {
@@ -76,9 +76,9 @@ internal class IntSequenceIdResolver : IdResolver {
     private var idSeq = 0
     private val nodesRef = mutableMapOf<Int, Bean<*>>()
 
-    override fun id(node: AnyBean): Int {
-        val id = nodesRef.entries.firstOrNull { it.value == node }?.key ?: ++idSeq
-        nodesRef[id] = node
+    override fun id(bean: AnyBean): Int {
+        val id = nodesRef.entries.firstOrNull { it.value == bean }?.key ?: ++idSeq
+        nodesRef[id] = bean
         return id
     }
 
