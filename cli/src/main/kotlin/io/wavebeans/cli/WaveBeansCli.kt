@@ -69,7 +69,7 @@ class WaveBeansCli(
                             Unit
                         }
             }
-            if (trackTime) printer.println("${executionTime / 1000.0}s")
+            if (trackTime) printer.println("${executionTime / 1000.0}sec")
             printer.flush()
             true
         } else {

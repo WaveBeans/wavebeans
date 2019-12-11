@@ -51,7 +51,7 @@ object WaveBeansCliSpec : Spek({
             it("should execute") { assertThat(cli.tryScriptExecution()).isTrue() }
             it("should generate non empty file") { assertThat(file.readText()).isNotEmpty() }
             it("should output time to console") {
-                assertThat(String(out.toByteArray())).matches(Regex("\\d+\\.\\d+s\\s*"))
+                assertThat(String(out.toByteArray())).matches(Regex("\\d+\\.\\d+sec\\s*"))
             }
         }
     }
