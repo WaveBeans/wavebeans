@@ -30,7 +30,6 @@ class ScriptRunner(
             "io.wavebeans.lib.stream.*",
             "io.wavebeans.lib.stream.fft.*",
             "io.wavebeans.lib.stream.window.*",
-            "kotlin.system.measureTimeMillis",
             Thread::class.qualifiedName + ".*",
             ArrayList::class.qualifiedName
     ).map { "import $it" }
@@ -69,7 +68,8 @@ class ScriptRunner(
         val scriptContent = (imports + customImports).joinToString(separator = "\n") +
                 "\n\n" + functions +
                 "\n\n" + cleanedContent +
-                "\n\n" + "measureTimeMillis { evalAllLocally() }"
+                "\n\n" + "evalAllLocally()" +
+                "\n\n" + "true // need to return something :/"
         log.debug { "Evaluating the following script: \n$scriptContent" }
         task = executor.submit(Callable {
             return@Callable try {
