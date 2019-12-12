@@ -6,6 +6,7 @@ import assertk.catch
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.io.File
+import java.lang.Thread.sleep
 import java.util.concurrent.CancellationException
 
 object ScriptRunnerSpec : Spek({
@@ -59,6 +60,8 @@ object ScriptRunnerSpec : Spek({
 
                 assertThat(runner.result(), "not finished right after the start")
                         .prop("finished") { it.first }.isFalse()
+
+                sleep(5000)
 
                 assertThat(runner.interrupt(true), "there was something to interrupt")
                         .isTrue()
