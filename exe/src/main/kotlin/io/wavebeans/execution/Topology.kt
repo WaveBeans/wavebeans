@@ -73,11 +73,14 @@ interface IdResolver {
 
 internal class IntSequenceIdResolver : IdResolver {
 
-    private var idSeq = 0
+    companion object {
+        private var idSeq = 0
+    }
+
     private val nodesRef = mutableMapOf<Int, Bean<*>>()
 
     override fun id(bean: AnyBean): Int {
-        val id = nodesRef.entries.firstOrNull { it.value == bean }?.key ?: ++idSeq
+        val id = nodesRef.entries.firstOrNull { it.value === bean }?.key ?: ++idSeq
         nodesRef[id] = bean
         return id
     }

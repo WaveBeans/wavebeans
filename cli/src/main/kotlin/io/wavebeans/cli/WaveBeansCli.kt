@@ -1,5 +1,6 @@
 package io.wavebeans.cli
 
+import io.wavebeans.cli.script.RunMode
 import io.wavebeans.cli.script.ScriptRunner
 import org.apache.commons.cli.CommandLine
 import org.apache.commons.cli.Option
@@ -30,8 +31,10 @@ class WaveBeansCli(
         val time = Option(null, "time", false, "Tracks amount of time the script was running for.")
         val v = Option("v", "verbose", false, "Print some extra execution logging to stdout")
         val h = Option("h", "help", false, "Prints this help")
-        val o = Option("o", "overseer", true, "Running script in distributed mode, specify exact overseer. Currently supported only `local`. ")
-        val options = Options().of(f, e, time, v, h, o)
+        val m = Option("m", "run-mode", true, "Running script in distributed mode, specify exact overseer. Default is: ${RunMode.LOCAL.name} .Currently supported: ${RunMode.values().joinToString(",") { it.name }}. ")
+        val p = Option("p", "partitions", true, "Number of partitions to use in Distributed mode.")
+        val t = Option("t", "threads", true, "Number of threads to use in Distributed mode.")
+        val options = Options().of(f, e, time, v, h, m, p, t)
     }
 
     private val verbose = cli.has(v)
@@ -46,10 +49,14 @@ class WaveBeansCli(
             val content = cli.get(e) { it }
                     ?: cli.getRequired(f) { File(it).readText() }
 
-            val overseer = cli.get(o) { it }
+            val runMode = cli.get(m) { RunMode.byName(it) } ?: RunMode.LOCAL
+            if (verbose) printer.println("Running mode: ${runMode.name}")
+            val runOptions = mutableMapOf<String, Any>()
+            if (cli.has(p)) runOptions["partitions"] = cli.getRequired(p) { it.toInt() }
+            if (cli.has(t)) runOptions["threads"] = cli.getRequired(t) { it.toInt() }
 
             val executionTime = measureTimeMillis {
-                ScriptRunner(content, closeTimeout = Long.MAX_VALUE, overseer = overseer).start()
+                ScriptRunner(content, closeTimeout = Long.MAX_VALUE, runMode = runMode, runOptions = runOptions).start()
                         .also { if (verbose) printer.println("Script started:\n$content") }
                         .use { runner ->
                             Runtime.getRuntime().addShutdownHook(Thread {

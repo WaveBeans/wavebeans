@@ -10,11 +10,11 @@ class ScriptRunner(
         private val content: String,
         private val sampleRate: Float = 44100.0f,
         private val closeTimeout: Long = 10000L,
-        overseer: String?
+        runMode: RunMode = RunMode.LOCAL,
+        runOptions: Map<String, Any> = emptyMap()
 ) : Closeable {
 
     companion object {
-        const val localOverseer: String = "local"
         private val log = logger {}
     }
 
@@ -32,11 +32,12 @@ class ScriptRunner(
             "io.wavebeans.cli.script.*"
     ).map { "import $it" }
 
-    private val evaluator = if (overseer == localOverseer) {
-        LocalScriptEvaluator::class.simpleName + "()"
-    } else {
-        throw UnsupportedOperationException("$overseer mode of run is unsupported")
-    }
+    private fun Any.parameter() = if (this is String) "\"${this}\"" else "$this"
+
+    private val evaluator = when (runMode) {
+        RunMode.LOCAL -> LocalScriptEvaluator::class
+        RunMode.LOCAL_DISTRIBUTED -> LocalDistributedScriptEvaluator::class
+    }.simpleName + "(" + runOptions.map { "${it.key} = ${it.value.parameter()}" }.joinToString(", ") + ")"
 
     private val functions = """
         val evaluator = $evaluator
