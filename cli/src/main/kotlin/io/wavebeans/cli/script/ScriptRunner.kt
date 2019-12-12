@@ -4,10 +4,7 @@ import de.swirtz.ktsrunner.objectloader.KtsObjectLoader
 import de.swirtz.ktsrunner.objectloader.LoadException
 import mu.KotlinLogging.logger
 import java.io.Closeable
-import java.util.concurrent.Callable
-import java.util.concurrent.Executors
-import java.util.concurrent.Future
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.*
 
 class ScriptRunner(
         private val content: String,
@@ -56,6 +53,8 @@ class ScriptRunner(
         }
     """.trimIndent()
 
+    private val startCountDown = CountDownLatch(1)
+
     fun start(): ScriptRunner {
         check(task == null) { "Task is already started" }
         // extract imports from content
@@ -73,6 +72,7 @@ class ScriptRunner(
         log.debug { "Evaluating the following script: \n$scriptContent" }
         task = executor.submit(Callable {
             return@Callable try {
+                startCountDown.countDown()
                 ktsObjectLoader.load<Any?>(scriptContent)
                 null
             } catch (e: Exception) {
@@ -80,6 +80,9 @@ class ScriptRunner(
                 if (e is LoadException) e.cause else e
             }
         })
+
+        check(startCountDown.await(10000, TimeUnit.MILLISECONDS)) { "The task is not started" }
+
         return this
     }
 

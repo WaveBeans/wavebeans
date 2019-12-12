@@ -56,12 +56,10 @@ object ScriptRunnerSpec : Spek({
 
         it("should return something after interruption") {
             // This test uses sleeps, better to wait properly, test may become flaky
-            ScriptRunner(script, closeTimeout = Long.MAX_VALUE).start().use { runner ->
+            ScriptRunner(script).start().use { runner ->
 
                 assertThat(runner.result(), "not finished right after the start")
                         .prop("finished") { it.first }.isFalse()
-
-                sleep(5000)
 
                 assertThat(runner.interrupt(true), "there was something to interrupt")
                         .isTrue()
