@@ -9,10 +9,12 @@ import java.util.concurrent.*
 class ScriptRunner(
         private val content: String,
         private val sampleRate: Float = 44100.0f,
-        private val closeTimeout: Long = 10000L
+        private val closeTimeout: Long = 10000L,
+        overseer: String?
 ) : Closeable {
 
     companion object {
+        const val localOverseer: String = "local"
         private val log = logger {}
     }
 
@@ -27,31 +29,24 @@ class ScriptRunner(
             "io.wavebeans.lib.stream.*",
             "io.wavebeans.lib.stream.fft.*",
             "io.wavebeans.lib.stream.window.*",
-            Thread::class.qualifiedName + ".*",
-            ArrayList::class.qualifiedName
+            "io.wavebeans.cli.script.*"
     ).map { "import $it" }
 
-    // TODO replace with proper evaluation environment
+    private val evaluator = if (overseer == localOverseer) {
+        LocalScriptEvaluator::class.simpleName + "()"
+    } else {
+        throw UnsupportedOperationException("$overseer mode of run is unsupported")
+    }
+
     private val functions = """
-        val outputs = ArrayList<StreamOutput<*>>()
-        
-        fun StreamOutput<*>.out() { outputs += this }
-        
-        fun evalAllLocally() {
-                outputs
-                    .map { it.writer(${sampleRate}f) }
-                    .forEach {
-                        try {
-                            while (it.write()) { sleep(0) }
-                        } catch (e: InterruptedException) {
-                            // if it's interrupted then we need to gracefully 
-                            // close everything that we've already processed
-                        } finally {
-                            it.close()
-                        }
-                    }
-        }
+        val evaluator = $evaluator
+        fun StreamOutput<*>.out() { evaluator.addOutput(this) }
     """.trimIndent()
+
+    private val evaluate = """
+        evaluator.eval(${sampleRate}f)
+    """.trimIndent()
+
 
     private val startCountDown = CountDownLatch(1)
 
@@ -67,7 +62,7 @@ class ScriptRunner(
         val scriptContent = (imports + customImports).joinToString(separator = "\n") +
                 "\n\n" + functions +
                 "\n\n" + cleanedContent +
-                "\n\n" + "evalAllLocally()" +
+                "\n\n" + evaluate +
                 "\n\n" + "true // need to return something :/"
         log.debug { "Evaluating the following script: \n$scriptContent" }
         task = executor.submit(Callable {

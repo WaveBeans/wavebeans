@@ -30,7 +30,8 @@ class WaveBeansCli(
         val time = Option(null, "time", false, "Tracks amount of time the script was running for.")
         val v = Option("v", "verbose", false, "Print some extra execution logging to stdout")
         val h = Option("h", "help", false, "Prints this help")
-        val options = Options().of(f, e, time, v, h)
+        val o = Option("o", "overseer", true, "Running script in distributed mode, specify exact overseer. Currently supported only `local`. ")
+        val options = Options().of(f, e, time, v, h, o)
     }
 
     private val verbose = cli.has(v)
@@ -45,8 +46,10 @@ class WaveBeansCli(
             val content = cli.get(e) { it }
                     ?: cli.getRequired(f) { File(it).readText() }
 
+            val overseer = cli.get(o) { it }
+
             val executionTime = measureTimeMillis {
-                ScriptRunner(content, closeTimeout = Long.MAX_VALUE).start()
+                ScriptRunner(content, closeTimeout = Long.MAX_VALUE, overseer = overseer).start()
                         .also { if (verbose) printer.println("Script started:\n$content") }
                         .use { runner ->
                             Runtime.getRuntime().addShutdownHook(Thread {

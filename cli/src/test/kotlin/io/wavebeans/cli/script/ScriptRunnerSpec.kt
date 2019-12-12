@@ -6,12 +6,13 @@ import assertk.catch
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.io.File
-import java.lang.Thread.sleep
 import java.util.concurrent.CancellationException
 
 object ScriptRunnerSpec : Spek({
 
-    fun eval(script: String) = ScriptRunner(script).use {
+    val overseer = ScriptRunner.localOverseer
+
+    fun eval(script: String) = ScriptRunner(script, overseer = overseer).use {
         it.start().awaitForResult()
     }
 
@@ -56,7 +57,7 @@ object ScriptRunnerSpec : Spek({
 
         it("should return something after interruption") {
             // This test uses sleeps, better to wait properly, test may become flaky
-            ScriptRunner(script).start().use { runner ->
+            ScriptRunner(script, overseer = overseer).start().use { runner ->
 
                 assertThat(runner.result(), "not finished right after the start")
                         .prop("finished") { it.first }.isFalse()
