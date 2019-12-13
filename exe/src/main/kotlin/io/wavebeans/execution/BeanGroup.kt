@@ -78,6 +78,12 @@ fun Topology.groupBeans(idResolver: GroupIdResolver = DefaultGroupIdResolver(thi
                 // finish stroke as there is nowhere to go -- reached the head
                 strokes += currentStroke + bean
             }
+            linksToBean.size == 1 && currentStroke.isEmpty() -> {
+                // single input bean case
+                strokes += listOf(bean)
+            }
+            else -> throw UnsupportedOperationException("Combination is not supported linksFromBean=$linksFromBean, " +
+                    "linksToBean=$linksToBean, currentStroke=$currentStroke")
         }
     }
 
