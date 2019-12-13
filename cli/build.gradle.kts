@@ -4,6 +4,7 @@ plugins {
 
 application {
     mainClassName = "io.wavebeans.cli.CliKt"
+    applicationName = "wavebeans"
 }
 
 repositories {
