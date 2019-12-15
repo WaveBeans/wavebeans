@@ -57,3 +57,35 @@ For `local-distributed` mode you need to pass additional parameters:
 **More information about execution**
 
 [TODO cover `--time` and `-v`]
+
+### Writing scripts
+
+Script is based on the functionality of the lib and everything provided there can be used. So follow LIB documentation to get idea how to solve one or another problem, it's no different that writing your own JVM application.
+
+**Imports**
+
+WaveBeans CLI tool executes the script written on Kotlin language. It has full support not only for library function but any other Kotlin SDK functionality. By default, WaveBeans and [Kotlin standard](https://kotlinlang.org/docs/reference/packages.html#default-imports) packages are imported, but you can import the one you need, just specify them on top of you script as usual:
+
+```kotlin
+import java.io.File
+
+val file = File.createTempFile("test", ".csv")
+440.sine().trim(Long.MAX_VALUE).toCsv("file://${file.absolutePath}").out()
+```
+
+You may specify as many imports as you want, while you're following [imports grammar](https://kotlinlang.org/docs/reference/packages.html#imports)
+
+**Outputs**
+
+WaveBeans processing is declarative. That means you define the processing logic and it is evaluated when terminal action is called. For WaveBeans the terminal action is output. Though it should be connected to the execution environment, in order to be processed.
+
+For the script in order to track the output you should call explicitly `.out()`:
+
+```kotlin
+
+440.sine().trim(1000).toCsv("file:///path/to/file.csv") // specify your handling logic
+    .out() // register output to be processed 
+
+```
+
+Otherwise, if you don't call it that lines of code won't be evaluated. Also, if you register output more than once by calling `.out()` a few times, it will be registered as two different output and be evaluated twice.
