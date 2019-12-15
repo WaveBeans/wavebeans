@@ -29,7 +29,6 @@ object TopologySerializerSpec : Spek({
 
         val deserializedTopology = with(TopologySerializer) {
             val topologySerialized = serialize(topology)
-            println(topologySerialized)
             deserialize(topologySerialized)
         }
 

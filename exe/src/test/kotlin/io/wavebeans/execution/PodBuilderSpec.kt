@@ -486,7 +486,6 @@ class PodBuilderSpec : Spek({
             val pods = listOf(o1).buildTopology(idResolver)
                     .partition(2)
                     .groupBeans(groupIdResolver())
-                    .also { println(TopologySerializer.serialize(it, jsonPretty)) }
                     .buildPods()
             it("should have 3 pods") { assertThat(pods).size().isEqualTo(3) }
             it("should have unique ids") {

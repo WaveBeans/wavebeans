@@ -174,7 +174,6 @@ object BeanGroupSpec : Spek({
         val topology = listOf(o1, o2)
                 .buildTopology(idResolver)
                 .groupBeans(groupIdResolver())
-                .also { println(TopologySerializer.serialize(it, jsonPretty)) }
 
 
         it("should have five group beans") {
@@ -298,7 +297,7 @@ object BeanGroupSpec : Spek({
             }
         }
         it("should have eight links") {
-            assertThat(topology.links.sortedWith(compareBy({ it.from }, { it.to })).also { println(it) })
+            assertThat(topology.links.sortedWith(compareBy({ it.from }, { it.to })))
                     .isListOf(
                             5.0 to 4.0,
                             5.1 to 4.0,
@@ -336,7 +335,7 @@ object BeanGroupSpec : Spek({
             }
         }
         it("should have two links") {
-            assertThat(topology.links.sortedWith(compareBy({ it.from }, { it.to })).also { println(it) })
+            assertThat(topology.links.sortedWith(compareBy({ it.from }, { it.to })))
                     .isListOf(
                             100.0 to 1.0 order 0,
                             100.0 to 2.0 order 1

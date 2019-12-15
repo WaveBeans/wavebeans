@@ -3,12 +3,17 @@ package io.wavebeans.execution.pod
 import io.wavebeans.execution.Call
 import io.wavebeans.execution.medium.PodCallResult
 import io.wavebeans.lib.AnyBean
+import mu.KotlinLogging
 import java.io.Closeable
 import java.lang.reflect.InvocationTargetException
 
 data class PodKey(val id: Int, val partition: Int)
 
 interface Pod : Closeable {
+
+    companion object {
+        private val log = KotlinLogging.logger { }
+    }
 
     val podKey: PodKey
 
@@ -34,11 +39,11 @@ interface Pod : Closeable {
             val result = method.call(this, *params)
 
             val callTime = (System.nanoTime() - start) / 1_000_000.0
-            if (callTime > 50) println("[$this][call=$call] Call time ${callTime}ms")
+            if (callTime > 50) log.warn { "[$this][call=$call] Call time ${callTime}ms" }
 
             val r = PodCallResult.wrap(call, result)
             val resultTime = (System.nanoTime() - start) / 1_000_000.0 - callTime
-            if (resultTime > 50) println("[$this][call=$call] Result wrap time ${resultTime}ms")
+            if (resultTime > 50) log.warn { "[$this][call=$call] Result wrap time ${resultTime}ms" }
 
             r
         } catch (e: InvocationTargetException) {
