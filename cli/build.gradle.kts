@@ -4,11 +4,19 @@ plugins {
 
 application {
     mainClassName = "io.wavebeans.cli.CliKt"
+    applicationName = "wavebeans"
+}
+
+repositories {
+    maven {
+        setUrl("https://dl.bintray.com/s1m0nw1/KtsRunner")
+    }
 }
 
 dependencies {
     implementation(project(":lib"))
     implementation(project(":exe"))
 
-    implementation(group = "org.jline", name = "jline", version = "3.10.0")
+    implementation("de.swirtz:ktsRunner:0.0.7")
+    implementation("commons-cli:commons-cli:1.4")
 }

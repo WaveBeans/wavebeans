@@ -14,10 +14,14 @@ import io.wavebeans.lib.math.minus
 import io.wavebeans.lib.math.plus
 import io.wavebeans.lib.math.r
 import io.wavebeans.lib.stream.plus
+import mu.KotlinLogging
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 
 object DftSpec : Spek({
+
+    val log = KotlinLogging.logger {}
+
     describe("Given signal as array of doubles [1,4]") {
         val x = (1..4).map { it.r }.asSequence()
         val expected = arrayOf(
@@ -278,19 +282,19 @@ object DftSpec : Spek({
 
         signals.forEach { signal ->
             describe("Given signal ${signal.key}") {
-                println("Test case: ${signal.key}")
+                log.debug { "Test case: ${signal.key}" }
                 var s = System.currentTimeMillis()
                 val x = signal.value().toList().asSequence()
-                println("Generation time = ${System.currentTimeMillis() - s}ms")
+                log.debug { "Generation time = ${System.currentTimeMillis() - s}ms" }
                 val n = x.count()
                 s = System.currentTimeMillis()
                 val fft = fft(x, n)
-                println("FFT time = ${System.currentTimeMillis() - s}ms")
+                log.debug { "FFT time = ${System.currentTimeMillis() - s}ms" }
 
                 describe("Calculating inversed FFT") {
                     s = System.currentTimeMillis()
                     val ifft = fft(fft, n, inversed = true)
-                    println("IFFT time = ${System.currentTimeMillis() - s}ms")
+                    log.debug { "IFFT time = ${System.currentTimeMillis() - s}ms" }
 
                     it("should be as source signal") {
                         val expected = x.toList()

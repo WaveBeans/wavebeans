@@ -15,6 +15,7 @@ import io.wavebeans.lib.stream.times
 import io.wavebeans.lib.stream.trim
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
+import java.io.File
 import kotlin.reflect.full.isSubclassOf
 
 object BeanGroupSpec : Spek({
@@ -173,7 +174,6 @@ object BeanGroupSpec : Spek({
         val topology = listOf(o1, o2)
                 .buildTopology(idResolver)
                 .groupBeans(groupIdResolver())
-                .also { println(TopologySerializer.serialize(it, jsonPretty)) }
 
 
         it("should have five group beans") {
@@ -297,7 +297,7 @@ object BeanGroupSpec : Spek({
             }
         }
         it("should have eight links") {
-            assertThat(topology.links.sortedWith(compareBy({ it.from }, { it.to })).also { println(it) })
+            assertThat(topology.links.sortedWith(compareBy({ it.from }, { it.to })))
                     .isListOf(
                             5.0 to 4.0,
                             5.1 to 4.0,
@@ -312,6 +312,37 @@ object BeanGroupSpec : Spek({
 
     }
 
+    describe("Sum of two inputs with 2 partitions consisting from single partition beans") {
+        val file = File.createTempFile("test", "csv").also { it.deleteOnExit() }
+        val i1 = 440.sine().n(1)                                 // [1.0]
+        val i2 = 880.sine().n(2)                                 // [2.0]
+        val o1 = (i1 + i2).n(3)                                  //       <|
+                .trim(1).n(4)                                    //       <| [100.0]
+                .toCsv("file://${file.absolutePath}").n(5)       //       <|
+        val topology = listOf(o1).buildTopology(idResolver)
+                .partition(2)
+                .groupBeans(groupIdResolver())
+
+        it("should have three group beans") {
+            assertThat(topology.refs).all {
+                size().isEqualTo(3)
+                group(100).all {
+                    groupRefs().ids().isListOf(5, 4, 3)
+                    groupLinks().isListOf(5 to 4, 4 to 3)
+                }
+                bean(1.0).isNotNull()
+                bean(2.0).isNotNull()
+            }
+        }
+        it("should have two links") {
+            assertThat(topology.links.sortedWith(compareBy({ it.from }, { it.to })))
+                    .isListOf(
+                            100.0 to 1.0 order 0,
+                            100.0 to 2.0 order 1
+                    )
+        }
+
+    }
 
 })
 

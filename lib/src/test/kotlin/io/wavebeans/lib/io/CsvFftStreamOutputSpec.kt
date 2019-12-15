@@ -41,7 +41,7 @@ class CsvFftStreamOutputSpec : Spek({
             }
 
             BufferedReader(InputStreamReader(FileInputStream(file))).use { reader ->
-                val lines = reader.lines().toList().also { println(it.joinToString("\n")) }
+                val lines = reader.lines().toList()
 
                 it("should have 3 lines") { assertThat(lines.size).isEqualTo(3) }
 

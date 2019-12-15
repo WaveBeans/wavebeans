@@ -16,6 +16,7 @@ import io.wavebeans.lib.stream.fft.trim
 import io.wavebeans.lib.stream.plus
 import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.stream.window.window
+import mu.KotlinLogging
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.io.File
@@ -24,6 +25,8 @@ import kotlin.system.measureTimeMillis
 
 @ExperimentalStdlibApi
 object OverseerIntegrationSpec : Spek({
+
+    val log = KotlinLogging.logger {}
 
     describe("Two outputs with different paths but same content") {
         val f1 = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
@@ -57,21 +60,21 @@ object OverseerIntegrationSpec : Spek({
                 .partition(2)
                 .groupBeans()
 
-        println("Topology: ${TopologySerializer.serialize(topology, jsonPretty)}")
+        log.debug { "Topology: ${TopologySerializer.serialize(topology, jsonPretty)}" }
 
         val overseer = Overseer()
 
         val timeToDeploy = measureTimeMillis {
             overseer.deployTopology(topology, 2)
-            println("Topology deployed")
+            log.debug { "Topology deployed" }
         }
         val timeToProcess = measureTimeMillis {
             overseer.waitToFinish()
-            println("Everything processed")
+            log.debug { "Everything processed" }
         }
         val timeToFinalize = measureTimeMillis {
             overseer.close()
-            println("Everything closed")
+            log.debug { "Everything closed" }
         }
 
         val f1Content = f1.readLines()
@@ -92,7 +95,7 @@ object OverseerIntegrationSpec : Spek({
                         it.close()
                     }
         }
-        println("Local run finished")
+        log.debug { "Local run finished" }
 
         val f1LocalContent = f1.readLines()
         it("should have the same size as local content [1]") { assertThat(f1Content.size).isEqualTo(f1LocalContent.size) }
@@ -107,8 +110,10 @@ object OverseerIntegrationSpec : Spek({
         it("should have the same size as local content [4]") { assertThat(f4Content.size).isEqualTo(f4LocalContent.size) }
         it("should have the same output as local content [4]") { assertThat(f4Content).isEqualTo(f4LocalContent) }
 
-        println("Deploy took $timeToDeploy ms, processing took $timeToProcess ms, " +
-                "finalizing took $timeToFinalize ms, local run time is $localRunTime ms")
+        log.debug {
+            "Deploy took $timeToDeploy ms, processing took $timeToProcess ms, " +
+                    "finalizing took $timeToFinalize ms, local run time is $localRunTime ms"
+        }
 
     }
 })

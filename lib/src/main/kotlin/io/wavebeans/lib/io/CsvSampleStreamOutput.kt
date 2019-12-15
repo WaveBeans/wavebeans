@@ -55,9 +55,6 @@ class CsvSampleStreamOutput(
             override fun footer(): ByteArray? = null
 
             override fun serialize(element: Sample): ByteArray {
-                if (offset % (sampleRate.toLong() * 1L) == 0L) {
-                    println("Processed ${offset / sampleRate} seconds")
-                }
                 val time = samplesCountToLength(offset++, sampleRate, params.outputTimeUnit)
                 return String.format("%d,%.10f\n", time, element).toByteArray(params.encoding())
             }

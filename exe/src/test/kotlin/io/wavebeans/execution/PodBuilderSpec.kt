@@ -12,6 +12,7 @@ import io.wavebeans.lib.io.toCsv
 import io.wavebeans.lib.stream.*
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
+import java.io.File
 
 @ExperimentalStdlibApi
 class PodBuilderSpec : Spek({
@@ -408,7 +409,6 @@ class PodBuilderSpec : Spek({
                     .buildTopology(idResolver)
                     .partition(2)
                     .groupBeans(groupIdResolver())
-                    .also { println(TopologySerializer.serialize(it, jsonPretty)) }
                     .buildPods()
 
             it("should have 9 pods") { assertThat(pods).size().isEqualTo(9) }
@@ -471,6 +471,42 @@ class PodBuilderSpec : Spek({
                             podRef.podProxies().isEmpty()
                             podRef.partition().isEqualTo(0)
                         }
+                    }
+                }
+            }
+        }
+
+        describe("Sum of two inputs with 2 partitions consisting from single partition beans") {
+            val file = File.createTempFile("test", "csv").also { it.deleteOnExit() }
+            val i1 = 440.sine().n(1)                                 // [1.0]
+            val i2 = 880.sine().n(2)                                 // [2.0]
+            val o1 = (i1 + i2).n(3)                                  //       <|
+                    .trim(1).n(4)                                    //       <| [100.0]
+                    .toCsv("file://${file.absolutePath}").n(5)       //       <|
+            val pods = listOf(o1).buildTopology(idResolver)
+                    .partition(2)
+                    .groupBeans(groupIdResolver())
+                    .buildPods()
+            it("should have 3 pods") { assertThat(pods).size().isEqualTo(3) }
+            it("should have unique ids") {
+                assertThat(pods.map { it.key.id }.distinct().sorted()).isEqualTo(listOf(1, 2) + (100..100).toList())
+            }
+            it("should have pods of specific type") {
+                assertThat(pods).all {
+                    podWithKey("sine 440", 1).eachIndexed(1) { pod, _ ->
+                        pod.podProxies().isEmpty()
+                    }
+                    podWithKey("sine 880", 2).eachIndexed(1) { pod, _ ->
+                        pod.podProxies().isEmpty()
+                    }
+                    podWithKey("group [ ( + ).trim().toCsv()", 100).eachIndexed(1) { pod, _ ->
+                        pod.podProxies().eachIndexed(2) { proxy, i ->
+                            when (i) {
+                                0 -> proxy.streamingPodProxyKey().isEqualTo(PodKey(1, 0))
+                                1 -> proxy.streamingPodProxyKey().isEqualTo(PodKey(2, 0))
+                            }
+                        }
+                        pod.partition().isEqualTo(0)
                     }
                 }
             }

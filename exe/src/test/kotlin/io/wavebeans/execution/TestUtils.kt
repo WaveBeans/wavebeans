@@ -69,46 +69,6 @@ fun <T> Assert<List<T>>.isListOf(vararg expected: Any?) = given { actual ->
     fail(expected, actual)
 }
 
-fun FiniteSampleStream.toDevNull(
-): StreamOutput<Sample> {
-    return DevNullSampleStreamOutput(this, NoParams())
-}
-
-class DevNullSampleStreamOutput(
-        val stream: FiniteSampleStream,
-        params: NoParams
-) : StreamOutput<Sample>, SinglePartitionBean {
-
-    override fun writer(sampleRate: Float): Writer {
-
-        val sampleIterator = stream.asSequence(sampleRate).iterator()
-        var sampleCounter = 0L
-        return object : Writer {
-            override fun write(): Boolean {
-                return if (sampleIterator.hasNext()) {
-                    sampleIterator.next()
-                    sampleCounter++
-                    true
-                } else {
-                    false
-                }
-            }
-
-            override fun close() {
-                println("[/DEV/NULL] Written $sampleCounter samples")
-            }
-
-        }
-    }
-
-    override val input: Bean<Sample>
-        get() = stream
-
-    override val parameters: BeanParams = params
-
-}
-
-
 fun seqStream() = SeqInput()
 
 class SeqInput constructor(
