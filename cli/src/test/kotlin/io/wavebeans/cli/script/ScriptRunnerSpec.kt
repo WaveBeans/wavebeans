@@ -65,7 +65,7 @@ object ScriptRunnerSpec : Spek({
                     // This test uses sleeps, better to wait properly, test may become flaky
                     ScriptRunner(script, runMode = runMode, runOptions = runOptions).start().use { runner ->
 
-                        sleep(5000)
+                        sleep(5000) // without that wait on fast machines script is not actually started but attempted to finish already.
 
                         assertThat(runner.result(), "not finished right after the start")
                                 .prop("finished") { it.first }.isFalse()
