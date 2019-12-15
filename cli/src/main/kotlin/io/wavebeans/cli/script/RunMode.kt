@@ -1,11 +1,11 @@
 package io.wavebeans.cli.script
 
-enum class RunMode(name: String) {
+enum class RunMode(val id: String) {
     LOCAL("local"),
     LOCAL_DISTRIBUTED("local-distributed")
     ;
 
     companion object {
-        fun byName(name: String): RunMode? = values().firstOrNull { it.name == name }
+        fun byId(id: String): RunMode? = values().firstOrNull { it.id == id }
     }
 }

@@ -31,7 +31,7 @@ class WaveBeansCli(
         val time = Option(null, "time", false, "Tracks amount of time the script was running for.")
         val v = Option("v", "verbose", false, "Print some extra execution logging to stdout")
         val h = Option("h", "help", false, "Prints this help")
-        val m = Option("m", "run-mode", true, "Running script in distributed mode, specify exact overseer. Default is: ${RunMode.LOCAL.name} .Currently supported: ${RunMode.values().joinToString(",") { it.name }}. ")
+        val m = Option("m", "run-mode", true, "Running script in distributed mode, specify exact overseer. Default is: ${RunMode.LOCAL.id}. Supported: ${RunMode.values().joinToString(", ") { it.id }}. ")
         val p = Option("p", "partitions", true, "Number of partitions to use in Distributed mode.")
         val t = Option("t", "threads", true, "Number of threads to use in Distributed mode.")
         val options = Options().of(f, e, time, v, h, m, p, t)
@@ -49,37 +49,37 @@ class WaveBeansCli(
             val content = cli.get(e) { it }
                     ?: cli.getRequired(f) { File(it).readText() }
 
-            val runMode = cli.get(m) { RunMode.byName(it) } ?: RunMode.LOCAL
-            if (verbose) printer.println("Running mode: ${runMode.name}")
+            val runMode = cli.get(m) { RunMode.byId(it) } ?: RunMode.LOCAL
+            if (verbose) printer.printLine("Running mode: ${runMode.name}")
             val runOptions = mutableMapOf<String, Any>()
             if (cli.has(p)) runOptions["partitions"] = cli.getRequired(p) { it.toInt() }
             if (cli.has(t)) runOptions["threads"] = cli.getRequired(t) { it.toInt() }
 
             val executionTime = measureTimeMillis {
                 ScriptRunner(content, closeTimeout = Long.MAX_VALUE, runMode = runMode, runOptions = runOptions).start()
-                        .also { if (verbose) printer.println("Script started:\n$content") }
+                        .also { if (verbose) printer.printLine("Script started:\n$content") }
                         .use { runner ->
                             Runtime.getRuntime().addShutdownHook(Thread {
-                                if (verbose) printer.println("Shutting down the script...")
+                                if (verbose) printer.printLine("Shutting down the script...")
                                 runner.interrupt(waitToFinish = true)
                                 runner.close()
-                                if (verbose) printer.println("Shut down finished.")
+                                if (verbose) printer.printLine("Shut down finished.")
                             })
 
                             try {
                                 runner.awaitForResult()
                                         .also {
                                             if (verbose)
-                                                printer.println("Finished with result: " + (it?.message ?: "Success"))
+                                                printer.printLine("Finished with result: " + (it?.message ?: "Success"))
                                         }
                             } catch (e: CancellationException) {
-                                if (verbose) printer.println("Script execution cancelled")
+                                if (verbose) printer.printLine("Script execution cancelled")
                             }
 
                             Unit
                         }
             }
-            if (trackTime) printer.println("${executionTime / 1000.0}sec")
+            if (trackTime) printer.printLine("${executionTime / 1000.0}sec")
             printer.flush()
             true
         } else {
@@ -87,4 +87,10 @@ class WaveBeansCli(
         }
     }
 
+}
+
+private fun PrintWriter.printLine(m: String): PrintWriter {
+    this.println(m)
+    this.flush()
+    return this
 }

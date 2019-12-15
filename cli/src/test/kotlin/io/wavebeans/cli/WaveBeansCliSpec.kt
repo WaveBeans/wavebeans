@@ -54,5 +54,31 @@ object WaveBeansCliSpec : Spek({
                 assertThat(String(out.toByteArray())).matches(Regex("\\d+\\.\\d+sec\\s*"))
             }
         }
+
+        describe("Short-living from executed on distributed environment") {
+            val scriptFile = File.createTempFile("test", "kts").also { it.deleteOnExit() }
+            val file = File.createTempFile("test", "csv").also { it.deleteOnExit() }
+            scriptFile.writeBytes("440.sine().trim(1).toCsv(\"file://${file.absolutePath}\").out()".toByteArray())
+            val out = ByteArrayOutputStream()
+            val cli = WaveBeansCli(
+                    cli = DefaultParser().parse(options, arrayOf(
+                            name,
+                            "--execute-file", scriptFile.absolutePath,
+                            "--time",
+                            "--run-mode", "local-distributed",
+                            "--threads", "1",
+                            "--partitions", "1"
+                    )),
+                    printer = PrintWriter(out)
+            )
+            out.flush()
+            out.close()
+
+            it("should execute") { assertThat(cli.tryScriptExecution()).isTrue() }
+            it("should generate non empty file") { assertThat(file.readText()).isNotEmpty() }
+            it("should output time to console") {
+                assertThat(String(out.toByteArray())).matches(Regex("\\d+\\.\\d+sec\\s*"))
+            }
+        }
     }
 })
