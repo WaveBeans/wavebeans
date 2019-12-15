@@ -54,17 +54,19 @@ class ScriptRunner(
     fun start(): ScriptRunner {
         check(task == null) { "Task is already started" }
         // extract imports from content
-        val importsRegex = Regex("import\\s+[\\w.*]+;?")
+        val importsRegex = Regex("import\\s+[\\w.* ]+;?")
         val customImports = importsRegex.findAll(content)
                 .map { it.groupValues.first().removeSuffix(";") }
                 .toList()
         val cleanedContent = content.replace(importsRegex, "")
 
-        val scriptContent = (imports + customImports).joinToString(separator = "\n") +
-                "\n\n" + functions +
-                "\n\n" + cleanedContent +
-                "\n\n" + evaluate +
-                "\n\n" + "true // need to return something :/"
+        val scriptContent = listOf(
+                (imports + customImports).joinToString(separator = "\n"),
+                functions,
+                cleanedContent,
+                evaluate,
+                "true // need to return something :/"
+        ).joinToString(separator = "\n\n")
         log.debug { "Evaluating the following script: \n$scriptContent" }
         task = executor.submit(Callable {
             return@Callable try {

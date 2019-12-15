@@ -34,7 +34,8 @@ class WaveBeansCli(
         val m = Option("m", "run-mode", true, "Running script in distributed mode, specify exact overseer. Default is: ${RunMode.LOCAL.id}. Supported: ${RunMode.values().joinToString(", ") { it.id }}. ")
         val p = Option("p", "partitions", true, "Number of partitions to use in Distributed mode.")
         val t = Option("t", "threads", true, "Number of threads to use in Distributed mode.")
-        val options = Options().of(f, e, time, v, h, m, p, t)
+        val s = Option("s", "sampleRate", true, "Sample rate in Hz to use for outputs. By default, it's 44100.")
+        val options = Options().of(f, e, time, v, h, m, p, t, s)
     }
 
     private val verbose = cli.has(v)
@@ -52,11 +53,18 @@ class WaveBeansCli(
             val runMode = cli.get(m) { RunMode.byId(it) } ?: RunMode.LOCAL
             if (verbose) printer.printLine("Running mode: ${runMode.name}")
             val runOptions = mutableMapOf<String, Any>()
-            if (cli.has(p)) runOptions["partitions"] = cli.getRequired(p) { it.toInt() }
-            if (cli.has(t)) runOptions["threads"] = cli.getRequired(t) { it.toInt() }
+            if (runMode == RunMode.LOCAL_DISTRIBUTED && cli.has(p)) runOptions["partitions"] = cli.getRequired(p) { it.toInt() }
+            if (runMode == RunMode.LOCAL_DISTRIBUTED && cli.has(t)) runOptions["threads"] = cli.getRequired(t) { it.toInt() }
+            val sampleRate = cli.get(s) { it.toFloat() } ?: 44100.0f
 
             val executionTime = measureTimeMillis {
-                ScriptRunner(content, closeTimeout = Long.MAX_VALUE, runMode = runMode, runOptions = runOptions).start()
+                ScriptRunner(
+                        content,
+                        closeTimeout = Long.MAX_VALUE,
+                        runMode = runMode,
+                        runOptions = runOptions,
+                        sampleRate = sampleRate
+                ).start()
                         .also { if (verbose) printer.printLine("Script started:\n$content") }
                         .use { runner ->
                             Runtime.getRuntime().addShutdownHook(Thread {
@@ -80,7 +88,6 @@ class WaveBeansCli(
                         }
             }
             if (trackTime) printer.printLine("${executionTime / 1000.0}sec")
-            printer.flush()
             true
         } else {
             false

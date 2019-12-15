@@ -6,3 +6,4 @@
 .gradle
 ds
 .DS_Store
+logs/cd
