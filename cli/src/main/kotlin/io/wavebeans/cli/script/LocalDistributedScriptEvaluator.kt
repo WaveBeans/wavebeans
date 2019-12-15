@@ -13,7 +13,6 @@ class LocalDistributedScriptEvaluator(
     @UseExperimental(ExperimentalStdlibApi::class)
     override fun eval(sampleRate: Float) {
 
-
         Overseer().use {
             try {
                 it.deployTopology(
