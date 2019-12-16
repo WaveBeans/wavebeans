@@ -29,7 +29,8 @@ class ScriptRunner(
             "io.wavebeans.lib.stream.*",
             "io.wavebeans.lib.stream.fft.*",
             "io.wavebeans.lib.stream.window.*",
-            "io.wavebeans.cli.script.*"
+            "io.wavebeans.cli.script.*",
+            "java.util.concurrent.TimeUnit.*" // to use time units easier
     ).map { "import $it" }
 
     private fun Any.parameter() = if (this is String) "\"${this}\"" else "$this"

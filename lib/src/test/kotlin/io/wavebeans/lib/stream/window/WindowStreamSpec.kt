@@ -4,6 +4,7 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.size
 import io.wavebeans.lib.*
+import io.wavebeans.lib.stream.rangeProjection
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 
