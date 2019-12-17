@@ -1,16 +1,17 @@
 package io.wavebeans.execution
 
 import assertk.assertThat
-import assertk.assertions.isEqualTo
-import assertk.assertions.isGreaterThan
-import assertk.assertions.isNull
-import assertk.assertions.size
+import assertk.assertions.*
 import assertk.catch
 import io.wavebeans.execution.TopologySerializer.jsonPretty
 import io.wavebeans.lib.io.*
+import io.wavebeans.lib.math.r
+import io.wavebeans.lib.sampleOf
 import io.wavebeans.lib.stream.*
+import io.wavebeans.lib.stream.fft.FftSample
 import io.wavebeans.lib.stream.fft.fft
 import io.wavebeans.lib.stream.fft.trim
+import io.wavebeans.lib.stream.window.Window
 import io.wavebeans.lib.stream.window.window
 import mu.KotlinLogging
 import org.spekframework.spek2.Spek
@@ -25,9 +26,9 @@ object OverseerIntegrationSpec : Spek({
     val log = KotlinLogging.logger {}
 
     @ExperimentalStdlibApi
-    fun runOnOverseer(outputs: List<StreamOutput<out Any>>): Triple<Long, Long, Long> {
+    fun runOnOverseer(outputs: List<StreamOutput<out Any>>, threads: Int = 2, partitions: Int = 2): Triple<Long, Long, Long> {
         val topology = outputs.buildTopology()
-                .partition(2)
+                .partition(partitions)
                 .groupBeans()
 
         log.debug { "Topology: ${TopologySerializer.serialize(topology, jsonPretty)}" }
@@ -35,7 +36,7 @@ object OverseerIntegrationSpec : Spek({
         val overseer = Overseer()
 
         val timeToDeploy = measureTimeMillis {
-            overseer.deployTopology(topology, 2)
+            overseer.deployTopology(topology, threads)
             log.debug { "Topology deployed" }
         }
         val timeToProcess = measureTimeMillis {
@@ -125,23 +126,71 @@ object OverseerIntegrationSpec : Spek({
         }
     }
 
-//    describe("Map function") {
-//
-//        describe("Sample to Sample mapping") {
-//            val file = File.createTempFile("test", "csv").also { it.deleteOnExit() }
-//            val o = listOf(
-//                    seqStream()
-//                            .map { it * 2 }
-//                            .trim(100)
-//                            .toCsv("file://${file.absolutePath}")
-//            )
-//            it("should not fail") { assertThat(catch { runOnOverseer(o) }.also { if (it != null) log.warn(it) { "Can't evaluate it" } }).isNull() }
-//            val fileContent = file.readLines()
-//            it("should not be empty") { assertThat(fileContent.isNotEmpty()) }
-//            runLocally(o)
-//            val fileContentLocal = file.readLines()
-//            it("should have the same output as local") { assertThat(fileContent).isEqualTo(fileContentLocal) }
-//
-//        }
-//    }
+    describe("Map function") {
+
+        describe("Sample to Sample mapping") {
+            val file = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
+            val o = listOf(
+                    seqStream()
+                            .map { it * 2 }
+                            .trim(100)
+                            .toCsv("file://${file.absolutePath}")
+            )
+
+            runOnOverseer(o)
+
+            val fileContent = file.readLines()
+
+            it("should not return empty input ") { assertThat(fileContent).isNotEmpty() }
+
+            runLocally(o)
+            val fileContentLocal = file.readLines()
+            it("should have the same output as local") { assertThat(fileContent).isEqualTo(fileContentLocal) }
+
+        }
+
+        describe("Window<Sample> to Sample mapping") {
+            val file = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
+            val o = listOf(
+                    seqStream()
+                            .window(10)
+                            .map { w -> w.elements.last() }
+                            .trim(100)
+                            .toCsv("file://${file.absolutePath}")
+            )
+
+            runOnOverseer(o)
+
+            val fileContent = file.readLines()
+
+            it("should not return empty input ") { assertThat(fileContent).isNotEmpty() }
+
+            runLocally(o)
+            val fileContentLocal = file.readLines()
+            it("should have the same output as local") { assertThat(fileContent).isEqualTo(fileContentLocal) }
+
+        }
+
+        describe("Sample to Window<Sample> and back mapping") {
+            val file = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
+            val o = listOf(
+                    seqStream()
+                            .map { sample -> Window((0..9).map { sample }) }
+                            .map { window -> window.elements.first() }
+                            .trim(100)
+                            .toCsv("file://${file.absolutePath}")
+            )
+
+            runOnOverseer(o)
+
+            val fileContent = file.readLines()
+
+            it("should not return empty input ") { assertThat(fileContent).isNotEmpty() }
+
+            runLocally(o)
+            val fileContentLocal = file.readLines()
+            it("should have the same output as local") { assertThat(fileContent).isEqualTo(fileContentLocal) }
+
+        }
+    }
 })

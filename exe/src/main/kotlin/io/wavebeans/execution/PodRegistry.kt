@@ -42,6 +42,7 @@ object PodRegistry {
         registerMergingPodProxy(typeOf<SampleWindowStream>(), SampleWindowMergingPodProxy::class.constructors.first())
         registerMergingPodProxy(typeOf<FiniteFftStream>(), FiniteFftStreamMergingPodProxy::class.constructors.first())
         registerMergingPodProxy(typeOf<BeanStream<Sample>>(), SampleStreamMergingPodProxy::class.constructors.first())
+        registerMergingPodProxy(typeOf<BeanStream<*>>(), AnyStreamMergingPodProxy::class.constructors.first())
         registerMergingPodProxy(typeOf<FftStream>(), FftStreamMergingPodProxy::class.constructors.first())
 
         registerPod(typeOf<BeanStream<Sample>>(), SampleStreamingPod::class.constructors.single { it.parameters.size == 2 })
