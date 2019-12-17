@@ -13,6 +13,8 @@ import kotlin.math.min
 // TODO consider moving to config
 const val DEFAULT_PARTITION_SIZE = 512
 
+typealias TransferContainer = Any
+
 /**
  * Base implementation of the [Pod].
  *
@@ -41,11 +43,11 @@ const val DEFAULT_PARTITION_SIZE = 512
  *      via instantiation of any [PodProxy]
  */
 // ThreadSafe
-abstract class AbstractPod<T : Any, ARRAY_T, B : BeanStream<T>>(
+abstract class AbstractPod<T : Any, B : BeanStream<T>>(
         override val podKey: PodKey,
         val bean: B,
         val partitionCount: Int,
-        val converter: (List<T>) -> ARRAY_T,
+        val converter: (List<T>) -> TransferContainer,
         val partitionSize: Int = DEFAULT_PARTITION_SIZE
 ) : Pod {
 

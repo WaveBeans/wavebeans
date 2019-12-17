@@ -1,6 +1,5 @@
 package io.wavebeans.execution.pod
 
-import io.wavebeans.execution.medium.FftSampleArray
 import io.wavebeans.execution.medium.createFftSampleArray
 import io.wavebeans.lib.BeanStream
 import io.wavebeans.lib.stream.fft.FftSample
@@ -9,7 +8,7 @@ import io.wavebeans.lib.stream.fft.FftStream
 class FftSampleStreamingPod(
         bean: BeanStream<FftSample>,
         podKey: PodKey
-) : StreamingPod<FftSample, FftSampleArray, BeanStream<FftSample>>(
+) : StreamingPod<FftSample, BeanStream<FftSample>>(
         bean = bean,
         podKey = podKey,
         converter = { list ->

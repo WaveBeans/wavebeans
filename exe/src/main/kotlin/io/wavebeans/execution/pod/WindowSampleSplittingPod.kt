@@ -12,7 +12,7 @@ class WindowSampleSplittingPod(
         bean: WindowStream<Sample>,
         podKey: PodKey,
         partitionCount: Int
-) : SplittingPod<Window<Sample>, WindowSampleArray, WindowStream<Sample>>(
+) : SplittingPod<Window<Sample>, WindowStream<Sample>>(
         bean = bean,
         podKey = podKey,
         partitionCount = partitionCount,

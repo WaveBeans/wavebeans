@@ -12,9 +12,6 @@ import io.wavebeans.execution.pod.SplittingPod
 import io.wavebeans.execution.pod.StreamingPod
 import io.wavebeans.lib.*
 import io.wavebeans.lib.io.StreamInput
-import io.wavebeans.lib.io.StreamOutput
-import io.wavebeans.lib.io.Writer
-import io.wavebeans.lib.stream.FiniteSampleStream
 
 class IntStream(
         val seq: List<Int>
@@ -28,8 +25,8 @@ class IntStream(
 
 }
 
-fun newTestStreamingPod(seq: List<Int>, partition: Int = 0, partitionSize: Int = 1): StreamingPod<Sample, SampleArray, IntStream> {
-    return object : StreamingPod<Sample, SampleArray, IntStream>(
+fun newTestStreamingPod(seq: List<Int>, partition: Int = 0, partitionSize: Int = 1): StreamingPod<Sample, IntStream> {
+    return object : StreamingPod<Sample, IntStream>(
             bean = IntStream(seq),
             podKey = PodKey(1, partition),
             partitionSize = partitionSize,
@@ -40,8 +37,8 @@ fun newTestStreamingPod(seq: List<Int>, partition: Int = 0, partitionSize: Int =
     ) {}
 }
 
-fun newTestSplittingPod(seq: List<Int>, partitionCount: Int): SplittingPod<Sample, SampleArray, IntStream> {
-    return object : SplittingPod<Sample, SampleArray, IntStream>(
+fun newTestSplittingPod(seq: List<Int>, partitionCount: Int): SplittingPod<Sample, IntStream> {
+    return object : SplittingPod<Sample, IntStream>(
             bean = IntStream(seq),
             podKey = PodKey(1, 0),
             partitionCount = partitionCount,

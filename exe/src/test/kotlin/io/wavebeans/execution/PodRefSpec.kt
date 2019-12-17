@@ -233,8 +233,8 @@ private fun input2Type(bean: AnyBean) = bean.inputs().drop(1).first()::class.cre
 
 private fun Assert<Pod>.proxies() = prop("proxies") {
     when (it) {
-        is SplittingPod<*, *, *> -> it.bean.inputs()
-        is StreamingPod<*, *, *> -> it.bean.inputs()
+        is SplittingPod<*, *> -> it.bean.inputs()
+        is StreamingPod<*, *> -> it.bean.inputs()
         else -> throw UnsupportedOperationException()
     }
 }

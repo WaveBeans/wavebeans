@@ -125,23 +125,23 @@ object OverseerIntegrationSpec : Spek({
         }
     }
 
-    describe("Map function") {
-
-        describe("Sample to Sample mapping") {
-            val file = File.createTempFile("test", "csv").also { it.deleteOnExit() }
-            val o = listOf(
-                    seqStream()
-                            .map { it * 2 }
-                            .trim(100)
-                            .toCsv("file://${file.absolutePath}")
-            )
-            it("should not fail") { assertThat(catch { runOnOverseer(o) }.also { if (it != null) log.warn(it) { "Can't evaluate it" } }).isNull() }
-            val fileContent = file.readLines()
-            it("should not be empty") { assertThat(fileContent.isNotEmpty()) }
-            runLocally(o)
-            val fileContentLocal = file.readLines()
-            it("should have the same output as local") { assertThat(fileContent).isEqualTo(fileContentLocal) }
-
-        }
-    }
+//    describe("Map function") {
+//
+//        describe("Sample to Sample mapping") {
+//            val file = File.createTempFile("test", "csv").also { it.deleteOnExit() }
+//            val o = listOf(
+//                    seqStream()
+//                            .map { it * 2 }
+//                            .trim(100)
+//                            .toCsv("file://${file.absolutePath}")
+//            )
+//            it("should not fail") { assertThat(catch { runOnOverseer(o) }.also { if (it != null) log.warn(it) { "Can't evaluate it" } }).isNull() }
+//            val fileContent = file.readLines()
+//            it("should not be empty") { assertThat(fileContent.isNotEmpty()) }
+//            runLocally(o)
+//            val fileContentLocal = file.readLines()
+//            it("should have the same output as local") { assertThat(fileContent).isEqualTo(fileContentLocal) }
+//
+//        }
+//    }
 })
