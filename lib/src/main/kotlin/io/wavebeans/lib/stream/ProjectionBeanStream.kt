@@ -1,5 +1,6 @@
-package io.wavebeans.lib
+package io.wavebeans.lib.stream
 
+import io.wavebeans.lib.*
 import io.wavebeans.lib.stream.window.Window
 import io.wavebeans.lib.stream.window.WindowStream
 import io.wavebeans.lib.stream.window.WindowStreamParams
@@ -24,9 +25,13 @@ class SampleProjectionBeanStream(
     override fun asSequence(sampleRate: Float): Sequence<Sample> {
         val start = timeToSampleIndexFloor(parameters.start, parameters.timeUnit, sampleRate)
                 .let { if (it < 0) 0 else it }
-        val end = parameters.end?.let { timeToSampleIndexCeil(it, parameters.timeUnit, sampleRate) } ?: Long.MAX_VALUE
+                .toInt()
+        val end = parameters.end
+                ?.let { timeToSampleIndexCeil(it, parameters.timeUnit, sampleRate) }
+                ?.toInt()
+                ?: Int.MAX_VALUE
         val length = end - start
-        return input.asSequence(sampleRate).drop(start.toInt()).take(length.toInt()) // TODO add support for Long?
+        return input.asSequence(sampleRate).drop(start).take(length) // TODO add support for Long?
     }
 
     override fun inputs(): List<AnyBean> = listOf(input)

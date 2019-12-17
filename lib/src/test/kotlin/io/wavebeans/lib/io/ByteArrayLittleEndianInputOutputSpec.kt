@@ -5,6 +5,7 @@ import assertk.assertions.isEqualTo
 import io.wavebeans.lib.*
 import io.wavebeans.lib.stream.FiniteInputSampleStream
 import io.wavebeans.lib.stream.FiniteSampleStream
+import io.wavebeans.lib.stream.rangeProjection
 import io.wavebeans.lib.stream.trim
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe

@@ -4,7 +4,6 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotSameAs
 import io.wavebeans.lib.listOfBytesAsInts
-import io.wavebeans.lib.rangeProjection
 import io.wavebeans.lib.stream
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe

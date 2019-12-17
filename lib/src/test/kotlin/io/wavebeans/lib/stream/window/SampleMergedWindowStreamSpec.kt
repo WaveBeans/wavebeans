@@ -5,6 +5,7 @@ import assertk.assertThat
 import assertk.assertions.*
 import assertk.catch
 import io.wavebeans.lib.*
+import io.wavebeans.lib.stream.rangeProjection
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 
