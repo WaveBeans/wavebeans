@@ -3,17 +3,14 @@ package io.wavebeans.execution
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThan
+import assertk.assertions.isNull
 import assertk.assertions.size
+import assertk.catch
 import io.wavebeans.execution.TopologySerializer.jsonPretty
-import io.wavebeans.lib.io.magnitudeToCsv
-import io.wavebeans.lib.io.phaseToCsv
-import io.wavebeans.lib.io.toCsv
-import io.wavebeans.lib.stream.rangeProjection
-import io.wavebeans.lib.stream.changeAmplitude
+import io.wavebeans.lib.io.*
+import io.wavebeans.lib.stream.*
 import io.wavebeans.lib.stream.fft.fft
 import io.wavebeans.lib.stream.fft.trim
-import io.wavebeans.lib.stream.plus
-import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.stream.window.window
 import mu.KotlinLogging
 import org.spekframework.spek2.Spek
@@ -26,6 +23,46 @@ import kotlin.system.measureTimeMillis
 object OverseerIntegrationSpec : Spek({
 
     val log = KotlinLogging.logger {}
+
+    @ExperimentalStdlibApi
+    fun runOnOverseer(outputs: List<StreamOutput<out Any>>): Triple<Long, Long, Long> {
+        val topology = outputs.buildTopology()
+                .partition(2)
+                .groupBeans()
+
+        log.debug { "Topology: ${TopologySerializer.serialize(topology, jsonPretty)}" }
+
+        val overseer = Overseer()
+
+        val timeToDeploy = measureTimeMillis {
+            overseer.deployTopology(topology, 2)
+            log.debug { "Topology deployed" }
+        }
+        val timeToProcess = measureTimeMillis {
+            overseer.waitToFinish()
+            log.debug { "Everything processed" }
+        }
+        val timeToFinalize = measureTimeMillis {
+            overseer.close()
+            log.debug { "Everything closed" }
+        }
+        return Triple(timeToDeploy, timeToProcess, timeToFinalize)
+    }
+
+    fun runLocally(outputs: List<StreamOutput<out Any>>): Long {
+        val localRunTime = measureTimeMillis {
+            outputs
+                    .map { it.writer(44100.0f) }
+                    .forEach {
+                        while (it.write()) {
+                            sleep(0)
+                        }
+                        it.close()
+                    }
+        }
+        log.debug { "Local run finished" }
+        return localRunTime
+    }
 
     describe("Two outputs with different paths but same content") {
         val f1 = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
@@ -55,26 +92,9 @@ object OverseerIntegrationSpec : Spek({
         val o3 = fft.magnitudeToCsv("file://${f3.absolutePath}")
         val o4 = fft.phaseToCsv("file://${f4.absolutePath}")
 
-        val topology = listOf(o1, o2, o3, o4).buildTopology()
-                .partition(2)
-                .groupBeans()
+        val outputs = listOf(o1, o2, o3, o4)
 
-        log.debug { "Topology: ${TopologySerializer.serialize(topology, jsonPretty)}" }
-
-        val overseer = Overseer()
-
-        val timeToDeploy = measureTimeMillis {
-            overseer.deployTopology(topology, 2)
-            log.debug { "Topology deployed" }
-        }
-        val timeToProcess = measureTimeMillis {
-            overseer.waitToFinish()
-            log.debug { "Everything processed" }
-        }
-        val timeToFinalize = measureTimeMillis {
-            overseer.close()
-            log.debug { "Everything closed" }
-        }
+        val (timeToDeploy, timeToProcess, timeToFinalize) = runOnOverseer(outputs)
 
         val f1Content = f1.readLines()
         val f2Content = f2.readLines()
@@ -84,17 +104,7 @@ object OverseerIntegrationSpec : Spek({
         it("should have non empty output. 2nd file") { assertThat(f2Content).size().isGreaterThan(1) }
         it("should have the same output") { assertThat(f1Content).isEqualTo(f2Content) }
 
-        val localRunTime = measureTimeMillis {
-            listOf(o1, o2, o3, o4)
-                    .map { it.writer(44100.0f) }
-                    .forEach {
-                        while (it.write()) {
-                            sleep(0)
-                        }
-                        it.close()
-                    }
-        }
-        log.debug { "Local run finished" }
+        val localRunTime = runLocally(outputs)
 
         val f1LocalContent = f1.readLines()
         it("should have the same size as local content [1]") { assertThat(f1Content.size).isEqualTo(f1LocalContent.size) }
@@ -113,6 +123,25 @@ object OverseerIntegrationSpec : Spek({
             "Deploy took $timeToDeploy ms, processing took $timeToProcess ms, " +
                     "finalizing took $timeToFinalize ms, local run time is $localRunTime ms"
         }
+    }
 
+    describe("Map function") {
+
+        describe("Sample to Sample mapping") {
+            val file = File.createTempFile("test", "csv").also { it.deleteOnExit() }
+            val o = listOf(
+                    seqStream()
+                            .map { it * 2 }
+                            .trim(100)
+                            .toCsv("file://${file.absolutePath}")
+            )
+            it("should not fail") { assertThat(catch { runOnOverseer(o) }.also { if (it != null) log.warn(it) { "Can't evaluate it" } }).isNull() }
+            val fileContent = file.readLines()
+            it("should not be empty") { assertThat(fileContent.isNotEmpty()) }
+            runLocally(o)
+            val fileContentLocal = file.readLines()
+            it("should have the same output as local") { assertThat(fileContent).isEqualTo(fileContentLocal) }
+
+        }
     }
 })
