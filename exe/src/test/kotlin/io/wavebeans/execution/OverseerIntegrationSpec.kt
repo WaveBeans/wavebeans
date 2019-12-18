@@ -163,7 +163,7 @@ object OverseerIntegrationSpec : Spek({
 
             val fileContent = file.readLines()
 
-            it("should not return empty input ") { assertThat(fileContent).isNotEmpty() }
+            it("should have non-empty output") { assertThat(fileContent).isNotEmpty() }
 
             runLocally(o)
             val fileContentLocal = file.readLines()
