@@ -48,7 +48,7 @@ class PodRefSpec : Spek({
                             .isInstanceOf(StreamingPod::class).all {
                                 proxies()
                                         .eachIndexed(1) { proxy, _ ->
-                                            proxy.isInstanceOf(SampleStreamPodProxy::class).all {
+                                            proxy.isInstanceOf(StreamingPodProxy::class).all {
                                                 pointedTo().isEqualTo(PodKey(0, 0))
                                                 forPartition().isEqualTo(0)
                                             }
@@ -81,7 +81,7 @@ class PodRefSpec : Spek({
                                 .isInstanceOf(SplittingPod::class).all {
                                     proxies()
                                             .eachIndexed(1) { proxy, _ ->
-                                                proxy.isInstanceOf(SampleStreamMergingPodProxy::class).all {
+                                                proxy.isInstanceOf(MergingPodProxy::class).all {
                                                     readsFrom().isListOf(PodKey(1, 0), PodKey(1, 1))
                                                     forPartition().isEqualTo(0)
                                                 }
@@ -168,11 +168,11 @@ class PodRefSpec : Spek({
                                 proxies()
                                         .eachIndexed(2) { proxy, i ->
                                             when (i) {
-                                                0 -> proxy.isInstanceOf(SampleStreamPodProxy::class).all {
+                                                0 -> proxy.isInstanceOf(StreamingPodProxy::class).all {
                                                     pointedTo().isEqualTo(PodKey(1, 0))
                                                     forPartition().isEqualTo(0)
                                                 }
-                                                1 -> proxy.isInstanceOf(SampleStreamPodProxy::class).all {
+                                                1 -> proxy.isInstanceOf(StreamingPodProxy::class).all {
                                                     pointedTo().isEqualTo(PodKey(2, 0))
                                                     forPartition().isEqualTo(0)
                                                 }
@@ -209,11 +209,11 @@ class PodRefSpec : Spek({
                                 proxies()
                                         .eachIndexed(2) { proxy, i ->
                                             when (i) {
-                                                0 -> proxy.isInstanceOf(SampleStreamMergingPodProxy::class).all {
+                                                0 -> proxy.isInstanceOf(MergingPodProxy::class).all {
                                                     readsFrom().isListOf(PodKey(1, 0), PodKey(1, 1))
                                                     forPartition().isEqualTo(0)
                                                 }
-                                                1 -> proxy.isInstanceOf(SampleStreamMergingPodProxy::class).all {
+                                                1 -> proxy.isInstanceOf(MergingPodProxy::class).all {
                                                     readsFrom().isListOf(PodKey(2, 0), PodKey(2, 1))
                                                     forPartition().isEqualTo(0)
                                                 }
@@ -233,8 +233,8 @@ private fun input2Type(bean: AnyBean) = bean.inputs().drop(1).first()::class.cre
 
 private fun Assert<Pod>.proxies() = prop("proxies") {
     when (it) {
-        is SplittingPod<*, *, *> -> it.bean.inputs()
-        is StreamingPod<*, *, *> -> it.bean.inputs()
+        is SplittingPod<*, *> -> it.bean.inputs()
+        is StreamingPod<*, *> -> it.bean.inputs()
         else -> throw UnsupportedOperationException()
     }
 }

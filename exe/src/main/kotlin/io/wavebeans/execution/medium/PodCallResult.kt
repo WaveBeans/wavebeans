@@ -12,25 +12,27 @@ import java.io.ObjectOutputStream
 
 // TODO whole approach should be revisited
 
-class PodCallResult(val call: Call, val byteArray: ByteArray?, val exception: Throwable?) {
+class PodCallResult(val call: Call, val byteArray: ByteArray?, val exception: Throwable?, val type: String?) {
     companion object {
         fun wrap(call: Call, value: Any?): PodCallResult {
+            val (byteArray, type) = when (value) {
+                null -> Pair(null, "Null")
+                is Unit -> Pair(null, "Unit")
+                is Long -> Pair(value.encodeBytes(), "Long")
+                is Sample -> Pair(value.encodeBytes(), "Sample")
+                is List<*> -> value.encodeBytesAndType()
+                is WindowStreamParams -> Pair(value.encodeBytes(), "WindowStreamParams")
+                else -> throw UnsupportedOperationException("Value `$value` is not supported")
+            }
             return PodCallResult(
                     call = call,
-                    byteArray = when (value) {
-                        null -> null
-                        is Unit -> null
-                        is Long -> value.encodeBytes()
-                        is Sample -> value.encodeBytes()
-                        is List<*> -> value.encodeBytes()
-                        is WindowStreamParams -> value.encodeBytes()
-                        else -> throw UnsupportedOperationException("Value `$value` is not supported")
-                    },
-                    exception = null
+                    byteArray = byteArray,
+                    exception = null,
+                    type = type
             )
         }
 
-        fun wrap(call: Call, exception: Throwable): PodCallResult = PodCallResult(call, null, exception)
+        fun wrap(call: Call, exception: Throwable): PodCallResult = PodCallResult(call, null, exception, null)
     }
 
     fun isNull(): Boolean = this.byteArray == null && this.exception == null
@@ -95,14 +97,17 @@ internal fun encodeEmptyList(): ByteArray {
 }
 
 
-@Suppress("unchecked")
-internal fun List<*>.encodeBytes(): ByteArray =
+@Suppress("UNCHECKED_CAST")
+internal fun List<*>.encodeBytesAndType(): Pair<ByteArray, String> =
         if (isEmpty()) {
-            encodeEmptyList()
+            Pair(encodeEmptyList(), "EmptyList")
         } else {
             when (val value = this.first()) {
                 is Sample -> {
-                    encodeList(this as List<Sample>, 8) { buf, at, el -> writeLong(el.toBits(), buf, at) }
+                    Pair(
+                            encodeList(this as List<Sample>, 8) { buf, at, el -> writeLong(el.toBits(), buf, at) },
+                            "List<Sample>"
+                    )
                 }
                 is SampleArray -> { // List<Array<Double>>
                     val seq = this.asSequence().map { (it as SampleArray) }
@@ -120,11 +125,11 @@ internal fun List<*>.encodeBytes(): ByteArray =
                             pointer += 8
                         }
                     }
-                    buf
+                    Pair(buf, "List<SampleArray>")
                 }
                 is Array<*> -> { // List<Array<*>>
                     if (this.isEmpty()) {
-                        encodeEmptyList()
+                        Pair(encodeEmptyList(), "EmptyList")
                     } else {
                         when (val aval = value[0]) {
                             is SampleArray -> { //List<Array<Array<Double>>> == List<WindowSampleArray>
@@ -153,7 +158,7 @@ internal fun List<*>.encodeBytes(): ByteArray =
                                     }
                                 }
 
-                                buf
+                                Pair(buf, "List<WindowSampleArray>")
                             }
                             is FftSample -> {
                                 val list = this.map { it as Array<FftSample> }
@@ -175,7 +180,7 @@ internal fun List<*>.encodeBytes(): ByteArray =
                                     }
                                 }
 
-                                buf
+                                Pair(buf, "List<Array<FftSample>>")
                             }
                             else -> throw UnsupportedOperationException("${aval!!::class}")
                         }

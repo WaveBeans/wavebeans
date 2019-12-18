@@ -2,13 +2,13 @@ package io.wavebeans.execution.pod
 
 import io.wavebeans.lib.*
 
-abstract class SplittingPod<T : Any, ARRAY_T : Any, B : BeanStream<T>>(
+abstract class SplittingPod<T : Any, B : BeanStream<T>>(
         bean: B,
         podKey: PodKey,
         partitionCount: Int,
-        converter: (List<T>) -> ARRAY_T,
+        converter: (List<T>) -> TransferContainer,
         partitionSize: Int = DEFAULT_PARTITION_SIZE
-) : AbstractPod<T, ARRAY_T, B>(podKey, bean, partitionCount, converter, partitionSize = partitionSize) {
+) : AbstractPod<T, B>(podKey, bean, partitionCount, converter, partitionSize = partitionSize) {
 
     override fun inputs(): List<AnyBean> = listOf(bean)
 
