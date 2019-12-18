@@ -2,6 +2,7 @@ package io.wavebeans.lib.io
 
 import io.wavebeans.lib.BeanParams
 import io.wavebeans.lib.BeanStream
+import io.wavebeans.lib.SinglePartitionBean
 import io.wavebeans.lib.SourceBean
 import kotlinx.serialization.*
 import kotlinx.serialization.internal.SerialClassDescImpl
@@ -45,7 +46,7 @@ class InputParams<T : Any>(val generator: (Long, Float) -> T?) : BeanParams()
 
 class Input<T : Any>(
         override val parameters: InputParams<T>
-) : BeanStream<T>, SourceBean<T> {
+) : BeanStream<T>, SourceBean<T>, SinglePartitionBean {
 
     override fun asSequence(sampleRate: Float): Sequence<T> =
             (0..Long.MAX_VALUE).asSequence()
