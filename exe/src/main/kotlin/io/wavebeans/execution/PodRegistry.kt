@@ -48,8 +48,8 @@ object PodRegistry {
         registerPod(typeOf<StreamOutput<Sample>>(), SampleStreamOutputPod::class.constructors.first())
         registerPod(typeOf<StreamOutput<FftSample>>(), FftSampleStreamOutputPod::class.constructors.first())
 
-        registerSplittingPod(typeOf<BeanStream<Sample>>(), SampleSplittingPod::class.constructors.single { it.parameters.size == 3 })
         registerSplittingPod(typeOf<WindowStream<Sample>>(), WindowSampleSplittingPod::class.constructors.single { it.parameters.size == 3 })
+        registerSplittingPod(typeOf<BeanStream<*>>(), AnySplittingPod::class.constructors.single { it.parameters.size == 3 })
     }
 
     fun registerPodProxy(outputType: KType, constructor: KFunction<PodProxy<*>>) {

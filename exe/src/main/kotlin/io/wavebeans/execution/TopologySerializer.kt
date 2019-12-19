@@ -5,9 +5,7 @@ import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.modules.SerializersModule
 import io.wavebeans.lib.BeanParams
 import io.wavebeans.lib.NoParams
-import io.wavebeans.lib.io.CsvFftStreamOutputParams
-import io.wavebeans.lib.io.CsvSampleStreamOutputParams
-import io.wavebeans.lib.io.SineGeneratedInputParams
+import io.wavebeans.lib.io.*
 import io.wavebeans.lib.stream.*
 import io.wavebeans.lib.stream.fft.FftStreamParams
 import io.wavebeans.lib.stream.fft.TrimmedFiniteFftStreamParams
@@ -30,6 +28,8 @@ object TopologySerializer {
             WindowStreamParams::class with WindowStreamParams.serializer()
             ProjectionBeanStreamParams::class with ProjectionBeanStreamParams.serializer()
             MapStreamParams::class with MapStreamParamsSerializer
+            InputParams::class with InputParamsSerializer
+            FunctionMergedStreamParams::class with FunctionMergedStreamParamsSerializer
         }
     }
 

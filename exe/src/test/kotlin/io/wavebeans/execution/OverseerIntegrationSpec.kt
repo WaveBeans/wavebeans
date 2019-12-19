@@ -1,14 +1,16 @@
 package io.wavebeans.execution
 
 import assertk.assertThat
-import assertk.assertions.*
-import assertk.catch
+import assertk.assertions.isEqualTo
+import assertk.assertions.isGreaterThan
+import assertk.assertions.isNotEmpty
+import assertk.assertions.size
 import io.wavebeans.execution.TopologySerializer.jsonPretty
+import io.wavebeans.lib.ZeroSample
 import io.wavebeans.lib.io.*
-import io.wavebeans.lib.math.r
+import io.wavebeans.lib.plus
 import io.wavebeans.lib.sampleOf
 import io.wavebeans.lib.stream.*
-import io.wavebeans.lib.stream.fft.FftSample
 import io.wavebeans.lib.stream.fft.fft
 import io.wavebeans.lib.stream.fft.trim
 import io.wavebeans.lib.stream.window.Window
@@ -20,12 +22,14 @@ import java.io.File
 import java.lang.Thread.sleep
 import kotlin.math.PI
 import kotlin.math.cos
+import kotlin.math.sin
 import kotlin.system.measureTimeMillis
+
+val log = KotlinLogging.logger {}
 
 @ExperimentalStdlibApi
 object OverseerIntegrationSpec : Spek({
 
-    val log = KotlinLogging.logger {}
 
     @ExperimentalStdlibApi
     fun runOnOverseer(outputs: List<StreamOutput<out Any>>, threads: Int = 2, partitions: Int = 2): Triple<Long, Long, Long> {
@@ -203,6 +207,33 @@ object OverseerIntegrationSpec : Spek({
             val frequency = 440.0
             val o = listOf(
                     input { x, sampleRate -> sampleOf(amplitude * cos(x / sampleRate * 2.0 * PI * frequency)) }
+                            .trim(100)
+                            .toCsv("file://${file.absolutePath}")
+            )
+
+            runOnOverseer(o)
+
+            val fileContent = file.readLines()
+
+            it("should have non-empty output") { assertThat(fileContent).isNotEmpty() }
+
+            runLocally(o)
+            val fileContentLocal = file.readLines()
+            it("should have the same output as local") { assertThat(fileContent).isEqualTo(fileContentLocal) }
+        }
+    }
+
+    describe("Function Merge") {
+        describe("generating sinusoid and merging it with another function") {
+            val file = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
+            val amplitude = 1.0
+            val frequency = 440.0
+            val timeTickInput = input { x, sampleRate -> sampleOf(x.toDouble() / sampleRate) }
+            val o = listOf(
+                    220.sine()
+                            .merge(with = timeTickInput) { x, y ->
+                                x + sampleOf(amplitude * sin((y ?: ZeroSample) * 2.0 * PI * frequency))
+                            }
                             .trim(100)
                             .toCsv("file://${file.absolutePath}")
             )

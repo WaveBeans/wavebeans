@@ -144,3 +144,10 @@ object ScalarOpSerializer {
 
 }
 
+operator fun Sample?.plus(other: Sample?): Sample = (this ?: ZeroSample) + (other ?: ZeroSample)
+operator fun Sample?.plus(other: Sample): Sample = (this ?: ZeroSample) + other
+operator fun Sample?.minus(other: Sample?): Sample = (this ?: ZeroSample) - (other ?: ZeroSample)
+operator fun Sample?.minus(other: Sample): Sample = (this ?: ZeroSample) - other
+operator fun Sample?.times(other: Sample?): Sample = (this ?: ZeroSample) * (other ?: ZeroSample)
+operator fun Sample?.times(other: Sample): Sample = (this ?: ZeroSample) * other
+operator fun Sample?.div(other: Sample): Sample = (this ?: ZeroSample) / other
