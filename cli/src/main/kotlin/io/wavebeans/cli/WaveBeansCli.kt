@@ -34,7 +34,7 @@ class WaveBeansCli(
         val m = Option("m", "run-mode", true, "Running script in distributed mode, specify exact overseer. Default is: ${RunMode.LOCAL.id}. Supported: ${RunMode.values().joinToString(", ") { it.id }}. ")
         val p = Option("p", "partitions", true, "Number of partitions to use in Distributed mode.")
         val t = Option("t", "threads", true, "Number of threads to use in Distributed mode.")
-        val s = Option("s", "sampleRate", true, "Sample rate in Hz to use for outputs. By default, it's 44100.")
+        val s = Option("s", "sample-rate", true, "Sample rate in Hz to use for outputs. By default, it's 44100.")
         val options = Options().of(f, e, time, v, h, m, p, t, s)
     }
 
