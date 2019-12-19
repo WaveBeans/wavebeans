@@ -19,7 +19,6 @@ object TopologySerializer {
             SineGeneratedInputParams::class with SineGeneratedInputParams.serializer()
             NoParams::class with NoParams.serializer()
             TrimmedFiniteSampleStreamParams::class with TrimmedFiniteSampleStreamParams.serializer()
-            MergedSampleStreamParams::class with MergedSampleStreamParams.serializer()
             CsvSampleStreamOutputParams::class with CsvSampleStreamOutputParams.serializer()
             BeanGroupParams::class with BeanGroupParams.serializer()
             CsvFftStreamOutputParams::class with CsvFftStreamOutputParams.serializer()

@@ -1,9 +1,6 @@
 package io.wavebeans.lib.stream
 
-import io.wavebeans.lib.Bean
-import io.wavebeans.lib.BeanParams
-import io.wavebeans.lib.BeanStream
-import io.wavebeans.lib.MultiAlterBean
+import io.wavebeans.lib.*
 import kotlinx.serialization.*
 import kotlinx.serialization.internal.SerialClassDescImpl
 import kotlin.reflect.jvm.jvmName
@@ -52,7 +49,7 @@ class FunctionMergedStream<T : Any, R : Any>(
         val sourceStream: BeanStream<T>,
         val mergeStream: BeanStream<T>,
         override val parameters: FunctionMergedStreamParams<T, R>
-) : BeanStream<R>, MultiAlterBean<T, R> {
+) : BeanStream<R>, MultiAlterBean<T, R>, SinglePartitionBean {
 
     override val inputs: List<Bean<T>>
         get() = listOf(sourceStream, mergeStream)
