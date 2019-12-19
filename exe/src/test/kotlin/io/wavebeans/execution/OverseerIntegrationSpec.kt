@@ -28,7 +28,12 @@ object OverseerIntegrationSpec : Spek({
     val log = KotlinLogging.logger {}
 
     @ExperimentalStdlibApi
-    fun runOnOverseer(outputs: List<StreamOutput<out Any>>, threads: Int = 2, partitions: Int = 2): Triple<Long, Long, Long> {
+    fun runOnOverseer(
+            outputs: List<StreamOutput<out Any>>,
+            threads: Int = 2,
+            partitions: Int = 2,
+            sampleRate: Float = 44100.0f
+    ): Triple<Long, Long, Long> {
         val topology = outputs.buildTopology()
                 .partition(partitions)
                 .groupBeans()
@@ -38,7 +43,7 @@ object OverseerIntegrationSpec : Spek({
         val overseer = Overseer()
 
         val timeToDeploy = measureTimeMillis {
-            overseer.deployTopology(topology, threads)
+            overseer.deployTopology(topology, threads, sampleRate)
             log.debug { "Topology deployed" }
         }
         val timeToProcess = measureTimeMillis {

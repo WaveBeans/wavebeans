@@ -2,10 +2,7 @@ package io.wavebeans.execution
 
 import io.wavebeans.execution.pod.*
 import io.wavebeans.execution.podproxy.*
-import io.wavebeans.lib.AnyBean
-import io.wavebeans.lib.Bean
-import io.wavebeans.lib.BeanStream
-import io.wavebeans.lib.Sample
+import io.wavebeans.lib.*
 import io.wavebeans.lib.io.StreamInput
 import io.wavebeans.lib.io.StreamOutput
 import io.wavebeans.lib.stream.FiniteSampleStream
@@ -78,6 +75,10 @@ object PodRegistry {
 
     fun createPod(beanType: KType, podKey: PodKey, bean: AnyBean): Pod =
             podRegistry[findRegisteredType(beanType, podRegistry.keys)]?.call(bean, podKey)
+                    ?: throw IllegalStateException("Pod for `$beanType` is not found")
+
+    fun createPod(beanType: KType, podKey: PodKey, sampleRate: Float, bean: SinkBean<*>): Pod =
+            podRegistry[findRegisteredType(beanType, podRegistry.keys)]?.call(bean, podKey, sampleRate)
                     ?: throw IllegalStateException("Pod for `$beanType` is not found")
 
     fun createSplittingPod(beanType: KType, podKey: PodKey, bean: AnyBean, partitionCount: Int): Pod =

@@ -51,7 +51,7 @@ class WaveBeansCli(
                     ?: cli.getRequired(f) { File(it).readText() }
 
             val runMode = cli.get(m) { RunMode.byId(it) } ?: RunMode.LOCAL
-            if (verbose) printer.printLine("Running mode: ${runMode.name}")
+            if (verbose) printer.printLine("Running mode: ${runMode.id}")
             val runOptions = mutableMapOf<String, Any>()
             if (runMode == RunMode.LOCAL_DISTRIBUTED && cli.has(p)) runOptions["partitions"] = cli.getRequired(p) { it.toInt() }
             if (runMode == RunMode.LOCAL_DISTRIBUTED && cli.has(t)) runOptions["threads"] = cli.getRequired(t) { it.toInt() }
