@@ -10,7 +10,7 @@ import org.spekframework.spek2.style.specification.describe
 object FunctionInputSpec : Spek({
     describe("Sequence of integers") {
 
-        it("should generate 10 integers if it return only that") {
+        it("should generate 10 integers if it returns only that") {
             val seq = input { x, _ -> if (x < 10) sampleOf(x.toInt()) else null }
                     .asSequence(44100.0f)
                     .map { it.asInt() }
