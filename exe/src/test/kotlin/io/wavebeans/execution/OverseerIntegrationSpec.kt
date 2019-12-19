@@ -18,6 +18,8 @@ import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.io.File
 import java.lang.Thread.sleep
+import kotlin.math.PI
+import kotlin.math.cos
 import kotlin.system.measureTimeMillis
 
 @ExperimentalStdlibApi
@@ -191,6 +193,29 @@ object OverseerIntegrationSpec : Spek({
             val fileContentLocal = file.readLines()
             it("should have the same output as local") { assertThat(fileContent).isEqualTo(fileContentLocal) }
 
+        }
+    }
+
+    describe("Function Input") {
+        describe("generating sinusoid") {
+            val file = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
+            val amplitude = 1.0
+            val frequency = 440.0
+            val o = listOf(
+                    input { x, sampleRate -> sampleOf(amplitude * cos(x / sampleRate * 2.0 * PI * frequency)) }
+                            .trim(100)
+                            .toCsv("file://${file.absolutePath}")
+            )
+
+            runOnOverseer(o)
+
+            val fileContent = file.readLines()
+
+            it("should have non-empty output") { assertThat(fileContent).isNotEmpty() }
+
+            runLocally(o)
+            val fileContentLocal = file.readLines()
+            it("should have the same output as local") { assertThat(fileContent).isEqualTo(fileContentLocal) }
         }
     }
 })
