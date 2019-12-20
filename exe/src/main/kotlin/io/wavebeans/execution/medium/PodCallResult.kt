@@ -12,7 +12,7 @@ import java.io.ObjectOutputStream
 
 // TODO whole approach should be revisited
 
-class PodCallResult(val call: Call, val byteArray: ByteArray?, val exception: Throwable?, val type: String?) {
+class PodCallResult(val call: Call, val byteArray: ByteArray?, val exception: Throwable?, val type: String) {
     companion object {
         fun wrap(call: Call, value: Any?): PodCallResult {
             val (byteArray, type) = when (value) {
@@ -32,7 +32,7 @@ class PodCallResult(val call: Call, val byteArray: ByteArray?, val exception: Th
             )
         }
 
-        fun wrap(call: Call, exception: Throwable): PodCallResult = PodCallResult(call, null, exception, null)
+        fun wrap(call: Call, exception: Throwable): PodCallResult = PodCallResult(call, null, exception, "Exception")
     }
 
     fun isNull(): Boolean = this.byteArray == null && this.exception == null

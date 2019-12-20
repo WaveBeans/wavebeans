@@ -84,7 +84,7 @@ class PodBuilder(val topology: Topology) {
             }
 
             // pod should have 2 inputs (or more?)
-            classForProxy.isSubclassOf(MultiBean::class) -> {
+            classForProxy.isSubclassOf(MultiBean::class) || classForProxy.isSubclassOf(MultiAlterBean::class) -> {
                 // TODO add support for 2+
                 val constructor = classForProxy.constructors.first {
                     it.parameters.size == 3 &&

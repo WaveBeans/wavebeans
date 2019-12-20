@@ -20,12 +20,22 @@ object MediumConverter {
                 val i = list.iterator()
                 createFftSampleArray(list.size) { i.next() }
             }
+            is Window<*> -> {
+                when(val e2 = e1.elements.firstOrNull()) {
+                    is Sample -> {
+                        val list = o as List<Window<Sample>>
+                        val i = list.iterator()
+                        createWindowSampleArray(list.size) { i.next() }
+                    }
+                    else -> throw UnsupportedOperationException("${e2!!::class} is not supported")
+                }
+            }
             else -> throw UnsupportedOperationException("${e1!!::class} is not supported")
         }
     }
 
     fun <T> convert(result: PodCallResult): T {
-        return when (result.type) {
+        return when (result.throwIfError().type) {
             "List<SampleArray>" -> result.nullableSampleArrayList() as T
             "List<WindowSampleArray>" -> result.nullableWindowSampleArrayList() as T
             else -> throw UnsupportedOperationException("${result.type} is not supported")
