@@ -46,7 +46,7 @@ object SampleScalarWindowStreamSpec : Spek({
     }
 
     describe("Sliding window size=3 step=2") {
-        val stream = DoubleStream(listOf(0.1, 0.2, 0.3, 0.4)).window(3).sliding(2)
+        val stream = DoubleStream(listOf(0.1, 0.2, 0.3, 0.4)).window(3, 2)
 
         it("should be calculated as sum with scalar") {
             val l = (stream + 1.0).asSequence(2.0f).asGroupedDoubles().toList()

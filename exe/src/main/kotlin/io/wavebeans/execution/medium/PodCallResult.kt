@@ -21,7 +21,6 @@ class PodCallResult(val call: Call, val byteArray: ByteArray?, val exception: Th
                 is Long -> Pair(value.encodeBytes(), "Long")
                 is Sample -> Pair(value.encodeBytes(), "Sample")
                 is List<*> -> value.encodeBytesAndType()
-                is WindowStreamParams -> Pair(value.encodeBytes(), "WindowStreamParams")
                 else -> throw UnsupportedOperationException("Value `$value` is not supported")
             }
             return PodCallResult(
@@ -58,21 +57,6 @@ fun PodCallResult.long(): Long =
                 ois.readLong()
             }
 
-        } ?: throw IllegalStateException("Can't decode null", this.exception)
-
-
-private fun WindowStreamParams.encodeBytes(): ByteArray {
-    val buf = ByteArray(8)
-    writeInt(this.windowSize, buf, 0)
-    writeInt(this.step, buf, 4)
-    return buf
-}
-
-fun PodCallResult.windowStreamParams(): WindowStreamParams =
-        this.throwIfError().byteArray?.let { buf ->
-            val windowSize = readInt(buf, 0)
-            val step = readInt(buf, 4)
-            WindowStreamParams(windowSize, step)
         } ?: throw IllegalStateException("Can't decode null", this.exception)
 
 
@@ -127,39 +111,43 @@ internal fun List<*>.encodeBytesAndType(): Pair<ByteArray, String> =
                     }
                     Pair(buf, "List<SampleArray>")
                 }
+                is WindowSampleArray -> { //List<WindowSampleArray>
+                    val list = this.map { it as WindowSampleArray }
+
+                    val contentSize = list.map {
+                        4 + // innerArray.size
+                                it.sampleArray.map { innerArr ->
+                                    4 + // elementsArray.size
+                                            4 + // window size
+                                            4 + // window step
+                                            innerArr.size * 8 // elements
+                                }.sum()
+                    }.sum()
+
+                    val buf = ByteArray(4 + contentSize)
+                    var pointer = 0
+
+                    writeInt(this.size, buf, pointer); pointer += 4
+
+                    list.forEach { innerArr ->
+                        writeInt(innerArr.windowSize, buf, pointer); pointer += 4
+                        writeInt(innerArr.windowStep, buf, pointer); pointer += 4
+                        writeInt(innerArr.sampleArray.size, buf, pointer); pointer += 4
+                        innerArr.sampleArray.forEach { sampleArray ->
+                            writeInt(sampleArray.size, buf, pointer); pointer += 4
+                            repeat(sampleArray.size) {
+                                writeLong(sampleArray[it].toBits(), buf, pointer); pointer += 8
+                            }
+                        }
+                    }
+
+                    Pair(buf, "List<WindowSampleArray>")
+                }
                 is Array<*> -> { // List<Array<*>>
                     if (this.isEmpty()) {
                         Pair(encodeEmptyList(), "EmptyList")
                     } else {
                         when (val aval = value[0]) {
-                            is SampleArray -> { //List<Array<Array<Double>>> == List<WindowSampleArray>
-                                val list = this.map { it as Array<SampleArray> }
-
-                                val contentSize = list.map {
-                                    4 + // innerArray.size
-                                            it.map { innerArr ->
-                                                4 + // elementsArray.size
-                                                        innerArr.size * 8 // elements
-                                            }.sum()
-                                }.sum()
-
-                                val buf = ByteArray(4 + contentSize)
-                                var pointer = 0
-
-                                writeInt(this.size, buf, pointer); pointer += 4
-
-                                list.forEach { innerArr ->
-                                    writeInt(innerArr.size, buf, pointer); pointer += 4
-                                    innerArr.forEach { sampleArray ->
-                                        writeInt(sampleArray.size, buf, pointer); pointer += 4
-                                        repeat(sampleArray.size) {
-                                            writeLong(sampleArray[it].toBits(), buf, pointer); pointer += 8
-                                        }
-                                    }
-                                }
-
-                                Pair(buf, "List<WindowSampleArray>")
-                            }
                             is FftSample -> {
                                 val list = this.map { it as Array<FftSample> }
 
@@ -317,14 +305,16 @@ fun PodCallResult.windowSampleArrayList(): List<WindowSampleArray> =
             if (size > 0) {
                 val list = ArrayList<WindowSampleArray>(size)
                 repeat(size) {
+                    val windowSize = readInt(buf, pointer); pointer += 4
+                    val windowStep = readInt(buf, pointer); pointer += 4
                     val innerArraySize = readInt(buf, pointer); pointer += 4
-                    list.add(Array(innerArraySize) {
+                    list.add(WindowSampleArray(windowSize, windowStep, Array(innerArraySize) {
                         val sampleArraySize = readInt(buf, pointer); pointer += 4
                         createSampleArray(sampleArraySize) {
                             val bits = readLong(buf, pointer); pointer += 8
                             Double.fromBits(bits)
                         }
-                    })
+                    }))
                 }
                 list
             } else {

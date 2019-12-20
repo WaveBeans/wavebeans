@@ -1,66 +1,27 @@
 package io.wavebeans.lib.stream.window
 
-import io.wavebeans.lib.*
-import io.wavebeans.lib.stream.StreamOp
-import kotlinx.serialization.*
-import kotlinx.serialization.internal.StringDescriptor
+import io.wavebeans.lib.BeanStream
+import io.wavebeans.lib.Sample
+import io.wavebeans.lib.ZeroSample
+import io.wavebeans.lib.stream.merge
 
-operator fun WindowStream<Sample>.minus(d: WindowStream<Sample>): WindowStream<Sample> =
-        SampleMergedWindowStream(
-                this,
-                d,
-                SampleMergedWindowStreamParams(SampleMinusStreamOp, this.parameters.windowSize, this.parameters.step)
-        )
+operator fun BeanStream<Window<Sample>>.minus(d: BeanStream<Window<Sample>>): BeanStream<Window<Sample>> =
+        this.merge(d) { x, y -> merge(x, y) { a, b -> a - b } }
 
-operator fun WindowStream<Sample>.plus(d: WindowStream<Sample>): WindowStream<Sample> =
-        SampleMergedWindowStream(
-                this,
-                d,
-                SampleMergedWindowStreamParams(SamplePlusStreamOp, this.parameters.windowSize, this.parameters.step)
-        )
+operator fun BeanStream<Window<Sample>>.plus(d: BeanStream<Window<Sample>>): BeanStream<Window<Sample>> =
+        this.merge(d) { x, y -> merge(x, y) { a, b -> a + b } }
 
-operator fun WindowStream<Sample>.times(d: WindowStream<Sample>): WindowStream<Sample> =
-        SampleMergedWindowStream(
-                this,
-                d,
-                SampleMergedWindowStreamParams(SampleTimesStreamOp, this.parameters.windowSize, this.parameters.step)
-        )
+operator fun BeanStream<Window<Sample>>.times(d: BeanStream<Window<Sample>>): BeanStream<Window<Sample>> =
+        this.merge(d) { x, y -> merge(x, y) { a, b -> a * b } }
 
-operator fun WindowStream<Sample>.div(d: WindowStream<Sample>): WindowStream<Sample> =
-        SampleMergedWindowStream(
-                this,
-                d,
-                SampleMergedWindowStreamParams(SampleDivStreamOp, this.parameters.windowSize, this.parameters.step)
-        )
+operator fun BeanStream<Window<Sample>>.div(d: BeanStream<Window<Sample>>): BeanStream<Window<Sample>> =
+        this.merge(d) { x, y -> merge(x, y) { a, b -> a / b } }
 
-
-@Serializer(forClass = SampleMergedWindowStreamParams::class)
-object SampleMergedWindowStreamParamsSerializer {
-
-    override val descriptor: SerialDescriptor
-        get() = StringDescriptor.withName("windowMergeParams")
-
-    override fun deserialize(decoder: Decoder): SampleMergedWindowStreamParams = TODO()
-
-    override fun serialize(encoder: Encoder, obj: SampleMergedWindowStreamParams) = TODO()
-
-}
-
-@Serializable(with = SampleMergedWindowStreamParamsSerializer::class)
-class SampleMergedWindowStreamParams(
-        @Serializable(with = StreamOpSerializer::class) val operation: StreamOp<Sample>,
-        windowSize: Int,
-        step: Int
-) : WindowStreamParams(windowSize, step)
-
-class SampleMergedWindowStream(
-        sourceStream: WindowStream<Sample>,
-        mergeStream: WindowStream<Sample>,
-        val params: SampleMergedWindowStreamParams
-) : MergedWindowStream<Sample>(sourceStream, mergeStream, params.operation), WindowStream<Sample> {
-    override val zeroEl: Sample
-        get() = ZeroSample
-
-    override val parameters: WindowStreamParams
-        get() = params
-}
+private fun merge(x: Window<Sample>?, y: Window<Sample>?, fn: (Sample, Sample) -> Sample): Window<Sample> =
+        x?.merge(y, fn)
+                ?: if (y != null) {
+                    Window.ofSamples(y.size, y.step, (0 until y.size).map { ZeroSample })
+                            .merge(y, fn)
+                } else {
+                    throw IllegalStateException("Empty window is not defined")
+                }

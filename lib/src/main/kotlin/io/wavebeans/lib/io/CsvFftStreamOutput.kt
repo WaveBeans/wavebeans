@@ -1,22 +1,18 @@
 package io.wavebeans.lib.io
 
-import io.wavebeans.lib.Bean
-import io.wavebeans.lib.BeanParams
-import io.wavebeans.lib.SinglePartitionBean
-import io.wavebeans.lib.SinkBean
+import io.wavebeans.lib.*
 import io.wavebeans.lib.stream.fft.FftSample
-import io.wavebeans.lib.stream.fft.FiniteFftStream
 import kotlinx.serialization.Serializable
 import java.net.URI
 import java.nio.charset.Charset
 
-fun FiniteFftStream.magnitudeToCsv(
+fun BeanStream<FftSample>.magnitudeToCsv(
         uri: String
 ): StreamOutput<FftSample> {
     return CsvFftStreamOutput(this, CsvFftStreamOutputParams(uri, true))
 }
 
-fun FiniteFftStream.phaseToCsv(
+fun BeanStream<FftSample>.phaseToCsv(
         uri: String
 ): StreamOutput<FftSample> {
     return CsvFftStreamOutput(this, CsvFftStreamOutputParams(uri, false))
@@ -30,7 +26,7 @@ data class CsvFftStreamOutputParams(
 ) : BeanParams()
 
 class CsvFftStreamOutput(
-        val stream: FiniteFftStream,
+        val stream: BeanStream<FftSample>,
         val params: CsvFftStreamOutputParams
 ) : StreamOutput<FftSample>, SinkBean<FftSample>, SinglePartitionBean {
 

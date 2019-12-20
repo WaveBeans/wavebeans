@@ -4,6 +4,7 @@ import assertk.assertThat
 import assertk.assertions.*
 import io.wavebeans.lib.eachIndexed
 import io.wavebeans.lib.io.sine
+import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.stream.window.window
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
@@ -14,9 +15,9 @@ class FftStreamSpec : Spek({
         val sine = 32.sine(0.5)
 
         describe("Calculating FFT") {
-            val fft = sine.window(256)
+            val fft = sine.trim(2000)
+                    .window(256)
                     .fft(256)
-                    .trim(2000)
                     .asSequence(128.0f)
                     .take(1)
                     .toList()
@@ -51,9 +52,9 @@ class FftStreamSpec : Spek({
         val sine = 440.sine(0.5)
 
         describe("Calculating FFT") {
-            val fft = sine.window(1024)
+            val fft = sine.trim(500)
+                    .window(1024)
                     .fft(1024)
-                    .trim(500)
                     .asSequence(44100.0f)
 
             describe("The sample of fft stream") {
