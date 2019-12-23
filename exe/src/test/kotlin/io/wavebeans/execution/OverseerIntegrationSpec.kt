@@ -12,7 +12,6 @@ import io.wavebeans.lib.plus
 import io.wavebeans.lib.sampleOf
 import io.wavebeans.lib.stream.*
 import io.wavebeans.lib.stream.fft.fft
-import io.wavebeans.lib.stream.fft.trim
 import io.wavebeans.lib.stream.window.Window
 import io.wavebeans.lib.stream.window.window
 import mu.KotlinLogging
@@ -93,9 +92,9 @@ object OverseerIntegrationSpec : Spek({
                 .trim(length)
                 .toCsv("file://${f2.absolutePath}")
         val fft = pp
+                .trim(length)
                 .window(401)
                 .fft(512)
-                .trim(length)
         val o3 = fft.magnitudeToCsv("file://${f3.absolutePath}")
         val o4 = fft.phaseToCsv("file://${f4.absolutePath}")
 
@@ -181,7 +180,7 @@ object OverseerIntegrationSpec : Spek({
             val file = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
             val o = listOf(
                     seqStream()
-                            .map { sample -> Window((0..9).map { sample }) }
+                            .map { sample -> Window.ofSamples(10, 10, (0..9).map { sample }) }
                             .map { window -> window.elements.first() }
                             .trim(100)
                             .toCsv("file://${file.absolutePath}")

@@ -99,7 +99,7 @@ object FunctionMergedStreamSpec : Spek({
 })
 
 private fun windowOf(x: Sample?, y: Sample?) =
-        Window(listOf(x ?: ZeroSample, y ?: ZeroSample))
+        Window.ofSamples(2, 2, listOf(x ?: ZeroSample, y ?: ZeroSample))
 
 private fun BeanStream<Sample>.toListInt() = this.asSequence(1.0f).map { it.asInt() }.toList()
 private fun BeanStream<Window<Sample>>.toListWindowInt() = this.asSequence(1.0f).map { it.elements.map { it.asInt() } }.toList()

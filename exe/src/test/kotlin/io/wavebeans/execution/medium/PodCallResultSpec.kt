@@ -105,24 +105,10 @@ object PodCallResultSpec : Spek({
             it("should return valid value") { assertThat(result.sampleList()).isEqualTo(sampleList) }
         }
 
-        describe("Wrapping WindowStreamParams") {
-            val params = WindowStreamParams(windowSize = 2, step = 3)
-            val result = result(params)
-
-            it("should have non empty byteArray") { assertThat(result.byteArray).isNotNull() }
-            it("should have empty exception") { assertThat(result.exception).isNull() }
-            it("should return valid value") {
-                assertThat(result.windowStreamParams()).all {
-                    prop("windowSize") { it.windowSize }.isEqualTo(params.windowSize)
-                    prop("step") { it.step }.isEqualTo(params.step)
-                }
-            }
-        }
-
         describe("Wrapping List of WindowSampleArray") {
             val obj = listOf(
-                    createWindowSampleArray(2) { i -> Window((0..9).map { sampleOf(it * i) }) },
-                    createWindowSampleArray(2) { i -> Window((0..9).map { sampleOf(it * i) }) }
+                    createWindowSampleArray(10, 10, 2) { i -> Window.ofSamples(10, 10, (0..9).map { sampleOf(it * i) }) },
+                    createWindowSampleArray(15, 5, 2) { i -> Window.ofSamples(15, 5, (0..9).map { sampleOf(it * i) }) }
             )
             val result = result(obj)
 
@@ -132,10 +118,10 @@ object PodCallResultSpec : Spek({
                 assertThat(result.nullableWindowSampleArrayList())
                         .isNotNull()
                         .all {
-                            prop("window @ [0,0]") { it[0][0] }.isEqualTo(obj[0][0])
-                            prop("window @ [0,1]") { it[0][1] }.isEqualTo(obj[0][1])
-                            prop("window @ [1,0]") { it[1][0] }.isEqualTo(obj[1][0])
-                            prop("window @ [1,1]") { it[1][1] }.isEqualTo(obj[1][1])
+                            prop("window @ [0,0]") { it[0].sampleArray[0] }.isEqualTo(obj[0].sampleArray[0])
+                            prop("window @ [0,1]") { it[0].sampleArray[1] }.isEqualTo(obj[0].sampleArray[1])
+                            prop("window @ [1,0]") { it[1].sampleArray[0] }.isEqualTo(obj[1].sampleArray[0])
+                            prop("window @ [1,1]") { it[1].sampleArray[1] }.isEqualTo(obj[1].sampleArray[1])
                         }
             }
         }

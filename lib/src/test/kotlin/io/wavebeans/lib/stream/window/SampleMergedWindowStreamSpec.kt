@@ -179,14 +179,14 @@ object SampleMergedWindowStreamSpec : Spek({
             val stream2 = (10..15).stream().window(3)
 
             it("should not be summed up") {
-                val e = catch { (stream1 + stream2) }
+                val e = catch { (stream1 + stream2).asSequence(1.0f).asGroupedInts().toList() }
                 assertThat(e)
                         .isNotNull()
                         .message().isEqualTo("Can't merge with stream with different window size or step")
             }
 
             it("should not be subtracted") {
-                val e = catch { (stream1 - stream2) }
+                val e = catch { (stream1 - stream2).asSequence(1.0f).asGroupedInts().toList() }
                 assertThat(e)
                         .isNotNull()
                         .message().isEqualTo("Can't merge with stream with different window size or step")
@@ -224,10 +224,10 @@ object SampleMergedWindowStreamSpec : Spek({
 
 
     describe("Sliding window of size=3 and step=2") {
-        val stream1 = (0..3).stream().window(3).sliding(2)
+        val stream1 = (0..3).stream().window(3, 2)
 
         describe("Another stream the same size") {
-            val stream2 = (10..13).stream().window(3).sliding(2)
+            val stream2 = (10..13).stream().window(3, 2)
 
             it("should sum up corresponding elements") {
                 val res = (stream1 + stream2).asSequence(1.0f).asGroupedInts().toList()
@@ -249,7 +249,7 @@ object SampleMergedWindowStreamSpec : Spek({
         }
 
         describe("Another stream the same size partial windows") {
-            val stream2 = (10..12).stream().window(3).sliding(2)
+            val stream2 = (10..12).stream().window(3, 2)
 
             it("should sum up corresponding elements") {
                 val res = (stream1 + stream2).asSequence(1.0f).asGroupedInts().toList()
@@ -271,7 +271,7 @@ object SampleMergedWindowStreamSpec : Spek({
         }
 
         describe("Another stream the same size with zeros") {
-            val stream2 = IntStream(4.repeat { 0 }).window(3).sliding(2)
+            val stream2 = IntStream(4.repeat { 0 }).window(3, 2)
 
             it("should sum up corresponding elements") {
                 val res = (stream2 + stream1).asSequence(1.0f).asGroupedInts().toList()
@@ -293,7 +293,7 @@ object SampleMergedWindowStreamSpec : Spek({
         }
 
         describe("Another stream the same size but longer") {
-            val stream2 = (10..15).stream().window(3).sliding(2)
+            val stream2 = (10..15).stream().window(3, 2)
 
             it("should sum up corresponding elements") {
                 val res = (stream1 + stream2).asSequence(1.0f).asGroupedInts().toList()
@@ -318,17 +318,17 @@ object SampleMergedWindowStreamSpec : Spek({
         }
 
         describe("Another stream different size") {
-            val stream2 = (10..15).stream().window(4).sliding(2)
+            val stream2 = (10..15).stream().window(4, 2)
 
             it("should not be summed up") {
-                val e = catch { (stream1 + stream2) }
+                val e = catch { (stream1 + stream2).asSequence(1.0f).asGroupedInts().toList() }
                 assertThat(e)
                         .isNotNull()
                         .message().isEqualTo("Can't merge with stream with different window size or step")
             }
 
             it("should not be subtracted") {
-                val e = catch { (stream1 - stream2) }
+                val e = catch { (stream1 - stream2).asSequence(1.0f).asGroupedInts().toList() }
                 assertThat(e)
                         .isNotNull()
                         .message().isEqualTo("Can't merge with stream with different window size or step")
@@ -345,7 +345,7 @@ object SampleMergedWindowStreamSpec : Spek({
                             ^------^     - window #1 1000-2499.99[9]ms
              */
 
-            val stream2 = (10..13).stream().window(3).sliding(2)
+            val stream2 = (10..13).stream().window(3, 2)
             val sampleRate = 2.0f
 
             it("should return valid range if one window touched") {
@@ -405,9 +405,9 @@ object SampleMergedWindowStreamSpec : Spek({
                              ^-------^   - window #1 1000-2499.99[9]ms
             */
 
-            val s1 = (0..3).stream().window(3).sliding(2)
-            val s2 = (10..13).stream().window(3).sliding(2)
-            val s3 = (20..22).stream().window(3).sliding(2)
+            val s1 = (0..3).stream().window(3, 2)
+            val s2 = (10..13).stream().window(3, 2)
+            val s3 = (20..22).stream().window(3, 2)
 
             val res = s3 - s2 + s1
             it("should calculate the sequence") {
@@ -417,7 +417,7 @@ object SampleMergedWindowStreamSpec : Spek({
                 }
             }
             it("should get range") {
-                assertThat(res.rangeProjection(1500, null).asSequence(2.0f).asGroupedInts().toList()).all {
+                assertThat(res.rangeProjection(999, null).asSequence(2.0f).asGroupedInts().toList()).all {
                     at(0).isListOf(12, -10, 0)
                 }
             }

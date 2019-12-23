@@ -8,8 +8,8 @@ import io.wavebeans.lib.NoParams
 import io.wavebeans.lib.io.*
 import io.wavebeans.lib.stream.*
 import io.wavebeans.lib.stream.fft.FftStreamParams
-import io.wavebeans.lib.stream.fft.TrimmedFiniteFftStreamParams
 import io.wavebeans.lib.stream.window.WindowStreamParams
+import io.wavebeans.lib.stream.window.WindowStreamParamsSerializer
 
 object TopologySerializer {
 
@@ -19,13 +19,11 @@ object TopologySerializer {
             SineGeneratedInputParams::class with SineGeneratedInputParams.serializer()
             NoParams::class with NoParams.serializer()
             TrimmedFiniteSampleStreamParams::class with TrimmedFiniteSampleStreamParams.serializer()
-            MergedSampleStreamParams::class with MergedSampleStreamParams.serializer()
             CsvSampleStreamOutputParams::class with CsvSampleStreamOutputParams.serializer()
             BeanGroupParams::class with BeanGroupParams.serializer()
             CsvFftStreamOutputParams::class with CsvFftStreamOutputParams.serializer()
-            TrimmedFiniteFftStreamParams::class with TrimmedFiniteFftStreamParams.serializer()
             FftStreamParams::class with FftStreamParams.serializer()
-            WindowStreamParams::class with WindowStreamParams.serializer()
+            WindowStreamParams::class with WindowStreamParamsSerializer
             ProjectionBeanStreamParams::class with ProjectionBeanStreamParams.serializer()
             MapStreamParams::class with MapStreamParamsSerializer
             InputParams::class with InputParamsSerializer

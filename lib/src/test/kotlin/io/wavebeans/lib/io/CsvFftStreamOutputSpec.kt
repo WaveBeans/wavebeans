@@ -8,7 +8,7 @@ import assertk.assertions.isNotNull
 import io.wavebeans.lib.eachIndexed
 import io.wavebeans.lib.stream
 import io.wavebeans.lib.stream.fft.fft
-import io.wavebeans.lib.stream.fft.trim
+import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.stream.window.window
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
@@ -25,9 +25,9 @@ class CsvFftStreamOutputSpec : Spek({
         val sampleRate = 4.0f
         val x = (1..4)
                 .stream(sampleRate)
+                .trim(1000)
                 .window(2)
                 .fft(4)
-                .trim(1000)
 
         val expectedFrequencies = listOf(0.0, 1.0)
         val expectedTimes = listOf(0.0, 500.0)

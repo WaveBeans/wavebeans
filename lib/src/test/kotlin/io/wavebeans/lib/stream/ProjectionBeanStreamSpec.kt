@@ -8,7 +8,7 @@ import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.util.concurrent.TimeUnit
 
-object ProjectionBeanStream : Spek({
+object ProjectionBeanStreamSpec : Spek({
     describe("Range with open end") {
 
         describe("Taking everything after 1s from 0..9") {

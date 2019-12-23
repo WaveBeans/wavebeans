@@ -6,6 +6,10 @@ import io.wavebeans.lib.stream.window.WindowStream
 import io.wavebeans.lib.stream.window.WindowStreamParams
 import kotlinx.serialization.Serializable
 import java.util.concurrent.TimeUnit
+import kotlin.reflect.KClass
+import kotlin.reflect.KType
+import kotlin.reflect.full.isSubclassOf
+import kotlin.reflect.full.isSupertypeOf
 
 @Serializable
 data class ProjectionBeanStreamParams(
@@ -17,60 +21,42 @@ data class ProjectionBeanStreamParams(
 /**
  * Allows to read only specific time projection of the [BeanStream] with type of [Sample].
  */
-class SampleProjectionBeanStream(
-        override val input: BeanStream<Sample>,
+class ProjectionBeanStream<T : Any>(
+        override val input: BeanStream<T>,
         override val parameters: ProjectionBeanStreamParams
-) : BeanStream<Sample>, SingleBean<Sample> {
+) : BeanStream<T>, SingleBean<T> {
 
-    override fun asSequence(sampleRate: Float): Sequence<Sample> {
+    override fun asSequence(sampleRate: Float): Sequence<T> {
         val start = timeToSampleIndexFloor(parameters.start, parameters.timeUnit, sampleRate)
                 .let { if (it < 0) 0 else it }
-                .toInt()
         val end = parameters.end
                 ?.let { timeToSampleIndexCeil(it, parameters.timeUnit, sampleRate) }
-                ?.toInt()
-                ?: Int.MAX_VALUE
-        val length = end - start
-        return input.asSequence(sampleRate).drop(start).take(length) // TODO add support for Long?
+                ?: Long.MAX_VALUE
+        var leftToRead = end - start
+        var toSkip = start
+        val iterator = input.asSequence(sampleRate).iterator()
+        while (toSkip > 0 && iterator.hasNext()) {
+            val obj = iterator.next()
+            toSkip -= SampleCountMeasurement.samplesInObject(obj)
+        }
+        leftToRead += toSkip // if we've over-read we may need to read less
+        return object : Iterator<T> {
+            override fun hasNext(): Boolean = leftToRead > 0 && iterator.hasNext()
+
+            override fun next(): T {
+                if (leftToRead > 0) {
+                    val obj = iterator.next()
+                    leftToRead -= SampleCountMeasurement.samplesInObject(obj)
+                    return obj
+                } else {
+                    throw IllegalStateException("Has no more elements to read")
+                }
+            }
+
+        }.asSequence()
     }
 
     override fun inputs(): List<AnyBean> = listOf(input)
-}
-
-class WindowSampleProjectionBeanStreamParams(
-        windowSize: Int,
-        step: Int,
-        val start: Long = 0,
-        val end: Long? = null,
-        val timeUnit: TimeUnit = TimeUnit.MILLISECONDS
-) : WindowStreamParams(windowSize, step) {
-    init {
-        require(step >= 1) { "Step should be more or equal to 1" }
-        require(windowSize > 1) { "Window size should be more than 1" }
-    }
-}
-
-/**
- * Allows to read only specific time projection of the [WindowStream] with type of [Sample].
- */
-class WindowSampleProjectionBeanStream(
-        override val input: WindowStream<Sample>,
-        override val parameters: WindowSampleProjectionBeanStreamParams
-) : WindowStream<Sample>, SingleBean<Window<Sample>> {
-
-    override fun asSequence(sampleRate: Float): Sequence<Window<Sample>> {
-        val startIdx = timeToSampleIndexFloor(parameters.start, parameters.timeUnit, sampleRate).toInt() / parameters.step
-        val endIdx = parameters.end?.let { timeToSampleIndexCeil(it, parameters.timeUnit, sampleRate).toInt() }
-                ?.let { it / parameters.step + if (it % parameters.step == 0) 0 else 1 }
-                ?: Int.MAX_VALUE
-
-        return input.asSequence(sampleRate)
-                .drop(startIdx)
-                .take(endIdx - startIdx)
-    }
-
-    override fun inputs(): List<AnyBean> = listOf(input)
-
 }
 
 /**
@@ -82,23 +68,27 @@ class WindowSampleProjectionBeanStream(
  *
  * @return the projection of specific time interval
  */
-fun BeanStream<Sample>.rangeProjection(start: Long, end: Long? = null, timeUnit: TimeUnit = TimeUnit.MILLISECONDS): BeanStream<Sample> {
-    return SampleProjectionBeanStream(this, ProjectionBeanStreamParams(start, end, timeUnit))
+fun <T : Any> BeanStream<T>.rangeProjection(start: Long, end: Long? = null, timeUnit: TimeUnit = TimeUnit.MILLISECONDS): BeanStream<T> {
+    return ProjectionBeanStream(this, ProjectionBeanStreamParams(start, end, timeUnit))
 }
 
-/**
- * Gets a projection of the object in the specified time range for [WindowStream]
- *
- * @param start starting point of the projection in time units.
- * @param end ending point of the projection (including) in time units. Null if do not limit
- * @param timeUnit the units the projection is defined in (i.e seconds, milliseconds, microseconds). TODO: replace TimeUnit with non-java.util.concurrent one
- *
- * @return the projection of specific time interval
- */
-fun WindowStream<Sample>.rangeProjection(start: Long, end: Long? = null, timeUnit: TimeUnit = TimeUnit.MILLISECONDS): WindowStream<Sample> {
-    return WindowSampleProjectionBeanStream(this,
-            WindowSampleProjectionBeanStreamParams(
-                    this.parameters.windowSize, this.parameters.step, start, end, timeUnit
-            )
-    )
+@Suppress("UNCHECKED_CAST")
+object SampleCountMeasurement {
+
+    private val types = mutableMapOf<KClass<*>, (Any) -> Int>()
+
+    init {
+        registerType(Sample::class) { 1 }
+        registerType(Window::class) { window -> window.step * samplesInObject(window.elements.first()!!) }
+    }
+
+    fun <T : Any> registerType(clazz: KClass<T>, measurer: (T) -> Int) {
+        check(types.put(clazz, measurer as (Any) -> Int) == null) { "$clazz is already registered" }
+    }
+
+    fun samplesInObject(obj: Any): Int {
+        return types.filterKeys { obj::class.isSubclassOf(it) }
+                .map { it.value }
+                .first().invoke(obj)
+    }
 }
