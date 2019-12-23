@@ -85,7 +85,7 @@ object WindowStreamSpec : Spek({
             }
 
             describe("Out-of-range. Before") {
-                val range = windowStream.rangeProjection(-42, 500)
+                val range = windowStream.rangeProjection(-42, 1000)
                 it("should return 1 window") {
                     val l = range.asSequence(sampleRate).asGroupedInts().toList()
                     assertThat(l).size().isEqualTo(1)
@@ -94,7 +94,7 @@ object WindowStreamSpec : Spek({
             }
 
             describe("Out-of-range. After") {
-                val range = windowStream.rangeProjection(4900, 500100)
+                val range = windowStream.rangeProjection(4000, 500100)
                 it("should return 1 window") {
                     val l = range.asSequence(sampleRate).asGroupedInts().toList()
                     assertThat(l).size().isEqualTo(1)
@@ -108,7 +108,7 @@ object WindowStreamSpec : Spek({
 
         describe("No partial windows.") {
 
-            val windowedStream = (0..8).stream().window(3).sliding(2)
+            val windowedStream = (0..8).stream().window(3, 2)
 
             it("should return values grouped by three, and one single-element list") {
                 val l = windowedStream.asSequence(1.0f).asGroupedInts().toList()
@@ -123,7 +123,7 @@ object WindowStreamSpec : Spek({
 
         describe("Partial windows.") {
 
-            val windowedStream = (0..9).stream().window(3).sliding(2)
+            val windowedStream = (0..9).stream().window(3, 2)
 
             it("should return values grouped by three, the rest as non-full list") {
                 val l = windowedStream.asSequence(1.0f).asGroupedInts().toList()
@@ -138,7 +138,7 @@ object WindowStreamSpec : Spek({
 
         describe("No elements at all") {
 
-            val windowedStream = IntStream(emptyList()).window(3).sliding(2)
+            val windowedStream = IntStream(emptyList()).window(3, 2)
 
             it("should return no values") {
                 val l = windowedStream.asSequence(1.0f).asGroupedInts().toList()
@@ -156,7 +156,7 @@ object WindowStreamSpec : Spek({
                              ^---^     - window #3 with time 3000-4499.99[9]ms
                                  ^-^   - window #4 with time 4000-4999.99[9]ms
             */
-            val windowStream = (0..9).stream().window(3).sliding(2)
+            val windowStream = (0..9).stream().window(3, 2)
             val sampleRate = 2.0f
 
             describe("Coinciding with Window.") {
@@ -180,11 +180,10 @@ object WindowStreamSpec : Spek({
 
             describe("Not-coinciding with Window.") {
                 val range = windowStream.rangeProjection(500, 1621)
-                it("should return 2 windows") {
+                it("should return 1 window") {
                     val l = range.asSequence(sampleRate).asGroupedInts().toList()
-                    assertThat(l).size().isEqualTo(2)
-                    assertThat(l).at(0).isEqualTo(listOf(0, 1, 2))
-                    assertThat(l).at(1).isEqualTo(listOf(2, 3, 4))
+                    assertThat(l).size().isEqualTo(1)
+                    assertThat(l).at(0).isEqualTo(listOf(2, 3, 4))
                 }
             }
 
@@ -198,7 +197,7 @@ object WindowStreamSpec : Spek({
             }
 
             describe("Out-of-range. After") {
-                val range = windowStream.rangeProjection(4900, 500100)
+                val range = windowStream.rangeProjection(4000, 500100)
                 it("should return 1 window") {
                     val l = range.asSequence(sampleRate).asGroupedInts().toList()
                     assertThat(l).size().isEqualTo(1)

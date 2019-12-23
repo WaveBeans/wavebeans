@@ -1,23 +1,86 @@
 package io.wavebeans.lib.stream.window
 
 import io.wavebeans.lib.*
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.*
+import kotlinx.serialization.internal.SerialClassDescImpl
+import kotlin.reflect.jvm.jvmName
 
 /**
- * Creates a [WindowStream] from specified [SampleStream].
+ * Creates a [BeanStream] of [Window] of type [Sample].
  *
  * @param size the size of the window. Must be more than 1.
  */
-fun BeanStream<Sample>.window(size: Int): WindowStream<Sample> =
-        SampleWindowStream(this, WindowStreamParams(size, size))
+fun BeanStream<Sample>.window(size: Int): BeanStream<Window<Sample>> =
+        WindowStream(this, WindowStreamParams(size, size) { ZeroSample })
 
 /**
- * Converts a [WindowStream] to a sliding [WindowStream].
+ * Creates a [BeanStream] of [Window] of type [Sample].
  *
+ * @param size the size of the window. Must be more than 1.
  * @param step the step to use for a sliding window. Must be more or equal to 1.
  */
-fun WindowStream<Sample>.sliding(step: Int): WindowStream<Sample> =
-        SampleWindowStream((this as SampleWindowStream).source, WindowStreamParams(this.parameters.windowSize, step))
+fun BeanStream<Sample>.window(size: Int, step: Int): BeanStream<Window<Sample>> =
+        WindowStream(this, WindowStreamParams(size, step) { ZeroSample })
+
+/**
+ * Creates a [BeanStream] of [Window] of specified type.
+ *
+ * @param size the size of the window. Must be more than 1.
+ * @param zeroElFn function that creates zero element objects.
+ */
+fun <T : Any> BeanStream<T>.window(size: Int, zeroElFn: () -> T): BeanStream<Window<T>> =
+        WindowStream(this, WindowStreamParams(size, size, zeroElFn))
+
+/**
+ * Creates a [BeanStream] of [Window] of specified type.
+ *
+ * @param size the size of the window. Must be more than 1.
+ * @param step the step to use for a sliding window. Must be more or equal to 1.
+ * @param zeroElFn function that creates zero element objects.
+ */
+fun <T : Any> BeanStream<T>.window(size: Int, step: Int, zeroElFn: () -> T): BeanStream<Window<T>> =
+        WindowStream(this, WindowStreamParams(size, step, zeroElFn))
+
+
+object WindowStreamParamsSerializer : KSerializer<WindowStreamParams<*>> {
+
+    override val descriptor: SerialDescriptor = object : SerialClassDescImpl("FunctionMergedStreamParams") {
+        init {
+            addElement("windowSize")
+            addElement("step")
+            addElement("zeroElFn")
+        }
+    }
+
+    override fun deserialize(decoder: Decoder): WindowStreamParams<*> {
+        val dec = decoder.beginStructure(descriptor)
+        var windowSize: Int? = null
+        var step: Int? = null
+        var funcClazzName: String? = null
+        loop@ while (true) {
+            when (val i = dec.decodeElementIndex(descriptor)) {
+                CompositeDecoder.READ_DONE -> break@loop
+                0 -> windowSize = dec.decodeIntElement(descriptor, i)
+                1 -> step = dec.decodeIntElement(descriptor, i)
+                2 -> funcClazzName = dec.decodeStringElement(descriptor, i)
+                else -> throw SerializationException("Unknown index $i")
+            }
+        }
+        @Suppress("UNCHECKED_CAST") val funcByName = Class.forName(funcClazzName).newInstance() as () -> Any
+        return WindowStreamParams(windowSize!!, step!!, funcByName)
+    }
+
+    override fun serialize(encoder: Encoder, obj: WindowStreamParams<*>) {
+        val funcName = obj.zeroElFn::class.jvmName
+        val structure = encoder.beginStructure(descriptor)
+        structure.encodeIntElement(descriptor, 0, obj.windowSize)
+        structure.encodeIntElement(descriptor, 1, obj.step)
+        structure.encodeStringElement(descriptor, 2, funcName)
+        structure.endStructure(descriptor)
+    }
+
+}
+
 
 /**
  * Parameters for [WindowStream].
@@ -25,10 +88,11 @@ fun WindowStream<Sample>.sliding(step: Int): WindowStream<Sample> =
  * @param windowSize the size of the window. Must be more than 1.
  * @param step the size of the step to move window forward. For a fixed window should be the same as [windowSize]. Must be more or equal to 1.
  */
-@Serializable
-open class WindowStreamParams(
+@Serializable(with = WindowStreamParamsSerializer::class)
+class WindowStreamParams<T : Any>(
         val windowSize: Int,
-        val step: Int
+        val step: Int,
+        val zeroElFn: () -> T
 ) : BeanParams() {
     init {
         require(step >= 1) { "Step should be more or equal to 1" }
@@ -48,46 +112,22 @@ open class WindowStreamParams(
  * This implementation works pretty much with any sampled medium, and uses generic [BeanStream] as source of data.
  *
  * @param T the type of the medium. Must be non-nullable type.
- * @param S the type of stream itself for some methods to return correct type.
  */
-interface WindowStream<T : Any> : BeanStream<Window<T>> {
-
-    override val parameters: WindowStreamParams
-
-}
-
-/**
- * Abstract implementation of generic window stream creator from any [BeanStream].
- */
-abstract class AbstractWindowStream<T : Any>(
-        val source: BeanStream<T>,
-        val params: WindowStreamParams
-) : WindowStream<T>, AlterBean<T, Window<T>>, SinglePartitionBean {
+class WindowStream<T : Any>(
+        override val input: BeanStream<T>,
+        override val parameters: WindowStreamParams<T>
+) : BeanStream<Window<T>>, AlterBean<T, Window<T>>, SinglePartitionBean {
 
     override fun asSequence(sampleRate: Float): Sequence<Window<T>> {
-        return source.asSequence(sampleRate)
+        return input.asSequence(sampleRate)
                 .windowed(
-                        size = params.windowSize,
-                        step = params.step,
+                        size = parameters.windowSize,
+                        step = parameters.step,
                         partialWindows = true
                 )
-                .map { Window(it) }
+                .map { Window(parameters.windowSize, parameters.step, it, parameters.zeroElFn) }
 
     }
 
-    override fun inputs(): List<AnyBean> = listOf(source)
-
-    override val parameters: WindowStreamParams
-        get() = params
-
-    override val input: Bean<T>
-        get() = source
+    override fun inputs(): List<AnyBean> = listOf(input)
 }
-
-/**
- * [WindowStream] implementation to work with [Sample] as a medium
- */
-class SampleWindowStream(
-        source: BeanStream<Sample>,
-        params: WindowStreamParams
-) : AbstractWindowStream<Sample>(source, params)

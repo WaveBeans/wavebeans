@@ -1,16 +1,17 @@
 package io.wavebeans.execution
 
 import assertk.assertThat
-import assertk.assertions.*
-import assertk.catch
+import assertk.assertions.isEqualTo
+import assertk.assertions.isGreaterThan
+import assertk.assertions.isNotEmpty
+import assertk.assertions.size
 import io.wavebeans.execution.TopologySerializer.jsonPretty
+import io.wavebeans.lib.ZeroSample
 import io.wavebeans.lib.io.*
-import io.wavebeans.lib.math.r
+import io.wavebeans.lib.plus
 import io.wavebeans.lib.sampleOf
 import io.wavebeans.lib.stream.*
-import io.wavebeans.lib.stream.fft.FftSample
 import io.wavebeans.lib.stream.fft.fft
-import io.wavebeans.lib.stream.fft.trim
 import io.wavebeans.lib.stream.window.Window
 import io.wavebeans.lib.stream.window.window
 import mu.KotlinLogging
@@ -20,12 +21,14 @@ import java.io.File
 import java.lang.Thread.sleep
 import kotlin.math.PI
 import kotlin.math.cos
+import kotlin.math.sin
 import kotlin.system.measureTimeMillis
+
+val log = KotlinLogging.logger {}
 
 @ExperimentalStdlibApi
 object OverseerIntegrationSpec : Spek({
 
-    val log = KotlinLogging.logger {}
 
     @ExperimentalStdlibApi
     fun runOnOverseer(
@@ -94,9 +97,9 @@ object OverseerIntegrationSpec : Spek({
                 .trim(length)
                 .toCsv("file://${f2.absolutePath}")
         val fft = pp
+                .trim(length)
                 .window(401)
                 .fft(512)
-                .trim(length)
         val o3 = fft.magnitudeToCsv("file://${f3.absolutePath}")
         val o4 = fft.phaseToCsv("file://${f4.absolutePath}")
 
@@ -182,7 +185,7 @@ object OverseerIntegrationSpec : Spek({
             val file = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
             val o = listOf(
                     seqStream()
-                            .map { sample -> Window((0..9).map { sample }) }
+                            .map { sample -> Window.ofSamples(10, 10, (0..9).map { sample }) }
                             .map { window -> window.elements.first() }
                             .trim(100)
                             .toCsv("file://${file.absolutePath}")
@@ -208,6 +211,33 @@ object OverseerIntegrationSpec : Spek({
             val frequency = 440.0
             val o = listOf(
                     input { x, sampleRate -> sampleOf(amplitude * cos(x / sampleRate * 2.0 * PI * frequency)) }
+                            .trim(100)
+                            .toCsv("file://${file.absolutePath}")
+            )
+
+            runOnOverseer(o)
+
+            val fileContent = file.readLines()
+
+            it("should have non-empty output") { assertThat(fileContent).isNotEmpty() }
+
+            runLocally(o)
+            val fileContentLocal = file.readLines()
+            it("should have the same output as local") { assertThat(fileContent).isEqualTo(fileContentLocal) }
+        }
+    }
+
+    describe("Function Merge") {
+        describe("generating sinusoid and merging it with another function") {
+            val file = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
+            val amplitude = 1.0
+            val frequency = 440.0
+            val timeTickInput = input { x, sampleRate -> sampleOf(x.toDouble() / sampleRate) }
+            val o = listOf(
+                    220.sine()
+                            .merge(with = timeTickInput) { x, y ->
+                                x + sampleOf(amplitude * sin((y ?: ZeroSample) * 2.0 * PI * frequency))
+                            }
                             .trim(100)
                             .toCsv("file://${file.absolutePath}")
             )

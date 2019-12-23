@@ -87,8 +87,9 @@ fun ByteArray.asInput(sampleRate: Float, bitDepth: BitDepth = BitDepth.BIT_8): F
 fun <T> Int.repeat(f: (Int) -> T): List<T> = (0 until this).map { f(it) }
 
 fun <T> Assert<List<T>>.isListOf(vararg expected: Any?) = given { actual ->
-    if (actual == expected.toList()) return
-    fail(expected, actual)
+    val expectedAsList = expected.toList()
+    if (actual == expectedAsList) return
+    fail(expectedAsList, actual)
 }
 
 fun IntRange.stream() = IntStream(this.toList())

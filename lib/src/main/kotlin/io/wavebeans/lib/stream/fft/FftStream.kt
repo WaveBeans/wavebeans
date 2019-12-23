@@ -3,15 +3,13 @@ package io.wavebeans.lib.stream.fft
 import io.wavebeans.lib.*
 import io.wavebeans.lib.math.ComplexNumber
 import io.wavebeans.lib.math.r
-import io.wavebeans.lib.stream.window.SampleWindowStream
 import io.wavebeans.lib.stream.window.Window
-import io.wavebeans.lib.stream.window.WindowStream
 import kotlinx.serialization.Serializable
 import java.util.concurrent.TimeUnit
 import kotlin.math.PI
 import kotlin.math.log10
 
-fun WindowStream<Sample>.fft(binCount: Int): FftStream = FftStreamImpl(this, FftStreamParams(binCount))
+fun BeanStream<Window<Sample>>.fft(binCount: Int): BeanStream<FftSample> = FftStream(this, FftStreamParams(binCount))
 
 data class FftSample(
         val time: Long,
@@ -36,15 +34,6 @@ data class FftSample(
 }
 
 
-interface FftStream : BeanStream<FftSample> {
-    /***
-     * Estimate number of FFT samples will be produced based on source samples count.
-     *
-     * @param samplesCount source sample count to base estimation on.
-     */
-    fun estimateFftSamplesCount(samplesCount: Long): Long
-}
-
 @Serializable
 data class FftStreamParams(
         val n: Int,
@@ -53,38 +42,32 @@ data class FftStreamParams(
         val timeUnit: TimeUnit = TimeUnit.MILLISECONDS
 ) : BeanParams()
 
-class FftStreamImpl(
-        val sampleStream: WindowStream<Sample>,
-        val params: FftStreamParams
-) : FftStream, AlterBean<Window<Sample>, FftSample>, SinglePartitionBean {
-
-    override val parameters: BeanParams = params
-
-    override val input: Bean<Window<Sample>> = sampleStream
-
-    override fun estimateFftSamplesCount(samplesCount: Long): Long = samplesCount / sampleStream.parameters.windowSize
+class FftStream(
+        override val input: BeanStream<Window<Sample>>,
+        override val parameters: FftStreamParams
+) : BeanStream<FftSample>, AlterBean<Window<Sample>, FftSample>, SinglePartitionBean {
 
     override fun asSequence(sampleRate: Float): Sequence<FftSample> {
-        require(sampleStream.parameters.windowSize <= params.n) {
-            "The window size (${sampleStream.parameters.windowSize}) " +
-                    "must be less or equal than N (${params.n})"
-        }
-        require(!(params.n == 0 || params.n and (params.n - 1) != 0)) {
-            "N should be power of 2 but ${params.n} found"
-        }
-        return sampleStream.asSequence(sampleRate)
-                .mapIndexed { idx, fftWindow ->
-                    val m = sampleStream.parameters.windowSize
+        return input.asSequence(sampleRate)
+                .mapIndexed { idx, window ->
+                    require(window.elements.size <= parameters.n) {
+                        "The window size (${window.elements.size}) " +
+                                "must be less or equal than N (${parameters.n})"
+                    }
+                    require(!(parameters.n == 0 || parameters.n and (parameters.n - 1) != 0)) {
+                        "N should be power of 2 but ${parameters.n} found"
+                    }
+                    val m = window.elements.size
                     val fft = fft(
-                            x = fftWindow.elements.asSequence()
+                            x = window.elements.asSequence()
                                     .map { it.r }
-                                    .zeropad(m, params.n),
-                            n = params.n
+                                    .zeropad(m, parameters.n),
+                            n = parameters.n
                     )
 
                     FftSample(
                             time = (idx.toDouble() * m.toDouble() / (sampleRate.toDouble() / 1e+9)).toLong(),
-                            binCount = params.n,
+                            binCount = parameters.n,
                             fft = fft.toList(),
                             sampleRate = sampleRate
                     )
