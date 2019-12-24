@@ -248,4 +248,31 @@ object OverseerIntegrationSpec : Spek({
             it("should have the same output as local") { assertThat(fileContent).isEqualTo(fileContentLocal) }
         }
     }
+
+    describe("CSV output with function") {
+        describe("generating sinusoid and storing it to csv") {
+            val file = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
+            val o = listOf(
+                    220.sine()
+                            .trim(100)
+                            .toCsv(
+                                    "file://${file.absolutePath}",
+                                    header = listOf("sample index", "sample value"),
+                                    elementSerializer = {idx, _, sample ->
+                                        listOf(idx.toString(), String.format("%.10f", sample))
+                                    }
+                            )
+            )
+
+            runOnOverseer(o)
+
+            val fileContent = file.readLines()
+
+            it("should have non-empty output") { assertThat(fileContent).isNotEmpty() }
+
+            runLocally(o)
+            val fileContentLocal = file.readLines()
+            it("should have the same output as local") { assertThat(fileContent).isEqualTo(fileContentLocal) }
+        }
+    }
 })

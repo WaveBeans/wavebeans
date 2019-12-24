@@ -33,8 +33,7 @@ object PodRegistry {
         registerMergingPodProxy(typeOf<BeanStream<*>>(), AnyStreamMergingPodProxy::class.constructors.first())
 
         registerPod(typeOf<BeanStream<*>>(), AnyStreamingPod::class.constructors.single { it.parameters.size == 2 })
-        registerPod(typeOf<StreamOutput<Sample>>(), SampleStreamOutputPod::class.constructors.first())
-        registerPod(typeOf<StreamOutput<FftSample>>(), FftSampleStreamOutputPod::class.constructors.first())
+        registerPod(typeOf<StreamOutput<*>>(), AnyStreamOutputPod::class.constructors.first())
 
         registerSplittingPod(typeOf<BeanStream<*>>(), AnySplittingPod::class.constructors.single { it.parameters.size == 3 })
     }
