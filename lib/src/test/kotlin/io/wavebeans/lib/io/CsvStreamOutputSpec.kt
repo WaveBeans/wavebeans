@@ -4,9 +4,7 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.size
-import io.wavebeans.lib.at
-import io.wavebeans.lib.samplesCountToLength
-import io.wavebeans.lib.seqStream
+import io.wavebeans.lib.*
 import io.wavebeans.lib.stream.map
 import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.stream.window.window
@@ -25,7 +23,7 @@ object CsvStreamOutputSpec : Spek({
                 .toCsv(
                         file.toURI().toString(),
                         header = listOf("time ms", "sample value"),
-                        elementSerializer = { idx, sampleRate, sample ->
+                        elementSerializer = { (idx, sampleRate, sample) ->
                             val sampleTime = samplesCountToLength(idx, sampleRate, TimeUnit.MILLISECONDS)
                             listOf(sampleTime.toString(), String.format("%.10f", sample))
                         }
@@ -50,7 +48,7 @@ object CsvStreamOutputSpec : Spek({
                 .toCsv(
                         file.toURI().toString(),
                         header = listOf("time ms") + (0..1).map { "sample#$it" },
-                        elementSerializer = { idx, sampleRate, window ->
+                        elementSerializer = { (idx, sampleRate, window) ->
                             val sampleTime = samplesCountToLength(idx, sampleRate, TimeUnit.MILLISECONDS)
                             listOf(sampleTime.toString()) + window.elements.map { String.format("%.10f", it) }
                         }
@@ -75,7 +73,7 @@ object CsvStreamOutputSpec : Spek({
                 .toCsv(
                         file.toURI().toString(),
                         header = listOf("time ms") + (0..1).map { "value#$it" },
-                        elementSerializer = { idx, sampleRate, pair ->
+                        elementSerializer = { (idx, sampleRate, pair) ->
                             val sampleTime = samplesCountToLength(idx, sampleRate, TimeUnit.MILLISECONDS)
                             listOf(sampleTime.toString(), String.format("%.10f", pair.first), String.format("%.10f", pair.second))
                         }

@@ -6,10 +6,8 @@ import assertk.assertions.isGreaterThan
 import assertk.assertions.isNotEmpty
 import assertk.assertions.size
 import io.wavebeans.execution.TopologySerializer.jsonPretty
-import io.wavebeans.lib.ZeroSample
+import io.wavebeans.lib.*
 import io.wavebeans.lib.io.*
-import io.wavebeans.lib.plus
-import io.wavebeans.lib.sampleOf
 import io.wavebeans.lib.stream.*
 import io.wavebeans.lib.stream.fft.fft
 import io.wavebeans.lib.stream.window.Window
@@ -258,7 +256,7 @@ object OverseerIntegrationSpec : Spek({
                             .toCsv(
                                     "file://${file.absolutePath}",
                                     header = listOf("sample index", "sample value"),
-                                    elementSerializer = {idx, _, sample ->
+                                    elementSerializer = { (idx, _, sample) ->
                                         listOf(idx.toString(), String.format("%.10f", sample))
                                     }
                             )

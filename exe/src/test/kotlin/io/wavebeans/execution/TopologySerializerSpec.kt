@@ -39,13 +39,13 @@ object TopologySerializerSpec : Spek({
 
                     nodeRef.prop("type") { it.type }.isIn(*listOf(
                             SineGeneratedInput::class,
-                            CsvSampleStreamOutput::class,
+                            CsvStreamOutput::class,
                             TrimmedFiniteSampleStream::class
                     ).map { it.qualifiedName }.toTypedArray())
 
                     nodeRef.prop("params") { it.params }.kClass().isIn(*listOf(
                             SineGeneratedInputParams::class,
-                            CsvSampleStreamOutputParams::class,
+                            CsvStreamOutputParams::class,
                             TrimmedFiniteSampleStreamParams::class,
                             NoParams::class
                     ).toTypedArray())
