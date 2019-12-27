@@ -6,10 +6,8 @@ import assertk.assertions.isGreaterThan
 import assertk.assertions.isNotEmpty
 import assertk.assertions.size
 import io.wavebeans.execution.TopologySerializer.jsonPretty
-import io.wavebeans.lib.ZeroSample
+import io.wavebeans.lib.*
 import io.wavebeans.lib.io.*
-import io.wavebeans.lib.plus
-import io.wavebeans.lib.sampleOf
 import io.wavebeans.lib.stream.*
 import io.wavebeans.lib.stream.fft.fft
 import io.wavebeans.lib.stream.window.Window
@@ -225,16 +223,41 @@ object OverseerIntegrationSpec : Spek({
     describe("Function Merge") {
         describe("generating sinusoid and merging it with another function") {
             val file = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
-            val amplitude = 1.0
-            val frequency = 440.0
             val timeTickInput = input { x, sampleRate -> sampleOf(x.toDouble() / sampleRate) }
             val o = listOf(
                     220.sine()
-                            .merge(with = timeTickInput) { x, y ->
-                                x + sampleOf(amplitude * sin((y ?: ZeroSample) * 2.0 * PI * frequency))
+                            .merge(with = timeTickInput) { (x, y) ->
+                                x + sampleOf(1.0 * sin((y ?: ZeroSample) * 2.0 * PI * 440.0))
                             }
                             .trim(100)
                             .toCsv("file://${file.absolutePath}")
+            )
+
+            runOnOverseer(o)
+
+            val fileContent = file.readLines()
+
+            it("should have non-empty output") { assertThat(fileContent).isNotEmpty() }
+
+            runLocally(o)
+            val fileContentLocal = file.readLines()
+            it("should have the same output as local") { assertThat(fileContent).isEqualTo(fileContentLocal) }
+        }
+    }
+
+    describe("CSV output with function") {
+        describe("generating sinusoid and storing it to csv") {
+            val file = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
+            val o = listOf(
+                    220.sine()
+                            .trim(100)
+                            .toCsv(
+                                    "file://${file.absolutePath}",
+                                    header = listOf("sample index", "sample value"),
+                                    elementSerializer = { (idx, _, sample) ->
+                                        listOf(idx.toString(), String.format("%.10f", sample))
+                                    }
+                            )
             )
 
             runOnOverseer(o)

@@ -17,12 +17,12 @@ object FunctionMergedStreamSpec : Spek({
             val merging = (10..19).stream()
 
             it("should return valid sum") {
-                assertThat(source.merge(with = merging) { x, y -> x + y }.toListInt())
+                assertThat(source.merge(with = merging) { (x, y) -> x + y }.toListInt())
                         .isEqualTo((10..28 step 2).toList())
             }
 
             it("should return valid windows") {
-                assertThat(source.merge(with = merging) { x, y -> windowOf(x, y) }.toListWindowInt())
+                assertThat(source.merge(with = merging) { (x, y) -> windowOf(x, y) }.toListWindowInt())
                         .isListOf(
                                 listOf(0, 10),
                                 listOf(1, 11),
@@ -42,13 +42,13 @@ object FunctionMergedStreamSpec : Spek({
             val merging = (10..15).stream()
 
             it("should return valid sum") {
-                assertThat(source.merge(with = merging) { x, y -> x + y }.toListInt())
+                assertThat(source.merge(with = merging) { (x, y) -> x + y }.toListInt())
                         .isEqualTo((10..20 step 2).toList() + (6..9))
 
             }
 
             it("should return valid windows") {
-                assertThat(source.merge(with = merging) { x, y -> windowOf(x, y) }.toListWindowInt())
+                assertThat(source.merge(with = merging) { (x, y) -> windowOf(x, y) }.toListWindowInt())
                         .isListOf(
                                 listOf(0, 10),
                                 listOf(1, 11),
@@ -68,13 +68,13 @@ object FunctionMergedStreamSpec : Spek({
             val merging = (10..25).stream()
 
             it("should return valid sum") {
-                assertThat(source.merge(with = merging) { x, y -> x + y }.toListInt())
+                assertThat(source.merge(with = merging) { (x, y) -> x + y }.toListInt())
                         .isEqualTo((10..28 step 2).toList() + (20..25))
 
             }
 
             it("should return valid windows") {
-                assertThat(source.merge(with = merging) { x, y -> windowOf(x, y) }.toListWindowInt())
+                assertThat(source.merge(with = merging) { (x, y) -> windowOf(x, y) }.toListWindowInt())
                         .isListOf(
                                 listOf(0, 10),
                                 listOf(1, 11),
