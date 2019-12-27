@@ -89,17 +89,57 @@ class FnInitParameters {
     fun add(name: String, value: String): FnInitParameters = FnInitParameters(params + (name to value))
     fun add(name: String, value: Int): FnInitParameters = FnInitParameters(params + (name to value.toString()))
     fun add(name: String, value: Long): FnInitParameters = FnInitParameters(params + (name to value.toString()))
+    fun add(name: String, value: Float): FnInitParameters = FnInitParameters(params + (name to value.toString()))
+    fun add(name: String, value: Double): FnInitParameters = FnInitParameters(params + (name to value.toString()))
+    fun <T : Any> add(name: String, value: Collection<T>, stringifier: (T) -> String): FnInitParameters =
+            FnInitParameters(params + (name to value.joinToString(separator = ",") { stringifier(it) }))
+
+    fun <T : Any> addObj(name: String, value: T, stringifier: (T) -> String): FnInitParameters =
+            FnInitParameters(params + (name to stringifier(value)))
+
+    fun addStrings(name: String, value: Collection<String>): FnInitParameters = add(name, value) { it }
+    fun addInts(name: String, value: Collection<Int>): FnInitParameters = add(name, value) { it.toString() }
+    fun addLongs(name: String, value: Collection<Long>): FnInitParameters = add(name, value) { it.toString() }
+    fun addFloats(name: String, value: Collection<Float>): FnInitParameters = add(name, value) { it.toString() }
+    fun addDoubles(name: String, value: Collection<Double>): FnInitParameters = add(name, value) { it.toString() }
 
     operator fun get(name: String): String? = params[name]
+    fun notNull(name: String): String = params[name] ?: throw IllegalArgumentException("Parameters $name is null")
 
-    fun string(name: String): String = stringOrNull(name) ?: throw IllegalArgumentException("Parameters $name is null")
-    fun stringOrNull(name: String): String? = params[name]
+    fun <T : Any> obj(name: String, objectifier: (String) -> T): T = notNull(name).let(objectifier)
+    fun <T : Any> objOrNull(name: String, objectifier: (String) -> T): T? = get(name)?.let(objectifier)
 
-    fun int(name: String): Int = intOrNull(name) ?: throw IllegalArgumentException("Parameters $name is null")
-    fun intOrNull(name: String): Int? = params[name]?.toInt()
+    fun string(name: String): String = notNull(name)
+    fun stringOrNull(name: String): String? = get(name)
+    fun strings(name: String): List<String> = list(name) { it }
+    fun stringsOrNull(name: String): List<String>? = listOrNull(name) { it }
 
-    fun long(name: String): Long = longOrNull(name) ?: throw IllegalArgumentException("Parameters $name is null")
-    fun longOrNull(name: String): Long? = params[name]?.toLong()
+    fun int(name: String): Int = notNull(name).toInt()
+    fun intOrNull(name: String): Int? = get(name)?.toInt()
+    fun ints(name: String): List<Int> = list(name) { it.toInt() }
+    fun intsOrNull(name: String): List<Int>? = listOrNull(name) { it.toInt() }
+
+
+    fun long(name: String): Long = notNull(name).toLong()
+    fun longOrNull(name: String): Long? = get(name)?.toLong()
+    fun longs(name: String): List<Long> = list(name) { it.toLong() }
+    fun longsOrNull(name: String): List<Long>? = listOrNull(name) { it.toLong() }
+
+    fun float(name: String): Float = notNull(name).toFloat()
+    fun floatOrNull(name: String): Float? = get(name)?.toFloat()
+    fun floats(name: String): List<Float> = list(name) { it.toFloat() }
+    fun floatsOrNull(name: String): List<Float>? = listOrNull(name) { it.toFloat() }
+
+    fun double(name: String): Double = notNull(name).toDouble()
+    fun doubleOrNull(name: String): Double? = get(name)?.toDouble()
+    fun doubles(name: String): List<Double> = list(name) { it.toDouble() }
+    fun doublesOrNull(name: String): List<Double>? = listOrNull(name) { it.toDouble() }
+
+    fun <T : Any> list(name: String, objectifier: (String) -> T): List<T> = listOrNull(name, objectifier)
+            ?: throw IllegalArgumentException("Parameters $name is null")
+
+    fun <T : Any> listOrNull(name: String, objectifier: (String) -> T): List<T>? =
+            params[name]?.let { it.split(",").map(objectifier) }
 }
 
 /**
