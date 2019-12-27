@@ -3,9 +3,11 @@ package io.wavebeans.lib.stream
 import io.wavebeans.lib.*
 import kotlinx.serialization.*
 import kotlinx.serialization.internal.SerialClassDescImpl
-import kotlin.reflect.jvm.jvmName
 
-fun <T : Any, R : Any> BeanStream<T>.merge(with: BeanStream<T>, merge: (T?, T?) -> R): BeanStream<R> =
+fun <T : Any, R : Any> BeanStream<T>.merge(with: BeanStream<T>, merge: (Pair<T?, T?>) -> R): BeanStream<R> =
+        this.merge(with, Fn.wrap(merge))
+
+fun <T : Any, R : Any> BeanStream<T>.merge(with: BeanStream<T>, merge: Fn<Pair<T?, T?>, R>): BeanStream<R> =
         FunctionMergedStream(this, with, FunctionMergedStreamParams(merge))
 
 
@@ -19,22 +21,21 @@ object FunctionMergedStreamParamsSerializer : KSerializer<FunctionMergedStreamPa
 
     override fun deserialize(decoder: Decoder): FunctionMergedStreamParams<*, *> {
         val dec = decoder.beginStructure(descriptor)
-        var funcMergeClazzName: String? = null
+        var fn: Fn<Pair<Any?, Any?>, Any>? = null
+        @Suppress("UNCHECKED_CAST")
         loop@ while (true) {
             when (val i = dec.decodeElementIndex(descriptor)) {
                 CompositeDecoder.READ_DONE -> break@loop
-                0 -> funcMergeClazzName = dec.decodeStringElement(descriptor, i)
+                0 -> fn = dec.decodeSerializableElement(descriptor, i, FnSerializer) as Fn<Pair<Any?, Any?>, Any>
                 else -> throw SerializationException("Unknown index $i")
             }
         }
-        @Suppress("UNCHECKED_CAST") val funcMergeByName = Class.forName(funcMergeClazzName).newInstance() as (Any?, Any?) -> Any
-        return FunctionMergedStreamParams(funcMergeByName)
+        return FunctionMergedStreamParams(fn!!)
     }
 
     override fun serialize(encoder: Encoder, obj: FunctionMergedStreamParams<*, *>) {
-        val funcMergeName = obj.merge::class.jvmName
         val structure = encoder.beginStructure(descriptor)
-        structure.encodeStringElement(descriptor, 0, funcMergeName)
+        structure.encodeSerializableElement(descriptor, 0, FnSerializer, obj.merge)
         structure.endStructure(descriptor)
     }
 
@@ -42,7 +43,7 @@ object FunctionMergedStreamParamsSerializer : KSerializer<FunctionMergedStreamPa
 
 @Serializable(with = FunctionMergedStreamParamsSerializer::class)
 class FunctionMergedStreamParams<T : Any, R : Any>(
-        val merge: (T?, T?) -> R
+        val merge: Fn<Pair<T?, T?>, R>
 ) : BeanParams()
 
 class FunctionMergedStream<T : Any, R : Any>(
@@ -69,7 +70,7 @@ class FunctionMergedStream<T : Any, R : Any>(
                 val s = if (sourceIterator.hasNext()) sourceIterator.next() else null
                 val m = if (mergeIterator.hasNext()) mergeIterator.next() else null
 
-                return parameters.merge(s, m)
+                return parameters.merge.apply(Pair(s, m))
             }
 
         }.asSequence()

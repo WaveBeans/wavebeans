@@ -7,12 +7,14 @@ import kotlinx.serialization.internal.StringSerializer
 import kotlinx.serialization.internal.nullable
 import kotlin.reflect.jvm.jvmName
 
+private const val fnClazz = "fnClazz"
+
 /**
  * [Fn] is abstract class to launch custom functions. It allows you bypass some parameters to the function execution out
  * of declaration to runtime via using [FnInitParameters]. Each [Fn] is required to have only one (or first) constructor
  * with [FnInitParameters] as the only one parameter.
  *
- * This abstract exist to be able to separate the declaration tier and runtime tier as there is no way to access declaration
+ * This abstraction exists to be able to separate the declaration tier and runtime tier as there is no way to access declaration
  * tier classes and data if they are not made publicly accessible. For example, it is impossible to use variables which are
  * defined inside inner closure, hence instantiating of [Fn] as inner class is not supported either. [Fn] instance can't
  * have implicit links to outer closure.
@@ -22,22 +24,40 @@ import kotlin.reflect.jvm.jvmName
  * mode only, limitations are not that strict and using data out of closures may work.
  */
 @Serializable(with = FnSerializer::class)
-@FunctionalInterface
 abstract class Fn<T, R>(val initParams: FnInitParameters = FnInitParameters()) {
 
     companion object {
+
+        /**
+         * Instantiate [Fn] of specified [clazz] initiailizing with [initParams]. Searches for the constructor with only
+         * one parameter of type [FnInitParameters].
+         *
+         * @throws [IllegalStateException] if constructor with only parameter og [FnInitParameters] is not found.
+         */
         @Suppress("UNCHECKED_CAST")
         fun <T, R> instantiate(clazz: Class<Fn<T, R>>, initParams: FnInitParameters = FnInitParameters()): Fn<T, R> {
-            return clazz.declaredConstructors.first {
+            return clazz.declaredConstructors.firstOrNull {
                 it.parameterTypes.size == 1 &&
                         it.parameterTypes[0].isAssignableFrom(FnInitParameters::class.java)
             }
-                    .also { it.isAccessible = true }
-                    .newInstance(initParams) as Fn<T, R>
+                    ?.also { it.isAccessible = true }
+                    ?.newInstance(initParams)
+                    ?.let { it as Fn<T, R> }
+                    ?: throw IllegalStateException("$clazz has no proper constructor with ${FnInitParameters::class} as only one parameter, " +
+                            "it has: ${clazz.declaredConstructors.joinToString { it.parameterTypes.toList().toString() }}")
         }
 
+        /**
+         * Wraps lambda function [fn] to a proper [Fn] class using generic wrapper [WrapFn]. The different between using
+         * that method and creating a proper class declaration is that this implementation doesn't allow to by pass parameters
+         * as [initParams] is not available inside lambda function.
+         *
+         * ```kotlin
+         * Fn.wrap { it.doSomethingAndReturn() }
+         * ```
+         */
         fun <T, R> wrap(fn: (T) -> R): Fn<T, R> {
-            return WrapFn(FnInitParameters().add("fnClazz", fn::class.jvmName))
+            return WrapFn(FnInitParameters().add(fnClazz, fn::class.jvmName))
         }
     }
 
@@ -76,10 +96,16 @@ internal class WrapFn<T, R>(initParams: FnInitParameters) : Fn<T, R>(initParams)
     private val fn: (T) -> R
 
     init {
-        val clazz = Class.forName(initParams["fnClazz"]!!)
-        val constructor = clazz.declaredConstructors.first()
-        constructor.isAccessible = true
-        fn = constructor.newInstance() as (T) -> R
+        val clazzName = initParams[fnClazz]!!
+        try {
+            val clazz = Class.forName(clazzName)
+            val constructor = clazz.declaredConstructors.first()
+            constructor.isAccessible = true
+            fn = constructor.newInstance() as (T) -> R
+        } catch (e: IllegalArgumentException) {
+            throw IllegalArgumentException("Wrapping function $clazzName failed, perhaps it is implemented as inner class" +
+                    " and should be wrapped manually", e)
+        }
     }
 
     override fun apply(argument: T): R {

@@ -1,13 +1,11 @@
 package io.wavebeans.lib.stream
 
-import io.wavebeans.lib.AlterBean
-import io.wavebeans.lib.BeanParams
-import io.wavebeans.lib.BeanStream
+import io.wavebeans.lib.*
 import kotlinx.serialization.*
 import kotlinx.serialization.internal.SerialClassDescImpl
-import kotlin.reflect.jvm.jvmName
 
-fun <T : Any, R : Any> BeanStream<T>.map(transform: (T) -> R): BeanStream<R> = MapStream(this, MapStreamParams(transform))
+fun <T : Any, R : Any> BeanStream<T>.map(transform: (T) -> R): BeanStream<R> = this.map(Fn.wrap(transform))
+fun <T : Any, R : Any> BeanStream<T>.map(transform: Fn<T, R>): BeanStream<R> = MapStream(this, MapStreamParams(transform))
 
 object MapStreamParamsSerializer : KSerializer<MapStreamParams<*, *>> {
 
@@ -19,29 +17,28 @@ object MapStreamParamsSerializer : KSerializer<MapStreamParams<*, *>> {
 
     override fun deserialize(decoder: Decoder): MapStreamParams<*, *> {
         val dec = decoder.beginStructure(descriptor)
-        var funcClazzName: String? = null
+        var fn: Fn<Any, Any>? = null
+        @Suppress("UNCHECKED_CAST")
         loop@ while (true) {
             when (val i = dec.decodeElementIndex(descriptor)) {
                 CompositeDecoder.READ_DONE -> break@loop
-                0 -> funcClazzName = dec.decodeStringElement(descriptor, i)
+                0 -> fn = dec.decodeSerializableElement(descriptor, i, FnSerializer) as Fn<Any, Any>
                 else -> throw SerializationException("Unknown index $i")
             }
         }
-        @Suppress("UNCHECKED_CAST") val funcByName = Class.forName(funcClazzName).newInstance() as (Any) -> Any
-        return MapStreamParams(funcByName)
+        return MapStreamParams(fn!!)
     }
 
     override fun serialize(encoder: Encoder, obj: MapStreamParams<*, *>) {
-        val funcName = obj.transform::class.jvmName
         val structure = encoder.beginStructure(descriptor)
-        structure.encodeStringElement(descriptor, 0, funcName)
+        structure.encodeSerializableElement(descriptor, 0, FnSerializer, obj.transform)
         structure.endStructure(descriptor)
     }
 
 }
 
 @Serializable(with = MapStreamParamsSerializer::class)
-class MapStreamParams<T : Any, R : Any>(val transform: (T) -> R) : BeanParams()
+class MapStreamParams<T : Any, R : Any>(val transform: Fn<T, R>) : BeanParams()
 
 class MapStream<T : Any, R : Any>(
         override val input: BeanStream<T>,
@@ -49,6 +46,6 @@ class MapStream<T : Any, R : Any>(
 ) : BeanStream<R>, AlterBean<T, R> {
 
     override fun asSequence(sampleRate: Float): Sequence<R> =
-            input.asSequence(sampleRate).map { parameters.transform(it) }
+            input.asSequence(sampleRate).map { parameters.transform.apply(it) }
 
 }

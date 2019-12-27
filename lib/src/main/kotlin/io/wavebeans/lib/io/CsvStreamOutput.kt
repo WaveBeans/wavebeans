@@ -27,8 +27,8 @@ fun <T : Any> BeanStream<T>.toCsv(
             uri,
             header,
             Fn.wrap(elementSerializer),
-            encoding)
-    )
+            encoding
+    ))
 }
 
 object CsvWindowStreamOutputParamsSerializer : KSerializer<CsvStreamOutputParams<*>> {
