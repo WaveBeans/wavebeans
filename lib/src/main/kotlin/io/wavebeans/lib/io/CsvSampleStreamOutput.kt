@@ -11,12 +11,16 @@ fun BeanStream<Sample>.toCsv(
     return toCsv(
             uri = uri,
             header = listOf("time ${timeUnit.abbreviation()}", "value"),
-            elementSerializer = CsvFn(FnInitParameters().add("timeUnit", timeUnit.name)),
+            elementSerializer = CsvFn(timeUnit),
             encoding = encoding
     )
 }
 
-internal class CsvFn(initParameters: FnInitParameters) : Fn<Triple<Long, Float, Sample>, List<String>>(initParameters) {
+internal class CsvFn(parameters: FnInitParameters) : Fn<Triple<Long, Float, Sample>, List<String>>(parameters
+) {
+
+    constructor(timeUnit: TimeUnit) : this(FnInitParameters().add("timeUnit", timeUnit.name))
+
     override fun apply(argument: Triple<Long, Float, Sample>): List<String> {
         val (idx, sampleRate, sample) = argument
         val tu = TimeUnit.valueOf(initParams["timeUnit"]!!)

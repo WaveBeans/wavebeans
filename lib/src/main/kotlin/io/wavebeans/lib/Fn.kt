@@ -35,15 +35,19 @@ abstract class Fn<T, R>(val initParams: FnInitParameters = FnInitParameters()) {
          * @throws [IllegalStateException] if constructor with only parameter og [FnInitParameters] is not found.
          */
         @Suppress("UNCHECKED_CAST")
-        fun <T, R> instantiate(clazz: Class<Fn<T, R>>, initParams: FnInitParameters = FnInitParameters()): Fn<T, R> {
-            return clazz.declaredConstructors.firstOrNull {
-                it.parameterTypes.size == 1 &&
-                        it.parameterTypes[0].isAssignableFrom(FnInitParameters::class.java)
-            }
+        fun <T, R> instantiate(clazz: Class<out Fn<T, R>>, initParams: FnInitParameters = FnInitParameters()): Fn<T, R> {
+            return clazz.declaredConstructors
+                    .firstOrNull { with(it.parameterTypes) { size == 1 && get(0).isAssignableFrom(FnInitParameters::class.java) } }
+                    .let { it ?: clazz.declaredConstructors.firstOrNull { c -> c.parameters.isEmpty() } }
                     ?.also { it.isAccessible = true }
-                    ?.newInstance(initParams)
+                    ?.let { c ->
+                        if (c.parameters.size == 1)
+                            c.newInstance(initParams)
+                        else
+                            c.newInstance()
+                    }
                     ?.let { it as Fn<T, R> }
-                    ?: throw IllegalStateException("$clazz has no proper constructor with ${FnInitParameters::class} as only one parameter, " +
+                    ?: throw IllegalStateException("$clazz has no proper constructor with ${FnInitParameters::class} as only one parameter or empty at all, " +
                             "it has: ${clazz.declaredConstructors.joinToString { it.parameterTypes.toList().toString() }}")
         }
 
@@ -67,7 +71,7 @@ abstract class Fn<T, R>(val initParams: FnInitParameters = FnInitParameters()) {
 
 /**
  * [FnInitParameters] are used to bypass some data to [Fn]. You need to serialize the value to a [String] yourself.
- * Hence, it's your responsibility either to convert it back from the [String] representation. The value is nullable.
+ * Hence, it's your responsibility either to convert it back from the [String] representation.
  *
  * This value is stored inside the json specification as you've provided them.
  */
@@ -82,9 +86,20 @@ class FnInitParameters {
         this.params = HashMap(params)
     }
 
-    fun add(name: String, value: String?): FnInitParameters = FnInitParameters(params + (name to value))
+    fun add(name: String, value: String): FnInitParameters = FnInitParameters(params + (name to value))
+    fun add(name: String, value: Int): FnInitParameters = FnInitParameters(params + (name to value.toString()))
+    fun add(name: String, value: Long): FnInitParameters = FnInitParameters(params + (name to value.toString()))
 
     operator fun get(name: String): String? = params[name]
+
+    fun string(name: String): String = stringOrNull(name) ?: throw IllegalArgumentException("Parameters $name is null")
+    fun stringOrNull(name: String): String? = params[name]
+
+    fun int(name: String): Int = intOrNull(name) ?: throw IllegalArgumentException("Parameters $name is null")
+    fun intOrNull(name: String): Int? = params[name]?.toInt()
+
+    fun long(name: String): Long = longOrNull(name) ?: throw IllegalArgumentException("Parameters $name is null")
+    fun longOrNull(name: String): Long? = params[name]?.toLong()
 }
 
 /**
