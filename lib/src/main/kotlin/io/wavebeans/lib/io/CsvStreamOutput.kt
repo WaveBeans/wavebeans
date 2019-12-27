@@ -23,12 +23,12 @@ fun <T : Any> BeanStream<T>.toCsv(
         elementSerializer: (Triple<Long, Float, T>) -> List<String>,
         encoding: String = "UTF-8"
 ): StreamOutput<T> {
-    return CsvStreamOutput(this, CsvStreamOutputParams(
+    return this.toCsv(
             uri,
             header,
             Fn.wrap(elementSerializer),
             encoding
-    ))
+    )
 }
 
 object CsvWindowStreamOutputParamsSerializer : KSerializer<CsvStreamOutputParams<*>> {
