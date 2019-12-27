@@ -11,8 +11,7 @@ abstract class AbstractStreamOutputPod<T: Any> : StreamOutput<T>, TickPod {
 
     abstract val bean: StreamOutput<T>
 
-    // TODO that should be the part of configuration
-    private val sampleRate = 44100.0f
+    abstract val sampleRate: Float
 
     @Volatile
     private var isFinished = false

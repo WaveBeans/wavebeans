@@ -18,7 +18,8 @@ class LocalDistributedScriptEvaluator(
                         outputs.buildTopology()
                                 .partition(partitions)
                                 .groupBeans(),
-                        threads
+                        threads,
+                        sampleRate
                 ).waitToFinish()
             } catch (e: InterruptedException) {
                 // if it's interrupted then we need to gracefully

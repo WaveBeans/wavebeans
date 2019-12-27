@@ -34,7 +34,7 @@ class WaveBeansCli(
         val m = Option("m", "run-mode", true, "Running script in distributed mode, specify exact overseer. Default is: ${RunMode.LOCAL.id}. Supported: ${RunMode.values().joinToString(", ") { it.id }}. ")
         val p = Option("p", "partitions", true, "Number of partitions to use in Distributed mode.")
         val t = Option("t", "threads", true, "Number of threads to use in Distributed mode.")
-        val s = Option("s", "sampleRate", true, "Sample rate in Hz to use for outputs. By default, it's 44100.")
+        val s = Option("s", "sample-rate", true, "Sample rate in Hz to use for outputs. By default, it's 44100.")
         val options = Options().of(f, e, time, v, h, m, p, t, s)
     }
 
@@ -51,7 +51,7 @@ class WaveBeansCli(
                     ?: cli.getRequired(f) { File(it).readText() }
 
             val runMode = cli.get(m) { RunMode.byId(it) } ?: RunMode.LOCAL
-            if (verbose) printer.printLine("Running mode: ${runMode.name}")
+            if (verbose) printer.printLine("Running mode: ${runMode.id}")
             val runOptions = mutableMapOf<String, Any>()
             if (runMode == RunMode.LOCAL_DISTRIBUTED && cli.has(p)) runOptions["partitions"] = cli.getRequired(p) { it.toInt() }
             if (runMode == RunMode.LOCAL_DISTRIBUTED && cli.has(t)) runOptions["threads"] = cli.getRequired(t) { it.toInt() }

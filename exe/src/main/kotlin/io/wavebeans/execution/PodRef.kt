@@ -5,6 +5,7 @@ import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.lib.AnyBean
 import io.wavebeans.lib.Bean
 import io.wavebeans.lib.BeanParams
+import io.wavebeans.lib.SinkBean
 import kotlin.reflect.KType
 import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.typeOf
@@ -39,7 +40,7 @@ data class PodRef(
         val splitToPartitions: Int? = null
 ) {
     @ExperimentalStdlibApi
-    fun instantiate(): Pod {
+    fun instantiate(sampleRate: Float): Pod {
         try {
             val proxies = podProxies.map {
                 if (it.pointedTo.size > 1) {
@@ -93,11 +94,20 @@ data class PodRef(
             val tailBean = createBean(proxies, internalBeans.reversed())
 
             return if (splitToPartitions == null) {
-                PodRegistry.createPod(
-                        tailBean::class.supertypes.first { it.isSubtypeOf(typeOf<AnyBean>()) },
-                        key,
-                        tailBean
-                )
+                if (tailBean is SinkBean<*>) {
+                    PodRegistry.createPod(
+                            tailBean::class.supertypes.first { it.isSubtypeOf(typeOf<AnyBean>()) },
+                            key,
+                            sampleRate,
+                            tailBean
+                    )
+                } else {
+                    PodRegistry.createPod(
+                            tailBean::class.supertypes.first { it.isSubtypeOf(typeOf<AnyBean>()) },
+                            key,
+                            tailBean
+                    )
+                }
             } else {
                 PodRegistry.createSplittingPod(
                         tailBean::class.supertypes.first { it.isSubtypeOf(typeOf<AnyBean>()) },

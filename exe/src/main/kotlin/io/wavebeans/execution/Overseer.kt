@@ -15,13 +15,13 @@ class Overseer : Closeable {
 
     private val controllers = mutableListOf<BushController>()
 
-    fun deployTopology(topology: Topology, threadsPerBush: Int): Overseer {
+    fun deployTopology(topology: Topology, threadsPerBush: Int, sampleRate: Float): Overseer {
         // master node makes planning and submits to certain bushes
         log.info { "Deploying topology: ${TopologySerializer.serialize(topology, jsonPretty)}" }
         val pods = PodBuilder(topology).build()
         log.info { "Pods: $pods" }
         // bush controller spreads pods over one or few bushes.
-        controllers += BushController(bushKeySeq.incrementAndGet(), pods, threadsPerBush)
+        controllers += BushController(bushKeySeq.incrementAndGet(), pods, threadsPerBush, sampleRate)
                 .start()
         log.info { "All controllers (amount=${controllers.size}) are started" }
         return this

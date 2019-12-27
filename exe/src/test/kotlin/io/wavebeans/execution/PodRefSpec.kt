@@ -44,7 +44,7 @@ class PodRefSpec : Spek({
                 )
 
                 it("should create pod") {
-                    assertThat(podRef.instantiate())
+                    assertThat(podRef.instantiate(1.0f))
                             .isInstanceOf(StreamingPod::class).all {
                                 proxies()
                                         .eachIndexed(1) { proxy, _ ->
@@ -77,7 +77,7 @@ class PodRefSpec : Spek({
                     )
 
                     it("should create pod") {
-                        assertThat(podRef.instantiate())
+                        assertThat(podRef.instantiate(1.0f))
                                 .isInstanceOf(SplittingPod::class).all {
                                     proxies()
                                             .eachIndexed(1) { proxy, _ ->
@@ -106,7 +106,7 @@ class PodRefSpec : Spek({
                 )
 
                 it("should create pod") {
-                    assertThat(podRef.instantiate())
+                    assertThat(podRef.instantiate(1.0f))
                             .isInstanceOf(StreamingPod::class).all {
                                 proxies().isEmpty()
                                 podKey().isEqualTo(PodKey(0, 0))
@@ -126,7 +126,7 @@ class PodRefSpec : Spek({
                 )
 
                 it("should create pod") {
-                    assertThat(podRef.instantiate())
+                    assertThat(podRef.instantiate(1.0f))
                             .isInstanceOf(SplittingPod::class).all {
                                 proxies().isEmpty()
                                 podKey().isEqualTo(PodKey(0, 0))
@@ -163,7 +163,7 @@ class PodRefSpec : Spek({
                 )
 
                 it("should create pod") {
-                    assertThat(podRef.instantiate())
+                    assertThat(podRef.instantiate(1.0f))
                             .isInstanceOf(SplittingPod::class).all {
                                 proxies()
                                         .eachIndexed(2) { proxy, i ->
@@ -204,7 +204,7 @@ class PodRefSpec : Spek({
                 )
 
                 it("should create pod") {
-                    assertThat(podRef.instantiate())
+                    assertThat(podRef.instantiate(1.0f))
                             .isInstanceOf(SplittingPod::class).all {
                                 proxies()
                                         .eachIndexed(2) { proxy, i ->
