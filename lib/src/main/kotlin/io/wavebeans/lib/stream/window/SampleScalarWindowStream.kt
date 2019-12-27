@@ -15,7 +15,7 @@ operator fun BeanStream<Window<Sample>>.times(d: Number): BeanStream<Window<Samp
 operator fun BeanStream<Window<Sample>>.div(d: Number): BeanStream<Window<Sample>> =
         this.map(ScalarSampleWindowOpFn(d.toDouble(), "/"))
 
-class ScalarSampleWindowOpFn(factor: Double, operator: String) : Fn<Window<Sample>, Window<Sample>>(
+internal class ScalarSampleWindowOpFn(factor: Double, operator: String) : Fn<Window<Sample>, Window<Sample>>(
         FnInitParameters()
                 .add("factor", factor.toString())
                 .add("operator", operator)
