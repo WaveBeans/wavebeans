@@ -83,7 +83,8 @@ object SampleScalarWindowStreamSpec : Spek({
 })
 
 private fun Assert<List<Sample>>.isListOf(vararg expected: Double) = given { actual ->
-    if (actual.zip(expected.toList()).map { (a, b) -> kotlin.math.abs(a - b) }.all { it < 1e-10 }) return
-    fail(expected, actual)
+    val expectedAsList = expected.toList()
+    if (actual.zip(expectedAsList).map { (a, b) -> kotlin.math.abs(a - b) }.all { it < 1e-10 }) return
+    fail(expectedAsList, actual)
 }
 

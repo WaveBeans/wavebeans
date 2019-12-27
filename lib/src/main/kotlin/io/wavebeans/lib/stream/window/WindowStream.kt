@@ -44,7 +44,7 @@ fun <T : Any> BeanStream<T>.window(size: Int, step: Int, zeroElFn: () -> T): Bea
 
 object WindowStreamParamsSerializer : KSerializer<WindowStreamParams<*>> {
 
-    override val descriptor: SerialDescriptor = object : SerialClassDescImpl("FunctionMergedStreamParams") {
+    override val descriptor: SerialDescriptor = object : SerialClassDescImpl("WindowStreamParams") {
         init {
             addElement("windowSize")
             addElement("step")

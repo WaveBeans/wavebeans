@@ -32,40 +32,38 @@ class CsvSampleStreamOutputSpec : Spek({
             val expectedTimes = (0 until 100) // overall 100 samples
                     .map { (it * 5).toDouble() } // 5 ms per sample
 
-            BufferedReader(InputStreamReader(FileInputStream(file))).use { reader ->
-                val lines = reader.lines().toList()
+            val lines = file.readLines()
 
-                it("should have 101 lines") { assertThat(lines.size).isEqualTo(101) }
+            it("should have 101 lines") { assertThat(lines.size).isEqualTo(101) }
 
-                it("2+ lines, 2nd column should have double values of Signal") {
-                    assertThat(
-                            lines.drop(1)
-                                    .map { l ->
-                                        l.split(",")
-                                                .drop(1)
-                                                .map { it.toDoubleOrNull() }
-                                    }
-                    ).eachIndexed(100) { a, _ ->
-                        a.isNotEmpty()
-                                .also { a.size().isEqualTo(1) }
-                                .also { a.each { it.isNotNull() } }
-                    }
+            it("2+ lines, 2nd column should have double values of Signal") {
+                assertThat(
+                        lines.drop(1)
+                                .map { l ->
+                                    l.split(",")
+                                            .drop(1)
+                                            .map { it.toDoubleOrNull() }
+                                }
+                ).eachIndexed(100) { a, _ ->
+                    a.isNotEmpty()
+                            .also { a.size().isEqualTo(1) }
+                            .also { a.each { it.isNotNull() } }
                 }
-
-                it("2+ lines, 1st column should have time in ms") {
-                    assertThat(
-                            lines.drop(1)
-                                    .map { l ->
-                                        l.split(",")
-                                                .take(1)
-                                                .map { it.toDouble() }
-                                    }
-                                    .flatten()
-                                    .sorted()
-                    ).isEqualTo(expectedTimes)
-                }
-
             }
+
+            it("2+ lines, 1st column should have time in ms") {
+                assertThat(
+                        lines.drop(1)
+                                .map { l ->
+                                    l.split(",")
+                                            .take(1)
+                                            .map { it.toDouble() }
+                                }
+                                .flatten()
+                                .sorted()
+                ).isEqualTo(expectedTimes)
+            }
+
         }
     }
 
@@ -84,40 +82,39 @@ class CsvSampleStreamOutputSpec : Spek({
             val expectedTimes = (0 until 100) // overall 100 samples
                     .map { (it * 5).toDouble() } // 5 ms per sample
 
-            BufferedReader(InputStreamReader(FileInputStream(file))).use { reader ->
-                val lines = reader.lines().toList()
 
-                it("should have 101 lines") { assertThat(lines.size).isEqualTo(101) }
+            val lines = file.readLines()
 
-                it("2+ lines, 2nd column should have double values of Signal") {
-                    assertThat(
-                            lines.drop(1)
-                                    .map { l ->
-                                        l.split(",")
-                                                .drop(1)
-                                                .map { it.toDoubleOrNull() }
-                                    }
-                    ).each { a ->
-                        a.isNotEmpty()
-                                .also { a.size().isEqualTo(1) }
-                                .also { a.each { it.isNotNull() } }
-                    }
+            it("should have 101 lines") { assertThat(lines.size).isEqualTo(101) }
+
+            it("2+ lines, 2nd column should have double values of Signal") {
+                assertThat(
+                        lines.drop(1)
+                                .map { l ->
+                                    l.split(",")
+                                            .drop(1)
+                                            .map { it.toDoubleOrNull() }
+                                }
+                ).each { a ->
+                    a.isNotEmpty()
+                            .also { a.size().isEqualTo(1) }
+                            .also { a.each { it.isNotNull() } }
                 }
-
-                it("2+ lines, 1st column should have time in ms") {
-                    assertThat(
-                            lines.drop(1)
-                                    .map { l ->
-                                        l.split(",")
-                                                .take(1)
-                                                .map { it.toDouble() }
-                                    }
-                                    .flatten()
-                                    .sorted()
-                    ).isEqualTo(expectedTimes)
-                }
-
             }
+
+            it("2+ lines, 1st column should have time in ms") {
+                assertThat(
+                        lines.drop(1)
+                                .map { l ->
+                                    l.split(",")
+                                            .take(1)
+                                            .map { it.toDouble() }
+                                }
+                                .flatten()
+                                .sorted()
+                ).isEqualTo(expectedTimes)
+            }
+
         }
     }
 })

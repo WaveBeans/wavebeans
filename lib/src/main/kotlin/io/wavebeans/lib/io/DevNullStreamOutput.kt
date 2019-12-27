@@ -3,12 +3,12 @@ package io.wavebeans.lib.io
 import io.wavebeans.lib.*
 import mu.KotlinLogging
 
-fun BeanStream<Sample>.toDevNull(): StreamOutput<Sample> = DevNullSampleStreamOutput(this)
+fun <T : Any> BeanStream<T>.toDevNull(): StreamOutput<T> = DevNullStreamOutput(this)
 
-class DevNullSampleStreamOutput(
-        override val input: BeanStream<Sample>,
+class DevNullStreamOutput<T : Any>(
+        override val input: BeanStream<T>,
         override val parameters: NoParams = NoParams()
-) : StreamOutput<Sample>, SinglePartitionBean {
+) : StreamOutput<T>, SinglePartitionBean {
 
     companion object {
         private val log = KotlinLogging.logger { }

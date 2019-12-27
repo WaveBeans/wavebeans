@@ -4,7 +4,7 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
 import io.wavebeans.lib.AnyBean
-import io.wavebeans.lib.io.CsvSampleStreamOutputParams
+import io.wavebeans.lib.io.CsvStreamOutputParams
 import io.wavebeans.lib.io.SineGeneratedInputParams
 import io.wavebeans.lib.io.sine
 import io.wavebeans.lib.io.toCsv
@@ -79,9 +79,9 @@ object TopologySpec : Spek({
             assertThat(topology.refs.firstOrNull { it.id == 6 })
                     .isNotNull()
                     .all {
-                        matchesPredicate { it.type.endsWith("CsvSampleStreamOutput") }
-                        matchesPredicate { it.params is CsvSampleStreamOutputParams }
-                        matchesPredicate { (it.params as CsvSampleStreamOutputParams).uri == "file:///some1.csv" }
+                        matchesPredicate { it.type.endsWith("CsvStreamOutput") }
+                        matchesPredicate { it.params is CsvStreamOutputParams<*> }
+                        matchesPredicate { (it.params as CsvStreamOutputParams<*>).uri == "file:///some1.csv" }
                     }
         }
 
@@ -89,9 +89,9 @@ object TopologySpec : Spek({
             assertThat(topology.refs.firstOrNull { it.id == 8 })
                     .isNotNull()
                     .all {
-                        matchesPredicate { it.type.endsWith("CsvSampleStreamOutput") }
-                        matchesPredicate { it.params is CsvSampleStreamOutputParams }
-                        matchesPredicate { (it.params as CsvSampleStreamOutputParams).uri == "file:///some2.csv" }
+                        matchesPredicate { it.type.endsWith("CsvStreamOutput") }
+                        matchesPredicate { it.params is CsvStreamOutputParams<*> }
+                        matchesPredicate { (it.params as CsvStreamOutputParams<*>).uri == "file:///some2.csv" }
                     }
         }
     }
