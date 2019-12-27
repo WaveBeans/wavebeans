@@ -19,11 +19,11 @@ fun BeanStream<Sample>.toCsv(
 internal class CsvFn(parameters: FnInitParameters) : Fn<Triple<Long, Float, Sample>, List<String>>(parameters
 ) {
 
-    constructor(timeUnit: TimeUnit) : this(FnInitParameters().add("timeUnit", timeUnit.name))
+    constructor(timeUnit: TimeUnit) : this(FnInitParameters().addObj("timeUnit", timeUnit) { it.name })
 
     override fun apply(argument: Triple<Long, Float, Sample>): List<String> {
         val (idx, sampleRate, sample) = argument
-        val tu = TimeUnit.valueOf(initParams["timeUnit"]!!)
+        val tu = initParams.obj("timeUnit") { TimeUnit.valueOf(it) }
         val time = samplesCountToLength(idx, sampleRate, tu)
         return listOf(time.toString(), String.format("%.10f", sample))
     }
