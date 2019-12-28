@@ -5,7 +5,8 @@ A set of tools to process audio signals using Kotlin/Java/Scala/etc. You can eit
 * generate signals and new instruments;
 * change existing signals, wave-files or audio streams;
 * mix different audio stream together;
-* research and explore signals.
+* research and explore audio signals;
+* make preparation for machine learning algorithms.
 
 Everything using one tool in single- or multi-threaded environment, or even distributing computation across multiple nodes (WIP).
 
@@ -29,13 +30,13 @@ export FILE="$(pwd)/sine440.wav" && \
     "440.sine().trim(1000).toMono16bitWav(\"file://$FILE\").out()"
 ```
 
-Follow [projects docs](cli/readme.md) and [usage docs](cli/docs/readme.md). 
+Follow [projects documentation](cli/readme.md) and [usage documentation](docs/user/cli/readme.md). 
 
 ### WaveBeans Lib
 
-Kotlin library to work with sound and sound files directly in your projects. Compatible with all other JVM languages -- Java, Scala, etc. Worth to mention, it API is used across other tools.
+Kotlin library to work with audio and sound files directly in your projects. Compatible with all other JVM languages -- Java, Scala, etc. Worth to mention, its API is used across other tools.
 
-Follow [projects docs](lib/readme.md)
+Follow [project documentation](lib/readme.md) and [usage documentation](docs/user/lib/readme.md)
 
 ## Installing
 
@@ -54,15 +55,55 @@ export WAVEBEANS_CLI_HOME=$(pwd)/wavebeans-cli/
 
 If you want to use WaveBeans in your application just add is as a dependency.
 
-Add maven dependency to your project
+Add maven dependency to your project:
+
 {TODO that is just mock}
 ```groovy
 implementation "io.wavebeans:wavebeans-lib:x.y.z"
 ```
 
+and start using it:
+
+```kotlin
+import io.wavebeans.lib.io.*
+import io.wavebeans.lib.stream.*
+import java.io.File
+import java.lang.Thread.sleep
+
+val file = File("sine440.wav")
+
+val out = 440.sine()
+        .trim(1000)
+        .toMono16bitWav("file://${file.absolutePath}")
+
+out.writer(44100.0f).use { writer ->
+    while (writer.write()) {
+        sleep(0)
+    }
+}
+```
+
+## Building from source
+
+Project uses `Gradle` as a build system. Please make sure you installed JDK 8 and Git before doing that.
+
+Then follow the steps:
+
+1. Clone the repository:
+    ```bash
+    git clone ....
+    ```
+2. Build using gradle wrapper:
+    ```bash
+    cd wavebeans/
+    ./gradlew build test
+    ```
+
+You can find Cli tool under `cli/build/distributions/`.
+
 ## Contribution
 
-We welcome feedback, bug reports, and pull requests!
+Any feedback, bug reports, and pull requests are welcome!
 
 For pull requests, please stick to the following guidelines:
 
@@ -74,4 +115,6 @@ Please note that by contributing any code or documentation to this repository (b
 
 ## Questions?
 
-Telegram channel: https://t.me/wavebeans
+If there are any other questions, concerns or suggestions please feel free to use following communication channels:
+
+* Telegram channel: https://t.me/wavebeans

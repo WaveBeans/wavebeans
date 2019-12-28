@@ -1,3 +1,3 @@
 # WaveBeans Lib
 
-WaveBeans Lib is the java library to connect to your project and use directly inside your app. It doesn't provide running in distributed mode out of the box, however provides the API which can run both in single-threaded and multi-threaded environments. Its API is used by [command line tool](../cli/readme.md) and [execution](../exe/readme.md), so in terms of API and functionality this is the only project you should focus on.
+WaveBeans Lib is the java library to connect to your project and use directly inside your app. It doesn't provide running in distributed mode out of the box, however provides the API which can run both in single-threaded and multi-threaded environments. Its API is used by [command line tool](../docs/user/cli/readme.md) and [execution](../docs/user/exe/readme.md), so in terms of API and functionality this is the only project you should focus on. Main documentation is located in [docs directory](../docs/readme.md).
