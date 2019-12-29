@@ -6,23 +6,61 @@ A set of tools to process audio signals using Kotlin/Java/Scala/etc. You can eit
 * change existing signals, wave-files or audio streams;
 * mix different audio stream together;
 * research and explore audio signals;
-* make preparation for machine learning algorithms.
+* make preparation for machine learning algorithms;
+* and many more.
 
 Everything using one tool in single- or multi-threaded environment, or even distributing computation across multiple nodes (WIP).
 
 ## Getting started 
 
-It's important to understand how you're about to use the WaveBeans, however if you're newbie the easiest way would be to use [command line tool](#wavebeans-cli) which provides comprehensive interface to the functionality and allows start working as soon as possible without deep dive.
+It's important to understand how you're about to use the WaveBeans, however if you're new to the tool the easiest way would be to use [command line tool](#wavebeans-cli) which provides comprehensive interface to the functionality and allows start working as soon as possible without deep dive.
 
 ### Prerequisites
 
 Overall all you need is to have JRE/JDK 8+ installed and configured properly, so `JAVA_HOME` variable points to correct Java home folder. 
 
-### WaveBeans Cli
+### Developing an audio application
 
-Command line interface to work with audio files.
+WaveBeans is written on Kotlin, but it is compatible with all other JVM languages -- Java, Scala, etc.
 
-Usage example -- generate 1 second of 440Hz sinusoid and store it as wav-file in current directory:
+If you want to use WaveBeans in your application just add it as a maven dependency. Here is what you would need to add into your `build.gradle` file for example:
+
+{TODO that is just a mock}
+```groovy
+implementation "io.wavebeans:wavebeans:x.y.z"
+```
+
+And start using it. Just create kotlin-file like this:
+
+```kotlin
+import io.wavebeans.lib.io.*
+import io.wavebeans.lib.stream.*
+import java.lang.Thread.sleep
+
+
+fun main() {
+    // describe what you want compute    
+    val out = 440.sine()
+            .trim(1000)
+            .toMono16bitWav("sine440.wav")
+
+    // this code launches it in single threaded mode, follow docs
+    // NOTE: this API is the matter of discussions, so it may change, but now it works.
+    out.writer(44100.0f).use { writer ->
+        while (writer.write()) {
+            sleep(0)
+        }
+    }
+}
+```
+
+For more follow [usage documentation](docs/user/lib/readme.md) and [project documentation](lib/readme.md). 
+
+## WaveBeans Cli
+
+WaveBeans provides a command line interface to work with audio files. Basically it allows you to run the program written on Kotlin script. Along with it, it provides some smoother API to wrap the code, but that's all the difference comparing to using it inside your application. You can even use Kotlin SDK classes and methods as usual.
+
+For example, let's generate 1 second of 440Hz sinusoid and store it as wav-file in current directory (this is a `bash` script):
 
 ```bash
 export FILE="$(pwd)/sine440.wav" && \
@@ -30,76 +68,62 @@ export FILE="$(pwd)/sine440.wav" && \
     "440.sine().trim(1000).toMono16bitWav(\"file://$FILE\").out()"
 ```
 
-Follow [projects documentation](cli/readme.md) and [usage documentation](docs/user/cli/readme.md). 
+For more information [usage documentation](docs/user/cli/readme.md) and follow [projects documentation](cli/readme.md). 
 
-### WaveBeans Lib
+### Installing Cli
 
-Kotlin library to work with audio and sound files directly in your projects. Compatible with all other JVM languages -- Java, Scala, etc. Worth to mention, its API is used across other tools.
-
-Follow [project documentation](lib/readme.md) and [usage documentation](docs/user/lib/readme.md)
-
-## Installing
-
-### WaveBeans Cli
+You need to have JRE 8 installed and configured. Also familiarity with Kotlin really helps.
 
 In order to start using WaveBeans via command line you just need to download the binaries, unzip it and you're ready to go:
 
-{TODO that is just mock}
+{TODO that is just a mock}
 ```bash
 curl -oL {TODO link here}/wavebeans-cli-x.y.z.zip
 unzip wavebeans-cli-x.y.z.zip
 export WAVEBEANS_CLI_HOME=$(pwd)/wavebeans-cli/
 ``` 
 
-### WaveBeans Lib
-
-If you want to use WaveBeans in your application just add is as a dependency.
-
-Add maven dependency to your project:
-
-{TODO that is just mock}
-```groovy
-implementation "io.wavebeans:wavebeans-lib:x.y.z"
-```
-
-and start using it:
-
-```kotlin
-import io.wavebeans.lib.io.*
-import io.wavebeans.lib.stream.*
-import java.io.File
-import java.lang.Thread.sleep
-
-val file = File("sine440.wav")
-
-val out = 440.sine()
-        .trim(1000)
-        .toMono16bitWav("file://${file.absolutePath}")
-
-out.writer(44100.0f).use { writer ->
-    while (writer.write()) {
-        sleep(0)
-    }
-}
-```
-
 ## Building from source
 
-Project uses `Gradle` as a build system. Please make sure you installed JDK 8 and Git before doing that.
-
-Then follow the steps:
+Project uses [gradle](https://gradle.org/) as a build system. And also, please make sure you installed JDK 8 and Git before doing that. Then follow the steps:
 
 1. Clone the repository:
+    
+    via `https`
     ```bash
-    git clone ....
+    git clone https://github.com/WaveBeans/wavebeans.git
     ```
-2. Build using gradle wrapper:
+    or via `ssh`
+    ```bash
+    git clone git@github.com:WaveBeans/wavebeans.git
+    ```
+2. Build and run tests using gradle wrapper:
     ```bash
     cd wavebeans/
     ./gradlew build test
     ```
 
-You can find Cli tool under `cli/build/distributions/`.
+Among everything else, you can find artifact of Cli tool under `cli/build/distributions/`.
+
+### Using IDE for development
+
+Intellij IDEA is recommended way to develop the framework, however you may find any other IDE like Eclipse with Kotlin plugin work smoothly with no issues.
+
+**Intellij IDEA project set up**
+
+1. Open `build.gradle` as a project inside IDE
+2. Choose to use gradle wrapper.
+3. Wait for IDE to fetch the project and index everything... and you're pretty much done.
+
+**Running tests in Intellij IDEA**
+
+Project uses [Spek 2](https://www.spekframework.org/) testing framework. You need to install [appropriate Spek plugin](https://plugins.jetbrains.com/plugin/10915-spek-framework/) first. However, at the time of writing you weren't been able to run all tests within one Run configuration, so any module needed to be configured separately via JUnit runner:
+
+* Create JUnit runner, name it, let's say `exe tests`, `lib tests`, `cli tests`
+* Test Kind: `All in package`
+* Package: `io.wavebeans`
+* User classpath of module choose one of: `wavebeans.exe.test`, `wavebeans.lib.test`, or `wavebeans.cli.test`
+* Everything else may remain with default values. 
 
 ## Contribution
 
