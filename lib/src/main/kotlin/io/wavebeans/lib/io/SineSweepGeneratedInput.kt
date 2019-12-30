@@ -1,12 +1,20 @@
 package io.wavebeans.lib.io
 
-import io.wavebeans.lib.*
-import java.util.concurrent.TimeUnit
+import io.wavebeans.lib.BeanParams
+import io.wavebeans.lib.Sample
+import io.wavebeans.lib.SinglePartitionBean
+import io.wavebeans.lib.sampleOf
 import kotlin.math.abs
 import kotlin.math.cos
 
-// TODO it should infinite stream
-
+/**
+ * Creates [SineSweepGeneratedInputParams].
+ *
+ * @param amplitude is [SineSweepGeneratedInputParams.amplitude]
+ * @param time is [SineSweepGeneratedInputParams.time]
+ * @param timeOffset is [SineSweepGeneratedInputParams.timeOffset]
+ * @param sweepDelta is [SineSweepGeneratedInputParams.sweepDelta]
+ */
 fun ClosedRange<Int>.sineSweep(amplitude: Double, time: Double, timeOffset: Double = 0.0, sweepDelta: Double = 0.1): StreamInput =
         SineSweepGeneratedInput(SineSweepGeneratedInputParams(
                 this.start.toDouble(),
@@ -32,6 +40,9 @@ data class SineSweepGeneratedInputParams(
         val sweepDelta: Double = 0.1
 ) : BeanParams()
 
+/**
+ * Generates the sine that changes the frequency from start to end within specified perion of time
+ */
 class SineSweepGeneratedInput(
         val params: SineSweepGeneratedInputParams
 ) : StreamInput, SinglePartitionBean {

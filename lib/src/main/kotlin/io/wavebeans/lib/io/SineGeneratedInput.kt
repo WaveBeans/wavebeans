@@ -5,7 +5,9 @@ import kotlinx.serialization.Serializable
 import kotlin.math.cos
 
 fun Number.sine(
+        /** Amplitude of the resulted sine, by default 1.0 */
         amplitude: Double = 1.0,
+        /** Time offset in seconds of the resulted sine, by default 0.0*/
         timeOffset: Double = 0.0
 ): BeanStream<Sample> {
     return SineGeneratedInput(SineGeneratedInputParams(this.toDouble(), amplitude, timeOffset))
@@ -17,9 +19,9 @@ data class SineGeneratedInputParams(
         val frequency: Double,
         /** Amplitude of the sinusoid. 0.0 < a <= 1.0 */
         val amplitude: Double,
-        /** time offset. */
+        /** Time offset in seconds. */
         val timeOffset: Double = 0.0,
-        /** Length of the sinusoid, when you read after that moment stream will just return zeros. */
+        /** Length of the sinusoid, when you read after that moment stream will just return zeros, in seconds */
         val time: Double? = null
 ) : BeanParams()
 
