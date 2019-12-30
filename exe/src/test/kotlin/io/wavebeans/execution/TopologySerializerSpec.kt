@@ -64,6 +64,63 @@ object TopologySerializerSpec : Spek({
         }
     }
 
+    describe("Input function") {
+
+        val i1 = input { (x, _) -> sampleOf(x) }
+
+        class InputFn(initParameters: FnInitParameters) : Fn<Pair<Long, Float>, Sample?>(initParameters) {
+            override fun apply(argument: Pair<Long, Float>): Sample? {
+                return sampleOf(argument.first) * initParams.int("factor")
+            }
+        }
+
+        val inputParameter = 2
+        val i2 = input(InputFn(FnInitParameters().add("factor", inputParameter)))
+
+        val o1 = i1
+                .trim(5000)
+                .toCsv("file:///some1.csv")
+        val o2 = i2
+                .trim(3000)
+                .toCsv("file:///some2.csv")
+
+        val topology = listOf(o1, o2).buildTopology()
+
+        val deserializedTopology = with(TopologySerializer) {
+            val topologySerialized = serialize(topology)
+            deserialize(topologySerialized)
+        }
+
+        it("has same refs") {
+            assertThat(deserializedTopology.refs).all {
+                size().isEqualTo(topology.refs.size)
+                each { nodeRef ->
+
+                    nodeRef.prop("type") { it.type }.isIn(*listOf(
+                            Input::class,
+                            CsvStreamOutput::class,
+                            TrimmedFiniteSampleStream::class
+                    ).map { it.qualifiedName }.toTypedArray())
+
+                    nodeRef.prop("params") { it.params }.kClass().isIn(*listOf(
+                            InputParams::class,
+                            CsvStreamOutputParams::class,
+                            TrimmedFiniteSampleStreamParams::class,
+                            NoParams::class
+                    ).toTypedArray())
+                }
+            }
+        }
+        it("has same links") {
+            assertThat(deserializedTopology.links).all {
+                size().isEqualTo(topology.links.size)
+                each {
+                    it.isIn(*topology.links.toTypedArray())
+                }
+            }
+        }
+    }
+
     describe("Map function") {
         class MapFn(initParams: FnInitParameters) : Fn<Sample, Sample>(initParams) {
             override fun apply(argument: Sample): Sample {

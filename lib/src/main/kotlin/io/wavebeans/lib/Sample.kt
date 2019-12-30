@@ -26,7 +26,10 @@ inline fun sampleOf(x: Short): Sample = sampleOf(x.toDouble() / Short.MAX_VALUE)
 inline fun sampleOf(x: Byte): Sample = sampleOf(x.toDouble() / Byte.MAX_VALUE)
 
 @Suppress("NOTHING_TO_INLINE")
-inline fun sampleOf(x: Double): Sample = /*if (x > 1.0 || x < -1.0) throw UnsupportedOperationException("x should belong to range [-1.0, 1.0] but it's $x") else */x
+inline fun sampleOf(x: Double): Sample = x
+
+@Suppress("NOTHING_TO_INLINE")
+inline fun sampleOf(x: Float): Sample = x.toDouble()
 
 @Suppress("NOTHING_TO_INLINE")
 inline fun Sample.asLong(): Long = round(this * Long.MAX_VALUE).toLong()

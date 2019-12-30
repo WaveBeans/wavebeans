@@ -205,10 +205,8 @@ object OverseerIntegrationSpec : Spek({
     describe("Function Input") {
         describe("generating sinusoid") {
             val file = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
-            val amplitude = 1.0
-            val frequency = 440.0
             val o = listOf(
-                    input { x, sampleRate -> sampleOf(amplitude * cos(x / sampleRate * 2.0 * PI * frequency)) }
+                    input { (x, sampleRate) -> sampleOf(1.0 * cos(x / sampleRate * 2.0 * PI * 440.0)) }
                             .trim(100)
                             .toCsv("file://${file.absolutePath}")
             )
@@ -228,7 +226,7 @@ object OverseerIntegrationSpec : Spek({
     describe("Function Merge") {
         describe("generating sinusoid and merging it with another function") {
             val file = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
-            val timeTickInput = input { x, sampleRate -> sampleOf(x.toDouble() / sampleRate) }
+            val timeTickInput = input { (x, sampleRate) -> sampleOf(x.toDouble() / sampleRate) }
             val o = listOf(
                     220.sine()
                             .merge(with = timeTickInput) { (x, y) ->

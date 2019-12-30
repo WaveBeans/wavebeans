@@ -1,14 +1,11 @@
 package io.wavebeans.lib.io
 
-import io.wavebeans.lib.BeanParams
-import io.wavebeans.lib.BeanStream
-import io.wavebeans.lib.SinglePartitionBean
-import io.wavebeans.lib.SourceBean
+import io.wavebeans.lib.*
 import kotlinx.serialization.*
 import kotlinx.serialization.internal.SerialClassDescImpl
-import kotlin.reflect.jvm.jvmName
 
-fun <T : Any> input(generator: (Long, Float) -> T?): BeanStream<T> = Input(InputParams(generator))
+fun <T : Any> input(generator: (Pair<Long, Float>) -> T?): BeanStream<T> = Input(InputParams(Fn.wrap(generator)))
+fun <T : Any> input(generator: Fn<Pair<Long, Float>, T?>): BeanStream<T> = Input(InputParams(generator))
 
 object InputParamsSerializer : KSerializer<InputParams<*>> {
 
@@ -20,29 +17,28 @@ object InputParamsSerializer : KSerializer<InputParams<*>> {
 
     override fun deserialize(decoder: Decoder): InputParams<*> {
         val dec = decoder.beginStructure(descriptor)
-        var funcClazzName: String? = null
+        var func: Fn<Pair<Long, Float>, Any?>? = null
+        @Suppress("UNCHECKED_CAST")
         loop@ while (true) {
             when (val i = dec.decodeElementIndex(descriptor)) {
                 CompositeDecoder.READ_DONE -> break@loop
-                0 -> funcClazzName = dec.decodeStringElement(descriptor, i)
+                0 -> func = dec.decodeSerializableElement(descriptor, i, FnSerializer) as Fn<Pair<Long, Float>, Any?>
                 else -> throw SerializationException("Unknown index $i")
             }
         }
-        @Suppress("UNCHECKED_CAST") val funcByName = Class.forName(funcClazzName).newInstance() as (Long, Float) -> Any?
-        return InputParams(funcByName)
+        return InputParams(func!!)
     }
 
     override fun serialize(encoder: Encoder, obj: InputParams<*>) {
-        val funcName = obj.generator::class.jvmName
         val structure = encoder.beginStructure(descriptor)
-        structure.encodeStringElement(descriptor, 0, funcName)
+        structure.encodeSerializableElement(descriptor, 0, FnSerializer, obj.generator)
         structure.endStructure(descriptor)
     }
 
 }
 
 @Serializable(with = InputParamsSerializer::class)
-class InputParams<T : Any>(val generator: (Long, Float) -> T?) : BeanParams()
+class InputParams<T : Any>(val generator: Fn<Pair<Long, Float>, T?>) : BeanParams()
 
 class Input<T : Any>(
         override val parameters: InputParams<T>
@@ -50,7 +46,7 @@ class Input<T : Any>(
 
     override fun asSequence(sampleRate: Float): Sequence<T> =
             (0..Long.MAX_VALUE).asSequence()
-                    .map { parameters.generator(it, sampleRate) }
+                    .map { parameters.generator.apply(Pair(it, sampleRate)) }
                     .takeWhile { it != null }
                     .map { it!! }
 

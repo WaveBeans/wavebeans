@@ -12,16 +12,34 @@ import kotlin.math.log10
 fun BeanStream<Window<Sample>>.fft(binCount: Int): BeanStream<FftSample> = FftStream(this, FftStreamParams(binCount))
 
 data class FftSample(
+        /**
+         * The time marker of this sample, in nano seconds.
+         */
         val time: Long,
+        /**
+         * Number of bins of this FFT calculations, i.e. 512, 1024
+         */
         val binCount: Int,
+        /**
+         * Sample rate which was used to calculate the FFT
+         */
         val sampleRate: Float,
+        /**
+         * The list of [ComplexNumber]s which is calculated FFT. Use [magnitude] and [phase] methods to extract magnitude and phase respectively.
+         */
         val fft: List<ComplexNumber>
 ) {
 
+    /**
+     * Gets the magnitude values for this FFT calculation. It is returned in logarithmic scale, using only first half of the FFT.
+     */
     fun magnitude(): Sequence<Double> = fft.asSequence()
             .take(binCount / 2)
             .map { 20 * log10(it.abs()) }
 
+    /**
+     * Gets the phase values for this FFT calculation. It returns only first half of the FFT.
+     */
     fun phase(): Sequence<Double> = fft.asSequence()
             .take(binCount / 2)
             .map {
@@ -30,6 +48,9 @@ data class FftSample(
                 phi - 2 * PI * doublePiCycles
             }
 
+    /**
+     * Returns the frequency values for each of the bins.
+     */
     fun frequency(): Sequence<Double> = (0 until (binCount / 2)).asSequence().map { it * sampleRate / binCount.toDouble() }
 }
 

@@ -1,6 +1,6 @@
 # WaveBeans documentation
 
-* [User Documentation](user/readme.md)
+* User Documentation
     * [Command line tool](user/cli/readme.md)
-    * [LIbrary](user/lib/readme.md)
+    * [Library](user/lib/readme.md)
 * [Development documentation](dev/readme.md)

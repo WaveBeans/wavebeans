@@ -1,20 +1,20 @@
 Sine input
 =========
 
-WaveBeans supports generating of sinusoid of specific frequency as well as sweep sinusoid which changes it frequency from one to another within specific time range. It works as an Input..
+WaveBeans supports generating of sinusoid of specific frequency as well as sweep sinusoid which changes it frequency from one to another within specific time range. These inputs as they are just a mathematical function support any sampling rate, and resampling happens internally.
 
 Sine
 ------
 
 To generate sinusoid of specific frequency you can use the following syntax:
 
-Generate sinusoid if the the frequency can be represented as integer number: 
+* generate sinusoid if the the frequency can be represented as integer number: 
 
 ```kotlin
 440.sine()
 ```
 
-Or there is another way to define it:
+* or there is another way to define it using any number as a source of frequency value:
 
 ```kotlin
 440.12345.sine() // the frequency of the sinusoid will be 440.12345Hz

@@ -14,7 +14,7 @@ data class ComplexNumber(val re: Double, val im: Double) : Comparable<ComplexNum
 
     override fun toString(): String {
         val r = this.re.toString()
-        val i = if (this.im < 0) "-${abs(this.im)}" else "+${this.im}"
+        val i = if (this.im < 0) "-${abs(this.im)}" else "+${abs(this.im)}"
         return "$r${i}i"
     }
 
