@@ -7,20 +7,20 @@ import java.io.DataOutputStream
 import java.net.URI
 
 
-fun FiniteSampleStream.toMono8bitWav(uri: String): StreamOutput<Sample> {
-    return WavFileOutput(this, WavFileOutputParams(URI(uri), BitDepth.BIT_8, 1))
+fun BeanStream<Sample>.toMono8bitWav(uri: String): StreamOutput<Sample> {
+    return WavFileOutput(this, WavFileOutputParams(uri, BitDepth.BIT_8, 1))
 }
 
-fun FiniteSampleStream.toMono16bitWav(uri: String): StreamOutput<Sample> {
-    return WavFileOutput(this, WavFileOutputParams(URI(uri), BitDepth.BIT_16, 1))
+fun BeanStream<Sample>.toMono16bitWav(uri: String): StreamOutput<Sample> {
+    return WavFileOutput(this, WavFileOutputParams(uri, BitDepth.BIT_16, 1))
 }
 
-fun FiniteSampleStream.toMono24bitWav(uri: String): StreamOutput<Sample> {
-    return WavFileOutput(this, WavFileOutputParams(URI(uri), BitDepth.BIT_24, 1))
+fun BeanStream<Sample>.toMono24bitWav(uri: String): StreamOutput<Sample> {
+    return WavFileOutput(this, WavFileOutputParams(uri, BitDepth.BIT_24, 1))
 }
 
-fun FiniteSampleStream.toMono32bitWav(uri: String): StreamOutput<Sample> {
-    return WavFileOutput(this, WavFileOutputParams(URI(uri), BitDepth.BIT_32, 1))
+fun BeanStream<Sample>.toMono32bitWav(uri: String): StreamOutput<Sample> {
+    return WavFileOutput(this, WavFileOutputParams(uri, BitDepth.BIT_32, 1))
 }
 
 
@@ -29,13 +29,13 @@ class WavFileWriterException(message: String, cause: Exception?) : Exception(mes
 }
 
 data class WavFileOutputParams(
-        val uri: URI,
+        val uri: String,
         val bitDepth: BitDepth,
         val numberOfChannels: Int
 ) : BeanParams()
 
 class WavFileOutput(
-        val stream: FiniteSampleStream,
+        val stream: BeanStream<Sample>,
         val params: WavFileOutputParams
 ) : StreamOutput<Sample>, SinglePartitionBean {
 
@@ -45,7 +45,7 @@ class WavFileOutput(
     override val parameters: BeanParams = params
 
     override fun writer(sampleRate: Float): Writer {
-        return object : ByteArrayLEFileOutputWriter(params.uri, stream, params.bitDepth, sampleRate) {
+        return object : ByteArrayLEFileOutputWriter(URI(params.uri), stream, params.bitDepth, sampleRate) {
 
             override fun header(): ByteArray? {
                 val destination = ByteArrayOutputStream()

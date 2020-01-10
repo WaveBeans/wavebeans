@@ -17,6 +17,7 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.InputStreamReader
 import java.lang.Thread.sleep
+import java.util.concurrent.TimeUnit
 import kotlin.streams.toList
 
 
@@ -30,11 +31,11 @@ class CsvFftStreamOutputSpec : Spek({
                 .fft(4)
 
         val expectedFrequencies = listOf(0.0, 1.0)
-        val expectedTimes = listOf(0.0, 500.0)
+        val expectedTimes = listOf(0.0, 499.0)
 
         describe("Generating magnitude") {
             val file = File.createTempFile("test_", ".tmp")
-            CsvFftStreamOutput(x, CsvFftStreamOutputParams("file://${file.absolutePath}", true)).writer(sampleRate).use { w ->
+            CsvFftStreamOutput(x, CsvFftStreamOutputParams("file://${file.absolutePath}", TimeUnit.MILLISECONDS, true)).writer(sampleRate).use { w ->
                 while (w.write()) {
                     sleep(0)
                 }
@@ -81,7 +82,7 @@ class CsvFftStreamOutputSpec : Spek({
 
         describe("Generating phase") {
             val file = File.createTempFile("test_", ".tmp")
-            CsvFftStreamOutput(x, CsvFftStreamOutputParams("file://${file.absolutePath}", false)).writer(sampleRate).use { w ->
+            CsvFftStreamOutput(x, CsvFftStreamOutputParams("file://${file.absolutePath}", TimeUnit.MILLISECONDS, false)).writer(sampleRate).use { w ->
                 while (w.write()) {
                     sleep(0)
                 }

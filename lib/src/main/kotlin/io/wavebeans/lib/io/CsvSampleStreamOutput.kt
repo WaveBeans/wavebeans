@@ -11,13 +11,12 @@ fun BeanStream<Sample>.toCsv(
     return toCsv(
             uri = uri,
             header = listOf("time ${timeUnit.abbreviation()}", "value"),
-            elementSerializer = CsvFn(timeUnit),
+            elementSerializer = SampleCsvFn(timeUnit),
             encoding = encoding
     )
 }
 
-internal class CsvFn(parameters: FnInitParameters) : Fn<Triple<Long, Float, Sample>, List<String>>(parameters
-) {
+class SampleCsvFn(parameters: FnInitParameters) : Fn<Triple<Long, Float, Sample>, List<String>>(parameters) {
 
     constructor(timeUnit: TimeUnit) : this(FnInitParameters().addObj("timeUnit", timeUnit) { it.name })
 
@@ -29,14 +28,3 @@ internal class CsvFn(parameters: FnInitParameters) : Fn<Triple<Long, Float, Samp
     }
 }
 
-fun TimeUnit.abbreviation(): String {
-    return when (this) {
-        TimeUnit.NANOSECONDS -> "ns"
-        TimeUnit.MICROSECONDS -> "us"
-        TimeUnit.MILLISECONDS -> "ms"
-        TimeUnit.SECONDS -> "s"
-        TimeUnit.MINUTES -> "m"
-        TimeUnit.HOURS -> "h"
-        TimeUnit.DAYS -> "d"
-    }
-}

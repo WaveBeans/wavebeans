@@ -8,11 +8,11 @@ WaveBeans provides the one atomic entity called a Bean which may perform some op
 
 1. `SourceBean` -- the bean that has only output, the one the whole stream can read from. Such beans are [Inputs](#inputs), for example.
 2. A `Bean`, which can have one or more input or outputs. This basically are operator that allows you perform an operation on sample, convert sample to something else, alter the stream, or merge different streams together. One operation at once, though the operation may do a lot of computations at once, not just one.
-3. `SinkBean` -- the bean has no outputs, this is the ones that dumps the audio samples onto disk or something like this.
+3. `SinkBean` -- the bean has no outputs, this is the ones that dumps the audio samples onto disk or something like this, so called [outputs](#outputs)
 
 The samples are starting their life in SourceBean then by following a mesh of other Beans which changes them are getting stored or distributed by SinkBean.
 
-WaveBeans uses declarative way to represent the algorithm, so you first define the way the samples are being altered or analyzed, then it's being executed in most efficient way. That means, that effectively SinkBean are pulling out data out of  
+WaveBeans uses declarative way to represent the stream, so you first define the way the samples are being altered or analyzed, then it's being executed in most efficient way. That means, that effectively SinkBean are pulling data out of the stream, and all computations are happened on demand at the time they are needed. Such stream is called `BeanStream<T>`, it has a type parameters which represent what is inside the stream, i.e. `BeanStream<Sample>` is the stream of samples. The type `T` is non-nullable.
 
 Inputs
 --------
@@ -26,6 +26,38 @@ There a few different types of inputs, you may read more in specific:
 * [custom defined function](inputs/function-as-input.md)
 
 Also, as all streams in WaveBeans considered to be infinite, there is extra functionality to convert finite streams like wav-files, read more about [finite converters](inputs/finite-converters.md)
+
+Outputs
+--------
+
+Outputs serve two main purposes: define what to do with all that sampled data -- where to store it or hand it over to, and it is a terminal action it allows to launch all the computations through all defined operations. Frankly speaking, you may define your low level kinda output at any operation, but just calling `asSequence()` which returns you a regular Kotlin Sequence and read the stream as is; just remember, in most cases streams are considered to be infinite, so just regular call `toList()` will never finish.
+
+Outputs consume specific type and and in some case it may work only with specific type of `BeanStream`.
+
+Output provides access to `Writer` which performs all the operations. Writer has only one method `write()` which when called performs one iteration across the whole stream -- i.e. generate the sine of 440Hz and then reduce the sine amplitude and store 1 second of resulted audio stream to the file. Method call return boolean value stating if that was the last iteration or there's more to do. You must close the output to make sure all buffers are flushed and everything is committed as requested. For most of the ouput types, you may close the output regardless if it finishes its work. 
+
+The definition of the output would like this:
+
+```kotlin
+val output = 440.sine()
+    .map { it / 2 }
+    .trim(1000)
+    .toMono16BitWav("file:///sine440.wav")
+```
+
+And then to execute single output you may create a writer and call `write()`method while it returns `true`. It requires to specify the sample rate of the whole stream:
+
+```kotlin
+output.writer(44100.0f).use { writer ->
+    while(writer.write()) {}
+}
+```
+
+Here is the list of supported outputs at the moment:
+
+* [CSV](outputs/csv-outputs.md)
+* [WAV](outputs/wav-output.md) 
+* [/dev/null](outputs/dev-null-output.md)  
 
 Types
 --------

@@ -6,7 +6,7 @@ import java.net.URI
 
 abstract class ByteArrayLEFileOutputWriter(
         uri: URI,
-        stream: FiniteSampleStream,
+        stream: BeanStream<Sample>,
         val bitDepth: BitDepth,
         sampleRate: Float
 ) : FileWriter<Sample>(uri, stream, sampleRate), SinglePartitionBean {
