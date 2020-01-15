@@ -3,11 +3,11 @@ package io.wavebeans.lib.stream
 import io.wavebeans.lib.*
 import kotlinx.serialization.Serializable
 
-operator fun BeanStream<Sample>.times(multiplier: Double): BeanStream<Sample> = this.changeAmplitude(multiplier)
-operator fun BeanStream<Sample>.div(divisor: Double): BeanStream<Sample> = this.changeAmplitude(1.0 / divisor)
+operator fun BeanStream<Sample>.times(multiplier: Number): BeanStream<Sample> = this.changeAmplitude(multiplier.toDouble())
+operator fun BeanStream<Sample>.div(divisor: Number): BeanStream<Sample> = this.changeAmplitude(1.0 / divisor.toDouble())
 
-fun BeanStream<Sample>.changeAmplitude(multiplier: Double): BeanStream<Sample> =
-        ChangeAmplitudeSampleStream(this, ChangeAmplitudeSampleStreamParams(multiplier))
+fun BeanStream<Sample>.changeAmplitude(multiplier: Number): BeanStream<Sample> =
+        ChangeAmplitudeSampleStream(this, ChangeAmplitudeSampleStreamParams(multiplier.toDouble()))
 
 @Serializable
 data class ChangeAmplitudeSampleStreamParams(
