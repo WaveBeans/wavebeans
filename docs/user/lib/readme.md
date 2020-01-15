@@ -59,6 +59,32 @@ Here is the list of supported outputs at the moment:
 * [WAV](outputs/wav-output.md) 
 * [/dev/null](outputs/dev-null-output.md)  
 
+Operations
+--------
+
+To connect inputs and outputs feeling the stream with the meaning, you'll always define a set of operations. That allows you to change the stream characteristics, merge different streams together, form a new types of the streams and convert it back. A list of available operations sometimes depend on the type of the stream, however there are operations that may work with any type and even convert it to a different type.
+
+To use an operation you can call specific method on the stream, i.e. here the map operation called which changes the type of the string to -1 or 1 depending on the input value:
+
+```kotlin
+440.sine() // create a stream of samples
+    .map { if (it > 0) 1 else -1} // calling an operation on the stream.
+```
+
+The list of supported operations are, grouped by the type they work with:
+
+* `Sample`
+    * [change amplitude](operations/change-amplitude-operation.md) -- change the value of the sample by scalar value.
+    * [trim](operations/trim-operation.md) -- cutting the infinite stream to become finite.
+* `Window<Sample>`
+    * [converting to FFT](operations/fft-operation.md) -- running FFT analysis on the stream.
+* `Any`
+    * [map](operations/map-operation.md) -- changing the input object or converting it to a different type.
+    * [merge](operations/merge-operation.md) -- merging two different streams of the same type to one stream.
+    * [projection](operations/projection-operation.md) -- getting a sub-stream of the stream
+    * [window](operations/window-operation.md) -- grouping a sequence of objects of defined length to handle them all at once. 
+    
+
 Types
 --------
 
