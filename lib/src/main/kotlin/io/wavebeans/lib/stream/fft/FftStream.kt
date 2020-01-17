@@ -5,9 +5,10 @@ import io.wavebeans.lib.math.ComplexNumber
 import io.wavebeans.lib.math.r
 import io.wavebeans.lib.stream.window.Window
 import kotlinx.serialization.Serializable
-import java.util.concurrent.TimeUnit
 import kotlin.math.PI
 import kotlin.math.log10
+import kotlin.math.min
+import kotlin.math.round
 
 fun BeanStream<Window<Sample>>.fft(binCount: Int): BeanStream<FftSample> = FftStream(this, FftStreamParams(binCount))
 
@@ -52,15 +53,21 @@ data class FftSample(
      * Returns the frequency values for each of the bins.
      */
     fun frequency(): Sequence<Double> = (0 until (binCount / 2)).asSequence().map { it * sampleRate / binCount.toDouble() }
+
+    /**
+     * Finds the corresponding bin of the closest frequency in the FFT.
+     *
+     * Calculated using formula: binIndex = round(freq / sampleRate * binCount)
+     *
+     * @return the bin number of desired frequency
+     */
+    fun bin(frequency: Double): Int = min(binCount, round(frequency / sampleRate * binCount).toInt())
 }
 
 
 @Serializable
 data class FftStreamParams(
-        val n: Int,
-        val start: Long = 0,
-        val end: Long? = null,
-        val timeUnit: TimeUnit = TimeUnit.MILLISECONDS
+        val n: Int
 ) : BeanParams()
 
 class FftStream(
