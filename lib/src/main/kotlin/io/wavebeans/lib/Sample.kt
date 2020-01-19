@@ -49,6 +49,9 @@ inline fun Sample.asShort(): Short = round(this * Short.MAX_VALUE).toShort()
 inline fun Sample.asByte(): Byte = round(this * Byte.MAX_VALUE).toByte()
 
 @Suppress("NOTHING_TO_INLINE")
+inline fun Sample.asDouble(): Double = this
+
+@Suppress("NOTHING_TO_INLINE")
 inline fun Byte.asUnsignedByte(): Int {
     val it = this.toInt() and 0xFF
     return it and 0x7F or (it.inv() and 0x80)
