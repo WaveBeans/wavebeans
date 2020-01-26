@@ -10,7 +10,7 @@ To change amplitude on the stream you may use one of the following methods:
 ```kotlin
 val stream = 440.sine() // initial stream is defined here, let's use simple sine.
 
-val multipliedByTwoStream = stream * 2 // you may ultiply by any scalar numeric value, i.e. integer
+val multipliedByTwoStream = stream * 2 // you may multiply by any scalar numeric value, i.e. integer
 val multipliedByOPointOneStream = stream * 0.1 // or here is double
 val dividedByTenStream = stream / 10 // division works similar
 val aFewOperationsStream = stream * 0.1 / 10 * 100.0 // you may specify a few operations sequentially

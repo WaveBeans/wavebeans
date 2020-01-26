@@ -11,6 +11,12 @@ A set of tools to process audio signals using Kotlin/Java/Scala/etc. You can eit
 
 Everything using one tool in single- or multi-threaded environment, or even distributing computation across multiple nodes (WIP).
 
+## Quick links
+
+* [API reference](docs/user/lib/readme.md)
+* [Execution reference](docs/user/exe/readme.md)
+* [Command line tool reference](docs/user/cli/readme.md)
+
 ## Getting started 
 
 It's important to understand how you're about to use the WaveBeans, however if you're new to the tool the easiest way would be to use [command line tool](#wavebeans-cli) which provides comprehensive interface to the functionality and allows start working as soon as possible without deep dive.

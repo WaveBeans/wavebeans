@@ -71,14 +71,15 @@ To use an operation you can call specific method on the stream, i.e. here the ma
     .map { if (it > 0) 1 else -1} // calling an operation on the stream.
 ```
 
-The list of supported operations are, grouped by the type they work with:
+The list of supported operations are:
 
-* `Sample`
+* [Arithmetic operations](operations/arithmetic-operations.md)
+* Specific operations for stream of type `Sample`
     * [change amplitude](operations/change-amplitude-operation.md) -- change the value of the sample by scalar value.
     * [trim](operations/trim-operation.md) -- cutting the infinite stream to become finite.
-* `Window<Sample>`
+* Specific operations for stream of type `Window<Sample>`
     * [converting to FFT](operations/fft-operation.md) -- running FFT analysis on the stream.
-* `Any`
+* Operations for any stream regardless of the type:
     * [map](operations/map-operation.md) -- changing the input object or converting it to a different type.
     * [merge](operations/merge-operation.md) -- merging two different streams of the same type to one stream.
     * [projection](operations/projection-operation.md) -- getting a sub-stream of the stream
