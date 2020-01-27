@@ -54,3 +54,7 @@ A following operations you may use over the windowed stream:
 * [scalar operations](arithmetic-operations.md) -- sum, subtract, divide, multiply by scalar values out-of-the-box if you've windowed the sample stream.
 * [projection](projection-operation.md) -- projection over the any windowed stream is built-in however don't forget to register your type calculator for a non-built-in types, it is called internally.
 * [FFT analysis](fft-operation.md) -- run an FFT analysis over the stream.
+
+**Output**
+
+The window operation mainly is used as interim operation and allows to perform further analysis, so it has no builtin outputs, however you may define your [own CSV output](../outputs/csv-outputs.md#user-defined-csv-output) if that is required.
