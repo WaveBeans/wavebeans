@@ -28,8 +28,8 @@ data class Window<T: Any>(
 ) {
 
     init {
-        require(size >= 1) { "Size should be more than 1" }
-        require(step >= 1) { "Step should be more than 1" }
+        require(size >= 1) { "Size should be more than 0" }
+        require(step >= 1) { "Step should be more than 0" }
         require(elements.isNotEmpty()) { "Window should have at least 1 element" }
     }
 
