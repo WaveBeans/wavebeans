@@ -3,7 +3,7 @@ package io.wavebeans.lib.stream.window
 import io.wavebeans.lib.Sample
 import io.wavebeans.lib.ZeroSample
 
-data class Window<T>(
+data class Window<T: Any>(
         /**
          * The size of the window it was created with.
          */

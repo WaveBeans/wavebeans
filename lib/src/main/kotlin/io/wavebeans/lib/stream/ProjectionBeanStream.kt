@@ -60,7 +60,7 @@ class ProjectionBeanStream<T : Any>(
 }
 
 /**
- * Gets a projection of the object in the specified time range for [BeanStream]
+ * Gets a projection of the object in the specified time range for [BeanStream].
  *
  * @param start starting point of the projection in time units.
  * @param end ending point of the projection (including) in time units. Null if do not limit
@@ -79,7 +79,7 @@ object SampleCountMeasurement {
 
     init {
         registerType(Sample::class) { 1 }
-        registerType(Window::class) { window -> window.step * samplesInObject(window.elements.first()!!) }
+        registerType(Window::class) { window -> window.step * samplesInObject(window.elements.first()) }
     }
 
     fun <T : Any> registerType(clazz: KClass<T>, measurer: (T) -> Int) {
@@ -89,6 +89,8 @@ object SampleCountMeasurement {
     fun samplesInObject(obj: Any): Int {
         return types.filterKeys { obj::class.isSubclassOf(it) }
                 .map { it.value }
-                .first().invoke(obj)
+                .firstOrNull()
+                ?.invoke(obj)
+                ?: throw IllegalStateException("${obj::class} is not registered within ${SampleCountMeasurement::class.simpleName}, use registerType() function")
     }
 }
