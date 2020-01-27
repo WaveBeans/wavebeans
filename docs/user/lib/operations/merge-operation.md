@@ -63,4 +63,6 @@ And this is how it's called:
         .merge(880.sine(), SumSamplesSafeFn(sampleOf(1.0)))
 ```
 
+This class uses helper function `sampleOf()` which converts any numeric type to internal representation of sample, please read more about in [types section](../readme.md#types)
+
 *Note: when trying to run that examples do not forget to [trim](trim-operation.md) the stream and define the output.*
