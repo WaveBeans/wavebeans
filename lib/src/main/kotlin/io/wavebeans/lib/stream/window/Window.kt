@@ -3,7 +3,7 @@ package io.wavebeans.lib.stream.window
 import io.wavebeans.lib.Sample
 import io.wavebeans.lib.ZeroSample
 
-data class Window<T>(
+data class Window<T: Any>(
         /**
          * The size of the window it was created with.
          */
@@ -28,8 +28,8 @@ data class Window<T>(
 ) {
 
     init {
-        require(size >= 1) { "Size should be more than 1" }
-        require(step >= 1) { "Step should be more than 1" }
+        require(size >= 1) { "Size should be more than 0" }
+        require(step >= 1) { "Step should be more than 0" }
         require(elements.isNotEmpty()) { "Window should have at least 1 element" }
     }
 
