@@ -1,41 +1,25 @@
 package io.wavebeans.execution
 
-import io.wavebeans.execution.TopologySerializer.jsonPretty
-import mu.KotlinLogging
+import io.wavebeans.lib.io.StreamOutput
 import java.io.Closeable
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.Future
 
-@ExperimentalStdlibApi
-class Overseer : Closeable {
+/**
+ * Evaluates all outputs. The way they are executed depends on the actual implementation.
+ */
+interface Overseer : Closeable {
 
-    companion object {
-        val bushKeySeq = AtomicInteger(0)
-        private val log = KotlinLogging.logger { }
-    }
+    /** List of outputs to be evaluated by the overseer. */
+    val outputs: List<StreamOutput<out Any>>
 
-    private val controllers = mutableListOf<BushController>()
-
-    fun deployTopology(topology: Topology, threadsPerBush: Int, sampleRate: Float): Overseer {
-        // master node makes planning and submits to certain bushes
-        log.info { "Deploying topology: ${TopologySerializer.serialize(topology, jsonPretty)}" }
-        val pods = PodBuilder(topology).build()
-        log.info { "Pods: $pods" }
-        // bush controller spreads pods over one or few bushes.
-        controllers += BushController(bushKeySeq.incrementAndGet(), pods, threadsPerBush, sampleRate)
-                .start()
-        log.info { "All controllers (amount=${controllers.size}) are started" }
-        return this
-    }
-
-    fun waitToFinish(): Overseer {
-        controllers.map { it.getAllFutures() }.flatten().all { it.get() == true }
-        log.info { "All controllers (amount=${controllers.size}) are finished" }
-        return this
-    }
-
-    override fun close() {
-        controllers.forEach { it.close() }
-        log.info { "All controllers (amount=${controllers.size}) are closed" }
-    }
-
+    /**
+     * Starts evaluating outputs according to desired execution strategy.
+     *
+     * @param sampleRate sample rate value to evaluate outputs with
+     *
+     * @return the list containing if the output was successfully evaluated.
+     * Futures are resolved only when all outputs has been finished evaluation.
+     */
+    fun eval(sampleRate: Float): List<Future<Boolean>>
 }
+

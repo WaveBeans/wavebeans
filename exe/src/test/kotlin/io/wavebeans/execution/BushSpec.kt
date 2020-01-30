@@ -47,7 +47,7 @@ object BushSpec : Spek({
 
         }
         val bush = Bush(
-                Overseer.bushKeySeq.incrementAndGet(), // avoid clashing of ids with other tests
+                LocalDistributedOverseer.bushKeySeq.incrementAndGet(), // avoid clashing of ids with other tests
                 1
         )
                 .also { it.addPod(pod) }

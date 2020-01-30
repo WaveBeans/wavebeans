@@ -1,11 +1,7 @@
 package io.wavebeans.execution
 
 import assertk.assertThat
-import assertk.assertions.isEqualTo
-import assertk.assertions.isGreaterThan
-import assertk.assertions.isNotEmpty
-import assertk.assertions.size
-import io.wavebeans.execution.TopologySerializer.jsonPretty
+import assertk.assertions.*
 import io.wavebeans.lib.*
 import io.wavebeans.lib.io.*
 import io.wavebeans.lib.stream.*
@@ -16,7 +12,6 @@ import mu.KotlinLogging
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.io.File
-import java.lang.Thread.sleep
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -27,50 +22,34 @@ val log = KotlinLogging.logger {}
 @ExperimentalStdlibApi
 object OverseerIntegrationSpec : Spek({
 
-
     @ExperimentalStdlibApi
     fun runOnOverseer(
             outputs: List<StreamOutput<out Any>>,
             threads: Int = 2,
             partitions: Int = 2,
             sampleRate: Float = 44100.0f
-    ): Triple<Long, Long, Long> {
-        val topology = outputs.buildTopology()
-                .partition(partitions)
-                .groupBeans()
+    ): Long {
 
-        log.debug { "Topology: ${TopologySerializer.serialize(topology, jsonPretty)}" }
-
-        val overseer = Overseer()
-
-        val timeToDeploy = measureTimeMillis {
-            overseer.deployTopology(topology, threads, sampleRate)
-            log.debug { "Topology deployed" }
+        val runTime = measureTimeMillis {
+            LocalDistributedOverseer(outputs, threads, partitions).use { overseer ->
+                assertThat(overseer.eval(sampleRate).all { it.get() == true }).isTrue()
+            }
         }
-        val timeToProcess = measureTimeMillis {
-            overseer.waitToFinish()
-            log.debug { "Everything processed" }
-        }
-        val timeToFinalize = measureTimeMillis {
-            overseer.close()
-            log.debug { "Everything closed" }
-        }
-        return Triple(timeToDeploy, timeToProcess, timeToFinalize)
+        log.debug { "Distributed run finished in $runTime ms" }
+        return runTime
     }
 
-    fun runLocally(outputs: List<StreamOutput<out Any>>): Long {
-        val localRunTime = measureTimeMillis {
-            outputs
-                    .map { it.writer(44100.0f) }
-                    .forEach {
-                        while (it.write()) {
-                            sleep(0)
-                        }
-                        it.close()
-                    }
+    fun runLocally(
+            outputs: List<StreamOutput<out Any>>,
+            sampleRate: Float = 44100.0f
+    ): Long {
+        val runTime = measureTimeMillis {
+            LocalOverseer(outputs).use { overseer ->
+                assertThat(overseer.eval(sampleRate).all { it.get() == true }).isTrue()
+            }
         }
-        log.debug { "Local run finished" }
-        return localRunTime
+        log.debug { "Local run finished in $runTime ms" }
+        return runTime
     }
 
     describe("Two outputs with different paths but same content") {
@@ -103,7 +82,7 @@ object OverseerIntegrationSpec : Spek({
 
         val outputs = listOf(o1, o2, o3, o4)
 
-        val (timeToDeploy, timeToProcess, timeToFinalize) = runOnOverseer(outputs)
+        val runTime = runOnOverseer(outputs)
 
         val f1Content = f1.readLines()
         val f2Content = f2.readLines()
@@ -128,10 +107,7 @@ object OverseerIntegrationSpec : Spek({
         it("should have the same size as local content [4]") { assertThat(f4Content.size).isEqualTo(f4LocalContent.size) }
         it("should have the same output as local content [4]") { assertThat(f4Content).isEqualTo(f4LocalContent) }
 
-        log.debug {
-            "Deploy took $timeToDeploy ms, processing took $timeToProcess ms, " +
-                    "finalizing took $timeToFinalize ms, local run time is $localRunTime ms"
-        }
+        log.debug { "Took $runTime ms, local run time is $localRunTime ms" }
     }
 
     describe("Map function") {

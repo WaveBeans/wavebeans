@@ -1,8 +1,10 @@
 package io.wavebeans.cli.script
 
 import io.wavebeans.lib.io.StreamOutput
+import java.io.Closeable
+import java.util.concurrent.Future
 
-interface ScriptEvaluator {
+interface ScriptEvaluator : Closeable {
 
     val outputs: MutableList<StreamOutput<*>>
 
@@ -10,6 +12,6 @@ interface ScriptEvaluator {
         outputs += out
     }
 
-    fun eval(sampleRate: Float)
+    fun eval(sampleRate: Float): List<Future<Boolean>>
 }
 
