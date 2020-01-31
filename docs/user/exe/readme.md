@@ -29,7 +29,7 @@ val outputs = listOf(stream1, stream2)
 val overseer = LocalOverseer(outputs)
 ```
 
-3. Invoke `eval()` function of the created overseer object specifying the desired sample rate, i.e. 44100Hz, it returns the list of [Future](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html) objects that allows you to wait for results, one Future correspond to one output. The easiest way would just to wait for all futures to resolve. You may check the results, as future object returns (when `get()` function is called) the boolean value, which is true if the output was evaluated successfully.
+3. Invoke `eval()` function of the created overseer object specifying the desired sample rate as a [Float number](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-float/index.html), i.e. 44100Hz, it returns the list of [Future](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html) objects that allows you to wait for results, one Future correspond to one output. The easiest way would just to wait for all futures to resolve. You may check the results, as future object returns (when `get()` function is called) the boolean value, which is true if the output was evaluated successfully.
 
 ```kotlin
 overseer.eval(44100.0f).all { it.get() }
@@ -37,9 +37,9 @@ overseer.eval(44100.0f).all { it.get() }
 
 4. When the overseer is evaluated it's needed to be closed:
 
-    ```kotlin
-   overseer.close()
-    ```
+```kotlin
+overseer.close()
+```
     
 Now when we know all the steps, it's better to provide a short code snippet to summarize everything, assuming the `outputs` and `sampleRate` variables are already defined:
 
@@ -96,7 +96,8 @@ stream.writer(sampleRate).use { writer ->
     }
 }
 
-// or calling everything explicitly, always consider using `.use{ } ` or at least `try-finally` statements instead
+// or calling everything explicitly, always consider using `.use{ } `
+// or at least `try-finally` statements instead
 val writer = stream.writer(sampleRate)
 while (writer.write()) {  }
 writer.close()
