@@ -39,22 +39,22 @@ implementation "io.wavebeans:wavebeans:x.y.z"
 And start using it. Just create kotlin-file like this:
 
 ```kotlin
+import io.wavebeans.execution.*
 import io.wavebeans.lib.io.*
 import io.wavebeans.lib.stream.*
-import java.lang.Thread.sleep
-
+import java.io.File
 
 fun main() {
-    // describe what you want compute    
+    // describe what you want compute
     val out = 440.sine()
             .trim(1000)
-            .toMono16bitWav("sine440.wav")
+            .toMono16bitWav("file://" + File("sine440.wav").absoluteFile)
 
-    // this code launches it in single threaded mode, follow docs
-    // NOTE: this API is the matter of discussions, so it may change, but now it works.
-    out.writer(44100.0f).use { writer ->
-        while (writer.write()) {
-            sleep(0)
+    // this code launches it in single threaded mode,
+    // follow execution documentation for details
+    LocalOverseer(listOf(out)).use { overseer ->
+        if (!overseer.eval(44100.0f).all { it.get() }) {
+            println("Execution failed. Check logs")
         }
     }
 }
@@ -69,9 +69,8 @@ WaveBeans provides a command line interface to work with audio files. Basically 
 For example, let's generate 1 second of 440Hz sinusoid and store it as wav-file in current directory (this is a `bash` script):
 
 ```bash
-export FILE="$(pwd)/sine440.wav" && \
-  ${WAVEBEANS_CLI_HOME}/bin/wavebeans --execute \
-    "440.sine().trim(1000).toMono16bitWav(\"file://$FILE\").out()"
+export FILE="$(pwd)/sine440.wav"
+./wavebeans --execute "440.sine().trim(1000).toMono16bitWav(\"file://$FILE\").out()"
 ```
 
 For more information [usage documentation](docs/user/cli/readme.md) and follow [projects documentation](cli/readme.md). 

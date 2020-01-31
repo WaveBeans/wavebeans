@@ -2,7 +2,9 @@ package io.wavebeans.cli.script
 
 import io.wavebeans.execution.*
 import io.wavebeans.lib.io.StreamOutput
+import java.util.concurrent.Future
 
+@UseExperimental(ExperimentalStdlibApi::class)
 class LocalDistributedScriptEvaluator(
         private val partitions: Int,
         private val threads: Int
@@ -10,22 +12,14 @@ class LocalDistributedScriptEvaluator(
 
     override val outputs = ArrayList<StreamOutput<*>>()
 
-    @UseExperimental(ExperimentalStdlibApi::class)
-    override fun eval(sampleRate: Float) {
-        Overseer().use {
-            try {
-                it.deployTopology(
-                        outputs.buildTopology()
-                                .partition(partitions)
-                                .groupBeans(),
-                        threads,
-                        sampleRate
-                ).waitToFinish()
-            } catch (e: InterruptedException) {
-                // if it's interrupted then we need to gracefully
-                // close everything that we've already processed
-                it.close()
-            }
-        }
+    private lateinit var overseer: Overseer
+
+    override fun eval(sampleRate: Float): List<Future<Boolean>> {
+        overseer = LocalDistributedOverseer(outputs, threads, partitions)
+        return overseer.eval(sampleRate)
+    }
+
+    override fun close() {
+        overseer.close()
     }
 }

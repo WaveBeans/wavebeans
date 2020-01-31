@@ -35,19 +35,23 @@ class ScriptRunner(
 
     private fun Any.parameter() = if (this is String) "\"${this}\"" else "$this"
 
-    private val evaluator = when (runMode) {
-        RunMode.LOCAL -> LocalScriptEvaluator::class
-        RunMode.LOCAL_DISTRIBUTED -> LocalDistributedScriptEvaluator::class
-    }.simpleName + "(" + runOptions.map { "${it.key} = ${it.value.parameter()}" }.joinToString(", ") + ")"
+    private val evaluator = runMode.clazz.simpleName + "(" + runOptions.map { "${it.key} = ${it.value.parameter()}" }.joinToString(", ") + ")"
 
     private val functions = """
         val evaluator = $evaluator
+
         fun StreamOutput<*>.out() { evaluator.addOutput(this) }
     """.trimIndent()
-
     private val evaluate = """
-        evaluator.eval(${sampleRate}f)
+        try {
+            evaluator.eval(${sampleRate}f).all { it.get() }
+        } catch (e : java.lang.InterruptedException) {
+            // nothing to do
+        } finally {
+            evaluator.close()
+        }
     """.trimIndent()
+
 
 
     private val startCountDown = CountDownLatch(1)
@@ -98,9 +102,12 @@ class ScriptRunner(
     }
 
     fun interrupt(waitToFinish: Boolean = false): Boolean {
-        executor.shutdown()
-        return task?.cancel(true) ?: false
-                .also { if (waitToFinish) executor.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS) }
+        return (task?.cancel(true) ?: false)
+                .also {
+                    executor.shutdown()
+                    if (waitToFinish)
+                        executor.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
+                }
     }
 
     override fun close() {
