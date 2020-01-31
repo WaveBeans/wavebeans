@@ -45,7 +45,9 @@ Now when we know all the steps, it's better to provide a short code snippet to s
 
 ```kotlin
 LocalOverseer(outputs).use { overseer ->
-    overseer.eval(sampleRate).all { it.get() }
+    if (!overseer.eval(sampleRate).all { it.get() }) {
+        println("Execution failed. Check logs")
+    }
 }
 ```
 
