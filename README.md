@@ -1,7 +1,5 @@
 # WaveBeans
 
-[ ![Download](https://api.bintray.com/packages/wavebeans/wavebeans/wavebeans/images/download.svg?version=0.0.1) ](https://bintray.com/wavebeans/wavebeans/wavebeans/0.0.1/link)
-
 A set of tools to process audio signals using Kotlin/Java/Scala/etc. You can either use it via command line or develop your own program which can be run as a part of you application:
 
 * generate signals and new instruments;
@@ -18,7 +16,6 @@ Everything using one tool in single- or multi-threaded environment, or even dist
 * [API reference](docs/user/lib/readme.md)
 * [Execution reference](docs/user/exe/readme.md)
 * [Command line tool reference](docs/user/cli/readme.md)
-* [Change log](CHANGELOG.md)
 
 ## Getting started 
 
@@ -32,33 +29,11 @@ Overall all you need is to have JRE/JDK 8+ installed and configured properly, so
 
 WaveBeans is written on Kotlin, but it is compatible with all other JVM languages -- Java, Scala, etc.
 
-If you want to use WaveBeans in your application just add it as a maven dependency. Here is what you would need to add into your `build.gradle` file:
+If you want to use WaveBeans in your application just add it as a maven dependency. Here is what you would need to add into your `build.gradle` file for example:
 
-* Register the new maven repository the WaveBeans is hosted in:
-
+{TODO that is just a mock}
 ```groovy
-repositories {
-    maven {
-        name = "Bintray WaveBeans"
-        url = uri("https://dl.bintray.com/wavebeans/wavebeans")
-    }
-}
-```
-
-* Register WaveBeans `exe` and `lib` main libraries, you may not need `exe` if you won't be using execution capabilities:
-
-```groovy
-dependencies {
-    implementation "io.wavebeans:exe:0.0.1"
-    implementation "io.wavebeans:lib:0.0.1"
-}
-```
-
-* Optionally you may be required to add regular kotlin runtime dependency if you don't have it:
-```groovy
-dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
-}
+implementation "io.wavebeans:wavebeans:x.y.z"
 ```
 
 And start using it. Just create kotlin-file like this:
@@ -87,10 +62,6 @@ fun main() {
 
 For more follow [usage documentation](docs/user/lib/readme.md) and [project documentation](lib/readme.md). 
 
-#### Logging
-
-WaveBeans uses `slf4j` for logging, but it doesn't provide the default logging engine when it is being used inside application. You would need to configure it properly on your own.
-
 ## WaveBeans Cli
 
 WaveBeans provides a command line interface to work with audio files. Basically it allows you to run the program written on Kotlin script. Along with it, it provides some smoother API to wrap the code, but that's all the difference comparing to using it inside your application. You can even use Kotlin SDK classes and methods as usual.
@@ -110,12 +81,12 @@ You need to have JRE 8 installed and configured. Also familiarity with Kotlin re
 
 In order to start using WaveBeans via command line you just need to download the binaries, unzip it and you're ready to go:
 
+{TODO that is just a mock}
 ```bash
-curl -LO https://dl.bintray.com/wavebeans/wavebeans/cli/wavebeans.zip
-unzip wavebeans.zip
-```
-
-Please follow more [precise instructions](/docs/user/cli/readme.md#installation-instructions) 
+curl -oL {TODO link here}/wavebeans-cli-x.y.z.zip
+unzip wavebeans-cli-x.y.z.zip
+export WAVEBEANS_CLI_HOME=$(pwd)/wavebeans-cli/
+``` 
 
 ## Building from source
 
@@ -175,6 +146,4 @@ Please note that by contributing any code or documentation to this repository (b
 
 If there are any other questions, concerns or suggestions please feel free to use following communication channels:
 
-* Open an issue or PR on GitHub.
-* Reach through Telegram channel: https://t.me/wavebeans
-* Mention on Twitter: [@WaveBeans](https://twitter.com/WaveBeans)
+* Telegram channel: https://t.me/wavebeans

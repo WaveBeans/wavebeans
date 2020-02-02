@@ -8,7 +8,35 @@ The tool requires to have JRE 8+ installed and be configured properly. Please fo
 
 ## Installation instructions
 
-[TODO there is no currently downloadable binary]
+* Download the binaries from https://dl.bintray.com/wavebeans/wavebeans/cli/wavebeans.zip
+
+```bash
+ curl -LO https://dl.bintray.com/wavebeans/wavebeans/cli/wavebeans.zip
+```
+
+* Unpack them
+
+```bash
+unzip wavebeans.zip
+```
+
+* To avoid providing a full path every time make an alias to WaveBeans CLI
+
+```bash
+echo "alias wavebeans=$(pwd)/wavebeans/bin/wavebeans" >> ~/.zshrc
+```
+
+* or add it to PATH variable to be located automatically:
+
+```bash
+echo "PATH=\$PATH:$(pwd)/wavebeans/bin/" >> ~/.zshrc
+```
+
+* Restart the shell and try running the tool, you should see the help output:
+
+```bash
+wavebeans
+```
 
 ## Usage
 
@@ -21,19 +49,19 @@ Let's try to write a small program and launch it. The program as simple as gener
     .out() // register output stream!
 ```
 
-To run this program you have two options (assuming `WAVEBEANS_CLI_HOME` is pointing to home directory of WaveBeans CLI):
+To run this program you have two options:
 
 1. Pass it as inline parameter:
 
 ```bash
-export FILE="$(pwd)/sine440.wav" && ${WAVEBEANS_CLI_HOME}/bin/wavebeans --execute "440.sine().trim(1000).toMono16bitWav(\"file://$FILE\").out()"
+export FILE="$(pwd)/sine440.wav" && wavebeans --execute "440.sine().trim(1000).toMono16bitWav(\"file://$FILE\").out()"
 ```
 
 2. Or store the script into the file and execute the file
 
 ```bash
 export FILE="$(pwd)/sine440.wav" && echo "440.sine().trim(1000).toMono16bitWav(\"file://$FILE\").out()" > script.kts 
-${WAVEBEANS_CLI_HOME}/bin/wavebeans -execute-file script.kts
+wavebeans -execute-file script.kts
 ```
 
 Either way you'll find `sine440.wav`created in the same directory you're in.

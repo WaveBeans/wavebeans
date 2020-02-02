@@ -1,15 +1,20 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-
 plugins {
     val kotlinVersion: String by System.getProperties()
 
     kotlin("jvm") version kotlinVersion
+    id("com.jfrog.bintray") version "1.8.4"
+
+    `java-library`
+    `maven-publish`
 }
 
 allprojects {
 
-    val spekVersion:String by System.getProperties()
+    group = "io.wavebeans"
+
+    val spekVersion: String by System.getProperties()
 
     apply {
         plugin("kotlin")
@@ -48,5 +53,42 @@ allprojects {
             includeEngines("spek2")
         }
     }
+
+    java {
+        withJavadocJar()
+        withSourcesJar()
+    }
+
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("lib") {
+            from(subprojects.first { it.name == "lib" }.components["java"])
+            groupId = "io.wavebeans"
+            artifactId = "lib"
+        }
+        create<MavenPublication>("exe") {
+            from(subprojects.first { it.name == "exe" }.components["java"])
+            groupId = "io.wavebeans"
+            artifactId = "exe"
+        }
+    }
+}
+
+bintray {
+    user = findProperty("bintray.user")?.toString() ?: ""
+    key = findProperty("bintray.key")?.toString() ?: ""
+    setPublications("lib", "exe")
+    pkg(delegateClosureOf<com.jfrog.bintray.gradle.BintrayExtension.PackageConfig> {
+        repo = "wavebeans"
+        name = "wavebeans"
+        userOrg = "wavebeans"
+        vcsUrl = "https://github.com/WaveBeans/wavebeans"
+        setLicenses("Apache-2.0")
+        version(delegateClosureOf<com.jfrog.bintray.gradle.BintrayExtension.VersionConfig> {
+            name = project.version.toString()
+        })
+    })
 }
 
