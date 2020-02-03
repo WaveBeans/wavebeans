@@ -2,11 +2,14 @@ package io.wavebeans.execution
 
 import assertk.assertThat
 import assertk.assertions.*
-import io.wavebeans.lib.*
+import io.wavebeans.lib.ZeroSample
 import io.wavebeans.lib.io.*
+import io.wavebeans.lib.plus
+import io.wavebeans.lib.sampleOf
 import io.wavebeans.lib.stream.*
 import io.wavebeans.lib.stream.fft.fft
 import io.wavebeans.lib.stream.window.Window
+import io.wavebeans.lib.stream.window.hamming
 import io.wavebeans.lib.stream.window.window
 import mu.KotlinLogging
 import org.spekframework.spek2.Spek
@@ -76,6 +79,7 @@ object OverseerIntegrationSpec : Spek({
         val fft = pp
                 .trim(length)
                 .window(401)
+                .hamming()
                 .fft(512)
         val o3 = fft.magnitudeToCsv("file://${f3.absolutePath}")
         val o4 = fft.phaseToCsv("file://${f4.absolutePath}")
