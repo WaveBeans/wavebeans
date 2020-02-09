@@ -55,7 +55,6 @@ object TableOutputSpec : Spek({
     describe("Operations between table filling in") {
         val tableName = "table2"
         val output = seqStream()
-                .trim(1000)
                 .toTable(tableName)
 
         val writer = output.writer(1000.0f)
