@@ -3,10 +3,7 @@ package io.wavebeans.lib.io.table
 import assertk.assertThat
 import assertk.assertions.isCloseTo
 import assertk.assertions.isEmpty
-import io.wavebeans.lib.Sample
-import io.wavebeans.lib.eachIndexed
-import io.wavebeans.lib.ms
-import io.wavebeans.lib.seqStream
+import io.wavebeans.lib.*
 import io.wavebeans.lib.stream.trim
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
@@ -35,7 +32,7 @@ object TableOutputSpec : Spek({
 
         it("should return pre-last 100ms") {
             val samples = TableRegistry.instance().byName<Sample>(tableName)
-                    .timeRange(800.ms, 900.ms)
+                    .timeRange(800.ms, 0.9e9.ns)
                     .asSequence(1.0f)
                     .toList()
             assertThat(samples).eachIndexed(100) { s, i ->
