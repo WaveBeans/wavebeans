@@ -57,5 +57,16 @@ data class TimeMeasure(
         return "${time}${timeUnit.abbreviation()}"
     }
 
+    override fun equals(other: Any?): Boolean {
+        if (other == null || other !is TimeMeasure) return false
+        return this.compareTo(other) == 0
+    }
+
+    override fun hashCode(): Int {
+        var result = time.hashCode()
+        result = 31 * result + timeUnit.hashCode()
+        return result
+    }
+
 
 }

@@ -3,6 +3,7 @@ package io.wavebeans.lib.io.table
 import assertk.assertThat
 import assertk.assertions.isCloseTo
 import assertk.assertions.isEmpty
+import assertk.assertions.isEqualTo
 import io.wavebeans.lib.*
 import io.wavebeans.lib.stream.trim
 import org.spekframework.spek2.Spek
@@ -106,7 +107,12 @@ object TableOutputSpec : Spek({
         }
 
         it("should return only 250ms of first 500 ms written which is in range [24,49]") {
-            val samples = TableRegistry.instance().byName<Sample>(tableName)
+            val table = TableRegistry.instance().byName<Sample>(tableName)
+
+            assertThat(table.firstMarker()).isEqualTo(24.ms)
+            assertThat(table.lastMarker()).isEqualTo(49.ms)
+
+            val samples = table
                     .last(10000.ms) // more than should be available
                     .asSequence(1.0f)
                     .toList()
@@ -116,7 +122,12 @@ object TableOutputSpec : Spek({
         }
 
         it("should return only 250ms of last 500 ms written which is in range [74,99]") {
-            val samples = TableRegistry.instance().byName<Sample>(tableName)
+            val table = TableRegistry.instance().byName<Sample>(tableName)
+
+            assertThat(table.firstMarker()).isEqualTo(74.ms)
+            assertThat(table.lastMarker()).isEqualTo(99.ms)
+
+            val samples = table
                     .last(10000.ms) // more than should be available
                     .asSequence(1.0f)
                     .toList()

@@ -91,5 +91,9 @@ class InMemoryTimeseriesTableDriver<T : Any>(
         return "InMemoryTimeseriesTableDriver($tableName)"
     }
 
+    override fun firstMarker(): TimeMeasure? = table.peekFirst()?.timeMarker
+
+    override fun lastMarker(): TimeMeasure? = table.peekLast()?.timeMarker
+
 
 }

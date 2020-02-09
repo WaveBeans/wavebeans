@@ -57,7 +57,8 @@ Here is the list of supported outputs at the moment:
 
 * [CSV](outputs/csv-outputs.md)
 * [WAV](outputs/wav-output.md) 
-* [/dev/null](outputs/dev-null-output.md)  
+* [/dev/null](outputs/dev-null-output.md)
+* [Memory Table](outputs/table-output.md)  
 
 Operations
 --------
