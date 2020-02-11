@@ -1,13 +1,14 @@
-package io.wavebeans.lib.io.table
+package io.wavebeans.lib.table
 
 import io.wavebeans.lib.*
 import mu.KotlinLogging
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 
 class InMemoryTimeseriesTableDriver<T : Any>(
-        private val tableName: String,
+        override val tableName: String,
         private val retentionPolicy: TableRetentionPolicy
 ) : TimeseriesTableDriver<T> {
 
@@ -19,9 +20,20 @@ class InMemoryTimeseriesTableDriver<T : Any>(
 
     private val table = ConcurrentLinkedDeque<Item<T>>()
 
-    private val scheduledExecutor = Executors.newSingleThreadScheduledExecutor { Thread(it, this.toString()) }
-            .also { it.scheduleAtFixedRate({ performCleanup() }, 0, 5000, TimeUnit.MILLISECONDS) }
+    private var scheduledExecutor: ScheduledExecutorService? = null
 
+    override fun init() {
+        log.debug { "[$this] Initializing driver" }
+        if (scheduledExecutor == null || scheduledExecutor!!.isShutdown) {
+            scheduledExecutor = Executors.newSingleThreadScheduledExecutor { Thread(it, this.toString()) }
+        }
+        scheduledExecutor!!.scheduleAtFixedRate({ performCleanup() }, 0, 5000, TimeUnit.MILLISECONDS)
+    }
+
+    override fun reset() {
+        log.debug { "[$this] Destroying driver" }
+        table.clear()
+    }
 
     fun performCleanup() {
         log.debug { "[$this] Performing cleanup according to policy $retentionPolicy" }
@@ -51,38 +63,15 @@ class InMemoryTimeseriesTableDriver<T : Any>(
         table += Item(time, value)
     }
 
-    override fun last(interval: TimeMeasure): BeanStream<T> {
-        log.debug { "[$this] Getting last $interval" }
-        val peekLast = table.peekLast()
-        val lastTimeMarker = peekLast?.timeMarker ?: 0.ns
-        val firstTimeMarker = peekLast?.let { it.timeMarker - interval } ?: 0.ns
-        return timeRange(firstTimeMarker, lastTimeMarker)
-    }
-
-    override fun timeRange(from: TimeMeasure, to: TimeMeasure): BeanStream<T> {
-        log.debug { "[$this] Getting time range from $from to $to" }
-        return object : BeanStream<T> {
-
-            override fun asSequence(sampleRate: Float): Sequence<T> {
-                return table.asSequence()
-                        .filter { it.timeMarker >= from }
-                        .takeWhile { it.timeMarker < to }
-                        .map { it.value }
-            }
-
-            override fun inputs(): List<AnyBean> = throw UnsupportedOperationException("not required")
-
-            override val parameters: BeanParams
-                get() = throw UnsupportedOperationException("not required")
-        }
-    }
-
     override fun close() {
         log.debug { "[$this] Shutting down..." }
-        scheduledExecutor.shutdown()
-        if (!scheduledExecutor.awaitTermination(5000, TimeUnit.MILLISECONDS)) {
-            log.debug { "[$this] Can't wait to shutdown. Forcing..." }
-            scheduledExecutor.shutdownNow()
+        val executor = scheduledExecutor
+        if (executor != null) {
+            executor.shutdown()
+            if (!executor.awaitTermination(5000, TimeUnit.MILLISECONDS)) {
+                log.debug { "[$this] Can't wait to shutdown. Forcing..." }
+                executor.shutdownNow()
+            }
         }
         log.debug { "[$this] Closed" }
     }
@@ -95,5 +84,23 @@ class InMemoryTimeseriesTableDriver<T : Any>(
 
     override fun lastMarker(): TimeMeasure? = table.peekLast()?.timeMarker
 
-
+    override fun query(query: TableQuery): Sequence<T> {
+        return when (query) {
+            is TimeRangeTableQuery -> {
+                table.asSequence()
+                        .filter { it.timeMarker >= query.from }
+                        .takeWhile { it.timeMarker < query.to }
+                        .map { it.value }
+            }
+            is LastIntervalTableQuery -> {
+                val to = table.peekLast()?.timeMarker ?: 0.s
+                val from = to - query.interval
+                table.asSequence()
+                        .filter { it.timeMarker >= from }
+                        .takeWhile { it.timeMarker < to }
+                        .map { it.value }
+            }
+            else -> throw IllegalStateException("$query is not supported")
+        }
+    }
 }

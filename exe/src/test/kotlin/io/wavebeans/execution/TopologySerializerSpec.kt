@@ -10,10 +10,14 @@ import io.wavebeans.lib.stream.window.WindowStream
 import io.wavebeans.lib.stream.window.WindowStreamParams
 import io.wavebeans.lib.stream.window.plus
 import io.wavebeans.lib.stream.window.window
+import io.wavebeans.lib.table.*
+import mu.KotlinLogging
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 
 object TopologySerializerSpec : Spek({
+
+    val log = KotlinLogging.logger {}
 
     describe("2 In 2 Out topology") {
 
@@ -219,7 +223,7 @@ object TopologySerializerSpec : Spek({
                 val topology = o.buildTopology()
 
                 val deserializedTopology = with(TopologySerializer) {
-                    val topologySerialized = serialize(topology).also { println(it) }
+                    val topologySerialized = serialize(topology).also { log.debug { it } }
                     deserialize(topologySerialized)
                 }
 
@@ -251,6 +255,48 @@ object TopologySerializerSpec : Spek({
                             it.isIn(*topology.links.toTypedArray())
                         }
                     }
+                }
+            }
+        }
+    }
+
+    describe("Table sink") {
+        val o = seqStream().toTable("table1")
+        val q = TableRegistry.instance().byName<Sample>("table1").last(2000.ms).toCsv("file:///path/to.csv")
+
+        val topology = listOf(o, q).buildTopology()
+        val deserializedTopology = with(TopologySerializer) {
+            val topologySerialized = serialize(topology).also { log.debug { it } }
+            deserialize(topologySerialized)
+        }
+
+        it("has same refs") {
+            assertThat(deserializedTopology.refs).all {
+                size().isEqualTo(topology.refs.size)
+                each { nodeRef ->
+
+                    nodeRef.prop("type") { it.type }.isIn(*listOf(
+                            SeqInput::class,
+                            TableOutput::class,
+                            TableDriverInput::class,
+                            CsvStreamOutput::class
+                    ).map { it.qualifiedName }.toTypedArray())
+
+                    nodeRef.prop("params") { it.params }.kClass().isIn(*listOf(
+                            NoParams::class,
+                            TableOutputParams::class,
+                            TableDriverStreamParams::class,
+                            CsvStreamOutputParams::class
+                    ).toTypedArray())
+                }
+            }
+        }
+
+        it("has same links") {
+            assertThat(deserializedTopology.links).all {
+                size().isEqualTo(topology.links.size)
+                each {
+                    it.isIn(*topology.links.toTypedArray())
                 }
             }
         }

@@ -1,4 +1,4 @@
-package io.wavebeans.lib.io.table
+package io.wavebeans.lib.table
 
 import java.util.concurrent.ConcurrentHashMap
 
@@ -11,7 +11,13 @@ interface TableRegistry {
 
     fun unregister(tableName: String)
 
+    fun reset(tableName: String)
+
+    fun exists(tableName: String): Boolean
+
     fun <T : Any> byName(tableName: String): TimeseriesTableDriver<T>
+
+    fun <T : Any> query(tableName: String, query: TableQuery): Sequence<T>
 
 }
 
@@ -28,9 +34,20 @@ object LocalTableRegistry : TableRegistry {
         registry.remove(tableName)
     }
 
-    override fun <T : Any> byName(tableName: String): TimeseriesTableDriver<T> {
-        @Suppress("UNCHECKED_CAST")
-        return registry[tableName] as TimeseriesTableDriver<T>
+    override fun reset(tableName: String) {
+        registry[tableName]?.reset()
     }
+
+    override fun exists(tableName: String): Boolean =
+            registry.containsKey(tableName)
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : Any> byName(tableName: String): TimeseriesTableDriver<T> =
+            registry[tableName] as TimeseriesTableDriver<T>
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : Any> query(tableName: String, query: TableQuery): Sequence<T> =
+            (registry[tableName] as TimeseriesTableDriver<T>).query(query)
+
 
 }

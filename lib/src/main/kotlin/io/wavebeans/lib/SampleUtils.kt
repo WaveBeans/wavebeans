@@ -21,3 +21,9 @@ fun timeToSampleIndexFloor(timePoint: Long, timeUnit: TimeUnit, sampleRate: Floa
 
 fun timeToSampleIndexCeil(timePoint: Long, timeUnit: TimeUnit, sampleRate: Float): Long =
         ceil(timeUnit.toNanos(timePoint).toDouble() / 1_000_000_000.0 * sampleRate).toLong()
+
+fun timeToSampleIndexFloor(timeMarker: TimeMeasure, sampleRate: Float): Long =
+        timeToSampleIndexFloor(timeMarker.time, timeMarker.timeUnit, sampleRate)
+
+fun timeToSampleIndexCeil(timeMarker: TimeMeasure, sampleRate: Float): Long =
+        timeToSampleIndexCeil(timeMarker.time, timeMarker.timeUnit, sampleRate)

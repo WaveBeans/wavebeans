@@ -1,4 +1,4 @@
-package io.wavebeans.lib.io.table
+package io.wavebeans.lib.table
 
 import io.wavebeans.lib.TimeMeasure
 

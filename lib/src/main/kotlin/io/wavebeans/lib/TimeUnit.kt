@@ -1,5 +1,6 @@
 package io.wavebeans.lib
 
+import kotlinx.serialization.Serializable
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.*
 
@@ -36,6 +37,7 @@ val Number.h
 val Number.d
     get() = TimeMeasure(this.toLong(), DAYS)
 
+@Serializable
 data class TimeMeasure(
         val time: Long,
         val timeUnit: TimeUnit

@@ -1,8 +1,9 @@
-package io.wavebeans.lib.io.table
+package io.wavebeans.lib.table
 
 import io.wavebeans.lib.*
 import io.wavebeans.lib.io.StreamOutput
 import io.wavebeans.lib.io.Writer
+import kotlinx.serialization.Serializable
 import java.util.concurrent.TimeUnit.NANOSECONDS
 
 fun <T : Any> BeanStream<T>.toTable(
@@ -12,25 +13,43 @@ fun <T : Any> BeanStream<T>.toTable(
         this,
         TableOutputParams(
                 tableName,
-                InMemoryTimeseriesTableDriver(tableName, TimeTableRetentionPolicy(maximumDataLength))
+                maximumDataLength
         )
 )
 
-class TableOutputParams<T : Any>(
+@Serializable
+class TableOutputParams(
         val tableName: String,
-        val timeseriesTableDriver: TimeseriesTableDriver<T>
+        val maximumDataLength: TimeMeasure
 ) : BeanParams()
 
 class TableOutput<T : Any>(
         override val input: BeanStream<T>,
-        override val parameters: TableOutputParams<T>
+        override val parameters: TableOutputParams
 ) : StreamOutput<T>, SinglePartitionBean {
 
+    private val tableDriver: TimeseriesTableDriver<T>
+
+    init {
+        val tableRegistry = TableRegistry.instance()
+        val tableName = parameters.tableName
+
+        if (tableRegistry.exists(tableName)) {
+            tableDriver = tableRegistry.byName(tableName)
+        } else {
+            tableDriver = InMemoryTimeseriesTableDriver(
+                    tableName,
+                    TimeTableRetentionPolicy(parameters.maximumDataLength)
+            )
+            tableRegistry.register(tableName, tableDriver)
+        }
+    }
+
     override fun writer(sampleRate: Float): Writer {
-        TableRegistry.instance().register(parameters.tableName, parameters.timeseriesTableDriver)
+        tableDriver.init()
 
         val iterator = input.asSequence(sampleRate).iterator()
-        var index = 0L
+        var index = tableDriver.lastMarker()?.let { timeToSampleIndexCeil(it, sampleRate) } ?: 0L
 
         return object : Writer {
             override fun write(): Boolean {
@@ -38,12 +57,12 @@ class TableOutput<T : Any>(
 
                 val element = iterator.next()
                 val time = samplesCountToLength(index++, sampleRate, NANOSECONDS)
-                parameters.timeseriesTableDriver.put(time.ns, element)
+                tableDriver.put(time.ns, element)
                 return true
             }
 
             override fun close() {
-                parameters.timeseriesTableDriver.close()
+                tableDriver.close()
             }
 
         }

@@ -1,9 +1,22 @@
-package io.wavebeans.lib.io.table
+package io.wavebeans.lib.table
 
-import io.wavebeans.lib.*
+import io.wavebeans.lib.BeanStream
+import io.wavebeans.lib.TimeMeasure
 import java.io.Closeable
 
 interface TimeseriesTableDriver<T : Any> : Closeable {
+
+    val tableName: String
+
+    /**
+     * Initializes the driver.
+     */
+    fun init()
+
+    /**
+     * Resets the driver state.
+     */
+    fun reset()
 
     /**
      * Puts the new values into the table. Depending on implementation may require the [time]
@@ -22,7 +35,9 @@ interface TimeseriesTableDriver<T : Any> : Closeable {
      *
      * @return a stream values laying within specified interval
      */
-    fun last(interval: TimeMeasure): BeanStream<T>
+    fun last(interval: TimeMeasure): BeanStream<T> {
+        return TableDriverInput(TableDriverStreamParams(tableName, LastIntervalTableQuery(interval)))
+    }
 
     /**
      * Gets the values as stream which has time markers between [from] (inclusvie) and [to] (exclusive).
@@ -33,7 +48,9 @@ interface TimeseriesTableDriver<T : Any> : Closeable {
      *
      * @return a stream values laying within specified interval
      */
-    fun timeRange(from: TimeMeasure, to: TimeMeasure): BeanStream<T>
+    fun timeRange(from: TimeMeasure, to: TimeMeasure): BeanStream<T> {
+        return TableDriverInput(TableDriverStreamParams(tableName, TimeRangeTableQuery(from, to)))
+    }
 
     /**
      * Gets the first time marker of the table.
@@ -46,5 +63,14 @@ interface TimeseriesTableDriver<T : Any> : Closeable {
      * Gets the last time marker of the table
      */
     fun lastMarker(): TimeMeasure?
+
+    /**
+     * Runs the query on the table returning the result as sequence.
+     *
+     * @param query the query to run
+     *
+     * @return the result of the query as sequence, can be empty sequence if there is nothing to return.
+     */
+    fun query(query: TableQuery): Sequence<T>
 }
 
