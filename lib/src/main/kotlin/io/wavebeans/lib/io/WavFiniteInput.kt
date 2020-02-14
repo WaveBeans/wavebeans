@@ -2,14 +2,14 @@ package io.wavebeans.lib.io
 
 import io.wavebeans.lib.*
 import io.wavebeans.lib.stream.FiniteToStream
-import io.wavebeans.lib.stream.sampleStream
+import io.wavebeans.lib.stream.stream
 import java.io.*
 import java.net.URI
 import java.util.concurrent.TimeUnit
 
-fun wave(uri: String): FiniteInput = WavFiniteInput(WavFiniteInputParams(URI(uri)))
+fun wave(uri: String): FiniteInput<Sample> = WavFiniteInput(WavFiniteInputParams(URI(uri)))
 
-fun wave(uri: String, converter: FiniteToStream): BeanStream<Sample> = wave(uri).sampleStream(converter)
+fun wave(uri: String, converter: FiniteToStream<Sample>): BeanStream<Sample> = wave(uri).stream(converter)
 
 data class WavFiniteInputParams(
         val uri: URI
@@ -18,7 +18,7 @@ data class WavFiniteInputParams(
 class WavFiniteInput(
         val params: WavFiniteInputParams,
         private val content: Content? = null
-) : FiniteInput, SinglePartitionBean {
+) : FiniteInput<Sample>, SinglePartitionBean {
 
     override val parameters: BeanParams = params
 

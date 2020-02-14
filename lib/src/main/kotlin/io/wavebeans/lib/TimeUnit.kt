@@ -43,6 +43,29 @@ data class TimeMeasure(
         val timeUnit: TimeUnit
 ) : Comparable<TimeMeasure> {
 
+    companion object {
+        fun parse(s: String): TimeMeasure {
+            val regex = "(-?[0-9]+\\.?[0-9]*[eE]?-?[0-9]*)[fFlL]?(ns|us|ms|s|m|h|d)".toRegex()
+            val parseException = IllegalArgumentException("Format invalid, should be: $regex")
+            if (s.length < 2) throw parseException
+            val matches = regex.findAll(s.toLowerCase())
+            val (timeS, unitS) = matches.singleOrNull()?.destructured ?: throw parseException
+            return TimeMeasure(
+                    timeS.toDouble().toLong(),
+                    when (unitS.toLowerCase()) {
+                        "ns" -> NANOSECONDS
+                        "us" -> MICROSECONDS
+                        "ms" -> MILLISECONDS
+                        "s" -> SECONDS
+                        "m" -> MINUTES
+                        "h" -> HOURS
+                        "d" -> DAYS
+                        else -> throw UnsupportedOperationException("Unit `$unitS` is not supported")
+                    }
+            )
+        }
+    }
+
     override operator fun compareTo(other: TimeMeasure): Int {
         return asNanoseconds().compareTo(other.asNanoseconds())
     }
