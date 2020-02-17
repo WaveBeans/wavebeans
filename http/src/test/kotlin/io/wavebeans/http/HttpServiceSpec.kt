@@ -49,12 +49,28 @@ object HttpServiceSpec : Spek({
                     }
                 }
                 it("should return time range") {
-                    handleRequest(Get, "/table/table1/timeRange/50ms/100ms/").apply {
+                    handleRequest(Get, "/table/table1/timeRange/0ms/100ms/").apply {
                         assertThat(response.status()).isNotNull().isEqualTo(HttpStatusCode.OK)
                         assertThat(response.content).isNotNull().all {
                             isNotEmpty()
                             prop("elements") { it.split("[\\r\\n]".toRegex()).filterNot { it.isEmpty() } }.each { it.matches(elementRegex) }
                         }
+                    }
+                }
+                it("should return 404 as table is not found") {
+                    handleRequest(Get, "/table/non-existing-table/timeRange/0ms/100ms/").apply {
+                        assertThat(response.status()).isNotNull().isEqualTo(HttpStatusCode.NotFound)
+                    }
+                    handleRequest(Get, "/table/non-existing-table/last/100ms/").apply {
+                        assertThat(response.status()).isNotNull().isEqualTo(HttpStatusCode.NotFound)
+                    }
+                }
+                it("should return 400 if parameter is incorrect") {
+                    handleRequest(Get, "/table/table1/timeRange/100/200/").apply {
+                        assertThat(response.status()).isNotNull().isEqualTo(HttpStatusCode.BadRequest)
+                    }
+                    handleRequest(Get, "/table/table1/last/100/").apply {
+                        assertThat(response.status()).isNotNull().isEqualTo(HttpStatusCode.BadRequest)
                     }
                 }
             }
@@ -83,7 +99,7 @@ object HttpServiceSpec : Spek({
                     }
                 }
                 it("should return time range") {
-                    handleRequest(Get, "/table/table2/timeRange/50ms/100ms/44100.0").apply {
+                    handleRequest(Get, "/table/table2/timeRange/0ms/100ms/44100.0").apply {
                         assertThat(response.status()).isNotNull().isEqualTo(HttpStatusCode.OK)
                         assertThat(response.content).isNotNull().all {
                             isNotEmpty()

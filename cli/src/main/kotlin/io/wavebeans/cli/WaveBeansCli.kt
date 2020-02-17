@@ -2,11 +2,13 @@ package io.wavebeans.cli
 
 import io.wavebeans.cli.script.RunMode
 import io.wavebeans.cli.script.ScriptRunner
+import io.wavebeans.http.HttpService
 import org.apache.commons.cli.CommandLine
 import org.apache.commons.cli.Option
 import org.apache.commons.cli.Options
 import java.io.File
 import java.io.PrintWriter
+import java.lang.Thread.sleep
 import java.util.concurrent.CancellationException
 import kotlin.system.measureTimeMillis
 
@@ -35,7 +37,9 @@ class WaveBeansCli(
         val p = Option("p", "partitions", true, "Number of partitions to use in Distributed mode.")
         val t = Option("t", "threads", true, "Number of threads to use in Distributed mode.")
         val s = Option("s", "sample-rate", true, "Sample rate in Hz to use for outputs. By default, it's 44100.")
-        val options = Options().of(f, e, time, v, h, m, p, t, s)
+        val http = Option(null, "http", true, "Run HTTP API on the specified port.")
+        val httpWait = Option(null, "http-wait", true, "Time to wait after script finish to shutdown the server in seconds, by default it doesn't wait (0 value), -1 to wait indefinitely")
+        val options = Options().of(f, e, time, v, h, m, p, t, s, http, httpWait)
     }
 
     private val verbose = cli.has(v)
@@ -57,37 +61,63 @@ class WaveBeansCli(
             if (runMode == RunMode.LOCAL_DISTRIBUTED && cli.has(t)) runOptions["threads"] = cli.getRequired(t) { it.toInt() }
             val sampleRate = cli.get(s) { it.toFloat() } ?: 44100.0f
 
-            val executionTime = measureTimeMillis {
-                ScriptRunner(
-                        content,
-                        closeTimeout = Long.MAX_VALUE,
-                        runMode = runMode,
-                        runOptions = runOptions,
-                        sampleRate = sampleRate
-                ).start()
-                        .also { if (verbose) printer.printLine("Script started:\n$content") }
-                        .use { runner ->
-                            Runtime.getRuntime().addShutdownHook(Thread {
-                                if (verbose) printer.printLine("Shutting down the script...")
-                                runner.interrupt(waitToFinish = true)
-                                runner.close()
-                                if (verbose) printer.printLine("Shut down finished.")
-                            })
+            val httpWait = cli.get(httpWait) { it.toLong() } ?: 0
+            val httpService = cli.get(http) { HttpService(serverPort = it.toInt()) }?.start()
+            var cancellingAheadOfTime = false
 
-                            try {
-                                runner.awaitForResult()
-                                        .also {
-                                            if (verbose)
-                                                printer.printLine("Finished with result: " + (it?.message ?: "Success"))
-                                        }
-                            } catch (e: CancellationException) {
-                                if (verbose) printer.printLine("Script execution cancelled")
+            try {
+                val executionTime = measureTimeMillis {
+                    ScriptRunner(
+                            content,
+                            closeTimeout = Long.MAX_VALUE,
+                            runMode = runMode,
+                            runOptions = runOptions,
+                            sampleRate = sampleRate
+                    ).start()
+                            .also { if (verbose) printer.printLine("Script started:\n$content") }
+                            .use { runner ->
+                                Runtime.getRuntime().addShutdownHook(Thread {
+                                    if (verbose) printer.printLine("Shutting down the script...")
+                                    runner.interrupt(waitToFinish = true)
+                                    runner.close()
+                                    if (verbose) printer.printLine("Shut down finished.")
+                                })
+
+                                try {
+                                    runner.awaitForResult()
+                                            .also {
+                                                if (verbose)
+                                                    printer.printLine("Finished with result: " + (it?.message
+                                                            ?: "Success"))
+                                            }
+                                } catch (e: CancellationException) {
+                                    if (verbose) printer.printLine("Script execution cancelled")
+                                    cancellingAheadOfTime = true
+                                }
+
+                                Unit
                             }
-
-                            Unit
+                }
+                if (trackTime) printer.printLine("${executionTime / 1000.0}sec")
+            } finally {
+                if (httpService != null) {
+                    if (httpWait != 0L && !cancellingAheadOfTime) {
+                        val endTime = if (httpWait > 0) System.currentTimeMillis() + httpWait * 1000L else Long.MAX_VALUE
+                        if (verbose) printer.printLine("HTTP API keep running")
+                        try {
+                            while (System.currentTimeMillis() < endTime) {
+                                sleep(1)
+                            }
+                        } catch (e: InterruptedException) {
+                            if (verbose) printer.printLine("Closing HTTP API")
+                            httpService.close()
                         }
+                    } else {
+                        if (verbose) printer.printLine("Closing HTTP API")
+                        httpService.close()
+                    }
+                }
             }
-            if (trackTime) printer.printLine("${executionTime / 1000.0}sec")
             true
         } else {
             false

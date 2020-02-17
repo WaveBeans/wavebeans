@@ -61,7 +61,7 @@ export FILE="$(pwd)/sine440.wav" && wavebeans --execute "440.sine().trim(1000).t
 
 ```bash
 export FILE="$(pwd)/sine440.wav" && echo "440.sine().trim(1000).toMono16bitWav(\"file://$FILE\").out()" > script.kts 
-wavebeans -execute-file script.kts
+wavebeans --execute-file script.kts
 ```
 
 Either way you'll find `sine440.wav`created in the same directory you're in.
@@ -117,3 +117,49 @@ For the script in order to track the output you should call explicitly `.out()`:
 ```
 
 Otherwise, if you don't call it that lines of code won't be evaluated. Also, if you register output more than once by calling `.out()` a few times, it will be registered as two different output and be evaluated twice.
+
+### HTTP API
+
+WaveBeans has built HTTP API to run variety of queries while the stream is being evaluated. More about exact functionality read in [HTTP API reference](../http/readme.md). CLI supports running the HTTP API along with your script. 
+
+To start the server specify the port you want to run it on via `--http` flag. The range of ports from 1 to 65536, though on Unix-like system to run on ports less than 1024 administrator privileges are required, and overall is not recommended to avoid interfering with standard services.
+
+When the script is stop running the HTTP server is also being shutdown, however you may want to leave it running. To achieve that you need to specify `--http-wait` flag and specify the number of seconds to keep the server running after execution is completed, or even do not stop at all by specifying -1.
+
+#### Example with Table API
+
+HTTP Service may provide different APIs, in this example we'll take a look at using it via calling Table API. Tables allows to store values and query it later. More about it you can read in [Table Output reference](../lib/outputs/table-output.md) and [Table Service API](../http/readme.md#table-service).
+
+First of all let's create the `script.kts` with the following content:
+
+```kotlin
+440.sine().toTable("sine440", 1.m).out()
+```
+
+That script generates sinusoid of 440 Hz and stores it into the table name `sine440`. The table keeps only last 1 minute of all samples.
+
+Then we run that script with CLI command tool and leave it working in background or in different console. HTTP we'll start on port 12345 and tell the HTTP server wait forever, however it is not really required here as provided script won't finish either.
+
+```bash
+wavebeans --execute-file script.kts --http 12345 --http-wait -1
+```
+
+While the script is running let's run a couple of queries via calling Table API over HTTP using `curl` command:
+
+```bash
+curl http://localhost:12345/table/sine440/last/1.ms/
+```
+
+Which return something like this:
+
+```json
+{"offset":368162653061,"value":0.6921708580045118}
+{"offset":368162675736,"value":0.6455957967580076}
+{"offset":368162698411,"value":0.5964844019471909}
+{"offset":368162721086,"value":0.5450296159930959}
+{"offset":368162743761,"value":0.4914335880185192}
+{"offset":368162766436,"value":0.43590687909747267}
+{"offset":368162789111,"value":0.3786676351923965}
+{"offset":368162811786,"value":0.3199407308930018}
+{"offset":368162834461,"value":0.2599568846828487}
+```

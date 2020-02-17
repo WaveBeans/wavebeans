@@ -20,7 +20,7 @@ class HttpService(
 
     lateinit var server: ApplicationEngine
 
-    fun start(wait: Boolean = false) {
+    fun start(wait: Boolean = false): HttpService {
         val env = applicationEngineEnvironment {
             module {
                 tableService()
@@ -31,6 +31,7 @@ class HttpService(
             }
         }
         server = embeddedServer(Netty, env).start(wait)
+        return this
     }
 
     override fun close() {

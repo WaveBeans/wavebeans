@@ -19,6 +19,9 @@ The second parameter has type [TimeMeasure](../types/time-measure.md).
 
 The table can work with any type you desire, on any stream, that type just needs to be a non-nullable.
 
+Querying
+--------
+
 While the stream is running the data is being stored into a table, where you can query it. The data is accessible regardless if the stream is over and closed or it is still being processed. However if you're trying to access data during execution it's not guaranteed to be presented as data availability depends on the overall stream performance and oyu need to write your code safely.
 
 To query the data you need first locate the table by its name from table registry. You need explicitly specify the type the table keeps, for example `Sample`. The table has type `io.wavebeans.lib.io.table.TimeseriesTableDriver<T>`:

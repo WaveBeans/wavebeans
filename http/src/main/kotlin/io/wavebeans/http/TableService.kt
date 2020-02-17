@@ -1,13 +1,20 @@
 package io.wavebeans.http
 
 import io.ktor.application.Application
+import io.ktor.application.ApplicationCall
 import io.ktor.application.call
+import io.ktor.application.install
+import io.ktor.features.BadRequestException
+import io.ktor.features.DataConversion
+import io.ktor.features.MissingRequestParameterException
+import io.ktor.features.ParameterConversionException
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.Parameters
 import io.ktor.response.respond
 import io.ktor.response.respondOutputStream
 import io.ktor.routing.get
 import io.ktor.routing.routing
-import io.ktor.util.KtorExperimentalAPI
+import io.ktor.util.*
 import io.ktor.util.getOrFail
 import io.wavebeans.lib.TimeMeasure
 import io.wavebeans.lib.s
@@ -17,18 +24,25 @@ import kotlinx.coroutines.withContext
 import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.io.OutputStream
-import java.util.concurrent.TimeUnit
+import java.lang.reflect.Type
+import kotlin.reflect.KClass
+import kotlin.reflect.KProperty
+import kotlin.reflect.full.cast
+import kotlin.reflect.jvm.jvmName
+import kotlin.reflect.typeOf
 
 @KtorExperimentalAPI
 fun Application.tableService() {
     val tableService = TableService()
+
     routing {
         get("/table/{tableName}/last/{interval}/{sampleRate?}") {
-            val tableName = call.parameters.getOrFail("tableName")
-            val interval = call.parameters.getOrFail("interval").let { TimeMeasure.parse(it) }
-            val sampleRate = call.parameters["sampleRate"]?.toFloat() ?: 44100.0f
+            val tableName: String = call.parameters.required("tableName") { it }
+            val interval: TimeMeasure = call.parameters.required("interval") { TimeMeasure.parseOrNull(it) }
+            val sampleRate: Float? = call.parameters.optional("sampleRate") { it.toFloatOrNull() }
+
             if (tableService.exists(tableName)) {
-                val stream = tableService.last(tableName, interval, sampleRate)
+                val stream = tableService.last(tableName, interval, sampleRate ?: 44100.0f)
                 call.respondOutputStream {
                     streamOutput(stream)
                 }
@@ -37,12 +51,13 @@ fun Application.tableService() {
             }
         }
         get("/table/{tableName}/timeRange/{from}/{to}/{sampleRate?}") {
-            val tableName = call.parameters.getOrFail("tableName")
-            val from = call.parameters.getOrFail("from").let { TimeMeasure.parse(it) }
-            val to = call.parameters.getOrFail("to").let { TimeMeasure.parse(it) }
-            val sampleRate = call.parameters["sampleRate"]?.toFloat() ?: 44100.0f
+            val tableName: String = call.parameters.required("tableName") { it }
+            val from: TimeMeasure = call.parameters.required("from") { TimeMeasure.parseOrNull(it) }
+            val to: TimeMeasure = call.parameters.required("to") { TimeMeasure.parseOrNull(it) }
+            val sampleRate: Float? = call.parameters.optional("sampleRate") { it.toFloatOrNull() }
+
             if (tableService.exists(tableName)) {
-                val stream = tableService.timeRange(tableName, from, to, sampleRate)
+                val stream = tableService.timeRange(tableName, from, to, sampleRate ?: 44100.0f)
                 call.respondOutputStream {
                     streamOutput(stream)
                 }
@@ -98,3 +113,8 @@ class TableService(
                 ByteArrayInputStream(ByteArray(0))
             }
 }
+
+fun <T : Any> Parameters.required(name: String, converter: (String) -> T?): T =
+        optional(name, converter) ?: throw BadRequestException("$name can't be converted")
+
+fun <T : Any> Parameters.optional(name: String, converter: (String) -> T?): T? = this[name]?.let { converter(it) }

@@ -44,12 +44,12 @@ data class TimeMeasure(
 ) : Comparable<TimeMeasure> {
 
     companion object {
-        fun parse(s: String): TimeMeasure {
-            val regex = "(-?[0-9]+\\.?[0-9]*[eE]?-?[0-9]*)[fFlL]?(ns|us|ms|s|m|h|d)".toRegex()
-            val parseException = IllegalArgumentException("Format invalid, should be: $regex")
-            if (s.length < 2) throw parseException
+        val regex = "(-?[0-9]+\\.?[0-9]*[eE]?-?[0-9]*)[fFlL]?(ns|us|ms|s|m|h|d)".toRegex()
+
+        fun parseOrNull(s: String): TimeMeasure? {
+            if (s.length < 2) return null
             val matches = regex.findAll(s.toLowerCase())
-            val (timeS, unitS) = matches.singleOrNull()?.destructured ?: throw parseException
+            val (timeS, unitS) = matches.singleOrNull()?.destructured ?: return null
             return TimeMeasure(
                     timeS.toDouble().toLong(),
                     when (unitS.toLowerCase()) {
@@ -64,6 +64,10 @@ data class TimeMeasure(
                     }
             )
         }
+
+        fun parse(s: String): TimeMeasure = parseOrNull(s)
+                ?: throw IllegalArgumentException("Format invalid, should be: $regex")
+
     }
 
     override operator fun compareTo(other: TimeMeasure): Int {
