@@ -250,4 +250,30 @@ object OverseerIntegrationSpec : Spek({
             it("should have the same output as local") { assertThat(fileContent).isEqualTo(fileContentLocal) }
         }
     }
+
+    describe("List as Input") {
+        describe("generating list of samples and storing it to csv") {
+            val file = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
+            val o = listOf(
+                    listOf(1, 2, 3, 4).map { sampleOf(it) }.input()
+                            .toCsv(
+                                    "file://${file.absolutePath}",
+                                    header = listOf("sample index", "sample value"),
+                                    elementSerializer = { (idx, _, sample) ->
+                                        listOf(idx.toString(), String.format("%.10f", sample))
+                                    }
+                            )
+            )
+
+            runOnOverseer(o)
+
+            val fileContent = file.readLines()
+
+            it("should have non-empty output") { assertThat(fileContent).size().isGreaterThan(1) }
+
+            runLocally(o)
+            val fileContentLocal = file.readLines()
+            it("should have the same output as local") { assertThat(fileContent).isEqualTo(fileContentLocal) }
+        }
+    }
 })

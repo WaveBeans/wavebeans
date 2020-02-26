@@ -28,6 +28,7 @@ object TopologySerializer {
             MapStreamParams::class with MapStreamParamsSerializer
             InputParams::class with InputParamsSerializer
             FunctionMergedStreamParams::class with FunctionMergedStreamParamsSerializer
+            ListAsInputParams::class with ListAsInputParamsSerializer
         }
     }
 
