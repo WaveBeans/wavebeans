@@ -36,9 +36,9 @@ interface AlterBean<IT : Any, OT : Any> : Bean<OT> {
     override fun inputs(): List<AnyBean> = listOf(input)
 }
 
-interface MultiAlterBean<IT : Any, OT : Any> : Bean<OT> {
+interface MultiAlterBean<OT : Any> : Bean<OT> {
 
-    val inputs: List<Bean<IT>>
+    val inputs: List<AnyBean>
 
     override fun inputs(): List<AnyBean> = inputs
 }
