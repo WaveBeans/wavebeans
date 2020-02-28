@@ -1,6 +1,15 @@
 WAV File input
 =======
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [WAV File input](#wav-file-input)
+  - [Syntax](#syntax)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 The [WAV](https://en.wikipedia.org/wiki/WAV) is very popular format to store uncompressed audio as file. Currently WaveBeans supports only files with single channel -- mono. The sampling rate and bit depth can be any.
 
 Worth to mention, wav-input doesn't support resampling internally, so it should correspond with stream sample rate or be resampled.

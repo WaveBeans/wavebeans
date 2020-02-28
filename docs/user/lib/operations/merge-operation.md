@@ -1,6 +1,18 @@
 Merge operation
 ========
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [Overview](#overview)
+- [Using as a class](#using-as-a-class)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
+Overview
+--------
+
 One of the most important base functions of WaveBeans is merge function, it allows you to make one out of two streams using an operation like sum, subtract or your own. Though, it works only with stream of the same type, but you can always [remap](map-operation.md) one of the streams for types to match. Despite the fact that merge stream works with the same stream types as inputs, it may return a different stream type as output.
 
 The merge function is implemented as a [regular function](../functions.md) with the input type `(Pair<T?, T?>)` and output type `R`, so the signature of merge function looks like this:
@@ -30,7 +42,8 @@ The very same can be achieved with just calling sum operation directly on the st
 
 Such shortcut operations are defined for streams of samples and windowed samples, as well as other [arithmetic operations](arithmetic-operations.md).
 
-**Using as a class**
+Using as a class
+----------
 
 When the function needs some arguments to be bypassed outside, or you just want to avoid defining the function in inline-style as the code of the function is too complex, you may define the merge function as a class. First of all please follow [functions documentation](../functions.md).
  

@@ -1,5 +1,15 @@
-Arithmetic operation
+Arithmetic operations
 ========
+
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [Arithmetic operations](#arithmetic-operations)
+  - [Sample stream operations](#sample-stream-operations)
+  - [Windowed sample stream operations](#windowed-sample-stream-operations)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 There are a few arithmetic operations are defined for certain types. It is mainly the syntactic sugar for [map](map-operation.md) and [merge](merge-operation.md) operations, anyway can be useful sometimes to use therm instead.
 
