@@ -1,3 +1,14 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [User defined functions](#user-defined-functions)
+  - [Function input and output type.](#function-input-and-output-type)
+  - [Lambda function](#lambda-function)
+  - [Class function](#class-function)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 User defined functions
 ========
 

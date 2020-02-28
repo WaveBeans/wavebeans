@@ -1,6 +1,15 @@
 Function as an Input
 ========
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [Function as an Input](#function-as-an-input)
+  - [Syntax](#syntax)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 Predefined Inputs are very handy but unfortunately not all the time. There is always a use case that is not covered in the framework or won't be covered at all. For such purposes WaveBeans supports inputs as custom functions. It has some limits though which is related to the way WaveBeans is being executed, you may read more about such limitations in [functions reference](../functions.md), that won't be covered here, as it's not related to the input itself.
 
 Inputs are being generated based on two values: 

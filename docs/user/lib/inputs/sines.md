@@ -1,6 +1,16 @@
 Sine input
 =========
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [Sine input](#sine-input)
+  - [Sine](#sine)
+  - [Sine sweep](#sine-sweep)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 WaveBeans supports generating of sinusoid of specific frequency as well as sweep sinusoid which changes it frequency from one to another within specific time range. These inputs as they are just a mathematical function support any sampling rate, and resampling happens internally.
 
 Sine

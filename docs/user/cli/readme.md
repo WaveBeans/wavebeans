@@ -1,3 +1,17 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Command Line Interface](#command-line-interface)
+  - [Requirements](#requirements)
+  - [Installation instructions](#installation-instructions)
+  - [Usage](#usage)
+    - [Basic example](#basic-example)
+    - [Parameters explained](#parameters-explained)
+    - [Writing scripts](#writing-scripts)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Command Line Interface
 
 WaveBeans CLI is the tool to automate various tasks related to audio signal processing. What it does: it allows you to write the program on Kotlin Script and run it via console in different modes: as local tool, on local distributed environment, or (potentially) on remote cluster. Depending on your task you may benefit or not from running task Locally in Distributed mode, where the execution is launched within defined number of threads, by default, the program is evaluated in a single thread.
