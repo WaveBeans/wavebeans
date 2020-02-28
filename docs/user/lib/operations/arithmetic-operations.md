@@ -1,4 +1,4 @@
-Arithmetic operation
+Arithmetic operations
 ========
 
 There are a few arithmetic operations are defined for certain types. It is mainly the syntactic sugar for [map](map-operation.md) and [merge](merge-operation.md) operations, anyway can be useful sometimes to use therm instead.

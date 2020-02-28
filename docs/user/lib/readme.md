@@ -1,4 +1,4 @@
-WaveBeans API reference
+API reference
 ==========
 
 Overview
