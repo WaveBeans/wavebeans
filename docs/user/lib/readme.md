@@ -1,5 +1,4 @@
-API reference
-==========
+# API reference
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -10,11 +9,14 @@ API reference
 - [Outputs](#outputs)
 - [Operations](#operations)
 - [Types](#types)
+  - [Sample](#sample)
+  - [Window<T>](#windowt)
+  - [FftSample](#fftsample)
+  - [User defined type](#user-defined-type)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-Overview
----------
+## Overview
 
 WaveBeans provides the one atomic entity called a Bean which may perform some operations. They are a few different types:
 
@@ -26,8 +28,7 @@ The samples are starting their life in SourceBean then by following a mesh of ot
 
 WaveBeans uses declarative way to represent the stream, so you first define the way the samples are being altered or analyzed, then it's being executed in most efficient way. That means, that effectively SinkBean are pulling data out of the stream, and all computations are happened on demand at the time they are needed. Such stream is called `BeanStream<T>`, it has a type parameters which represent what is inside the stream, i.e. `BeanStream<Sample>` is the stream of samples. The type `T` is non-nullable.
 
-Inputs
---------
+## Inputs
 
 Inputs allow you to generate some data that the whole other stream will then process, alter, slice and dice. Whatever is required. You can choose to read the input from file like WAV file, or you may generate the input based on some mathematical function like sine.
 
@@ -39,8 +40,7 @@ There a few different types of inputs, you may read more in specific:
 
 Also, as all streams in WaveBeans considered to be infinite, there is extra functionality to convert finite streams like wav-files, read more about [finite converters](inputs/finite-converters.md)
 
-Outputs
---------
+## Outputs
 
 Outputs serve two main purposes: define what to do with all that sampled data -- where to store it or hand it over to, and it is a terminal action it allows to launch all the computations through all defined operations. Frankly speaking, you may define your low level kinda output at any operation, but just calling `asSequence()` which returns you a regular Kotlin Sequence and read the stream as is; just remember, in most cases streams are considered to be infinite, so just regular call `toList()` will never finish.
 
@@ -71,8 +71,7 @@ Here is the list of supported outputs at the moment:
 * [WAV](outputs/wav-output.md) 
 * [/dev/null](outputs/dev-null-output.md)  
 
-Operations
---------
+## Operations
 
 To connect inputs and outputs feeling the stream with the meaning, you'll always define a set of operations. That allows you to change the stream characteristics, merge different streams together, form a new types of the streams and convert it back. A list of available operations sometimes depend on the type of the stream, however there are operations that may work with any type and even convert it to a different type.
 
@@ -98,14 +97,13 @@ The list of supported operations are:
     * [window](operations/window-operation.md) -- grouping a sequence of objects of defined length to handle them all at once. 
     
 
-Types
---------
+## Types
 
 Each `Bean` has input and output type, sometimes they might the same, sometimes might be different. Even more, the flexibility of using Beans, you can use any types of your own.
 
 In that section, it'll be covered what types are provided out of the box and what API they do have.
 
-**Sample**
+### Sample
 
 Sample is first-class citizen in WaveBeans. It holds the smallest piece of information available -- an audio sample. Internally, sample represented as 64-bit floating point value, its value is usually between -1 and 1 (including), which is basically amplitude of the signal at the certain point of time. So any input signal regardless of its type is being converted to this range, i.e. if the signal is represented as a 16-bit integer, its values are between -32768 and 32767, that ismapped to dynamic range from -1 to 1. But at the same time that means, while the stream is being processed the amplitude might be times higher than 1.0 without any cropping. However, you have to remember to return it back to range (-1, 1) before saving to certain formats like wav-files which doesn't support that.
 
@@ -158,7 +156,7 @@ ZeroSample == 0.0    // = true
 a - b < 0            // = true
 ```
 
-**Window<T>**
+### Window<T>
 
 Windows are used to group a set of values to behave as one single value and be processed all at once during one iteration. For example samples, all at once within one operation. The good usage example might be grouping `Sample`s into groups of 512-ish `Sample`s, to perform the FFT computation.
 
@@ -186,7 +184,7 @@ Window(2, 2, samples) { ZeroSample }
 Window.ofSamples(2, 2, samples)
 ```
 
-**FftSample**
+### FftSample
 
 FftSample is the type used by FftStream and is converted by variety of ways from a bunch of Samples. It is a complex object that consists of following fields:
 * `time` -- the time marker of this sample, in nano seconds.
@@ -211,7 +209,7 @@ b * c // -8 + 6i
 a > b // true
 ```
 
-**User defined type**
+### User defined type
 
 Using certain operations you can convert one type to another, and that new type can be used further down by the stream and then be converted to the one which is supported out of the box or used down to the SinkBean and be stored using that type. Or you can even return that type out of the Input and use all the way through to the end of the stream. Or use within windowing, or convert the FftSample directly. It's not limited, it's up to your requirement and understanding.
 
