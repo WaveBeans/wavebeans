@@ -5,14 +5,16 @@ Execution
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**
 
-- [Execution](#execution)
-  - [Single-threaded mode](#single-threaded-mode)
-  - [Multi-threaded mode](#multi-threaded-mode)
-  - [Using writers](#using-writers)
-  - [Using sequence](#using-sequence)
+- [Overview](#overview)
+- [Single-threaded mode](#single-threaded-mode)
+- [Multi-threaded mode](#multi-threaded-mode)
+- [Using writers](#using-writers)
+- [Using sequence](#using-sequence)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
+Overview
+------
 
 WaveBeans supports a few ways to launch the stream: in single threaded mode, in multi-threaded mode on one machine or *(WIP)* in distributed mode on a few machines. Despite the fact that this approach API is in active development and may change in the future, but it's definitely won't change drastically.
 
