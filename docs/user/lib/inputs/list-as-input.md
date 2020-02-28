@@ -1,5 +1,8 @@
 List as Input
 ========
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 Whenever you want to generate the input based on some predefined value such as list of values, you may that approach and convert any `List<T>` into a stream with corresponding type T. The main difference between List as Input and [input as function](function-as-input.md) is that all values are available at the time the stream starts, but not being evaluated.
 
