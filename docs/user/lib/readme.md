@@ -10,7 +10,7 @@
 - [Operations](#operations)
 - [Types](#types)
   - [Sample](#sample)
-  - [Window<T>](#windowt)
+  - [Window of any type T](#window-of-any-type-t)
   - [FftSample](#fftsample)
   - [User defined type](#user-defined-type)
 
@@ -156,7 +156,7 @@ ZeroSample == 0.0    // = true
 a - b < 0            // = true
 ```
 
-### Window<T>
+### Window of any type T
 
 Windows are used to group a set of values to behave as one single value and be processed all at once during one iteration. For example samples, all at once within one operation. The good usage example might be grouping `Sample`s into groups of 512-ish `Sample`s, to perform the FFT computation.
 
