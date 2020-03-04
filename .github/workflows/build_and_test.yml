@@ -8,6 +8,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - uses: wavebeans/wavebeans@cli-via-kotlinc
+      - uses: WaveBeans/wavebeans@cli-via-kotlinc
         with:
           args: test
