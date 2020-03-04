@@ -3,6 +3,7 @@ package io.wavebeans.lib.io
 import io.wavebeans.lib.BeanParams
 import io.wavebeans.lib.BeanStream
 import io.wavebeans.lib.SourceBean
+import io.wavebeans.lib.WaveBeansClassLoader
 import kotlinx.serialization.*
 import kotlinx.serialization.internal.ArrayListSerializer
 import kotlinx.serialization.internal.SerialClassDescImpl
@@ -28,12 +29,12 @@ object ListAsInputParamsSerializer : KSerializer<ListAsInputParams> {
             get() = object : SerialClassDescImpl("any") {}
 
         override fun deserialize(decoder: Decoder): Any {
-            val s = serializerByTypeToken(Class.forName(type))
+            val s = serializerByTypeToken(WaveBeansClassLoader.classForName(type))
             return decoder.decode(s)
         }
 
         override fun serialize(encoder: Encoder, obj: Any) {
-            val s = serializerByTypeToken(Class.forName(type))
+            val s = serializerByTypeToken(WaveBeansClassLoader.classForName(type))
             encoder.encode(s, obj)
         }
     }

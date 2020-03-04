@@ -1,9 +1,10 @@
 package io.wavebeans.cli.script
 
-import de.swirtz.ktsrunner.objectloader.KtsObjectLoader
-import de.swirtz.ktsrunner.objectloader.LoadException
+import io.wavebeans.lib.WaveBeansClassLoader
 import mu.KotlinLogging.logger
 import java.io.Closeable
+import java.io.File
+import java.lang.reflect.InvocationTargetException
 import java.util.concurrent.*
 
 class ScriptRunner(
@@ -20,7 +21,6 @@ class ScriptRunner(
 
     private val executor = Executors.newSingleThreadExecutor()
     private var task: Future<Throwable?>? = null
-    private val ktsObjectLoader = KtsObjectLoader()
 
     private val imports: List<String> = listOf( // TODO replace with compile time generation, reflection will slow everything down here, not reasonable
             "io.wavebeans.lib.*",
@@ -37,23 +37,6 @@ class ScriptRunner(
 
     private val evaluator = runMode.clazz.simpleName + "(" + runOptions.map { "${it.key} = ${it.value.parameter()}" }.joinToString(", ") + ")"
 
-    private val functions = """
-        val evaluator = $evaluator
-
-        fun StreamOutput<*>.out() { evaluator.addOutput(this) }
-    """.trimIndent()
-    private val evaluate = """
-        try {
-            evaluator.eval(${sampleRate}f).all { it.get() }
-        } catch (e : java.lang.InterruptedException) {
-            // nothing to do
-        } finally {
-            evaluator.close()
-        }
-    """.trimIndent()
-
-
-
     private val startCountDown = CountDownLatch(1)
 
     fun start(): ScriptRunner {
@@ -65,28 +48,106 @@ class ScriptRunner(
                 .toList()
         val cleanedContent = content.replace(importsRegex, "")
 
-        val scriptContent = listOf(
-                (imports + customImports).joinToString(separator = "\n"),
-                functions,
-                cleanedContent,
-                evaluate,
-                "true // need to return something :/"
-        ).joinToString(separator = "\n\n")
+        val scriptContent = """
+            package io.wavebeans.script
+            
+            ${(imports + customImports).joinToString(separator = "\n")}
+            import mu.KotlinLogging.logger
+            
+            val log = logger {}
+            
+            class WaveBeansScript {
+
+                val evaluator = $evaluator
+                
+                fun StreamOutput<*>.out() { evaluator.addOutput(this) }
+
+                fun content() {
+                    ${cleanedContent}
+                }
+
+                fun run() {
+                    content()
+                    
+                    try {
+                        log.info { "Script evaluation started" }
+                        evaluator.eval(${sampleRate}f).all { it.get() }
+                    } catch (e : java.lang.InterruptedException) {
+                        log.info { "Script evaluation interrupted" }
+                        // nothing to do
+                    } catch (e : Exception) {
+                        log.error(e) { "Script evaluation failed" } 
+                        e.printStackTrace(System.err)
+                        evaluator.close()
+                        System.exit(1)
+                    } finally {
+                        evaluator.close() 
+                        log.info { "Evaluator closed" }
+                    }
+                }
+            }
+        """.trimIndent()
+
         log.debug { "Evaluating the following script: \n$scriptContent" }
+        val compileTask = executor.submit(Callable<File> {
+            compile(scriptContent)
+        })
+        val jarFile = try {
+            compileTask.get(30000, TimeUnit.MILLISECONDS)!!
+        } catch (e: ExecutionException) {
+            log.error(e) { "Can't compile the script:\n$scriptContent" }
+            throw IllegalStateException("Can't compile the script: ${e.message}", e)
+        } catch (e: TimeoutException) {
+            log.error(e) { "Compilation took more than 30 sec:\n$scriptContent" }
+            throw IllegalStateException("Compilation took more than 30 sec", e)
+        }
+
         task = executor.submit(Callable {
             return@Callable try {
                 startCountDown.countDown()
-                ktsObjectLoader.load<Any?>(scriptContent)
+                run(jarFile)
                 null
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 log.error(e) { "Error while evaluating the following script: \n$scriptContent" }
-                if (e is LoadException) e.cause else e
+                e
             }
         })
 
         check(startCountDown.await(10000, TimeUnit.MILLISECONDS)) { "The task is not started" }
 
         return this
+    }
+
+    private fun compile(script: String): File {
+        val scriptFile = File(createTempDir("wavebeans-script"), "WaveBeansScript.kt")
+        val jarFile = File(createTempDir("wavebeans-script"), "wavebeans.jar")
+
+        scriptFile.writeText(script)
+
+        val compileCall = CommandRunner(
+                "/usr/local/bin/kotlinc",
+                "-d", jarFile.absolutePath, scriptFile.absolutePath,
+                "-cp", System.getProperty("java.class.path"),
+                "-jvm-target", "1.8"
+        ).call()
+
+        if (compileCall.exitCode != 0) {
+            throw IllegalStateException("Can't compile the script. \n${String(compileCall.output)}")
+        }
+
+        return jarFile
+    }
+
+    private fun run(jarFile: File) {
+        try {
+            WaveBeansClassLoader.classLoader = ScriptClassLoader(jarFile)
+            val scriptClazz = WaveBeansClassLoader.classForName("io.wavebeans.script.WaveBeansScript")
+            val scriptInstance = scriptClazz.constructors.first().newInstance()
+            val runMethod = scriptClazz.getMethod("run")
+            runMethod.invoke(scriptInstance)
+        } catch (e: InvocationTargetException) {
+            throw e.cause ?: e
+        }
     }
 
     fun result(): Pair<Boolean, Throwable?> {
@@ -102,11 +163,13 @@ class ScriptRunner(
     }
 
     fun interrupt(waitToFinish: Boolean = false): Boolean {
+        log.debug { "Attempting to interrupt the execution [waitToFinish=$waitToFinish]" }
         return (task?.cancel(true) ?: false)
                 .also {
                     executor.shutdown()
                     if (waitToFinish)
                         executor.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
+                    log.debug { "Interrupted the execution" }
                 }
     }
 
