@@ -124,8 +124,17 @@ class ScriptRunner(
 
         scriptFile.writeText(script)
 
+        val kotlinc = "kotlinc"
+        val kotlinHome = System.getenv("KOTLIN_HOME")
+                ?.takeIf { File("$it/$kotlinc").exists() }
+                ?: System.getenv("PATH")
+                        .split(":")
+                        .firstOrNull { File("$it/$kotlinc").exists() }
+                ?: throw IllegalStateException("$kotlinc is not located, make sure it is available via either" +
+                        " PATH or KOTLIN_HOME environment variable")
+
         val compileCall = CommandRunner(
-                "/usr/local/bin/kotlinc",
+                "$kotlinHome/$kotlinc",
                 "-d", jarFile.absolutePath, scriptFile.absolutePath,
                 "-cp", System.getProperty("java.class.path"),
                 "-jvm-target", "1.8"
