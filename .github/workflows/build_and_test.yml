@@ -10,4 +10,4 @@ jobs:
       - uses: actions/checkout@v1
       - uses: WaveBeans/wavebeans@cli-via-kotlinc
         with:
-          args: test
+          args: ./gradlew test
