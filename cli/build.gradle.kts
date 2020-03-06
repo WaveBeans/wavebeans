@@ -12,4 +12,5 @@ dependencies {
     implementation(project(":exe"))
 
     implementation("commons-cli:commons-cli:1.4")
+    implementation("ch.qos.logback:logback-classic:1.2.3")
 }

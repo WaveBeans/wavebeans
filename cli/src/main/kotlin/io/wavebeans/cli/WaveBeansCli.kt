@@ -1,14 +1,18 @@
 package io.wavebeans.cli
 
+import ch.qos.logback.classic.Level
+import ch.qos.logback.classic.LoggerContext
 import io.wavebeans.cli.script.RunMode
 import io.wavebeans.cli.script.ScriptRunner
 import org.apache.commons.cli.CommandLine
 import org.apache.commons.cli.Option
 import org.apache.commons.cli.Options
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.PrintWriter
 import java.util.concurrent.CancellationException
 import kotlin.system.measureTimeMillis
+
 
 /**
  * Class encapsulates all functionality that can be done via CLI interface.
@@ -35,7 +39,8 @@ class WaveBeansCli(
         val p = Option("p", "partitions", true, "Number of partitions to use in Distributed mode.")
         val t = Option("t", "threads", true, "Number of threads to use in Distributed mode.")
         val s = Option("s", "sample-rate", true, "Sample rate in Hz to use for outputs. By default, it's 44100.")
-        val options = Options().of(f, e, time, v, h, m, p, t, s)
+        val debug = Option(null, "debug", false, "DEBUG level of logging in to file under `logs` directory. By default it is INFO")
+        val options = Options().of(f, e, time, v, h, m, p, t, s, debug)
     }
 
     private val verbose = cli.has(v)
@@ -46,6 +51,13 @@ class WaveBeansCli(
      * Handles `^C` signal properly trying to close streams and flush what is done but is in temporary buffers.
      */
     fun tryScriptExecution(): Boolean {
+
+        if (cli.has(debug)) {
+            val lc = LoggerFactory.getILoggerFactory() as LoggerContext
+            val logbackLogger = lc.getLogger("ROOT")
+            logbackLogger.level = Level.DEBUG
+        }
+
         return if (cli.has(e) || cli.has(f)) {
             val content = cli.get(e) { it }
                     ?: cli.getRequired(f) { File(it).readText() }
@@ -64,28 +76,33 @@ class WaveBeansCli(
                         runMode = runMode,
                         runOptions = runOptions,
                         sampleRate = sampleRate
-                ).start()
-                        .also { if (verbose) printer.printLine("Script started:\n$content") }
-                        .use { runner ->
-                            Runtime.getRuntime().addShutdownHook(Thread {
-                                if (verbose) printer.printLine("Shutting down the script...")
-                                runner.interrupt(waitToFinish = true)
-                                runner.close()
-                                if (verbose) printer.printLine("Shut down finished.")
-                            })
+                ).use { runner ->
+                    try {
+                        runner.start()
+                        if (verbose) printer.printLine("Script started:\n$content")
 
-                            try {
-                                runner.awaitForResult()
-                                        .also {
-                                            if (verbose)
-                                                printer.printLine("Finished with result: " + (it?.message ?: "Success"))
-                                        }
-                            } catch (e: CancellationException) {
-                                if (verbose) printer.printLine("Script execution cancelled")
-                            }
+                        Runtime.getRuntime().addShutdownHook(Thread {
+                            if (verbose) printer.printLine("Shutting down the script...")
+                            runner.interrupt(waitToFinish = true)
+                            runner.close()
+                            if (verbose) printer.printLine("Shut down finished.")
+                        })
 
-                            Unit
+                        try {
+                            runner.awaitForResult()
+                                    .also {
+                                        if (verbose)
+                                            printer.printLine("Finished with result: " + (it?.message ?: "Success"))
+                                    }
+                        } catch (e: CancellationException) {
+                            if (verbose) printer.printLine("Script execution cancelled")
                         }
+                    } catch (e: Exception) {
+                        e.message?.let { printer.printLine(it) } ?: e.printStackTrace(printer)
+                    }
+
+                    Unit
+                }
             }
             if (trackTime) printer.printLine("${executionTime / 1000.0}sec")
             true
