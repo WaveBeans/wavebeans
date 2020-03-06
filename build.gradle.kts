@@ -48,17 +48,24 @@ allprojects {
 
     }
 
-    val test by tasks.getting(Test::class) {
-        useJUnitPlatform {
-            includeEngines("spek2")
-        }
-    }
-
     java {
         withJavadocJar()
         withSourcesJar()
     }
 
+    tasks.test {
+        useJUnitPlatform {
+            includeEngines("spek2")
+        }
+    }
+
+    tasks.jar {
+        manifest {
+            attributes(
+                    "WaveBeans-Version" to properties["version"]
+            )
+        }
+    }
 }
 
 publishing {
@@ -75,6 +82,7 @@ publishing {
         }
     }
 }
+
 
 bintray {
     user = findProperty("bintray.user")?.toString() ?: ""
