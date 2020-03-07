@@ -33,17 +33,18 @@ class WaveBeansCli(
         val f = Option("f", "execute-file", true, "Executes script from file.")
         val e = Option("e", "execute", true, "Executes script from provided string.")
         val time = Option(null, "time", false, "Tracks amount of time the script was running for.")
-        val v = Option("v", "verbose", false, "Print some extra execution logging to stdout")
+        val verbose = Option(null, "verbose", false, "Print some extra execution logging to stdout")
         val h = Option("h", "help", false, "Prints this help")
         val m = Option("m", "run-mode", true, "Running script in distributed mode, specify exact overseer. Default is: ${RunMode.LOCAL.id}. Supported: ${RunMode.values().joinToString(", ") { it.id }}. ")
         val p = Option("p", "partitions", true, "Number of partitions to use in Distributed mode.")
         val t = Option("t", "threads", true, "Number of threads to use in Distributed mode.")
         val s = Option("s", "sample-rate", true, "Sample rate in Hz to use for outputs. By default, it's 44100.")
+        val v = Option("v", "version", false, "Prints version of the tool.")
         val debug = Option(null, "debug", false, "DEBUG level of logging in to file under `logs` directory. By default it is INFO")
-        val options = Options().of(f, e, time, v, h, m, p, t, s, debug)
+        val options = Options().of(f, e, time, verbose, h, m, p, t, s, debug, v)
     }
 
-    private val verbose = cli.has(v)
+    private val verbosePrint = cli.has(verbose)
     private val trackTime = cli.has(time)
 
     /**
@@ -63,7 +64,7 @@ class WaveBeansCli(
                     ?: cli.getRequired(f) { File(it).readText() }
 
             val runMode = cli.get(m) { RunMode.byId(it) } ?: RunMode.LOCAL
-            if (verbose) printer.printLine("Running mode: ${runMode.id}")
+            if (verbosePrint) printer.printLine("Running mode: ${runMode.id}")
             val runOptions = mutableMapOf<String, Any>()
             if (runMode == RunMode.LOCAL_DISTRIBUTED && cli.has(p)) runOptions["partitions"] = cli.getRequired(p) { it.toInt() }
             if (runMode == RunMode.LOCAL_DISTRIBUTED && cli.has(t)) runOptions["threads"] = cli.getRequired(t) { it.toInt() }
@@ -79,23 +80,23 @@ class WaveBeansCli(
                 ).use { runner ->
                     try {
                         runner.start()
-                        if (verbose) printer.printLine("Script started:\n$content")
+                        if (verbosePrint) printer.printLine("Script started:\n$content")
 
                         Runtime.getRuntime().addShutdownHook(Thread {
-                            if (verbose) printer.printLine("Shutting down the script...")
+                            if (verbosePrint) printer.printLine("Shutting down the script...")
                             runner.interrupt(waitToFinish = true)
                             runner.close()
-                            if (verbose) printer.printLine("Shut down finished.")
+                            if (verbosePrint) printer.printLine("Shut down finished.")
                         })
 
                         try {
                             runner.awaitForResult()
                                     .also {
-                                        if (verbose)
+                                        if (verbosePrint)
                                             printer.printLine("Finished with result: " + (it?.message ?: "Success"))
                                     }
                         } catch (e: CancellationException) {
-                            if (verbose) printer.printLine("Script execution cancelled")
+                            if (verbosePrint) printer.printLine("Script execution cancelled")
                         }
                     } catch (e: Exception) {
                         e.message?.let { printer.printLine(it) } ?: e.printStackTrace(printer)
