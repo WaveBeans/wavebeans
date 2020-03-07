@@ -1,6 +1,18 @@
 Memory table
 ======
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [Overview](#overview)
+- [Querying](#querying)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
+Overview
+------
+
 Memory tables allows you to store the values of the stream to query it later for different purposes. To create a memory table you just define as any other output specifying the name of the table:
 
 ```kotlin
@@ -18,6 +30,9 @@ stream.toTable("tableName", 120.m)
 The second parameter has type [TimeMeasure](../types/time-measure.md).
 
 The table can work with any type you desire, on any stream, that type just needs to be a non-nullable.
+
+Querying
+------
 
 While the stream is running the data is being stored into a table, where you can query it. The data is accessible regardless if the stream is over and closed or it is still being processed. However if you're trying to access data during execution it's not guaranteed to be presented as data availability depends on the overall stream performance and oyu need to write your code safely.
 
