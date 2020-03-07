@@ -1,10 +1,23 @@
-Sine input
-=========
+# Sine input
+
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [Sine](#sine)
+  - [Amplitude](#amplitude)
+  - [Offset](#offset)
+  - [Lower level API](#lower-level-api)
+- [Sine sweep](#sine-sweep)
+  - [Offset](#offset-1)
+  - [Sweep delta](#sweep-delta)
+  - [Lower level API](#lower-level-api-1)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 WaveBeans supports generating of sinusoid of specific frequency as well as sweep sinusoid which changes it frequency from one to another within specific time range. These inputs as they are just a mathematical function support any sampling rate, and resampling happens internally.
 
-Sine
-------
+## Sine
 
 To generate sinusoid of specific frequency you can use the following syntax:
 
@@ -24,7 +37,7 @@ To generate sinusoid of specific frequency you can use the following syntax:
 1e6.sine() // the frequency of the sinusoid will be 10^6
 ```
 
-**Amplitude**
+### Amplitude
 
 By default, the sine is generated with amplitude `1.0` which can be changed as a parameter:
 
@@ -34,7 +47,7 @@ By default, the sine is generated with amplitude `1.0` which can be changed as a
 440.sine(0.5) // or you can specify it like this, as amplitude is the first argument if the sine function
 ```
 
-**Offset**
+### Offset
 
 Also you may define the time offset of the sine:
 
@@ -45,7 +58,7 @@ Also you may define the time offset of the sine:
                    // and time offset is the second you would need to specify them both.
 ```
 
-**Lower level API**
+### Lower level API
 
 That API is just a wrapper around class implementation `io.wavebeans.lib.io.SineGeneratedInput` which you may instantiate as well having the same result. You would need just to pass some of the parameters as an object of type `io.wavebeans.lib.io.SineGeneratedInputParams`:
 
@@ -61,8 +74,7 @@ SineGeneratedInput(SineGeneratedInputParams(440.0, 1.0)) // providing only requi
 
 ```
 
-Sine sweep
-------
+## Sine sweep
 
 To generate sine sweep, which is sine that changes its frequency from one value to another within time period, you may use the following API:
 
@@ -72,7 +84,7 @@ To generate sine sweep, which is sine that changes its frequency from one value 
 (440..880).sineSweep(amplitude = 1.0, time = 2.0) // or the same but specifying as named parameters
 ```
 
-**Offset**
+### Offset
 
 You can also tweak similar to regular sine the time offset (in seconds) to change the phase of the sine, by default it is `0`:
 
@@ -80,7 +92,7 @@ You can also tweak similar to regular sine the time offset (in seconds) to chang
 (440..880).sineSweep(1.0, 2.0, timeOffset = 1.0) 
 ```
 
-**Sweep delta**
+### Sweep delta
 
 And also you may change the frequency value it'll be changed by evenly. Note: make sure sample rate allows this, it shouldn't be less than (1 / sample rate), by default it is `0.1`:
 
@@ -88,7 +100,7 @@ And also you may change the frequency value it'll be changed by evenly. Note: ma
 (440..880).sineSweep(1.0, 2.0, sweepDelta = 0.01) 
 ```
 
-**Lower level API**
+### Lower level API
 
 The same as sin API it is just a wrapper around proper class instantiation, so you can always do this with the same effect:
 

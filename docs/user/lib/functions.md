@@ -1,10 +1,19 @@
-User defined functions
-========
+# User defined functions
+
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [Function input and output type](#function-input-and-output-type)
+- [Lambda function](#lambda-function)
+- [Function as class](#function-as-class)
+  - [FnInitParameters](#fninitparameters)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 For various cases you may not be satisfied with built-in functions provided by WaveBeans framework. To solve that issue you may define functions of your own. There are two way to define function, with one main difference -- whether or not you need to pass by some parameters from configuration runtime to execution runtime.
 
-Function input and output type.
--------
+## Function input and output type
 
 Each function must define the type of input and output. The type (both input and output) can be only one, to bypass or return a few different parameters as one you may use tuples for [two](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-pair/index.html) or [three](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-triple/index.html) parameters or [data classes](https://kotlinlang.org/docs/reference/data-classes.html) for more.
 
@@ -32,8 +41,7 @@ fun apply(argument: Pair<Sample, Double>): Sample { // `argument` type is specif
 
 For more information please follow [Kotlin documentation]((https://kotlinlang.org/docs/reference/multi-declarations.html)).
 
-Lambda function
--------
+## Lambda function
 
 If you don't need to bypass any parameters to execution runtime, you can define the function very shortly with so called [lambda-function](https://kotlinlang.org/docs/reference/lambdas.html#lambda-expressions-and-anonymous-functions). Inside lambda function the operand can be used as `it`, or defined explicitly. 
  
@@ -49,8 +57,7 @@ In this case if you'll try to bypass parameter outside of the lambda expression 
 
 This way is very compact and most of the time parameters contain everything that is required to perform the operation.
  
-Class function
--------
+## Function as class
 
 This is the most cumbersome way to define the function but at the same time the most flexible. You can define a function as a class, but keep in mind that shouldn't be the inner class or anonymous class. Also, to bypass parameters you would need to be able to serialize them into string representation. There are functions defined for primitive types, for your own classes you would need to do it on your own 
 
@@ -77,7 +84,7 @@ class ChangeAmplitudeFn(parameters: FnInitParameters)  // there should be at lea
 stream.map(ChangeAmplitudeFn(2.0))
 ```
 
-**FnInitParameters**
+### FnInitParameters
 
 Type `io.wavebeans.lib.FnInitParameters` is the specific class that is used to bypass parameters from configuration runtime to execution runtime. For transferring all values should be serialized into strings.
 

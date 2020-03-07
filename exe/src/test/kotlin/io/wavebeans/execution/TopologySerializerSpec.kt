@@ -11,6 +11,7 @@ import io.wavebeans.lib.stream.window.WindowStreamParams
 import io.wavebeans.lib.stream.window.plus
 import io.wavebeans.lib.stream.window.window
 import io.wavebeans.lib.table.*
+import kotlinx.serialization.Serializable
 import mu.KotlinLogging
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
@@ -258,6 +259,48 @@ object TopologySerializerSpec : Spek({
                 }
             }
         }
+    }
+
+    describe("List as input") {
+
+        @Serializable
+        data class A(val v: String, val f: Float)
+
+        val o = listOf(1, 2, 3, 4).input().toDevNull()
+        val o2 = listOf(A("1", 1.0f), A("2", 2.0f), A("3", 3.0f), A("4", 4.0f)).input().toDevNull()
+        val topology = listOf(o, o2).buildTopology()
+
+        val deserializedTopology = with(TopologySerializer) {
+            val topologySerialized = serialize(topology).also { log.debug { it } }
+            deserialize(topologySerialized)
+        }.also { log.debug { it } }
+
+        it("has same refs") {
+            assertThat(deserializedTopology.refs).all {
+                size().isEqualTo(topology.refs.size)
+                each { nodeRef ->
+
+                    nodeRef.prop("type") { it.type }.isIn(*listOf(
+                            ListAsInput::class,
+                            DevNullStreamOutput::class
+                    ).map { it.qualifiedName }.toTypedArray())
+
+                    nodeRef.prop("params") { it.params }.kClass().isIn(*listOf(
+                            ListAsInputParams::class,
+                            NoParams::class
+                    ).toTypedArray())
+                }
+            }
+        }
+        it("has same links") {
+            assertThat(deserializedTopology.links).all {
+                size().isEqualTo(topology.links.size)
+                each {
+                    it.isIn(*topology.links.toTypedArray())
+                }
+            }
+        }
+
     }
 
     describe("Table sink") {

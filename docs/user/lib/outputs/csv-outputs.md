@@ -1,12 +1,25 @@
-CSV file output
-=======
+# CSV file output
+
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [Overview](#overview)
+- [Writing Samples](#writing-samples)
+  - [Low-level API](#low-level-api)
+- [Writing FFT samples](#writing-fft-samples)
+  - [Low-level API](#low-level-api-1)
+- [User defined CSV output](#user-defined-csv-output)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
+## Overview
 
 One of the very valuable outputs for further analysis by third party tools, either visualization or converting low level data to something WaveBeans doesn't support out of the box, is CSV file. CSV file is simple comma-separated value file, which is easy to read or work with. 
 
 WaveBeans support output to CSV of predefined type in specific columnar format or you may define your own function on predefined type or user defined type.
 
-Writing Samples
--------
+## Writing Samples
 
 One of the predefined and most simple types is Sample. The CSV output of such type has two columns: time and value. The time value is integer value of the current time, the unit is defined as a parameter, precision up to nano-seconds. The value is double of current sample value (usually between `-1.0` and `1.0`, however is not limited here), the precision is 10^-10 (10 digits after dot).
 
@@ -52,12 +65,11 @@ time ns,value
 ... SKIPPED ...
 ```
 
-**Low-level API**
+### Low-level API
 
 Samples to CSV is just a convenient wrapper around [user defined CSV output](#user-defined-csv-output), in order to use that API you may use function `io.wavebeans.lib.io.SampleCsvFn`, which has `timeUnit` as a parameter.
 
-Writing FFT samples
---------
+## Writing FFT samples
 
 Another type supported out-of-the-box is FFT sample. FFT sample is more complicated than just sample and can be represented only as a pivotal table, where the columns are frequencies and rows are values for each time markers. Each row is a single FFT calculation of the specified window. Also, FFT stream consist of two sub-streams -- magnitude and phase, you need to specify explicitly which one needs to be written.
 
@@ -86,7 +98,7 @@ Both method of writing magnitude or phase into CSV file support following parame
 * `timeUnit` -- the first column of the table is integer value of time markers, that flag allows you to specify which units to use to output this value. The type is `java.util.concurrent.TimeUnit`, supported every time unit enumerated there. Default value is milliseconds. *optional*
 * `encoding` - what encoding to use when interpret string value to bytes. By default, `UTF-8`. Most of the time you won't need to change it. *optional*
 
-*Low-level API*
+### Low-level API
 
 As any other API within WaveBeans framework, CSV output of FFT sample is just a wrapper around a class. You may create the instance of this class by specifying the stream it needs to read from and a set of parameters.
 
@@ -113,8 +125,7 @@ CsvFftStreamOutput(fftStream, CsvFftStreamOutputParams(
 ))
 ```
 
-User defined CSV output
---------
+## User defined CSV output
 
 If you want to customize CSV output for predefined type or store your own type you may define a function that will implement that custom logic. CSV consists of two main parts: header and body, both of them should be specified. 
 

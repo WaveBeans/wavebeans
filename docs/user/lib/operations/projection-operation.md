@@ -1,6 +1,18 @@
 Projection operation
 ========
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [Overview](#overview)
+- [Working with different types](#working-with-different-types)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
+Overview
+--------
+
 When you're working with the stream sometimes you may need to get the subset of the stream. For this purpose projection of the stream is built. For a positioning a time scale is used. When defining a projection you need to specify the time marker of the start, which can be 0 for beginning of the stream or any other time value more than 0; the end marker is optional, you may leave it `null` if you want to have unlimited at the end stream.
 
 To use a projection on the stream call `rangeProjection()` function, you would need to specify `start` (`value > 0`), `end` (`null` or `value > start`) and `timeUnit` (`TimeUnit.MILLISECONDS` is default value):
@@ -38,7 +50,8 @@ val finiteRangeStream = rangeStream.trim(length)
 val infiniteRangeStream = finiteRangeStream.sampleStream(ZeroFilling()) 
 ```
 
-**Working with different types**
+Working with different types
+----------
 
 Projection operation is defined for `Sample` and `Window<Sample>` types out of the box, but it's not limited to them. Only thing you need to keep in mind, that projection calculates time when the stream is being executed and the sample rate is provided, so it needs a way to convert the size of your type to samples to correctly calculate time markers, i.e. for `Sample` the size is always 1, for windowed samples the size is th size of the window step.
 
