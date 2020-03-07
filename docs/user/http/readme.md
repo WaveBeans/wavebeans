@@ -2,14 +2,14 @@
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+**Table of Contents**
 
-- [HTTP API](#http-api)
-  - [In-application usage](#in-application-usage)
-  - [Table Service](#table-service)
-    - [Custom types](#custom-types)
-  - [Helper Types](#helper-types)
-    - [Time Measure](#time-measure)
+- [Overview](#overview)
+- [In-application usage](#in-application-usage)
+- [Table Service](#table-service)
+  - [Custom types](#custom-types)
+- [Helper Types](#helper-types)
+  - [Time Measure](#time-measure)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
