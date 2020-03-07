@@ -1,6 +1,18 @@
 WAV-file output
 =========
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [Overview](#overview)
+- [Low-level API](#low-level-api)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
+Overview
+--------
+
 The [WAV](https://en.wikipedia.org/wiki/WAV) is very popular format to store uncompressed audio as file. Currently WaveBeans supports only files with single channel -- mono. The sampling rate and bit depth can be any. It can be used only to store stream of samples -- `BeanStream<Sample>`.
 
 Writing to wave file is 2 step process:
@@ -21,7 +33,8 @@ To store the stream into a wav file you would need to call one of the following 
 
 *Note: Don't forget to follow general rules to [execute the stream](../../exe/readme.md)*
 
-**Low-level API**
+Low-level API
+--------
 
 As any other API within WaveBeans framework, WAV output is just a wrapper around a class. You may create the instance of this class by specifying the stream it needs to read from and a set of parameters.
 

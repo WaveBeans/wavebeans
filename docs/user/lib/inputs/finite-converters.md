@@ -1,6 +1,10 @@
 Finite converters
 =========
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 All WaveBeans streams supposed to be infinite during processing, however certain inputs like [wav-files](wav-file.md) are finite by their nature and that conflict needs to be resolved. For that particular purpose there is an abstraction that allows you to convert such finite stream into infinite one based on defined strategy. For example, you may replace all samples with zeros which are out of range of the source stream -- basically replace with silence, so it won't affect any other stream while you're mixing the up together for instance.
 
 It is required for some of the cases and implemented only for type `Sample` currently. Also, only one converter is supported out of the box which fills with zeros everything what is out of the range of the source stream -- `ZeroFilling`. To convert finite stream to infinite one, you can call method `sampleStream()` on the FiniteSampleStream instance:
