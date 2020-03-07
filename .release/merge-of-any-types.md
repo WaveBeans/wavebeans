@@ -1,0 +1,1 @@
+Operations: merge operation can [merge streams of different types](/docs/user/lib/operations/merge-operation.md#using-with-two-different-input-types)

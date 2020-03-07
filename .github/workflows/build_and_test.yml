@@ -8,6 +8,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - uses: MrRamych/gradle-actions/openjdk-8@3.1
+      - uses: WaveBeans/wavebeans@cli-via-kotlinc
         with:
-          args: test
+          args: ./gradlew test

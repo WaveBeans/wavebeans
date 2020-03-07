@@ -2,10 +2,7 @@ package io.wavebeans.execution
 
 import io.wavebeans.execution.pod.Pod
 import io.wavebeans.execution.pod.PodKey
-import io.wavebeans.lib.AnyBean
-import io.wavebeans.lib.Bean
-import io.wavebeans.lib.BeanParams
-import io.wavebeans.lib.SinkBean
+import io.wavebeans.lib.*
 import kotlin.reflect.KType
 import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.typeOf
@@ -65,7 +62,7 @@ data class PodRef(
                 if (leftRefs.isEmpty()) return inputs.single()
                 val beanRef = leftRefs.first()
                 try {
-                    val beanClazz = Class.forName(beanRef.type).kotlin
+                    val beanClazz = WaveBeansClassLoader.classForName(beanRef.type).kotlin
                     val bean = when {
                         inputs.isEmpty() -> beanClazz.constructors.first {
                             it.parameters.size == 1 &&

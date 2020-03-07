@@ -4,14 +4,14 @@ import io.wavebeans.lib.*
 import kotlinx.serialization.*
 import kotlinx.serialization.internal.SerialClassDescImpl
 
-fun <T : Any, R : Any> BeanStream<T>.merge(with: BeanStream<T>, merge: (Pair<T?, T?>) -> R): BeanStream<R> =
+fun <T1 : Any, T2 : Any, R : Any> BeanStream<T1>.merge(with: BeanStream<T2>, merge: (Pair<T1?, T2?>) -> R): BeanStream<R> =
         this.merge(with, Fn.wrap(merge))
 
-fun <T : Any, R : Any> BeanStream<T>.merge(with: BeanStream<T>, merge: Fn<Pair<T?, T?>, R>): BeanStream<R> =
+fun <T1 : Any, T2 : Any, R : Any> BeanStream<T1>.merge(with: BeanStream<T2>, merge: Fn<Pair<T1?, T2?>, R>): BeanStream<R> =
         FunctionMergedStream(this, with, FunctionMergedStreamParams(merge))
 
 
-object FunctionMergedStreamParamsSerializer : KSerializer<FunctionMergedStreamParams<*, *>> {
+object FunctionMergedStreamParamsSerializer : KSerializer<FunctionMergedStreamParams<*, *, *>> {
 
     override val descriptor: SerialDescriptor = object : SerialClassDescImpl("FunctionMergedStreamParams") {
         init {
@@ -19,7 +19,7 @@ object FunctionMergedStreamParamsSerializer : KSerializer<FunctionMergedStreamPa
         }
     }
 
-    override fun deserialize(decoder: Decoder): FunctionMergedStreamParams<*, *> {
+    override fun deserialize(decoder: Decoder): FunctionMergedStreamParams<*, *, *> {
         val dec = decoder.beginStructure(descriptor)
         var fn: Fn<Pair<Any?, Any?>, Any>? = null
         @Suppress("UNCHECKED_CAST")
@@ -33,7 +33,7 @@ object FunctionMergedStreamParamsSerializer : KSerializer<FunctionMergedStreamPa
         return FunctionMergedStreamParams(fn!!)
     }
 
-    override fun serialize(encoder: Encoder, obj: FunctionMergedStreamParams<*, *>) {
+    override fun serialize(encoder: Encoder, obj: FunctionMergedStreamParams<*, *, *>) {
         val structure = encoder.beginStructure(descriptor)
         structure.encodeSerializableElement(descriptor, 0, FnSerializer, obj.merge)
         structure.endStructure(descriptor)
@@ -42,17 +42,17 @@ object FunctionMergedStreamParamsSerializer : KSerializer<FunctionMergedStreamPa
 }
 
 @Serializable(with = FunctionMergedStreamParamsSerializer::class)
-class FunctionMergedStreamParams<T : Any, R : Any>(
-        val merge: Fn<Pair<T?, T?>, R>
+class FunctionMergedStreamParams<T1 : Any, T2 : Any, R : Any>(
+        val merge: Fn<Pair<T1?, T2?>, R>
 ) : BeanParams()
 
-class FunctionMergedStream<T : Any, R : Any>(
-        val sourceStream: BeanStream<T>,
-        val mergeStream: BeanStream<T>,
-        override val parameters: FunctionMergedStreamParams<T, R>
-) : BeanStream<R>, MultiAlterBean<T, R>, SinglePartitionBean {
+class FunctionMergedStream<T1 : Any, T2 : Any, R : Any>(
+        val sourceStream: BeanStream<T1>,
+        val mergeStream: BeanStream<T2>,
+        override val parameters: FunctionMergedStreamParams<T1, T2, R>
+) : BeanStream<R>, MultiAlterBean<R>, SinglePartitionBean {
 
-    override val inputs: List<Bean<T>>
+    override val inputs: List<AnyBean>
         get() = listOf(sourceStream, mergeStream)
 
     override fun asSequence(sampleRate: Float): Sequence<R> {

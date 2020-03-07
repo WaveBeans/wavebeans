@@ -1,6 +1,15 @@
 Function as an Input
 ========
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [Syntax](#syntax)
+- [Low-level API](#low-level-api)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 Predefined Inputs are very handy but unfortunately not all the time. There is always a use case that is not covered in the framework or won't be covered at all. For such purposes WaveBeans supports inputs as custom functions. It has some limits though which is related to the way WaveBeans is being executed, you may read more about such limitations in [functions reference](../functions.md), that won't be covered here, as it's not related to the input itself.
 
 Inputs are being generated based on two values: 
@@ -79,7 +88,8 @@ input(InputFn(440.0, 1.0)) // or just specifying both of the parameters one by o
 
 That approach is more cumbersome but very flexible as you basically can do whatever you want and even call third party libraries methods.
 
-**Low-level API**
+Low-level API
+-------
 
 As any input that one has lower level API which is just class `Input<T>`, where `T` is the type of the produced output. Also it works with instances of `Fn` only, so you have two ways to instantiate it:
 
