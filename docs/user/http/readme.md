@@ -1,5 +1,20 @@
 # HTTP API
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [HTTP API](#http-api)
+  - [In-application usage](#in-application-usage)
+  - [Table Service](#table-service)
+    - [Custom types](#custom-types)
+  - [Helper Types](#helper-types)
+    - [Time Measure](#time-measure)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
+## Overview
+
 WaveBeans framework allows expose to access some of the data to be expose via HTTP API. While the stream is being evaluated you may start the HTTP Server. It is possible via [CLI](../cli/readme.md#http-api) or in your application.
 
 Http Service provides access to different underlying service implementations which has different purpose with REST API:
@@ -91,7 +106,7 @@ Number formats, examples:
 * double `100.2` or as float `100.2f`, however will be rounded down to `100`
 * `1e2` -- the value is double, but has only integer part so will be interpreted as `100`
 * `1.2e2` -- the value is double as well, but keeping in mind mantias the value will be interpreted as `1.2 * 100 = 120.0 = 120`
-* `-100`, `1.2` -- all negatives are also supported.
+* `-100`, `-1.2` -- all negatives are also supported.
 
 The second part is time unit which is 1 or 2 latin symbols, case doesn't matter:
 * `ns` -- nanoseconds
