@@ -3,6 +3,7 @@ package io.wavebeans.execution
 import kotlinx.serialization.Serializable
 import io.wavebeans.lib.BeanParams
 import io.wavebeans.lib.SinkBean
+import io.wavebeans.lib.WaveBeansClassLoader
 import kotlin.reflect.full.isSubclassOf
 
 interface BeanGroup
@@ -88,7 +89,7 @@ fun Topology.groupBeans(idResolver: GroupIdResolver = DefaultGroupIdResolver(thi
     }
 
     this.refs
-            .filter { Class.forName(it.type).kotlin.isSubclassOf(SinkBean::class) }
+            .filter { WaveBeansClassLoader.classForName(it.type).kotlin.isSubclassOf(SinkBean::class) }
             .forEach {
                 buildStrokes(it, emptyList(), it.partition)
             }

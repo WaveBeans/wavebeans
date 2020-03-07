@@ -146,14 +146,14 @@ class FnInitParameters {
  * Helper [Fn] to wrap lambda functions within [Fn] instance to provide more friendly API.
  */
 @Suppress("UNCHECKED_CAST")
-internal class WrapFn<T, R>(initParams: FnInitParameters) : Fn<T, R>(initParams) {
+class WrapFn<T, R>(initParams: FnInitParameters) : Fn<T, R>(initParams) {
 
     private val fn: (T) -> R
 
     init {
         val clazzName = initParams[fnClazz]!!
         try {
-            val clazz = Class.forName(clazzName)
+            val clazz = WaveBeansClassLoader.classForName(clazzName)
             val constructor = clazz.declaredConstructors.first()
             constructor.isAccessible = true
             fn = constructor.newInstance() as (T) -> R
@@ -222,7 +222,7 @@ object FnSerializer : KSerializer<Fn<*, *>> {
         loop@ while (true) {
             when (val i = dec.decodeElementIndex(descriptor)) {
                 CompositeDecoder.READ_DONE -> break@loop
-                0 -> fnClazz = Class.forName(dec.decodeStringElement(descriptor, i)) as Class<Fn<Any, Any>>
+                0 -> fnClazz = WaveBeansClassLoader.classForName(dec.decodeStringElement(descriptor, i)) as Class<Fn<Any, Any>>
                 1 -> initParams = dec.decodeSerializableElement(descriptor, i, FnInitParameters.serializer())
                 else -> throw SerializationException("Unknown index $i")
             }
