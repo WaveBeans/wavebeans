@@ -40,7 +40,7 @@ object HttpServiceSpec : Spek({
                 after { overseer.close() }
 
                 it("should return last 100ms") {
-                    handleRequest(Get, "/table/table1/last/100ms/44100.0").apply {
+                    handleRequest(Get, "/table/table1/last?interval=100ms&sampleRate=44100.0").apply {
                         assertThat(response.status()).isNotNull().isEqualTo(HttpStatusCode.OK)
                         assertThat(response.content).isNotNull().all {
                             isNotEmpty()
@@ -49,7 +49,7 @@ object HttpServiceSpec : Spek({
                     }
                 }
                 it("should return time range") {
-                    handleRequest(Get, "/table/table1/timeRange/0ms/100ms/").apply {
+                    handleRequest(Get, "/table/table1/timeRange?from=0ms&to=100ms").apply {
                         assertThat(response.status()).isNotNull().isEqualTo(HttpStatusCode.OK)
                         assertThat(response.content).isNotNull().all {
                             isNotEmpty()
@@ -58,18 +58,18 @@ object HttpServiceSpec : Spek({
                     }
                 }
                 it("should return 404 as table is not found") {
-                    handleRequest(Get, "/table/non-existing-table/timeRange/0ms/100ms/").apply {
+                    handleRequest(Get, "/table/non-existing-table/timeRange?from=0ms&to=100ms").apply {
                         assertThat(response.status()).isNotNull().isEqualTo(HttpStatusCode.NotFound)
                     }
-                    handleRequest(Get, "/table/non-existing-table/last/100ms/").apply {
+                    handleRequest(Get, "/table/non-existing-table/last?interval=100ms").apply {
                         assertThat(response.status()).isNotNull().isEqualTo(HttpStatusCode.NotFound)
                     }
                 }
                 it("should return 400 if parameter is incorrect") {
-                    handleRequest(Get, "/table/table1/timeRange/100/200/").apply {
+                    handleRequest(Get, "/table/table1/timeRange?from=100&to=200").apply {
                         assertThat(response.status()).isNotNull().isEqualTo(HttpStatusCode.BadRequest)
                     }
-                    handleRequest(Get, "/table/table1/last/100/").apply {
+                    handleRequest(Get, "/table/table1/last?interval=100").apply {
                         assertThat(response.status()).isNotNull().isEqualTo(HttpStatusCode.BadRequest)
                     }
                 }
@@ -90,7 +90,7 @@ object HttpServiceSpec : Spek({
                 after { overseer.close() }
 
                 it("should return last 100ms") {
-                    handleRequest(Get, "/table/table2/last/100ms/44100.0").apply {
+                    handleRequest(Get, "/table/table2/last?interval=100ms&sampleRate=44100.0").apply {
                         assertThat(response.status()).isNotNull().isEqualTo(HttpStatusCode.OK)
                         assertThat(response.content).isNotNull().all {
                             isNotEmpty()
@@ -99,7 +99,7 @@ object HttpServiceSpec : Spek({
                     }
                 }
                 it("should return time range") {
-                    handleRequest(Get, "/table/table2/timeRange/0ms/100ms/44100.0").apply {
+                    handleRequest(Get, "/table/table2/timeRange?from=0ms&to=100ms&sampleRate=44100.0").apply {
                         assertThat(response.status()).isNotNull().isEqualTo(HttpStatusCode.OK)
                         assertThat(response.content).isNotNull().all {
                             isNotEmpty()

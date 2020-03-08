@@ -55,11 +55,11 @@ Table Service allows you to query data being stored in [tables](../lib/outputs/t
 
 Following methods available, mostly this methods are exposed from [table query functionality](../lib/outputs/table-output.md#querying):
 
-* Getting last Interval: `/table/{tableName}/last/{interval}/{sampleRate?}`:
+* Getting last Interval: `/table/{tableName}/last?interval={interval}[&sampleRate={sampleRate}]`:
     * `tableName` -- the name of the table to query, if the table can't be found the API call with return `404 Not Found` HTTP code.
     * `interval` -- the interval you're requesting, the type of [TimeMeasure](#time-measure). If malformed you'll see `400 Bad Request` HTTP code.
     * `sampleRate` -- is optional parameter which defines which sample rate to use to form the stream. By default 44100. In this case only affects the offset time values.
-* Getting specific time range: `/table/{tableName}/timeRange/{from}/{to}/{sampleRate?}`:
+* Getting specific time range: `/table/{tableName}/timeRange?from={from}&to={to}[&sampleRate={sampleRate}]`:
     * `tableName` -- the name of the table to query, if the table can't be found the API call with return `404 Not Found` HTTP code.
     * `from`, `to` -- the from and to values of the interval you're requesting, the type of [TimeMeasure](#time-measure). If malformed you'll see `400 Bad Request` HTTP code.
     * `sampleRate` -- is optional parameter which defines which sample rate to use to form the stream. By default 44100. In this case only affects the offset time values.

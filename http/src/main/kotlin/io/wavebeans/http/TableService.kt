@@ -36,10 +36,10 @@ fun Application.tableService() {
     val tableService = TableService()
 
     routing {
-        get("/table/{tableName}/last/{interval}/{sampleRate?}") {
+        get("/table/{tableName}/last") {
             val tableName: String = call.parameters.required("tableName") { it }
-            val interval: TimeMeasure = call.parameters.required("interval") { TimeMeasure.parseOrNull(it) }
-            val sampleRate: Float? = call.parameters.optional("sampleRate") { it.toFloatOrNull() }
+            val interval: TimeMeasure = call.request.queryParameters.required("interval") { TimeMeasure.parseOrNull(it) }
+            val sampleRate: Float? = call.request.queryParameters.optional("sampleRate") { it.toFloatOrNull() }
 
             if (tableService.exists(tableName)) {
                 val stream = tableService.last(tableName, interval, sampleRate ?: 44100.0f)
@@ -50,11 +50,11 @@ fun Application.tableService() {
                 call.respond(HttpStatusCode.NotFound, "$tableName is not found")
             }
         }
-        get("/table/{tableName}/timeRange/{from}/{to}/{sampleRate?}") {
+        get("/table/{tableName}/timeRange") {
             val tableName: String = call.parameters.required("tableName") { it }
-            val from: TimeMeasure = call.parameters.required("from") { TimeMeasure.parseOrNull(it) }
-            val to: TimeMeasure = call.parameters.required("to") { TimeMeasure.parseOrNull(it) }
-            val sampleRate: Float? = call.parameters.optional("sampleRate") { it.toFloatOrNull() }
+            val from: TimeMeasure = call.request.queryParameters.required("from") { TimeMeasure.parseOrNull(it) }
+            val to: TimeMeasure = call.request.queryParameters.required("to") { TimeMeasure.parseOrNull(it) }
+            val sampleRate: Float? = call.request.queryParameters.optional("sampleRate") { it.toFloatOrNull() }
 
             if (tableService.exists(tableName)) {
                 val stream = tableService.timeRange(tableName, from, to, sampleRate ?: 44100.0f)

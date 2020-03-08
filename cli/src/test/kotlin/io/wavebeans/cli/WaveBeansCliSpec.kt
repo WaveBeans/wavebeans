@@ -115,7 +115,7 @@ object WaveBeansCliSpec : Spek({
                 fun result(): List<String> {
                     return runBlocking {
                         HttpClient(CIO).use { client ->
-                            val response = client.get<String>(URL("http://localhost:12345/table/table1/last/1.ms/"))
+                            val response = client.get<String>(URL("http://localhost:12345/table/table1/last?interval=1.ms"))
                             response
                         }
                     }.split("[\\r\\n]+".toRegex()).filterNot { it.isEmpty() }

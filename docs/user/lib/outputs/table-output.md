@@ -47,9 +47,9 @@ Once you've located the table you can start querying the table. Any query return
 Currently you can do the following with the table:
 
 * `last(interval: TimeMeasure): BeanStream<T>` -- gets the last N time units out of the table, the parameter is [TimeMeasure](../types/time-measure.md). In provided example, it may return as exactly 2 seconds or less, even emptr stream, depending how much data is available.
-* `timeRange(from: TimeMeasure, to: TimeMeasure): BeanStream<T>` -- gets the exact time range between `from` and `to` parameters which are both are [TimeMeasure](../types/time-measure.md) type. The same as method `last90`, it may return the stream with the length `to - from`, or less, or even empty. If `from > to`, it'll return the empty stream.
-* `firstMarker(): TimeMeasure` -- return the time marker of the first value in the table.
-* `lastMarker(): TimeMeasure` -- return the time marker of the last value in the table.
+* `timeRange(from: TimeMeasure, to: TimeMeasure): BeanStream<T>` -- gets the exact time range between `from` and `to` parameters which are both are [TimeMeasure](../types/time-measure.md) type. The same as method `last()`, it may return the stream with the length `to - from`, or less, or even empty. If `from > to`, it'll return the empty stream.
+* `firstMarker(): TimeMeasure` -- return the time marker of the first value in the table. *Remember if the stream is still running the value keep changing*
+* `lastMarker(): TimeMeasure` -- return the time marker of the last value in the table. *Remember if the stream is still running the value keep changing*
 
 A few examples, assuming table is defined as above and has type `Sample`:
 
