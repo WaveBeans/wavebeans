@@ -49,8 +49,8 @@ repositories {
 
 ```groovy
 dependencies {
-    implementation "io.wavebeans:exe:0.0.1"
-    implementation "io.wavebeans:lib:0.0.1"
+    implementation "io.wavebeans:exe:$wavebeans_version"
+    implementation "io.wavebeans:lib:$wavebeans_version"
 }
 ```
 

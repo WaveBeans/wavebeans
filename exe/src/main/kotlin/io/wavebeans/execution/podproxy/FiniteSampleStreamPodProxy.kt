@@ -5,8 +5,7 @@ import io.wavebeans.execution.medium.SampleArray
 import io.wavebeans.execution.medium.long
 import io.wavebeans.execution.medium.nullableSampleArrayList
 import io.wavebeans.lib.Sample
-import io.wavebeans.lib.ZeroSample
-import io.wavebeans.lib.stream.FiniteSampleStream
+import io.wavebeans.lib.stream.FiniteStream
 import java.util.concurrent.TimeUnit
 
 @ExperimentalStdlibApi
@@ -18,7 +17,7 @@ class FiniteSampleStreamPodProxy(
         forPartition = forPartition,
         converter = { it.nullableSampleArrayList() },
         elementExtractor = { arr, i -> if (i < arr.size) arr[i] else null }
-), FiniteSampleStream {
+), FiniteStream<Sample> {
 
     override fun length(timeUnit: TimeUnit): Long {
         val bush = podDiscovery.bushFor(pointedTo)
@@ -35,7 +34,7 @@ class FiniteSampleStreamMergingPodProxy(
         forPartition = forPartition,
         converter = { it.nullableSampleArrayList() },
         elementExtractor = { arr, i -> if (i < arr.size) arr[i] else null }
-), FiniteSampleStream {
+), FiniteStream<Sample> {
 
     override fun length(timeUnit: TimeUnit): Long {
         TODO()

@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit
 
 object ZeroFillingFiniteSampleStreamSpec : Spek({
 
-    fun stream(seq: List<Int>): FiniteSampleStream = object : FiniteSampleStream {
+    fun stream(seq: List<Int>): FiniteStream<Sample> = object : FiniteStream<Sample> {
         override fun length(timeUnit: TimeUnit): Long = throw UnsupportedOperationException()
 
         override fun asSequence(sampleRate: Float): Sequence<Sample> {
@@ -27,7 +27,7 @@ object ZeroFillingFiniteSampleStreamSpec : Spek({
 
     describe("Finite stream having 10 elements") {
         val seq = 10.repeat { it }
-        val zeroFilling = stream(seq).sampleStream(ZeroFilling())
+        val zeroFilling = stream(seq).stream(ZeroFilling())
 
         it("should return first 10 elements") {
             assertThat(
@@ -50,7 +50,7 @@ object ZeroFillingFiniteSampleStreamSpec : Spek({
     describe("Finite stream having more elements than default sample array size") {
         val elCount = (512 * 3.14).toInt()
         val seq = elCount.repeat { it }
-        val zeroFilling = stream(seq).sampleStream(ZeroFilling())
+        val zeroFilling = stream(seq).stream(ZeroFilling())
 
         it("should return first $elCount elements") {
             assertThat(
@@ -72,7 +72,7 @@ object ZeroFillingFiniteSampleStreamSpec : Spek({
 
     describe("Finite stream having 10 elements taking first half") {
         val seq = 10.repeat { it }
-        val zeroFilling = stream(seq).sampleStream(ZeroFilling()).rangeProjection(0, 500)
+        val zeroFilling = stream(seq).stream(ZeroFilling()).rangeProjection(0, 500)
 
         it("should return first 5 elements") {
             assertThat(
@@ -95,7 +95,7 @@ object ZeroFillingFiniteSampleStreamSpec : Spek({
 
     describe("Finite stream having 10 elements taking second half") {
         val seq = 10.repeat { it }
-        val zeroFilling = stream(seq).sampleStream(ZeroFilling()).rangeProjection(500, 1000)
+        val zeroFilling = stream(seq).stream(ZeroFilling()).rangeProjection(500, 1000)
 
         it("should return second 5 elements") {
             assertThat(
