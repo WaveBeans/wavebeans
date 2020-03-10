@@ -1,7 +1,6 @@
 package io.wavebeans.lib.io
 
 import io.wavebeans.lib.*
-import io.wavebeans.lib.stream.FiniteSampleStream
 import java.net.URI
 
 abstract class ByteArrayLEFileOutputWriter(

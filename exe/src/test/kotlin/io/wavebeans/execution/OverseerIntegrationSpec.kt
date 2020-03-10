@@ -4,6 +4,8 @@ import assertk.assertThat
 import assertk.assertions.*
 import io.wavebeans.lib.*
 import io.wavebeans.lib.io.*
+import io.wavebeans.lib.table.TableRegistry
+import io.wavebeans.lib.table.toTable
 import io.wavebeans.lib.stream.*
 import io.wavebeans.lib.stream.fft.fft
 import io.wavebeans.lib.stream.window.Window
@@ -125,7 +127,7 @@ object OverseerIntegrationSpec : Spek({
 
             val fileContent = file.readLines()
 
-            it("should not return empty input ") { assertThat(fileContent).isNotEmpty() }
+            it("should have non-empty output") { assertThat(fileContent).size().isGreaterThan(1) }
 
             runLocally(o)
             val fileContentLocal = file.readLines()
@@ -147,7 +149,7 @@ object OverseerIntegrationSpec : Spek({
 
             val fileContent = file.readLines()
 
-            it("should have non-empty output") { assertThat(fileContent).isNotEmpty() }
+            it("should have non-empty output") { assertThat(fileContent).size().isGreaterThan(1) }
 
             runLocally(o)
             val fileContentLocal = file.readLines()
@@ -169,7 +171,7 @@ object OverseerIntegrationSpec : Spek({
 
             val fileContent = file.readLines()
 
-            it("should have non-empty output") { assertThat(fileContent).isNotEmpty() }
+            it("should have non-empty output") { assertThat(fileContent).size().isGreaterThan(1) }
 
             runLocally(o)
             val fileContentLocal = file.readLines()
@@ -191,7 +193,7 @@ object OverseerIntegrationSpec : Spek({
 
             val fileContent = file.readLines()
 
-            it("should have non-empty output") { assertThat(fileContent).isNotEmpty() }
+            it("should have non-empty output") { assertThat(fileContent).size().isGreaterThan(1) }
 
             runLocally(o)
             val fileContentLocal = file.readLines()
@@ -216,7 +218,7 @@ object OverseerIntegrationSpec : Spek({
 
             val fileContent = file.readLines()
 
-            it("should have non-empty output") { assertThat(fileContent).isNotEmpty() }
+            it("should have non-empty output") { assertThat(fileContent).size().isGreaterThan(1) }
 
             runLocally(o)
             val fileContentLocal = file.readLines()
@@ -243,7 +245,7 @@ object OverseerIntegrationSpec : Spek({
 
             val fileContent = file.readLines()
 
-            it("should have non-empty output") { assertThat(fileContent).isNotEmpty() }
+            it("should have non-empty output") { assertThat(fileContent).size().isGreaterThan(1) }
 
             runLocally(o)
             val fileContentLocal = file.readLines()
@@ -275,5 +277,32 @@ object OverseerIntegrationSpec : Spek({
             val fileContentLocal = file.readLines()
             it("should have the same output as local") { assertThat(fileContent).isEqualTo(fileContentLocal) }
         }
+    }
+
+    describe("Table output") {
+        val file = File.createTempFile("test", ".csv")//.also { it.deleteOnExit() }
+
+        val run1 = seqStream().trim(1000).toTable("t1")
+        val run2 = TableRegistry.instance().byName<Sample>("t1")
+                .last(2000.ms)
+                .map { it * 2 }
+                .toCsv("file://${file.absolutePath}")
+
+        runOnOverseer(listOf(run1))
+
+        runOnOverseer(listOf(run2))
+
+        val fileContent = file.readLines()
+
+        it("should have non-empty output") { assertThat(fileContent).size().isGreaterThan(1) }
+
+        TableRegistry.instance().reset("t1")
+
+        runLocally(listOf(run1))
+        runLocally(listOf(run2))
+
+        val fileContentLocal = file.readLines()
+        it("should have the same output as local") { assertThat(fileContent).isEqualTo(fileContentLocal) }
+
     }
 })

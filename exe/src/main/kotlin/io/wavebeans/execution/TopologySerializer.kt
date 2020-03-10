@@ -10,6 +10,7 @@ import io.wavebeans.lib.stream.*
 import io.wavebeans.lib.stream.fft.FftStreamParams
 import io.wavebeans.lib.stream.window.WindowStreamParams
 import io.wavebeans.lib.stream.window.WindowStreamParamsSerializer
+import io.wavebeans.lib.table.*
 
 object TopologySerializer {
 
@@ -29,6 +30,12 @@ object TopologySerializer {
             InputParams::class with InputParamsSerializer
             FunctionMergedStreamParams::class with FunctionMergedStreamParamsSerializer
             ListAsInputParams::class with ListAsInputParamsSerializer
+            TableOutputParams::class with TableOutputParams.serializer()
+            TableDriverStreamParams::class with TableDriverStreamParams.serializer()
+        }
+        polymorphic(TableQuery::class) {
+            TimeRangeTableQuery::class with TimeRangeTableQuery.serializer()
+            LastIntervalTableQuery::class with LastIntervalTableQuery.serializer()
         }
     }
 

@@ -1,0 +1,1 @@
+Output: writing samples to in-memory [table](/docs/user/lib/outputs/table-output.md) for later [querying](/docs/user/lib/outputs/table-output.md#querying)

@@ -1,31 +1,28 @@
 package io.wavebeans.lib.stream
 
 import io.wavebeans.lib.*
-import kotlinx.serialization.Serializable
-import java.util.concurrent.TimeUnit
 
-class ZeroFilling : FiniteToStream {
-    override fun convert(finiteSampleStream: FiniteSampleStream): BeanStream<Sample> {
-        return ZeroFillingFiniteSampleStream(finiteSampleStream)
+class ZeroFilling : FiniteToStream<Sample> {
+    override fun convert(finiteStream: FiniteStream<Sample>): BeanStream<Sample> {
+        return ZeroFillingFiniteSampleStream(finiteStream)
     }
 }
 
 private class ZeroFillingFiniteSampleStream(
-        val finiteSampleStream: FiniteSampleStream,
+        val finiteStream: FiniteStream<Sample>,
         val params: NoParams = NoParams()
 ) : BeanStream<Sample>, SingleBean<Sample> {
 
     override val parameters: BeanParams = params
 
-    override val input: Bean<Sample> = finiteSampleStream
+    override val input: Bean<Sample> = finiteStream
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> {
         return object : Iterator<Sample> {
 
-            val iterator = finiteSampleStream
+            val iterator = finiteStream
                     .asSequence(sampleRate)
                     .iterator()
-
 
             override fun hasNext(): Boolean = true
 

@@ -4,7 +4,7 @@ import io.wavebeans.lib.BeanStream
 import io.wavebeans.lib.Sample
 import java.util.concurrent.TimeUnit
 
-interface FiniteSampleStream : BeanStream<Sample> {
+interface FiniteStream<T : Any> : BeanStream<T> {
 
     fun length(timeUnit: TimeUnit = TimeUnit.MILLISECONDS): Long
 }
