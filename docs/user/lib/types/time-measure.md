@@ -1,6 +1,10 @@
 Time-measure type
 ======
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 Time measure type allows you to specify different time markers or time length. 
 
 The class you would need to instantiate is `io.wavebeans.lib.TimeMeasure`, though there are a set of helper function that helps you to create the instance of the class out of any number:

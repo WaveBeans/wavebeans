@@ -34,6 +34,11 @@ How to do a release?
 5. Website `wavebeans.io`:
     1. Update documentation
     2. Update release notes: https://wavebeans.io/wavebeans/release_notes.html
+        * Update links from `/docs/user/lib` to `/docs/api`
+        * Update links from `/docs/user/http` to `/docs/http`
+        * Update links from `/docs/user/cli` to `/docs/cli`
+        * Update links from `/docs/user/exe` to `/docs/exe`
+        * `.md` to `.html`
 
 6. Social channels:
     * Post the link on twitter and telegram channel.
