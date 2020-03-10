@@ -1,1 +1,0 @@
-Inputs: using [List as input](/docs/user/lib/inputs/list-as-input.md)

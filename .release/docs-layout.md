@@ -1,1 +1,0 @@
-Documentation: restructured to publish on [wavebeans.io](https://wavebeans.io)

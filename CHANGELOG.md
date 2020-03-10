@@ -1,3 +1,14 @@
+Version 0.0.2 on 2020-03-10
+------
+
+* CLI: Using kotlinc to compile script.
+* Documentation: restructured to publish on [wavebeans.io](https://wavebeans.io)
+* HTTP API: introduced [HTTP interface](/docs/user/http/readme.md) for accessing internal resources
+* Table: added [querying](/docs/user/lib/outputs/table-output.md#querying) over HTTP API
+* Inputs: using [List as input](/docs/user/lib/inputs/list-as-input.md)
+* Operations: merge operation can [merge streams of different types](/docs/user/lib/operations/merge-operation.md#using-with-two-different-input-types)
+* Output: writing samples to in-memory [table](/docs/user/lib/outputs/table-output.md) for later [querying](/docs/user/lib/outputs/table-output.md#querying)
+
 Version 0.0.1 on 01/31/2020
 ------
 
