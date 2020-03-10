@@ -26,10 +26,11 @@ Kotlin installed, kotlinc which can be located either via KOTLIN_HOME or PATH. F
 
 ## Installation instructions
 
-* Download the binaries from https://dl.bintray.com/wavebeans/wavebeans/cli/wavebeans.zip
+* Choose the appropriate version
+* Download the binaries from `https://dl.bintray.com/wavebeans/wavebeans/wavebeans-$VERSION.zip`
 
 ```bash
- curl -LO https://dl.bintray.com/wavebeans/wavebeans/cli/wavebeans.zip
+ curl -LO https://dl.bintray.com/wavebeans/wavebeans/wavebeans-$VERSION.zip
 ```
 
 * Unpack them
