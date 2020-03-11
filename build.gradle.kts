@@ -80,6 +80,11 @@ publishing {
             groupId = "io.wavebeans"
             artifactId = "exe"
         }
+        create<MavenPublication>("http") {
+            from(subprojects.first { it.name == "http" }.components["java"])
+            groupId = "io.wavebeans"
+            artifactId = "http"
+        }
     }
 }
 
@@ -87,7 +92,7 @@ publishing {
 bintray {
     user = findProperty("bintray.user")?.toString() ?: ""
     key = findProperty("bintray.key")?.toString() ?: ""
-    setPublications("lib", "exe")
+    setPublications("lib", "exe", "http")
     pkg(delegateClosureOf<com.jfrog.bintray.gradle.BintrayExtension.PackageConfig> {
         repo = "wavebeans"
         name = "wavebeans"
