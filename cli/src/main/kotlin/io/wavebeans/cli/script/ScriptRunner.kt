@@ -57,6 +57,7 @@ class ScriptRunner(
             
             val log = logger {}
             
+            @kotlin.ExperimentalStdlibApi
             class WaveBeansScript {
 
                 val evaluator = $evaluator
@@ -72,7 +73,14 @@ class ScriptRunner(
                     
                     try {
                         log.info { "Script evaluation started" }
-                        evaluator.eval(${sampleRate}f).all { it.get() }
+                        evaluator.eval(${sampleRate}f)
+                            .map { it.get() }
+                            .also {
+                                it.mapNotNull { it.exception }
+                                        .map { log.error(it) { "Error during evaluation" }; it }
+                                        .firstOrNull()?.let { throw it }
+                            }
+                            .all { it.finished }
                     } catch (e : java.lang.InterruptedException) {
                         log.info { "Script evaluation interrupted" }
                         // nothing to do
