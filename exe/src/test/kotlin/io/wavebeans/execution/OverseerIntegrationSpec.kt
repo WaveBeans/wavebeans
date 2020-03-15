@@ -34,7 +34,12 @@ object OverseerIntegrationSpec : Spek({
 
         val runTime = measureTimeMillis {
             LocalDistributedOverseer(outputs, threads, partitions).use { overseer ->
-                assertThat(overseer.eval(sampleRate).all { it.get() == true }).isTrue()
+                assertThat(
+                        overseer.eval(sampleRate)
+                                .map { it.get() }
+                                .also { it.mapNotNull { it.exception }.forEach { log.error(it) { "Evaluation error" } } }
+                                .all { it.finished }
+                ).isTrue()
             }
         }
         log.debug { "Distributed run finished in $runTime ms" }
@@ -47,7 +52,12 @@ object OverseerIntegrationSpec : Spek({
     ): Long {
         val runTime = measureTimeMillis {
             LocalOverseer(outputs).use { overseer ->
-                assertThat(overseer.eval(sampleRate).all { it.get() == true }).isTrue()
+                assertThat(
+                        overseer.eval(sampleRate)
+                                .map { it.get() }
+                                .also { it.mapNotNull { it.exception }.forEach { log.error(it) { "Evaluation error" } } }
+                                .all { it.finished }
+                ).isTrue()
             }
         }
         log.debug { "Local run finished in $runTime ms" }
@@ -283,6 +293,32 @@ object OverseerIntegrationSpec : Spek({
         val file = File.createTempFile("test", ".csv")//.also { it.deleteOnExit() }
 
         val run1 = seqStream().trim(1000).toTable("t1")
+        val run2 = TableRegistry.instance().byName<Sample>("t1")
+                .last(2000.ms)
+                .map { it * 2 }
+                .toCsv("file://${file.absolutePath}")
+
+        runOnOverseer(listOf(run1))
+
+        runOnOverseer(listOf(run2))
+
+        val fileContent = file.readLines()
+
+        it("should have non-empty output") { assertThat(fileContent).size().isGreaterThan(1) }
+
+        TableRegistry.instance().reset("t1")
+
+        runLocally(listOf(run1))
+        runLocally(listOf(run2))
+
+        val fileContentLocal = file.readLines()
+        it("should have the same output as local") { assertThat(fileContent).isEqualTo(fileContentLocal) }
+
+    }
+    describe("Table output2") {
+        val file = File.createTempFile("test", ".csv")//.also { it.deleteOnExit() }
+
+        val run1 = seqStream().window(401).fft(512).trim(1000).toTable("t1")
         val run2 = TableRegistry.instance().byName<Sample>("t1")
                 .last(2000.ms)
                 .map { it * 2 }
