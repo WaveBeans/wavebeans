@@ -2,7 +2,6 @@ package io.wavebeans.lib.stream
 
 import io.wavebeans.lib.*
 import kotlinx.serialization.*
-import kotlinx.serialization.internal.SerialClassDescImpl
 
 fun <T1 : Any, T2 : Any, R : Any> BeanStream<T1>.merge(with: BeanStream<T2>, merge: (Pair<T1?, T2?>) -> R): BeanStream<R> =
         this.merge(with, Fn.wrap(merge))
@@ -13,10 +12,8 @@ fun <T1 : Any, T2 : Any, R : Any> BeanStream<T1>.merge(with: BeanStream<T2>, mer
 
 object FunctionMergedStreamParamsSerializer : KSerializer<FunctionMergedStreamParams<*, *, *>> {
 
-    override val descriptor: SerialDescriptor = object : SerialClassDescImpl("FunctionMergedStreamParams") {
-        init {
-            addElement("mergeFn")
-        }
+    override val descriptor: SerialDescriptor = SerialDescriptor("FunctionMergedStreamParams") {
+        element("mergeFn", FnSerializer.descriptor)
     }
 
     override fun deserialize(decoder: Decoder): FunctionMergedStreamParams<*, *, *> {
@@ -33,9 +30,9 @@ object FunctionMergedStreamParamsSerializer : KSerializer<FunctionMergedStreamPa
         return FunctionMergedStreamParams(fn!!)
     }
 
-    override fun serialize(encoder: Encoder, obj: FunctionMergedStreamParams<*, *, *>) {
+    override fun serialize(encoder: Encoder, value: FunctionMergedStreamParams<*, *, *>) {
         val structure = encoder.beginStructure(descriptor)
-        structure.encodeSerializableElement(descriptor, 0, FnSerializer, obj.merge)
+        structure.encodeSerializableElement(descriptor, 0, FnSerializer, value.merge)
         structure.endStructure(descriptor)
     }
 

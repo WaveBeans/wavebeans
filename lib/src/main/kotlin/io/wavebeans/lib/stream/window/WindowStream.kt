@@ -2,7 +2,7 @@ package io.wavebeans.lib.stream.window
 
 import io.wavebeans.lib.*
 import kotlinx.serialization.*
-import kotlinx.serialization.internal.SerialClassDescImpl
+import kotlinx.serialization.builtins.serializer
 import kotlin.reflect.jvm.jvmName
 
 /**
@@ -44,12 +44,10 @@ fun <T : Any> BeanStream<T>.window(size: Int, step: Int, zeroElFn: () -> T): Bea
 
 object WindowStreamParamsSerializer : KSerializer<WindowStreamParams<*>> {
 
-    override val descriptor: SerialDescriptor = object : SerialClassDescImpl("WindowStreamParams") {
-        init {
-            addElement("windowSize")
-            addElement("step")
-            addElement("zeroElFn")
-        }
+    override val descriptor: SerialDescriptor = SerialDescriptor(WindowStreamParams::class.jvmName) {
+        element("windowSize", Int.serializer().descriptor)
+        element("step", Int.serializer().descriptor)
+        element("zeroElFn", String.serializer().descriptor)
     }
 
     override fun deserialize(decoder: Decoder): WindowStreamParams<*> {
@@ -71,11 +69,11 @@ object WindowStreamParamsSerializer : KSerializer<WindowStreamParams<*>> {
         return WindowStreamParams(windowSize!!, step!!, funcByName)
     }
 
-    override fun serialize(encoder: Encoder, obj: WindowStreamParams<*>) {
-        val funcName = obj.zeroElFn::class.jvmName
+    override fun serialize(encoder: Encoder, value: WindowStreamParams<*>) {
+        val funcName = value.zeroElFn::class.jvmName
         val structure = encoder.beginStructure(descriptor)
-        structure.encodeIntElement(descriptor, 0, obj.windowSize)
-        structure.encodeIntElement(descriptor, 1, obj.step)
+        structure.encodeIntElement(descriptor, 0, value.windowSize)
+        structure.encodeIntElement(descriptor, 1, value.step)
         structure.encodeStringElement(descriptor, 2, funcName)
         structure.endStructure(descriptor)
     }
