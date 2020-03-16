@@ -44,10 +44,10 @@ val outputs = listOf(stream1, stream2)
 val overseer = LocalOverseer(outputs)
 ```
 
-3. Invoke `eval()` function of the created overseer object specifying the desired sample rate as a [Float number](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-float/index.html), i.e. 44100Hz, it returns the list of [Future](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html) objects that allows you to wait for results, one Future correspond to one output. The easiest way would just to wait for all futures to resolve. You may check the results, as future object returns (when `get()` function is called) the boolean value, which is true if the output was evaluated successfully.
+3. Invoke `eval()` function of the created overseer object specifying the desired sample rate as a [Float number](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-float/index.html), i.e. 44100Hz as `44100.0f`. The method call returns the list of [Future](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html) objects that allows you to wait for results, one Future correspond to one output. The easiest way would be just to wait for all futures to resolve. You may check the results when the future object is resolved when `get()` function is called, it returns the `ExecutionResult` value. That class has field `finished` and it is `true` if the output was evaluated successfully, otherwise, if it is `false`, the execution of the output has failed and it's worth to check the `exception` field.
 
 ```kotlin
-overseer.eval(44100.0f).all { it.get() }
+overseer.eval(44100.0f).all { it.get().finished }
 ```
 
 4. When the overseer is evaluated it's needed to be closed:
@@ -60,8 +60,11 @@ Now when we know all the steps, it's better to provide a short code snippet to s
 
 ```kotlin
 LocalOverseer(outputs).use { overseer ->
-    if (!overseer.eval(sampleRate).all { it.get() }) {
-        println("Execution failed. Check logs")
+    val results = overseer.eval(sampleRate).map { it.get() }
+    if (!results.all { it.finished }) {
+        println("Execution failed.")
+        results.mapNotNull { it.exception }
+            .forEach { it.printStackTrace(System.err) }
     }
 }
 ```

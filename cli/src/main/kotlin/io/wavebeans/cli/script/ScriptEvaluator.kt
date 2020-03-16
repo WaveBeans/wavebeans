@@ -1,5 +1,6 @@
 package io.wavebeans.cli.script
 
+import io.wavebeans.execution.ExecutionResult
 import io.wavebeans.lib.io.StreamOutput
 import java.io.Closeable
 import java.util.concurrent.Future
@@ -12,6 +13,6 @@ interface ScriptEvaluator : Closeable {
         outputs += out
     }
 
-    fun eval(sampleRate: Float): List<Future<Boolean>>
+    fun eval(sampleRate: Float): List<Future<ExecutionResult>>
 }
 

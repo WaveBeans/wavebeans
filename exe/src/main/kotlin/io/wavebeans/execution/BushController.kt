@@ -24,7 +24,7 @@ class BushController(val key: BushKey, val pods: List<PodRef>, threads: Int, sam
         log.info { "BUSH[$key] Closed. " }
     }
 
-    fun getAllFutures(): List<Future<Boolean>> {
+    fun getAllFutures(): List<Future<ExecutionResult>> {
         return bush.tickPodsFutures()
     }
 }

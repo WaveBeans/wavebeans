@@ -10,6 +10,7 @@ import java.io.File
 import java.lang.Thread.sleep
 import java.util.concurrent.CancellationException
 
+@ExperimentalStdlibApi
 object ScriptRunnerSpec : Spek({
 
     arrayOf(

@@ -4,7 +4,7 @@ import io.wavebeans.execution.*
 import io.wavebeans.lib.io.StreamOutput
 import java.util.concurrent.Future
 
-@UseExperimental(ExperimentalStdlibApi::class)
+@ExperimentalStdlibApi
 class LocalDistributedScriptEvaluator(
         private val partitions: Int,
         private val threads: Int
@@ -14,7 +14,7 @@ class LocalDistributedScriptEvaluator(
 
     private lateinit var overseer: Overseer
 
-    override fun eval(sampleRate: Float): List<Future<Boolean>> {
+    override fun eval(sampleRate: Float): List<Future<ExecutionResult>> {
         overseer = LocalDistributedOverseer(outputs, threads, partitions)
         return overseer.eval(sampleRate)
     }
