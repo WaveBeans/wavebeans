@@ -1,6 +1,8 @@
 package io.wavebeans.lib.stream
 
+import com.sun.media.sound.FFT
 import io.wavebeans.lib.*
+import io.wavebeans.lib.stream.fft.FftSample
 import io.wavebeans.lib.stream.window.Window
 import io.wavebeans.lib.stream.window.WindowStream
 import io.wavebeans.lib.stream.window.WindowStreamParams
@@ -78,8 +80,11 @@ object SampleCountMeasurement {
     private val types = mutableMapOf<KClass<*>, (Any) -> Int>()
 
     init {
+        registerType(Number::class) { 1 }
         registerType(Sample::class) { 1 }
         registerType(Window::class) { window -> window.step * samplesInObject(window.elements.first()) }
+        registerType(FftSample::class) { it.samplesCount }
+        registerType(List::class) { it.size * samplesInObject(it.first() ?: throw IllegalStateException("List of nullable types is not supported")) }
     }
 
     fun <T : Any> registerType(clazz: KClass<T>, measurer: (T) -> Int) {

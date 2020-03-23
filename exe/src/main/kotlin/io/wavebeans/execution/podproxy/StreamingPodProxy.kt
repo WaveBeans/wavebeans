@@ -40,5 +40,5 @@ abstract class StreamingPodProxy<T : Any, ARRAY_T>(
     override val parameters: BeanParams
         get() = throw UnsupportedOperationException("That's not required for PodProxy")
 
-    override fun toString(): String = "${this::class.simpleName}->[$pointedTo] for $forPartition"
+    override fun toString(): String = "${this::class.simpleName}->[$pointedTo] for partition=$forPartition"
 }

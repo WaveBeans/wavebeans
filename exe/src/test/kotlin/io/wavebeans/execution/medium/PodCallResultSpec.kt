@@ -128,8 +128,8 @@ object PodCallResultSpec : Spek({
 
         describe("Wrapping List<FftSampleArray>") {
             val obj = listOf(
-                    createFftSampleArray(2) { i -> FftSample(i.toLong(), i, i * 123.0f, listOf(i.r, i.i)) },
-                    createFftSampleArray(2) { i -> FftSample(i.toLong(), i, i * 123.0f, listOf(i.r, i.i)) }
+                    createFftSampleArray(2) { i -> FftSample(i.toLong(), i, i, i * 123.0f, listOf(i.r, i.i)) },
+                    createFftSampleArray(2) { i -> FftSample(i.toLong(), i, i, i * 123.0f, listOf(i.r, i.i)) }
             )
             val result = result(obj)
 
@@ -143,6 +143,26 @@ object PodCallResultSpec : Spek({
                             prop("fft @ [0,1]") { it[0][1] }.isEqualTo(obj[0][1])
                             prop("fft @ [1,0]") { it[1][0] }.isEqualTo(obj[1][0])
                             prop("fft @ [1,1]") { it[1][1] }.isEqualTo(obj[1][1])
+                        }
+            }
+        }
+        describe("Wrapping List<Array<DoubleArray>>") {
+            val obj = listOf(
+                    Array(2) { i -> DoubleArray(i) { it.toDouble() + 123.0 } },
+                    Array(2) { i -> DoubleArray(i) { it.toDouble() - 345.0 } }
+            )
+            val result = result(obj)
+
+            it("should have non empty byteArray") { assertThat(result.byteArray).isNotNull() }
+            it("should have empty exception") { assertThat(result.exception).isNull() }
+            it("should return valid value") {
+                assertThat(result.nullableDoubleArrayArrayList())
+                        .isNotNull()
+                        .all {
+                            prop("doubleArray @ [0,0]") { it[0][0] }.isEqualTo(obj[0][0])
+                            prop("doubleArray @ [0,1]") { it[0][1] }.isEqualTo(obj[0][1])
+                            prop("doubleArray @ [1,0]") { it[1][0] }.isEqualTo(obj[1][0])
+                            prop("doubleArray @ [1,1]") { it[1][1] }.isEqualTo(obj[1][1])
                         }
             }
         }

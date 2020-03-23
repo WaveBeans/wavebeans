@@ -8,6 +8,7 @@ import io.wavebeans.lib.io.*
 import io.wavebeans.lib.table.TableRegistry
 import io.wavebeans.lib.table.toTable
 import io.wavebeans.lib.stream.*
+import io.wavebeans.lib.stream.fft.FftSample
 import io.wavebeans.lib.stream.fft.fft
 import io.wavebeans.lib.stream.window.Window
 import io.wavebeans.lib.stream.window.window
@@ -341,11 +342,25 @@ object OverseerIntegrationSpec : Spek({
     describe("Table output2") {
         val file = File.createTempFile("test", ".csv")//.also { it.deleteOnExit() }
 
-        val run1 = seqStream().window(401).fft(512).trim(1000).toTable("t1")
-        val run2 = TableRegistry.instance().byName<Sample>("t1")
+        val run1 = seqStream()
+                .window(401)
+                .fft(512)
+                .trim(10)
+                .toTable("t2", 10.s)
+
+        val run2 = TableRegistry.instance().byName<FftSample>("t2")
                 .last(2000.ms)
-                .map { it * 2 }
-                .toCsv("file://${file.absolutePath}")
+                .map { it.magnitude().toList() }
+                .toCsv(
+                        uri = "file://${file.absolutePath}",
+                        header = listOf("index", "magnitudes"),
+                        elementSerializer = { (idx, _, magnitudes) ->
+                            listOf(
+                                    idx.toString(),
+                                    magnitudes.joinToString(",")
+                            )
+                        }
+                )
 
         runOnOverseer(listOf(run1))
 
@@ -355,7 +370,7 @@ object OverseerIntegrationSpec : Spek({
 
         it("should have non-empty output") { assertThat(fileContent).size().isGreaterThan(1) }
 
-        TableRegistry.instance().reset("t1")
+        TableRegistry.instance().reset("t2")
 
         runLocally(listOf(run1))
         runLocally(listOf(run2))

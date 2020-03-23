@@ -1,6 +1,7 @@
 package io.wavebeans.lib.io
 
 import io.wavebeans.lib.BeanStream
+import mu.KotlinLogging
 import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileInputStream
@@ -12,6 +13,10 @@ abstract class FileWriter<T : Any>(
         val stream: BeanStream<T>,
         val sampleRate: Float
 ) : Writer {
+
+    companion object {
+        private val log = KotlinLogging.logger { }
+    }
 
     protected abstract fun header(): ByteArray?
 
@@ -30,6 +35,7 @@ abstract class FileWriter<T : Any>(
             buffer.write(bytes, 0, bytes.size)
             true
         } else {
+            log.debug { "[$this uri=$uri] The stream is over" }
             false
         }
     }
@@ -37,8 +43,11 @@ abstract class FileWriter<T : Any>(
     protected abstract fun serialize(element: T): ByteArray
 
     override fun close() {
+        log.debug { "[$this] Closing the writer" }
         buffer.close()
+        log.debug { "[$this] Buffer closed" }
         file.close()
+        log.debug { "[$this] Temporary file $tmpFile closed" }
 
         FileOutputStream(File(uri)).use { f ->
             val header = header()
@@ -49,14 +58,17 @@ abstract class FileWriter<T : Any>(
                 do {
                     val r = tmpF.read(buf)
                     if (r != -1) f.write(buf, 0, r)
+                    log.trace { "[$this] Copied other $bufferSize bytes from $tmpFile to file with uri=$uri" }
                 } while (r != -1)
             }
 
             val footer = footer()
             if (footer != null) f.write(footer)
         }
+        log.debug { "[$this] Temporary file $tmpFile copied over to file with uri=$uri" }
 
         tmpFile.delete()
+        log.debug { "[$this] Temporary file $tmpFile deleted" }
     }
 
 }

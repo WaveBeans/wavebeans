@@ -73,7 +73,7 @@ class PodProxyIterator<T : Any, ARRAY_T>(
 
     private fun tryReadBuckets(): List<ARRAY_T>? {
         if (buckets == null || bucketPointer >= buckets?.size ?: 0) {
-            log.trace { "Calling iterator [Pod=$pod] iteratorKey=$iteratorKey" }
+            log.trace { "[$this] Calling iteratorNext(pod=$pod, iteratorKey=$iteratorKey)" }
 
             val podResult = caller.call(
                     "iteratorNext" +
@@ -82,12 +82,14 @@ class PodProxyIterator<T : Any, ARRAY_T>(
             ).get(5000, TimeUnit.MILLISECONDS)
 
             if (podResult.isNull()) {
+                log.trace { "[$this] iteratorNext(pod=$pod, iteratorKey=$iteratorKey) returned null" }
                 buckets = null
                 bucketPointer = 0
                 pointer = 0
                 return null
             }
             buckets = converter(podResult)
+            log.trace { "[$this] iteratorNext(pod=$pod, iteratorKey=$iteratorKey) result was converted to buckets=$buckets" }
             bucketPointer = 0
             pointer = 0
         }
