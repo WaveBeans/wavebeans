@@ -3,6 +3,7 @@ package io.wavebeans.lib.table
 import io.wavebeans.lib.*
 import io.wavebeans.lib.io.StreamOutput
 import io.wavebeans.lib.io.Writer
+import io.wavebeans.lib.stream.SampleCountMeasurement
 import kotlinx.serialization.Serializable
 import java.util.concurrent.TimeUnit.NANOSECONDS
 
@@ -56,7 +57,7 @@ class TableOutput<T : Any>(
                 if (!iterator.hasNext()) return false
 
                 val element = iterator.next()
-                val time = samplesCountToLength(index++, sampleRate, NANOSECONDS)
+                val time = SampleCountMeasurement.samplesInObject(element) * samplesCountToLength(index++, sampleRate, NANOSECONDS)
                 tableDriver.put(time.ns, element)
                 return true
             }

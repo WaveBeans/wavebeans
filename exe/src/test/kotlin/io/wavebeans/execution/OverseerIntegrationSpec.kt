@@ -339,7 +339,7 @@ object OverseerIntegrationSpec : Spek({
         }
     }
 
-    describe("Table output2") {
+    describe("Table output with FftSample") {
         val file = File.createTempFile("test", ".csv")//.also { it.deleteOnExit() }
 
         val run1 = seqStream()
