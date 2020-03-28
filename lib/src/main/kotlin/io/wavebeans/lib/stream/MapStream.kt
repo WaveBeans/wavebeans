@@ -1,7 +1,9 @@
 package io.wavebeans.lib.stream
 
 import io.wavebeans.lib.*
+import jdk.nashorn.internal.runtime.regexp.joni.Config.log
 import kotlinx.serialization.*
+import mu.KotlinLogging
 import kotlin.reflect.jvm.jvmName
 
 fun <T : Any, R : Any> BeanStream<T>.map(transform: (T) -> R): BeanStream<R> = this.map(Fn.wrap(transform))
@@ -43,7 +45,13 @@ class MapStream<T : Any, R : Any>(
         override val parameters: MapStreamParams<T, R>
 ) : BeanStream<R>, AlterBean<T, R> {
 
-    override fun asSequence(sampleRate: Float): Sequence<R> =
-            input.asSequence(sampleRate).map { parameters.transform.apply(it) }
+    companion object {
+        private val log = KotlinLogging.logger {}
+    }
+
+    override fun asSequence(sampleRate: Float): Sequence<R> {
+        log.trace { "[$this] Initiating sequence Map(input = $input,parameters = $parameters)" }
+        return input.asSequence(sampleRate).map { parameters.transform.apply(it) }
+    }
 
 }

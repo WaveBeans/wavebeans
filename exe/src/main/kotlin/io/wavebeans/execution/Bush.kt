@@ -7,12 +7,14 @@ import io.wavebeans.execution.pod.TickPod
 import mu.KotlinLogging
 import java.io.Closeable
 import java.util.concurrent.*
+import kotlin.math.abs
+import kotlin.random.Random
 
 typealias BushKey = Int
 
 data class ExecutionResult(val finished: Boolean, val exception: Exception?) {
-    companion object{
-        fun success() = ExecutionResult(true,null)
+    companion object {
+        fun success() = ExecutionResult(true, null)
         fun error(e: Exception) = ExecutionResult(false, e)
     }
 }
@@ -54,9 +56,11 @@ class Bush(
                 if (!isDraining && pod.tick()) {
                     workingPool.submit(Tick(pod))
                 } else {
+                    log.debug { "Tick pod $pod has finished as it is over [isDraining=$isDraining]" }
                     tickFinished[pod]!!.complete(ExecutionResult.success())
                 }
             } catch (e: Exception) {
+                log.debug(e) { "Tick pod $pod has finished due to error" }
                 tickFinished[pod]!!.complete(ExecutionResult.error(e))
             }
         }
@@ -104,10 +108,18 @@ class Bush(
         check(pod != null) { "Pod $podKey is not found on Bush $bushKey" }
         val call = Call.parseRequest(request)
         val res = CompletableFuture<PodCallResult>()
+        val id = abs(Random.nextInt()).toString(16)
+        val start = System.currentTimeMillis()
         val r = try {
+            log.trace { "[$id][$this] Calling pod=$podKey, request=$request" }
             val retVal = pod.call(call)
+            log.trace { "[$id][$this] Call to pod=$podKey, request=$request took ${System.currentTimeMillis() - start}ms" }
             retVal
         } catch (e: Throwable) {
+            log.info(e) {
+                "[$id][$this] Call to pod=$podKey, request=$request " +
+                        "took ${System.currentTimeMillis() - start}ms and ended up with error"
+            }
             PodCallResult.wrap(call, e)
         }
         res.complete(r)

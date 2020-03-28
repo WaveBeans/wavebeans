@@ -26,19 +26,6 @@ class SimpleBushCaller internal constructor(
         val podDiscovery: PodDiscovery
 ) : BushCaller {
 
-    companion object {
-//        val callPool = Executors.newFixedThreadPool(10)
-//
-//        init {
-//            Runtime.getRuntime().addShutdownHook(Thread {
-//                callPool.shutdown()
-//                if (!callPool.awaitTermination(5000, TimeUnit.MILLISECONDS)) {
-//                    callPool.shutdownNow()
-//                }
-//            })
-//        }
-    }
-
     /***
      * @param request HTTP-like request: methodName?param1=value&param2=value
      */

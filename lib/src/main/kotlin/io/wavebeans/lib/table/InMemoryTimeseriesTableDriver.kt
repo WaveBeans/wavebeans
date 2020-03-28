@@ -85,6 +85,7 @@ class InMemoryTimeseriesTableDriver<T : Any>(
     override fun lastMarker(): TimeMeasure? = table.peekLast()?.timeMarker
 
     override fun query(query: TableQuery): Sequence<T> {
+        log.debug { "[$this] Running query $query" }
         return when (query) {
             is TimeRangeTableQuery -> {
                 table.asSequence()

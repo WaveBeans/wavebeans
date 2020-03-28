@@ -51,7 +51,7 @@ class CsvFftStreamOutput(
                 else
                     element.phase().map(::format10)
 
-                val timeMarker = params.timeUnit.convert(element.time, TimeUnit.NANOSECONDS)
+                val timeMarker = params.timeUnit.convert(element.time(), TimeUnit.NANOSECONDS)
                 var b = (sequenceOf(timeMarker) + seq)
                         .joinToString(",")
 

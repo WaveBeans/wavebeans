@@ -163,8 +163,8 @@ abstract class AbstractPod<T : Any, B : BeanStream<T>>(
                             iterations--
                         }
                         log.trace {
-                            "Reading... [POD=$podKey] Left $iterations iterations after filling the buffer. " +
-                                    "Buffers=${buffers.map { Triple(it.key, it.value.first, it.value.second.size) }}"
+                            "Reading... [POD=$podKey] Left $iterations iterations after filling the buffer, hasNext=${i.hasNext()}, " +
+                                    "buffers=${buffers.map { Triple("iteratorKey="+it.key, "partitionIndex="+it.value.first, "bufferSize="+it.value.second.size) }}"
                         }
                     }
                 } finally {
