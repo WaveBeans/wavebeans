@@ -1,5 +1,6 @@
 package io.wavebeans.cli.script
 
+import io.wavebeans.execution.ExecutionResult
 import io.wavebeans.execution.LocalOverseer
 import io.wavebeans.execution.Overseer
 import io.wavebeans.lib.io.StreamOutput
@@ -11,7 +12,7 @@ class LocalScriptEvaluator : ScriptEvaluator {
 
     private lateinit var overseer: Overseer
 
-    override fun eval(sampleRate: Float): List<Future<Boolean>> {
+    override fun eval(sampleRate: Float): List<Future<ExecutionResult>> {
         overseer = LocalOverseer(outputs)
         return overseer.eval(sampleRate)
     }

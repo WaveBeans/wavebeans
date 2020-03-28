@@ -22,12 +22,12 @@ class PodBuilder(val topology: Topology) {
 
     fun build(): List<PodRef> {
         return beansById.values.flatten().map { beanRef ->
-            val beanClazz = Class.forName(beanRef.type).kotlin
+            val beanClazz = WaveBeansClassLoader.classForName(beanRef.type).kotlin
             val (classForProxy, beanRefs, beanLinks) =
                     if (beanClazz.isSubclassOf(BeanGroup::class)) {
                         val groupParams = beanRef.params as BeanGroupParams
                         Triple(
-                                Class.forName(groupParams.beanRefs.last().type).kotlin,
+                                WaveBeansClassLoader.classForName(groupParams.beanRefs.last().type).kotlin,
                                 groupParams.beanRefs,
                                 groupParams.links
                         )

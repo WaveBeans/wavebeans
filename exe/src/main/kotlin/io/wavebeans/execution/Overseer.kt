@@ -20,6 +20,6 @@ interface Overseer : Closeable {
      * @return the list containing if the output was successfully evaluated.
      * Futures are resolved only when all outputs has been finished evaluation.
      */
-    fun eval(sampleRate: Float): List<Future<Boolean>>
+    fun eval(sampleRate: Float): List<Future<ExecutionResult>>
 }
 

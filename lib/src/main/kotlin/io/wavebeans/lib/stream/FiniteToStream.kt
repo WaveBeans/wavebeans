@@ -3,9 +3,9 @@ package io.wavebeans.lib.stream
 import io.wavebeans.lib.BeanStream
 import io.wavebeans.lib.Sample
 
-fun FiniteSampleStream.sampleStream(converter: FiniteToStream): BeanStream<Sample> = converter.convert(this)
+fun <T : Any> FiniteStream<T>.stream(converter: FiniteToStream<T>): BeanStream<T> = converter.convert(this)
 
-interface FiniteToStream {
+interface FiniteToStream<T : Any> {
 
-    fun convert(finiteSampleStream: FiniteSampleStream): BeanStream<Sample>
+    fun convert(finiteStream: FiniteStream<T>): BeanStream<T>
 }

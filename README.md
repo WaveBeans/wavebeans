@@ -1,6 +1,6 @@
 # WaveBeans
 
-[ ![Download](https://api.bintray.com/packages/wavebeans/wavebeans/wavebeans/images/download.svg?version=0.0.1) ](https://bintray.com/wavebeans/wavebeans/wavebeans/0.0.1/link)
+[ ![Download](https://api.bintray.com/packages/wavebeans/wavebeans/wavebeans/images/download.svg?version=0.0.2) ](https://bintray.com/wavebeans/wavebeans/wavebeans/0.0.2/link)
 
 A set of tools to process audio signals using Kotlin/Java/Scala/etc. You can either use it via command line or develop your own program which can be run as a part of you application:
 
@@ -49,8 +49,8 @@ repositories {
 
 ```groovy
 dependencies {
-    implementation "io.wavebeans:exe:0.0.1"
-    implementation "io.wavebeans:lib:0.0.1"
+    implementation "io.wavebeans:exe:$wavebeans_version"
+    implementation "io.wavebeans:lib:$wavebeans_version"
 }
 ```
 

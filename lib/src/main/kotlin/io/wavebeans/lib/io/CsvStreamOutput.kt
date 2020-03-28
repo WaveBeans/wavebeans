@@ -2,11 +2,11 @@ package io.wavebeans.lib.io
 
 import io.wavebeans.lib.*
 import kotlinx.serialization.*
-import kotlinx.serialization.internal.ArrayListSerializer
-import kotlinx.serialization.internal.SerialClassDescImpl
-import kotlinx.serialization.internal.defaultSerializer
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
 import java.net.URI
 import java.nio.charset.Charset
+import kotlin.reflect.jvm.jvmName
 
 fun <T : Any> BeanStream<T>.toCsv(
         uri: String,
@@ -33,13 +33,11 @@ fun <T : Any> BeanStream<T>.toCsv(
 
 object CsvWindowStreamOutputParamsSerializer : KSerializer<CsvStreamOutputParams<*>> {
 
-    override val descriptor: SerialDescriptor = object : SerialClassDescImpl("CsvWindowStreamOutputParams") {
-        init {
-            addElement("uri")
-            addElement("header")
-            addElement("elementSerializer")
-            addElement("encoding")
-        }
+    override val descriptor: SerialDescriptor = SerialDescriptor(CsvStreamOutputParams::class.jvmName) {
+        element("uri", String.serializer().descriptor)
+        element("header", String.serializer().descriptor)
+        element("elementSerializer", String.serializer().descriptor)
+        element("encoding", String.serializer().descriptor)
     }
 
     override fun deserialize(decoder: Decoder): CsvStreamOutputParams<*> {
@@ -52,7 +50,7 @@ object CsvWindowStreamOutputParamsSerializer : KSerializer<CsvStreamOutputParams
             when (val i = dec.decodeElementIndex(descriptor)) {
                 CompositeDecoder.READ_DONE -> break@loop
                 0 -> uri = dec.decodeStringElement(descriptor, i)
-                1 -> header = dec.decodeSerializableElement(descriptor, i, ArrayListSerializer(String::class.defaultSerializer()!!))
+                1 -> header = dec.decodeSerializableElement(descriptor, i, ListSerializer(String.serializer()))
                 2 -> fn = dec.decodeSerializableElement(descriptor, i, FnSerializer)
                 3 -> encoding = dec.decodeStringElement(descriptor, i)
                 else -> throw SerializationException("Unknown index $i")
@@ -62,12 +60,12 @@ object CsvWindowStreamOutputParamsSerializer : KSerializer<CsvStreamOutputParams
         return CsvStreamOutputParams(uri!!, header!!, fn!! as Fn<Triple<Long, Float, Any>, List<String>>, encoding!!)
     }
 
-    override fun serialize(encoder: Encoder, obj: CsvStreamOutputParams<*>) {
+    override fun serialize(encoder: Encoder, value: CsvStreamOutputParams<*>) {
         val structure = encoder.beginStructure(descriptor)
-        structure.encodeStringElement(descriptor, 0, obj.uri)
-        structure.encodeSerializableElement(descriptor, 1, ArrayListSerializer(String::class.defaultSerializer()!!), obj.header)
-        structure.encodeSerializableElement(descriptor, 2, FnSerializer, obj.elementSerializer)
-        structure.encodeStringElement(descriptor, 3, obj.encoding)
+        structure.encodeStringElement(descriptor, 0, value.uri)
+        structure.encodeSerializableElement(descriptor, 1, ListSerializer(String.serializer()), value.header)
+        structure.encodeSerializableElement(descriptor, 2, FnSerializer, value.elementSerializer)
+        structure.encodeStringElement(descriptor, 3, value.encoding)
         structure.endStructure(descriptor)
     }
 

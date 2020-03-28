@@ -16,9 +16,9 @@ import io.wavebeans.lib.io.StreamInput
 import io.wavebeans.lib.math.ComplexNumber
 import io.wavebeans.lib.math.minus
 import io.wavebeans.lib.math.plus
-import io.wavebeans.lib.stream.FiniteInputSampleStream
+import io.wavebeans.lib.stream.FiniteInputStream
 import io.wavebeans.lib.stream.ZeroFilling
-import io.wavebeans.lib.stream.sampleStream
+import io.wavebeans.lib.stream.stream
 import io.wavebeans.lib.stream.window.Window
 import org.spekframework.spek2.dsl.Skip
 import org.spekframework.spek2.dsl.TestBody
@@ -68,7 +68,7 @@ fun Assert<ComplexNumber>.isCloseTo(value: ComplexNumber, delta: ComplexNumber) 
 fun Suite.itShouldHave(what: String, body: TestBody.() -> Unit) = this.it("should have $what", skip = Skip.No, body = body)
 
 fun Iterable<Int>.stream(sampleRate: Float, bitDepth: BitDepth = BitDepth.BIT_8): BeanStream<Sample> {
-    return FiniteInputSampleStream(
+    return FiniteInputStream(
             this.map {
                 when (bitDepth) {
                     BitDepth.BIT_8 -> listOf(it.toByte())
@@ -79,10 +79,10 @@ fun Iterable<Int>.stream(sampleRate: Float, bitDepth: BitDepth = BitDepth.BIT_8)
                 }
             }.flatten().toList().toByteArray().asInput(sampleRate, bitDepth),
             NoParams()
-    ).sampleStream(ZeroFilling())
+    ).stream(ZeroFilling())
 }
 
-fun ByteArray.asInput(sampleRate: Float, bitDepth: BitDepth = BitDepth.BIT_8): FiniteInput =
+fun ByteArray.asInput(sampleRate: Float, bitDepth: BitDepth = BitDepth.BIT_8): FiniteInput<Sample> =
         ByteArrayLittleEndianInput(ByteArrayLittleEndianInputParams(sampleRate, bitDepth, this))
 
 fun <T> Int.repeat(f: (Int) -> T): List<T> = (0 until this).map { f(it) }

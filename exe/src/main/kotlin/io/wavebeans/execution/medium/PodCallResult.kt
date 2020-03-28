@@ -4,7 +4,6 @@ import io.wavebeans.execution.Call
 import io.wavebeans.lib.Sample
 import io.wavebeans.lib.math.ComplexNumber
 import io.wavebeans.lib.stream.fft.FftSample
-import io.wavebeans.lib.stream.window.WindowStreamParams
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.ObjectInputStream
@@ -147,31 +146,55 @@ internal fun List<*>.encodeBytesAndType(): Pair<ByteArray, String> =
                     if (this.isEmpty()) {
                         Pair(encodeEmptyList(), "EmptyList")
                     } else {
-                        when (val aval = value[0]) {
+
+                        data class ListArrayElEncoder(
+                                val elName: String,
+                                val sizeEncoder: (Any) -> Int,
+                                val elEncoder: (Any, ByteArray, Int) -> Int
+                        )
+
+                        val elEncoder = when (val aval = value[0]) {
                             is FftSample -> {
-                                val list = this.map { it as Array<FftSample> }
-
-                                val contentSize = list.map {
-                                    4 + // innerArray.size
-                                            it.map { el -> el.encodeSize() }.sum()
-                                }.sum()
-
-                                val buf = ByteArray(4 + contentSize)
-                                var pointer = 0
-
-                                writeInt(this.size, buf, pointer); pointer += 4
-
-                                list.forEach { innerArray ->
-                                    writeInt(innerArray.size, buf, pointer); pointer += 4
-                                    innerArray.forEach { fftSample ->
-                                        pointer = fftSample.encode(buf, pointer)
-                                    }
-                                }
-
-                                Pair(buf, "List<Array<FftSample>>")
+                                ListArrayElEncoder(
+                                        "FftSample",
+                                        { (it as FftSample).encodeSize() },
+                                        { el, buf, pointer -> (el as FftSample).encode(buf, pointer) }
+                                )
+                            }
+                            is DoubleArray -> {
+                                ListArrayElEncoder(
+                                        "DoubleArray",
+                                        {
+                                            4 + // array.size
+                                                    (it as DoubleArray).size * 8 // size of all elements
+                                        },
+                                        { el, buf, pointer ->
+                                            var p = pointer
+                                            val a = el as DoubleArray
+                                            writeInt(a.size, buf, p); p += 4
+                                            a.forEach { writeLong(it.toBits(), buf, p); p += 8 }
+                                            p
+                                        }
+                                )
                             }
                             else -> throw UnsupportedOperationException("${aval!!::class}")
                         }
+
+                        val contentSize = this.map {
+                            4 + // innerArray.size
+                                    (it as Array<Any>).map { el -> elEncoder.sizeEncoder(el) }.sum()
+                        }.sum()
+                        val buf = ByteArray(4 + contentSize)
+                        var pointer = 0
+
+                        writeInt(this.size, buf, pointer); pointer += 4
+
+                        this.forEach {
+                            val innerArray = it as Array<Any>
+                            writeInt(innerArray.size, buf, pointer); pointer += 4
+                            innerArray.forEach { el -> pointer = elEncoder.elEncoder(el, buf, pointer) }
+                        }
+                        Pair(buf, "List<Array<${elEncoder.elName}>>")
                     }
                 }
                 else -> throw UnsupportedOperationException("${value!!::class}")
@@ -181,8 +204,9 @@ internal fun List<*>.encodeBytesAndType(): Pair<ByteArray, String> =
 
 internal fun FftSample.encode(buf: ByteArray, at: Int): Int {
     var pointer = at
-    writeLong(this.time, buf, pointer); pointer += 8
+    writeLong(this.index, buf, pointer); pointer += 8
     writeInt(this.binCount, buf, pointer); pointer += 4
+    writeInt(this.samplesCount, buf, pointer); pointer += 4
     writeInt(this.sampleRate.toBits(), buf, pointer); pointer += 4
     writeInt(this.fft.size, buf, pointer); pointer += 4
     this.fft.forEach {
@@ -194,8 +218,9 @@ internal fun FftSample.encode(buf: ByteArray, at: Int): Int {
 
 internal fun decodeFftSample(buf: ByteArray, from: Int): Pair<FftSample, Int> {
     var pointer = from
-    val time = readLong(buf, pointer); pointer += 8
+    val index = readLong(buf, pointer); pointer += 8
     val binCount = readInt(buf, pointer); pointer += 4
+    val samplesCount = readInt(buf, pointer); pointer += 4
     val sampleRate = Float.fromBits(readInt(buf, pointer)); pointer += 4
     val fftSize = readInt(buf, pointer); pointer += 4
     val fft = ArrayList<ComplexNumber>(fftSize)
@@ -206,14 +231,15 @@ internal fun decodeFftSample(buf: ByteArray, from: Int): Pair<FftSample, Int> {
     }
 
     return Pair(
-            FftSample(time, binCount, sampleRate, fft),
+            FftSample(index, binCount, samplesCount, sampleRate, fft),
             pointer
     )
 }
 
 internal fun FftSample.encodeSize(): Int =
-        8 + // time [Long]
+        8 + // index [Long]
                 4 + // binCount [Int]
+                4 + // samplesCount [Int]
                 4 + // sampleRate [Float]
                 4 + // fft.size [Int]
                 this.fft.size *
@@ -344,7 +370,32 @@ fun PodCallResult.fftSampleArrayList(): List<FftSampleArray> =
             }
         } ?: throw IllegalStateException("Can't decode null", this.exception)
 
+fun PodCallResult.doubleArrayArrayList(): List<Array<DoubleArray>> =
+        throwIfError().byteArray?.let { buf ->
+            var pointer = 0
+
+            val size = readInt(buf, pointer); pointer += 4
+            if (size > 0) {
+                val list = ArrayList<Array<DoubleArray>>(size)
+                repeat(size) {
+                    val doubleArrayArraySize = readInt(buf, pointer); pointer += 4
+                    list.add(Array<DoubleArray>(doubleArrayArraySize) {
+                        val doubleArraySize = readInt(buf, pointer); pointer += 4
+                        DoubleArray(doubleArraySize) {
+                            val v = readLong(buf, pointer); pointer += 8
+                            Double.fromBits(v)
+                        }
+                    })
+                }
+                list
+            } else {
+                emptyList<Array<DoubleArray>>()
+            }
+        } ?: throw IllegalStateException("Can't decode null", this.exception)
+
 
 fun PodCallResult.nullableSampleArrayList(): List<SampleArray>? = ifNotNull { this.sampleArrayList() }
 fun PodCallResult.nullableFftSampleArrayList(): List<FftSampleArray>? = ifNotNull { this.fftSampleArrayList() }
 fun PodCallResult.nullableWindowSampleArrayList(): List<WindowSampleArray>? = ifNotNull { this.windowSampleArrayList() }
+fun PodCallResult.nullableDoubleArrayArrayList(): List<Array<DoubleArray>>? = ifNotNull { this.doubleArrayArrayList() }
+

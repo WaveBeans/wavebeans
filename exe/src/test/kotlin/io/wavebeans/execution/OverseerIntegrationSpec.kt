@@ -2,15 +2,17 @@ package io.wavebeans.execution
 
 import assertk.assertThat
 import assertk.assertions.*
-import io.wavebeans.lib.ZeroSample
+import assertk.catch
+import io.wavebeans.lib.*
 import io.wavebeans.lib.io.*
-import io.wavebeans.lib.plus
-import io.wavebeans.lib.sampleOf
 import io.wavebeans.lib.stream.*
+import io.wavebeans.lib.stream.fft.FftSample
 import io.wavebeans.lib.stream.fft.fft
 import io.wavebeans.lib.stream.window.Window
 import io.wavebeans.lib.stream.window.hamming
 import io.wavebeans.lib.stream.window.window
+import io.wavebeans.lib.table.TableRegistry
+import io.wavebeans.lib.table.toTable
 import mu.KotlinLogging
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
@@ -35,7 +37,16 @@ object OverseerIntegrationSpec : Spek({
 
         val runTime = measureTimeMillis {
             LocalDistributedOverseer(outputs, threads, partitions).use { overseer ->
-                assertThat(overseer.eval(sampleRate).all { it.get() == true }).isTrue()
+                assertThat(
+                        overseer.eval(sampleRate)
+                                .map { it.get() }
+                                .also {
+                                    it.mapNotNull { it.exception }
+                                            .map { log.error(it) { "Error during evaluation" }; it }
+                                            .firstOrNull()?.let { throw it }
+                                }
+                                .all { it.finished }
+                ).isTrue()
             }
         }
         log.debug { "Distributed run finished in $runTime ms" }
@@ -48,7 +59,16 @@ object OverseerIntegrationSpec : Spek({
     ): Long {
         val runTime = measureTimeMillis {
             LocalOverseer(outputs).use { overseer ->
-                assertThat(overseer.eval(sampleRate).all { it.get() == true }).isTrue()
+                assertThat(
+                        overseer.eval(sampleRate)
+                                .map { it.get() }
+                                .also {
+                                    it.mapNotNull { it.exception }
+                                            .map { log.error(it) { "Error during evaluation" }; it }
+                                            .firstOrNull()?.let { throw it }
+                                }
+                                .all { it.finished }
+                ).isTrue()
             }
         }
         log.debug { "Local run finished in $runTime ms" }
@@ -129,7 +149,7 @@ object OverseerIntegrationSpec : Spek({
 
             val fileContent = file.readLines()
 
-            it("should not return empty input ") { assertThat(fileContent).isNotEmpty() }
+            it("should have non-empty output") { assertThat(fileContent).size().isGreaterThan(1) }
 
             runLocally(o)
             val fileContentLocal = file.readLines()
@@ -151,7 +171,7 @@ object OverseerIntegrationSpec : Spek({
 
             val fileContent = file.readLines()
 
-            it("should have non-empty output") { assertThat(fileContent).isNotEmpty() }
+            it("should have non-empty output") { assertThat(fileContent).size().isGreaterThan(1) }
 
             runLocally(o)
             val fileContentLocal = file.readLines()
@@ -173,7 +193,7 @@ object OverseerIntegrationSpec : Spek({
 
             val fileContent = file.readLines()
 
-            it("should have non-empty output") { assertThat(fileContent).isNotEmpty() }
+            it("should have non-empty output") { assertThat(fileContent).size().isGreaterThan(1) }
 
             runLocally(o)
             val fileContentLocal = file.readLines()
@@ -195,7 +215,7 @@ object OverseerIntegrationSpec : Spek({
 
             val fileContent = file.readLines()
 
-            it("should have non-empty output") { assertThat(fileContent).isNotEmpty() }
+            it("should have non-empty output") { assertThat(fileContent).size().isGreaterThan(1) }
 
             runLocally(o)
             val fileContentLocal = file.readLines()
@@ -220,7 +240,7 @@ object OverseerIntegrationSpec : Spek({
 
             val fileContent = file.readLines()
 
-            it("should have non-empty output") { assertThat(fileContent).isNotEmpty() }
+            it("should have non-empty output") { assertThat(fileContent).size().isGreaterThan(1) }
 
             runLocally(o)
             val fileContentLocal = file.readLines()
@@ -247,11 +267,118 @@ object OverseerIntegrationSpec : Spek({
 
             val fileContent = file.readLines()
 
-            it("should have non-empty output") { assertThat(fileContent).isNotEmpty() }
+            it("should have non-empty output") { assertThat(fileContent).size().isGreaterThan(1) }
 
             runLocally(o)
             val fileContentLocal = file.readLines()
             it("should have the same output as local") { assertThat(fileContent).isEqualTo(fileContentLocal) }
         }
+    }
+
+    describe("List as Input") {
+        describe("generating list of samples and storing it to csv") {
+            val file = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
+            val o = listOf(
+                    listOf(1, 2, 3, 4).map { sampleOf(it) }.input()
+                            .toCsv(
+                                    "file://${file.absolutePath}",
+                                    header = listOf("sample index", "sample value"),
+                                    elementSerializer = { (idx, _, sample) ->
+                                        listOf(idx.toString(), String.format("%.10f", sample))
+                                    }
+                            )
+            )
+
+            runOnOverseer(o)
+
+            val fileContent = file.readLines()
+
+            it("should have non-empty output") { assertThat(fileContent).size().isGreaterThan(1) }
+
+            runLocally(o)
+            val fileContentLocal = file.readLines()
+            it("should have the same output as local") { assertThat(fileContent).isEqualTo(fileContentLocal) }
+        }
+    }
+
+    describe("Table output") {
+        val file = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
+
+        val run1 = seqStream().trim(1000).toTable("t1")
+        val run2 = TableRegistry.instance().byName<Sample>("t1")
+                .last(2000.ms)
+                .map { it * 2 }
+                .toCsv("file://${file.absolutePath}")
+
+        runOnOverseer(listOf(run1))
+
+        runOnOverseer(listOf(run2))
+
+        val fileContent = file.readLines()
+
+        it("should have non-empty output") { assertThat(fileContent).size().isGreaterThan(1) }
+
+        TableRegistry.instance().reset("t1")
+
+        runLocally(listOf(run1))
+        runLocally(listOf(run2))
+
+        val fileContentLocal = file.readLines()
+        it("should have the same output as local") { assertThat(fileContent).isEqualTo(fileContentLocal) }
+
+    }
+
+    describe("Exception throwing by overseer") {
+        data class SomeUnknownClass(val value: Int)
+
+        val run1 = seqStream().map { SomeUnknownClass(1) }.trim(100).toDevNull()
+
+        it("should throw exception when run on distributed overseer") {
+            assertThat(catch { runOnOverseer(listOf(run1)) }).isNotNull()
+        }
+        it("should  throw exception when run on local overseer") {
+            assertThat(catch { runLocally(listOf(run1)) }).isNotNull()
+        }
+    }
+
+    describe("Table output with FftSample") {
+        val file = File.createTempFile("test", ".csv")//.also { it.deleteOnExit() }
+
+        val run1 = seqStream()
+                .window(401)
+                .fft(512)
+                .trim(10)
+                .toTable("t2", 10.s)
+
+        val run2 = TableRegistry.instance().byName<FftSample>("t2")
+                .last(2000.ms)
+                .map { it.magnitude().toList() }
+                .toCsv(
+                        uri = "file://${file.absolutePath}",
+                        header = listOf("index", "magnitudes"),
+                        elementSerializer = { (idx, _, magnitudes) ->
+                            listOf(
+                                    idx.toString(),
+                                    magnitudes.joinToString(",")
+                            )
+                        }
+                )
+
+        runOnOverseer(listOf(run1))
+
+        runOnOverseer(listOf(run2))
+
+        val fileContent = file.readLines()
+
+        it("should have non-empty output") { assertThat(fileContent).size().isGreaterThan(1) }
+
+        TableRegistry.instance().reset("t2")
+
+        runLocally(listOf(run1))
+        runLocally(listOf(run2))
+
+        val fileContentLocal = file.readLines()
+        it("should have the same output as local") { assertThat(fileContent).isEqualTo(fileContentLocal) }
+
     }
 })

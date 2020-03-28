@@ -48,17 +48,24 @@ allprojects {
 
     }
 
-    val test by tasks.getting(Test::class) {
-        useJUnitPlatform {
-            includeEngines("spek2")
-        }
-    }
-
     java {
         withJavadocJar()
         withSourcesJar()
     }
 
+    tasks.test {
+        useJUnitPlatform {
+            includeEngines("spek2")
+        }
+    }
+
+    tasks.jar {
+        manifest {
+            attributes(
+                    "WaveBeans-Version" to properties["version"]
+            )
+        }
+    }
 }
 
 publishing {
@@ -73,13 +80,19 @@ publishing {
             groupId = "io.wavebeans"
             artifactId = "exe"
         }
+        create<MavenPublication>("http") {
+            from(subprojects.first { it.name == "http" }.components["java"])
+            groupId = "io.wavebeans"
+            artifactId = "http"
+        }
     }
 }
+
 
 bintray {
     user = findProperty("bintray.user")?.toString() ?: ""
     key = findProperty("bintray.key")?.toString() ?: ""
-    setPublications("lib", "exe")
+    setPublications("lib", "exe", "http")
     pkg(delegateClosureOf<com.jfrog.bintray.gradle.BintrayExtension.PackageConfig> {
         repo = "wavebeans"
         name = "wavebeans"

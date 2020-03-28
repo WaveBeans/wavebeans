@@ -24,10 +24,10 @@ class LocalOverseer(
 
     private val earlyFinish = AtomicBoolean(false)
 
-    override fun eval(sampleRate: Float): List<Future<Boolean>> {
+    override fun eval(sampleRate: Float): List<Future<ExecutionResult>> {
         return outputs
                 .map { out ->
-                    pool.submit(Callable<Boolean> {
+                    pool.submit(Callable<ExecutionResult> {
                         log.info { "[$out] Evaluating" }
                         var i = 0L
                         try {
@@ -39,13 +39,13 @@ class LocalOverseer(
                                 }
                             }
                             log.info { "[$out] Finished evaluating. Done $i iterations" }
-                            true
+                            ExecutionResult.success()
                         } catch (e: InterruptedException) {
                             log.info { "[$out] Finished evaluating early. Done $i iterations" }
-                            false
+                            ExecutionResult.success()
                         } catch (e: Exception) {
                             log.error(e) { "[$out] Error running. Done $i iterations" }
-                            false
+                            ExecutionResult.error(e)
                         }
                     })
                 }

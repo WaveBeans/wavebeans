@@ -4,16 +4,30 @@ import io.wavebeans.execution.medium.PodCallResult
 import io.wavebeans.execution.pod.Pod
 import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.execution.pod.TickPod
+import mu.KotlinLogging
 import java.io.Closeable
 import java.util.concurrent.*
+import kotlin.math.abs
+import kotlin.random.Random
 
 typealias BushKey = Int
+
+data class ExecutionResult(val finished: Boolean, val exception: Exception?) {
+    companion object {
+        fun success() = ExecutionResult(true, null)
+        fun error(e: Exception) = ExecutionResult(false, e)
+    }
+}
 
 class Bush(
         val bushKey: BushKey,
         val threadsCount: Int,
         val podDiscovery: PodDiscovery = PodDiscovery.default
 ) : Closeable {
+
+    companion object {
+        private val log = KotlinLogging.logger { }
+    }
 
     class NamedThreadFactory(val name: String) : ThreadFactory {
         private var c = 0
@@ -29,7 +43,7 @@ class Bush(
 
     private val pods = ConcurrentHashMap<PodKey, Pod>()
 
-    private val tickFinished = ConcurrentHashMap<Pod, CompletableFuture<Boolean>>()
+    private val tickFinished = ConcurrentHashMap<Pod, CompletableFuture<ExecutionResult>>()
 
     init {
         podDiscovery.registerBush(bushKey, this)
@@ -42,11 +56,12 @@ class Bush(
                 if (!isDraining && pod.tick()) {
                     workingPool.submit(Tick(pod))
                 } else {
-                    tickFinished[pod]!!.complete(true)
+                    log.debug { "Tick pod $pod has finished as it is over [isDraining=$isDraining]" }
+                    tickFinished[pod]!!.complete(ExecutionResult.success())
                 }
             } catch (e: Exception) {
-                workingPool.submit(Tick(pod))
-                e.printStackTrace(System.err)
+                log.debug(e) { "Tick pod $pod has finished due to error" }
+                tickFinished[pod]!!.complete(ExecutionResult.error(e))
             }
         }
 
@@ -69,7 +84,7 @@ class Bush(
         podDiscovery.registerPod(bushKey, pod)
     }
 
-    fun tickPodsFutures(): List<Future<Boolean>> {
+    fun tickPodsFutures(): List<Future<ExecutionResult>> {
         return tickFinished.values.toList()
     }
 
@@ -93,10 +108,18 @@ class Bush(
         check(pod != null) { "Pod $podKey is not found on Bush $bushKey" }
         val call = Call.parseRequest(request)
         val res = CompletableFuture<PodCallResult>()
+        val id = abs(Random.nextInt()).toString(16)
+        val start = System.currentTimeMillis()
         val r = try {
+            log.trace { "[$id][$this] Calling pod=$podKey, request=$request" }
             val retVal = pod.call(call)
+            log.trace { "[$id][$this] Call to pod=$podKey, request=$request took ${System.currentTimeMillis() - start}ms" }
             retVal
         } catch (e: Throwable) {
+            log.info(e) {
+                "[$id][$this] Call to pod=$podKey, request=$request " +
+                        "took ${System.currentTimeMillis() - start}ms and ended up with error"
+            }
             PodCallResult.wrap(call, e)
         }
         res.complete(r)

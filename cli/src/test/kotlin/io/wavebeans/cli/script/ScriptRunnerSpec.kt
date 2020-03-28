@@ -5,14 +5,16 @@ import assertk.assertions.*
 import assertk.catch
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
+import org.spekframework.spek2.style.specification.describe
 import java.io.File
 import java.lang.Thread.sleep
 import java.util.concurrent.CancellationException
 
+@ExperimentalStdlibApi
 object ScriptRunnerSpec : Spek({
 
     arrayOf(
-            Pair(RunMode.LOCAL, emptyMap()),
+            Pair(RunMode.LOCAL, emptyMap<String, Any>()),
             Pair(RunMode.LOCAL_DISTRIBUTED, mapOf<String, Any>("partitions" to 2, "threads" to 2))
     ).forEach { (runMode, runOptions) ->
 
@@ -92,7 +94,7 @@ object ScriptRunnerSpec : Spek({
                 """.trimIndent()
 
                 it("should run with exception explaining the reason") {
-                    assertThat(eval(script))
+                    assertThat(catch { eval(script) })
                             .isNotNull()
                             .message().isNotNull().contains("noSuchMethod()")
                 }
@@ -148,6 +150,40 @@ object ScriptRunnerSpec : Spek({
                         assertThat(eval(script)).isNull()
                     }
                 }
+            }
+
+            describe("Defining function as class") {
+                val script = """
+                    class InputFn: Fn<Pair<Long, Float>, Sample?>() {
+                        override fun apply(argument: Pair<Long, Float>): Sample? {
+                            return sampleOf(argument.first)
+                        }
+                    }
+
+                    input(InputFn())
+                      .trim(1)
+                      .toDevNull()
+                      .out()
+                """.trimIndent()
+
+                it("should run with no exceptions") {
+                    assertThat(eval(script)).isNull()
+                }
+
+            }
+
+            describe("Defining function as lambda") {
+                val script = """
+                    input { (i, _) -> sampleOf(i) }
+                      .trim(1)
+                      .toDevNull()
+                      .out()
+                """.trimIndent()
+
+                it("should run with no exceptions") {
+                    assertThat(eval(script)).isNull()
+                }
+
             }
         }
     }

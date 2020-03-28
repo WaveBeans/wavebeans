@@ -3,12 +3,8 @@ package io.wavebeans.execution
 import io.wavebeans.execution.pod.*
 import io.wavebeans.execution.podproxy.*
 import io.wavebeans.lib.*
-import io.wavebeans.lib.io.StreamInput
 import io.wavebeans.lib.io.StreamOutput
-import io.wavebeans.lib.stream.FiniteSampleStream
-import io.wavebeans.lib.stream.fft.FftSample
-import io.wavebeans.lib.stream.fft.FftStream
-import io.wavebeans.lib.stream.window.WindowStream
+import io.wavebeans.lib.stream.FiniteStream
 import mu.KotlinLogging
 import kotlin.reflect.KFunction
 import kotlin.reflect.KType
@@ -26,7 +22,7 @@ object PodRegistry {
     private val splittingPodRegistry = mutableMapOf<KType, KFunction<Pod>>()
 
     init {
-        registerPodProxy(typeOf<FiniteSampleStream>(), FiniteSampleStreamPodProxy::class.constructors.first())
+        registerPodProxy(typeOf<FiniteStream<Sample>>(), FiniteSampleStreamPodProxy::class.constructors.first())
         registerPodProxy(typeOf<BeanStream<*>>(), AnyStreamPodProxy::class.constructors.first())
 
         registerMergingPodProxy(typeOf<BeanStream<*>>(), AnyStreamMergingPodProxy::class.constructors.first())

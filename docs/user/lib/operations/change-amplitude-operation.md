@@ -1,6 +1,10 @@
 Change amplitude operation
 ========
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 To change amplitude for each sample on the stream you may use this simple operation. As internal representation of sample allows you to have amplitude more than absolute value of one, you can multiply or divide safely, however don't forget to normalize the stream before the output using certain sinks. You may this operation on any stream with type `Sample` -- `BeanStream<Sample>`.
 
 The multiplier (or divisor) is double scalar value following the formula: `sample[x] * a` or `sample[x] / b`, the operation is not commutative in this case. API allow to use any numeric value which will automatically be converted into double representation. 

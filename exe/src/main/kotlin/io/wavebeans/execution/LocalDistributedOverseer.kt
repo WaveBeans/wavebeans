@@ -23,7 +23,7 @@ class LocalDistributedOverseer(
             .partition(partitionsCount)
             .groupBeans()
 
-    override fun eval(sampleRate: Float): List<Future<Boolean>> {
+    override fun eval(sampleRate: Float): List<Future<ExecutionResult>> {
         log.info { "Deploying topology: ${TopologySerializer.serialize(topology, TopologySerializer.jsonPretty)}" }
         val pods = PodBuilder(topology).build()
         log.info { "Pods: $pods" }

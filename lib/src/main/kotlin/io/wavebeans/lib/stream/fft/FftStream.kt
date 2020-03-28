@@ -14,13 +14,17 @@ fun BeanStream<Window<Sample>>.fft(binCount: Int): BeanStream<FftSample> = FftSt
 
 data class FftSample(
         /**
-         * The time marker of this sample, in nano seconds.
+         * The index of the sample in the stream.
          */
-        val time: Long,
+        val index: Long,
         /**
          * Number of bins of this FFT calculations, i.e. 512, 1024
          */
         val binCount: Int,
+        /**
+         * Number of samples the FFT is calculated based on.
+         */
+        val samplesCount: Int,
         /**
          * Sample rate which was used to calculate the FFT
          */
@@ -62,6 +66,11 @@ data class FftSample(
      * @return the bin number of desired frequency
      */
     fun bin(frequency: Double): Int = min(binCount, round(frequency / sampleRate * binCount).toInt())
+
+    /**
+     * The time marker of this sample, in nano seconds.
+     */
+    fun time(): Long = (index.toDouble() * samplesCount.toDouble() / (sampleRate.toDouble() / 1e+9)).toLong()
 }
 
 
@@ -76,8 +85,9 @@ class FftStream(
 ) : BeanStream<FftSample>, AlterBean<Window<Sample>, FftSample>, SinglePartitionBean {
 
     override fun asSequence(sampleRate: Float): Sequence<FftSample> {
+        var idx = 0L
         return input.asSequence(sampleRate)
-                .mapIndexed { idx, window ->
+                .map { window ->
                     require(window.elements.size <= parameters.n) {
                         "The window size (${window.elements.size}) " +
                                 "must be less or equal than N (${parameters.n})"
@@ -94,8 +104,9 @@ class FftStream(
                     )
 
                     FftSample(
-                            time = (idx.toDouble() * m.toDouble() / (sampleRate.toDouble() / 1e+9)).toLong(),
+                            index = idx++,
                             binCount = parameters.n,
+                            samplesCount = m,
                             fft = fft.toList(),
                             sampleRate = sampleRate
                     )

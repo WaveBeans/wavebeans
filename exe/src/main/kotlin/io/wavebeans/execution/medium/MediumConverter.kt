@@ -30,6 +30,15 @@ object MediumConverter {
                     else -> throw UnsupportedOperationException("${e2!!::class} is not supported")
                 }
             }
+            is List<*> -> {
+                when (val e2 = e1.firstOrNull()) {
+                    is Int -> (o as List<List<Int>>).map { it.toIntArray() }.toTypedArray()
+                    is Long -> (o as List<List<Long>>).map { it.toLongArray() }.toTypedArray()
+                    is Float -> (o as List<List<Float>>).map { it.toFloatArray() }.toTypedArray()
+                    is Double -> (o as List<List<Double>>).map { it.toDoubleArray() }.toTypedArray()
+                    else -> throw UnsupportedOperationException("${e2!!::class} is not supported")
+                }
+            }
             else -> throw UnsupportedOperationException("${e1!!::class} is not supported")
         }
     }
@@ -39,6 +48,7 @@ object MediumConverter {
             "List<SampleArray>" -> result.nullableSampleArrayList() as T
             "List<WindowSampleArray>" -> result.nullableWindowSampleArrayList() as T
             "List<Array<FftSample>>" -> result.nullableFftSampleArrayList() as T
+            "List<Array<DoubleArray>>" -> result.nullableDoubleArrayArrayList() as T
             else -> throw UnsupportedOperationException("${result.type} is not supported")
         }
     }
@@ -62,6 +72,10 @@ object MediumConverter {
                     is FftSample -> {
                         val list = container as Array<FftSample>
                         if (at < list.size) list[at] else null
+                    }
+                    is DoubleArray -> {
+                        val list = container as Array<DoubleArray>
+                        if (at < list.size) list[at].toList() else null
                     }
                     else -> throw UnsupportedOperationException("${el!!::class} is not supported")
                 }

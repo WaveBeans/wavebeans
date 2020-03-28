@@ -3,8 +3,8 @@ package io.wavebeans.lib.io
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import io.wavebeans.lib.*
-import io.wavebeans.lib.stream.FiniteInputSampleStream
-import io.wavebeans.lib.stream.FiniteSampleStream
+import io.wavebeans.lib.stream.FiniteInputStream
+import io.wavebeans.lib.stream.FiniteStream
 import io.wavebeans.lib.stream.rangeProjection
 import io.wavebeans.lib.stream.trim
 import org.spekframework.spek2.Spek
@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.MILLISECONDS
 
 private class ByteArrayFileOutputMock(
-        val stream: FiniteSampleStream,
+        val stream: FiniteStream<Sample>,
         val bitDepth: BitDepth
 ) : StreamOutput<Sample> {
 
@@ -61,7 +61,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
 
         describe("output based on that input") {
             val output = ByteArrayFileOutputMock(
-                    FiniteInputSampleStream(input, NoParams()),
+                    FiniteInputStream(input, NoParams()),
                     BitDepth.BIT_8
             )
 
@@ -148,7 +148,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
 
         describe("output based on that input") {
             val output = ByteArrayFileOutputMock(
-                    FiniteInputSampleStream(input, NoParams()),
+                    FiniteInputStream(input, NoParams()),
                     BitDepth.BIT_16
             )
 
@@ -181,8 +181,8 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
 
     describe("Output of ByteArray LE, sequence of -100:100, encoding to 16 bit ") {
         val signal = (-100 until 100).toList()
-        val output = ByteArrayFileOutputMock(FiniteInputSampleStream(
-                object : FiniteInput {
+        val output = ByteArrayFileOutputMock(FiniteInputStream<Sample>(
+                object : FiniteInput<Sample> {
                     override val parameters: BeanParams
                         get() = throw UnsupportedOperationException()
 
@@ -205,8 +205,8 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
 
     describe("Output of ByteArray LE, sequence of -100:100, encoding to 24 bit ") {
         val signal = (-100 until 100).toList()
-        val output = ByteArrayFileOutputMock(FiniteInputSampleStream(
-                object : FiniteInput {
+        val output = ByteArrayFileOutputMock(FiniteInputStream<Sample>(
+                object : FiniteInput<Sample> {
                     override val parameters: BeanParams
                         get() = throw UnsupportedOperationException()
 

@@ -6,7 +6,9 @@ import io.wavebeans.lib.stream
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import io.wavebeans.lib.*
+import io.wavebeans.lib.io.input
 import io.wavebeans.lib.stream.window.Window
+import io.wavebeans.lib.stream.window.window
 
 object FunctionMergedStreamSpec : Spek({
     describe("10 items int stream") {
@@ -94,6 +96,35 @@ object FunctionMergedStreamSpec : Spek({
                                 listOf(0, 25)
                         )
             }
+        }
+    }
+
+    describe("Int and float stream") {
+        val stream = input { (idx, _) -> idx.toInt() }
+                .merge(input { (idx, _) -> idx.toFloat() }) { (a, b) ->
+                    requireNotNull(a)
+                    requireNotNull(b)
+                    a.toLong() + b.toLong()
+                }
+
+        it("should return list of sum of long values") {
+            assertThat(stream.asSequence(10.0f).take(10).toList())
+                    .isEqualTo((0 until 20 step 2).map { it.toLong() })
+        }
+    }
+
+    describe("Int and Window<Int> stream") {
+        val stream = input { (idx, _) -> idx.toInt() }
+                .window(2) { 0 }
+                .merge(input { (idx, _) -> idx.toInt() }) { (window, a) ->
+                    requireNotNull(window)
+                    requireNotNull(a)
+                    window.elements.first().toLong() + a.toLong()
+                }
+
+        it("should return list of sum of long values") {
+            assertThat(stream.asSequence(10.0f).take(10).toList())
+                    .isEqualTo((0 until 30 step 3).map { it.toLong() })
         }
     }
 })

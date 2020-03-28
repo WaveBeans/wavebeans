@@ -1,11 +1,25 @@
 Map operation
 ========
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [Overview](#overview)
+- [Using as lambda function](#using-as-lambda-function)
+- [Using as class](#using-as-class)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
+Overview
+--------
+
 Map operation allows you to either alter the value of the object you're working with, or completely change the type of the stream. There is a set of types which are already define and you can work with, or you may define your own, please follow the [Types section of API reference document](../readme.md#types).
 
 There are two main ways to define the map operation: via Lambda function or defining a proper class. The main difference is either you want to bypass any parameters or if the data provided inside the function is enough for you. Please follow [functions documentation](../functions.md) to get more information about nuances and limitations of each specific approach.
 
-**Using as lambda function**
+Using as lambda function
+-------
 
 To define a map operation using Lambda function you just need to call `map { }` on your stream. Let's for example make a function that changes the amplitude of the input stream. Usually you use [predefined change amplitude function](change-amplitude-operation.md) to achieve this, but as this operation is simple either ways, let's do it by calling map operation-- we double the sample value. 
 
@@ -36,7 +50,8 @@ Map function can also be used to convert one type to another. It is done the ver
 
 In that example the stream from the type `BeanStream<Sample>` is converted to `BeanStream<Int>` and instead of working with Sample you'll work with their signs only, and for example you may [merge](merge-operation.md) the stream with another stream and use that side effect that the sign will be changing with frequency 440Hz. 
 
-**Using as class**
+Using as class
+--------
 
 When the function needs some arguments to be bypassed outside, or you just want to avoid defining the function in inline-style as the code of the function is too complex, you may define the map function as a class. First of all please follow [functions documentation](../functions.md).
 

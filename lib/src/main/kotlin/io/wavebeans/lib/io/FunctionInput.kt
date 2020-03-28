@@ -2,17 +2,15 @@ package io.wavebeans.lib.io
 
 import io.wavebeans.lib.*
 import kotlinx.serialization.*
-import kotlinx.serialization.internal.SerialClassDescImpl
+import kotlin.reflect.jvm.jvmName
 
 fun <T : Any> input(generator: (Pair<Long, Float>) -> T?): BeanStream<T> = Input(InputParams(Fn.wrap(generator)))
 fun <T : Any> input(generator: Fn<Pair<Long, Float>, T?>): BeanStream<T> = Input(InputParams(generator))
 
 object InputParamsSerializer : KSerializer<InputParams<*>> {
 
-    override val descriptor: SerialDescriptor = object : SerialClassDescImpl("InputParams") {
-        init {
-            addElement("generateFn")
-        }
+    override val descriptor: SerialDescriptor = SerialDescriptor(InputParams::class.jvmName) {
+        element("generateFn", FnSerializer.descriptor)
     }
 
     override fun deserialize(decoder: Decoder): InputParams<*> {
@@ -29,9 +27,9 @@ object InputParamsSerializer : KSerializer<InputParams<*>> {
         return InputParams(func!!)
     }
 
-    override fun serialize(encoder: Encoder, obj: InputParams<*>) {
+    override fun serialize(encoder: Encoder, value: InputParams<*>) {
         val structure = encoder.beginStructure(descriptor)
-        structure.encodeSerializableElement(descriptor, 0, FnSerializer, obj.generator)
+        structure.encodeSerializableElement(descriptor, 0, FnSerializer, value.generator)
         structure.endStructure(descriptor)
     }
 

@@ -1,6 +1,15 @@
 WAV File input
 =======
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [Syntax](#syntax)
+- [Low-level API](#low-level-api)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 The [WAV](https://en.wikipedia.org/wiki/WAV) is very popular format to store uncompressed audio as file. Currently WaveBeans supports only files with single channel -- mono. The sampling rate and bit depth can be any.
 
 Worth to mention, wav-input doesn't support resampling internally, so it should correspond with stream sample rate or be resampled.
@@ -24,7 +33,8 @@ Using that API we can convert the file to infinite stream by defining the strate
 wave("file:///path/to/file.wav", ZeroFilling())
 ```
 
-**Low-level API**
+Low-level API
+-------
 
 As any other stream in the system, API mentioned above is just a wrapper around classes which handle all the logic. To create an instance with the same effect you would need to to this:
 
