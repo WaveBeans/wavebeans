@@ -7,7 +7,13 @@
 - [Overview](#overview)
 - [In-application usage](#in-application-usage)
 - [Table Service](#table-service)
+  - [Builtin type support](#builtin-type-support)
+    - [`FftSample` schema](#fftsample-schema)
+    - [`Window<T>` schema](#windowt-schema)
+    - [`List<T>` schema](#listt-schema)
   - [Custom types](#custom-types)
+    - [Custom serializer](#custom-serializer)
+  - [Measuring](#measuring)
 - [Helper Types](#helper-types)
   - [Time Measure](#time-measure)
 
@@ -80,6 +86,68 @@ Both endpoints return stream as new-line separated JSON objects like this:
 
 The `offset` is the time marker of the sample in nanoseconds, the value is serialized as JSON the sample value. For the type `Sample` it is simply `double` value. If you store the custom value in the table before returning it as a part of HTTP API you need to make it serializable. 
 
+### Builtin type support
+
+The following builtin types are supported out of the box for convenience:
+ 
+ * `FftSample`
+ * `Window<T>`, where `T` must be either builtin type or any other custom serializable type
+ * `List<T>`, where `T` must be either builtin type or any other custom serializable type
+ 
+All types follow the same pattern which is new-line separated json objects, but has different value schemas:
+
+```json
+{ 
+  "offset": 123,// the offset as Long number in nanoseconds
+  "value": ...  // value specific schema
+}
+```
+
+#### `FftSample` schema
+
+The FFT Sample returned as full object with every single value calculated (e.g. magnitude, phase, etc), despite the fact in the program usage it is being calculated on the fly. This is how the object looks like:
+ 
+```json
+{ 
+    "index": 0,                 // Int value of the index of the FFT sample
+    "binCount":   4,            // Int value of the bins count
+    "samplesCount": 2,          // Int number of samples the FFT is calculated on
+    "sampleRate": 44100.0,      // Float number of sample rate the stream is being evaluated with
+    // for the folowing arrays the index correponds to phase and magnitude arrays
+    "magnitude": [1.0,2.0,3.0,4.0], // array of Double values of magnitude values of the FFT
+    "phase":     [1.0,2.0,3.0,4.0], // array of Double values of phase values of the FFT
+    "frequency": [1.0,2.0,3.0,4.0], // array of double of frequencies values  
+    "time": 0                       // Long value of the time marker of the sample, in nano seconds
+}
+```
+
+#### `Window<T>` schema
+
+If the stream is some windowed serializable type T, it'll return the following schema:
+
+```json
+{
+    "size": 4, // Int value of the window size
+    "step": 2, // Int value of the windown step
+    "elements": [obj1, obj2, obj3, obj4], // array of objects which are serialized according to their own rules
+    "sampleType": "my.application.MySample" // the string qualifying the class of the sample (which is T)
+```
+
+The type `T` must be either builtin type or custom type with provided mechanism of serialization as by [next section](#custom-types)
+
+#### `List<T>` schema
+
+If the stream is some list of serializable type T, it'll return the objects as an array:
+
+```json
+[
+  obj1,
+  obj2,
+  obj3,
+  obj4
+]
+```
+
 ### Custom types
 
 In order to be used custom types needs to be made serializable. If you're using primitive types like String or Integer, you don't need to define its serialization routine. 
@@ -94,6 +162,46 @@ data class MyType(val field1: Int, val field2: String)
 ```
 
 For more serialization techniques follow official documentation of [`kotlinx.serialization`](https://github.com/Kotlin/kotlinx.serialization)
+
+#### Custom serializer
+
+If for any reason using `@Serializable` doesn't work for you, you can develop your own serializer and register it for your class.
+
+Let's consider having a simple class `B` whic has only one field:
+
+```kotlin
+data class B(val v: String)
+```
+
+The serialization routine is defined as per [`kotlinx.serialization documentation`](https://github.com/Kotlin/kotlinx.serialization). Two methods are required to be implemented: `descriptor` and `serialize()`, `deserialize()` is not used so it is up to you to implement it if you need it for any other purpose.
+
+```kotlin
+class BSerializer : KSerializer<B> {
+
+    override val descriptor: SerialDescriptor = SerialDescriptor("B") {
+        element("v", String.serializer().descriptor)
+    }
+
+    override fun deserialize(decoder: Decoder): B = 
+        throw UnsupportedOperationException("Don't need it")
+
+    override fun serialize(encoder: Encoder, value: B) {
+        val s = encoder.beginStructure(descriptor)
+        s.encodeStringElement(descriptor, 0, value.v)
+        s.endStructure(descriptor)
+    }
+}
+```
+
+Once the serializer is defined, you need to register it with the `JsonBeanStreamReader`.
+
+```kotlin
+JsonBeanStreamReader.register(B::class, BSerializer())
+```
+
+### Measuring
+
+The table service has time as an argument, but the data in stream is in samples interpreted according to defined sample rate. Moreover, some of the streams group samples together working with grouped sample as one complex sample. Also you may define the type which is not known to the system and it is impossible to measure it automatically. HTTP Table service uses simialr to [projection operation](../lib/operations/projection-operation.md) way of measurement, please follow [appropriate section](../lib/operations/projection-operation.md#working-with-different-types) for more details.
 
 ## Helper Types
 

@@ -6,7 +6,7 @@ if [ -z "$VERSION" ]; then
   exit 1
 fi
 
-CHANGES=$(awk '{print "* " $0}' *.md)
+CHANGES=$(awk '{print "" $0}' *.md)
 
 mv $CHANGELOG_FILE $CHANGELOG_FILE~
 

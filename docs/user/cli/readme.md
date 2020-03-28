@@ -11,6 +11,8 @@
   - [Basic example](#basic-example)
   - [Parameters explained](#parameters-explained)
   - [Writing scripts](#writing-scripts)
+  - [HTTP API](#http-api)
+    - [Example with Table API](#example-with-table-api)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -166,7 +168,7 @@ wavebeans --execute-file script.kts --http 12345 --http-wait -1
 While the script is running let's run a couple of queries via calling Table API over HTTP using `curl` command:
 
 ```bash
-curl http://localhost:12345/table/sine440/last/1.ms/
+curl http://localhost:12345/table/sine440/last?interval=1.ms
 ```
 
 Which return something like this:
