@@ -96,7 +96,7 @@ The following builtin types are supported out of the box for convenience:
  
 All types follow the same pattern which is new-line separated json objects, but has different value schemas:
 
-```json
+```metadata json
 { 
   "offset": 123,// the offset as Long number in nanoseconds
   "value": ...  // value specific schema
