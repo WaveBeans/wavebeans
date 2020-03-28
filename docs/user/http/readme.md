@@ -167,13 +167,13 @@ For more serialization techniques follow official documentation of [`kotlinx.ser
 
 If for any reason using `@Serializable` doesn't work for you, you can develop your own serializer and register it for your class.
 
-Let's consider having a simple class `B` whic has only one field:
+Let's consider having a simple class `B` which has only one field:
 
 ```kotlin
 data class B(val v: String)
 ```
 
-The serialization routine is defined as per [`kotlinx.serialization documentation`](https://github.com/Kotlin/kotlinx.serialization). Two methods are required to be implemented: `descriptor` and `serialize()`, `deserialize()` is not used so it is up to you to implement it if you need it for any other purpose.
+The serialization routine is defined as per [`kotlinx.serialization documentation`](https://github.com/Kotlin/kotlinx.serialization). Two methods are required to be implemented: `descriptor` and `serialize()`, `deserialize()` is not used, so it is up to you to implement it if you need it for any other purpose.
 
 ```kotlin
 class BSerializer : KSerializer<B> {
@@ -201,7 +201,7 @@ JsonBeanStreamReader.register(B::class, BSerializer())
 
 ### Measuring
 
-The table service has time as an argument, but the data in stream is in samples interpreted according to defined sample rate. Moreover, some of the streams group samples together working with grouped sample as one complex sample. Also you may define the type which is not known to the system and it is impossible to measure it automatically. HTTP Table service uses simialr to [projection operation](../lib/operations/projection-operation.md) way of measurement, please follow [appropriate section](../lib/operations/projection-operation.md#working-with-different-types) for more details.
+The table service has time as an argument, but the data in stream is in samples interpreted according to defined sample rate. Moreover, some of the streams group samples together working with grouped sample as one complex sample. Also you may define the type which is not known to the system and it is impossible to measure it automatically. HTTP Table service uses similar to [projection operation](../lib/operations/projection-operation.md) way of measurement, please follow [appropriate section](../lib/operations/projection-operation.md#working-with-different-types) for more details.
 
 ## Helper Types
 
