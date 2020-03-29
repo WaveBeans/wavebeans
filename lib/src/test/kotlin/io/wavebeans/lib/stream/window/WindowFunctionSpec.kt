@@ -145,7 +145,7 @@ object WindowFunctionSpec : Spek({
                 .take(2)
                 .toList()
 
-        it("should return all blackman values inside windows") {
+        it("should return all doubled values inside windows") {
             assertThat(w).isEqualTo(
                     seqStream()
                             .window(10)
