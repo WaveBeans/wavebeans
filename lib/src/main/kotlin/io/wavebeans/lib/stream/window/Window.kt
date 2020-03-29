@@ -51,4 +51,24 @@ data class Window<T: Any>(
                 zeroEl
         )
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as Window<*>
+
+        if (size != other.size) return false
+        if (step != other.step) return false
+        if (elements != other.elements) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = size
+        result = 31 * result + step
+        result = 31 * result + elements.hashCode()
+        return result
+    }
 }

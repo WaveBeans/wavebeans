@@ -71,6 +71,7 @@ abstract class Fn<T, R>(val initParams: FnInitParameters = FnInitParameters()) {
             val (fnClazzStr, paramsStr) = value.split("|").take(2)
             val fnClazz = Class.forName(fnClazzStr) as Class<Fn<T, R>>
             val params = paramsStr.split(";")
+                    .filter { it.isNotBlank() }
                     .map {
                         val (k, v) = it.split(":").take(2)
                         k to if (v == "null") {
@@ -130,12 +131,16 @@ class FnInitParameters {
     fun addLongs(name: String, value: Collection<Long>): FnInitParameters = add(name, value) { it.toString() }
     fun addFloats(name: String, value: Collection<Float>): FnInitParameters = add(name, value) { it.toString() }
     fun addDoubles(name: String, value: Collection<Double>): FnInitParameters = add(name, value) { it.toString() }
+    fun add(name: String, value: Fn<*, *>): FnInitParameters = addObj(name, value) { it.asString() }
 
     operator fun get(name: String): String? = params[name]
     fun notNull(name: String): String = params[name] ?: throw IllegalArgumentException("Parameters $name is null")
 
     fun <T : Any> obj(name: String, objectifier: (String) -> T): T = notNull(name).let(objectifier)
     fun <T : Any> objOrNull(name: String, objectifier: (String) -> T): T? = get(name)?.let(objectifier)
+
+    fun <T : Any, R : Any> fn(name: String): Fn<T, R> = obj(name) { Fn.fromString<T, R>(it) }
+    fun <T : Any, R : Any> fnOrNull(name: String): Fn<T, R>? = objOrNull(name) { Fn.fromString<T, R>(it) }
 
     fun string(name: String): String = notNull(name)
     fun stringOrNull(name: String): String? = get(name)

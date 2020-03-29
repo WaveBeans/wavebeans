@@ -5,6 +5,7 @@ import assertk.assertions.each
 import assertk.assertions.isEqualTo
 import assertk.assertions.prop
 import io.wavebeans.lib.io.input
+import io.wavebeans.lib.isListOf
 import io.wavebeans.lib.sampleOf
 import io.wavebeans.lib.seqStream
 import org.spekframework.spek2.Spek
@@ -152,6 +153,25 @@ object WindowFunctionSpec : Spek({
                             .map { window -> window.copy(elements = window.elements.map { it * 2 }) }
                             .take(2)
                             .toList()
+            )
+        }
+    }
+
+    describe("Custom type window function") {
+        val w = input { (i, _) -> i }
+                .window(5) { 0 }
+                .windowFunction(
+                        func = { 2 },
+                        multiplyFn = { (a, b) -> a * b }
+                )
+                .asSequence(1.0f)
+                .take(2)
+                .toList()
+
+        it("should return all values inside windows") {
+            assertThat(w).isListOf(
+                    Window(5, 5, listOf(0L, 2L, 4L, 6L, 8L)) { 0L },
+                    Window(5, 5, listOf(10L, 12L, 14L, 16L, 18L)) { 0L }
             )
         }
     }
