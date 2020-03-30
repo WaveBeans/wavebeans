@@ -7,11 +7,9 @@ import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.typeOf
 
-@ExperimentalStdlibApi
 fun Topology.buildPods(): List<PodRef> = PodBuilder(this).build()
 
 
-@ExperimentalStdlibApi
 class PodBuilder(val topology: Topology) {
 
     private val beansById = topology.refs.groupBy { it.id }

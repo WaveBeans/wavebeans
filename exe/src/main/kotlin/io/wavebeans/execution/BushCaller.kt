@@ -29,7 +29,6 @@ class SimpleBushCaller internal constructor(
     /***
      * @param request HTTP-like request: methodName?param1=value&param2=value
      */
-    @ExperimentalStdlibApi
     override fun call(request: String): Future<PodCallResult> {
         val bush = podDiscovery.bush(bushKey)
                 ?: throw IllegalStateException("Unable to make call `$request` to Bush[$bushKey] as it hasn't been found.")

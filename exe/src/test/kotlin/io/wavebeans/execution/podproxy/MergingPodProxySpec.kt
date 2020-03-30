@@ -17,7 +17,6 @@ import org.spekframework.spek2.style.specification.describe
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Future
 
-@ExperimentalStdlibApi
 class MergingPodProxyTester(
         val readsFrom: List<Pod>,
         val timeToReadAtOnce: Int,
@@ -69,7 +68,6 @@ class MergingPodProxyTester(
 }
 
 
-@UseExperimental(ExperimentalStdlibApi::class)
 object MergingPodProxySpec : Spek({
 
     describe("Merging Pod Proxy for two Pods with partitionSize=2") {

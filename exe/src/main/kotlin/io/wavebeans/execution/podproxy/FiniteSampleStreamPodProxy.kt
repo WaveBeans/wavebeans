@@ -8,7 +8,6 @@ import io.wavebeans.lib.Sample
 import io.wavebeans.lib.stream.FiniteStream
 import java.util.concurrent.TimeUnit
 
-@ExperimentalStdlibApi
 class FiniteSampleStreamPodProxy(
         pointedTo: PodKey,
         forPartition: Int

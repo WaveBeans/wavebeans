@@ -14,7 +14,6 @@ import kotlin.random.Random
 
 val random = Random(1234)
 
-@ExperimentalStdlibApi
 object BushSpec : Spek({
 
     describe("Bush should call pod method. 1 pod per bush") {

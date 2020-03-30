@@ -35,6 +35,19 @@ allprojects {
         jvmTarget = "1.8"
     }
 
+//    compileKotlin.kotlinOptions.freeCompilerArgs = listOf(
+//            "-Xopt-in=io.ktor.util.KtorExperimentalAPI",
+//            "-Xopt-in=kotlin.ExperimentalStdlibApi"
+//    )
+//
+//    compileTestKotlin.kotlinOptions.freeCompilerArgs = listOf(
+//            "-Xopt-in=io.ktor.util.KtorExperimentalAPI",
+//            "-Xopt-in=kotlin.ExperimentalStdlibApi"
+//    )
+
+    tasks.withType<KotlinCompile>().all {
+        kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlin.ExperimentalStdlibApi"
+    }
     dependencies {
         implementation(kotlin("stdlib-jdk8"))
         implementation(kotlin("reflect"))

@@ -55,7 +55,6 @@ class WaveBeansCli(
      * Tries executes script which is provided via string of file. String has priority over the file.
      * Handles `^C` signal properly trying to close streams and flush what is done but is in temporary buffers.
      */
-    @ExperimentalStdlibApi
     fun tryScriptExecution(): Boolean {
 
         if (cli.has(debug)) {

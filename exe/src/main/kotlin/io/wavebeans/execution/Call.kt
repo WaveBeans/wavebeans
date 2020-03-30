@@ -25,7 +25,6 @@ data class Call(
         }
     }
 
-    @ExperimentalStdlibApi
     fun param(key: String, type: KType): Any? {
         return when (type) {
             typeOf<Int>() -> params[key]?.toInt()

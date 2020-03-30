@@ -18,7 +18,6 @@ import org.spekframework.spek2.style.specification.describe
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Future
 
-@ExperimentalStdlibApi
 class PodProxyTester(
         val pointedTo: Pod,
         val timeToReadAtOnce: Int = 1
@@ -67,7 +66,6 @@ class PodProxyTester(
 }
 
 
-@UseExperimental(ExperimentalStdlibApi::class)
 object StreamingPodProxySpec : Spek({
 
     describe("Pod Proxy count amount of calls to Pod") {

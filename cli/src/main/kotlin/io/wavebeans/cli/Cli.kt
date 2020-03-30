@@ -12,7 +12,6 @@ import java.util.jar.JarFile
 import java.util.jar.Manifest
 import kotlin.system.exitProcess
 
-@ExperimentalStdlibApi
 fun main(args: Array<String>) {
     val cli = try {
         DefaultParser().parse(options, args)

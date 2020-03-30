@@ -5,7 +5,6 @@ import mu.KotlinLogging
 import java.util.concurrent.Future
 import java.util.concurrent.atomic.AtomicInteger
 
-@ExperimentalStdlibApi
 class LocalDistributedOverseer(
         override val outputs: List<StreamOutput<out Any>>,
         private val threadsCount: Int,
