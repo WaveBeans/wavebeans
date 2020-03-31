@@ -6,18 +6,41 @@ object WaveBeansClassLoader {
 
     private val log = KotlinLogging.logger {}
 
-    var classLoader: ClassLoader = WaveBeansClassLoader.javaClass.classLoader
-        set(value) {
+    private val classLoaders = mutableListOf<ClassLoader>()
+
+    init {
+        reset()
+    }
+
+    fun reset() {
+        classLoaders.clear()
+        classLoaders += WaveBeansClassLoader.javaClass.classLoader
+    }
+
+    fun addClassLoader(classLoader: ClassLoader) {
+        if (!classLoaders.contains(classLoader)) {
             log.debug {
-                "Set new class loader $value from:\n" +
+                "Setting new class loader $classLoader from:\n" +
                         Thread.currentThread().stackTrace
                                 .drop(1)
                                 .joinToString("\n") { it.toString() }
             }
-            field = value
+            classLoaders += classLoader
         }
+    }
 
-    fun instance(): ClassLoader = classLoader
-
-    fun classForName(name: String): Class<*> = Class.forName(name, true, instance())
+    fun classForName(name: String): Class<*> {
+        val i = classLoaders.iterator()
+        while (i.hasNext()) {
+            val instance = i.next()
+            try {
+                return Class.forName(name, true, instance)
+            } catch (e: ClassNotFoundException) {
+                // ignore, try next one
+            } catch (e: NoClassDefFoundError) {
+                // ignore, try next one
+            }
+        }
+        throw ClassNotFoundException("$name class can't be loaded using any of class loaders: $classLoaders")
+    }
 }

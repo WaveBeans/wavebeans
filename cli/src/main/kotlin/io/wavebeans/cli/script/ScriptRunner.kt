@@ -157,7 +157,7 @@ class ScriptRunner(
 
     private fun run(jarFile: File) {
         try {
-            WaveBeansClassLoader.classLoader = ScriptClassLoader(jarFile)
+            WaveBeansClassLoader.addClassLoader(ScriptClassLoader(jarFile))
             val scriptClazz = WaveBeansClassLoader.classForName("io.wavebeans.script.WaveBeansScript")
             val scriptInstance = scriptClazz.constructors.first().newInstance()
             val runMethod = scriptClazz.getMethod("run")

@@ -3,14 +3,18 @@ package io.wavebeans.cli.script
 import assertk.assertThat
 import assertk.assertions.*
 import assertk.catch
+import io.wavebeans.lib.WaveBeansClassLoader
 import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
 import org.spekframework.spek2.style.specification.describe
 import java.io.File
 import java.lang.Thread.sleep
 import java.util.concurrent.CancellationException
 
 object ScriptRunnerSpec : Spek({
+
+    beforeEachTest {
+        WaveBeansClassLoader.reset()
+    }
 
     arrayOf(
             Pair(RunMode.LOCAL, emptyMap<String, Any>()),

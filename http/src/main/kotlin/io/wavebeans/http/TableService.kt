@@ -31,7 +31,6 @@ import kotlin.reflect.full.cast
 import kotlin.reflect.jvm.jvmName
 import kotlin.reflect.typeOf
 
-@KtorExperimentalAPI
 fun Application.tableService() {
     val tableService = TableService()
 

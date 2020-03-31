@@ -10,6 +10,7 @@ import io.ktor.client.features.ClientRequestException
 import io.ktor.client.request.get
 import io.wavebeans.cli.WaveBeansCli.Companion.name
 import io.wavebeans.cli.WaveBeansCli.Companion.options
+import io.wavebeans.lib.WaveBeansClassLoader
 import kotlinx.coroutines.runBlocking
 import org.apache.commons.cli.DefaultParser
 import org.spekframework.spek2.Spek
@@ -25,6 +26,11 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.SECONDS
 
 object WaveBeansCliSpec : Spek({
+
+    beforeEachTest {
+        WaveBeansClassLoader.reset()
+    }
+
     describe("Scripting") {
         describe("Short-living script") {
             val file = File.createTempFile("test", "csv").also { it.deleteOnExit() }
