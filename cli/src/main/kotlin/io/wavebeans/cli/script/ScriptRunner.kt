@@ -1,11 +1,18 @@
 package io.wavebeans.cli.script
 
-import io.wavebeans.lib.WaveBeansClassLoader
 import mu.KotlinLogging.logger
+import org.jetbrains.kotlin.cli.common.repl.ReplCodeLine
+import org.jetbrains.kotlin.cli.common.repl.ReplCompileResult
+import org.jetbrains.kotlin.cli.common.repl.ReplEvalResult
 import java.io.Closeable
 import java.io.File
-import java.lang.reflect.InvocationTargetException
 import java.util.concurrent.*
+import kotlin.script.experimental.api.ScriptCompilationConfiguration
+import kotlin.script.experimental.api.ScriptEvaluationConfiguration
+import kotlin.script.experimental.api.dependencies
+import kotlin.script.experimental.jvm.JvmDependency
+import kotlin.script.experimental.jvmhost.repl.JvmReplCompiler
+import kotlin.script.experimental.jvmhost.repl.JvmReplEvaluator
 
 class ScriptRunner(
         private val content: String,
@@ -57,50 +64,43 @@ class ScriptRunner(
             
             val log = logger {}
             
-            class WaveBeansScript {
+            val evaluator = $evaluator
+            
+            fun StreamOutput<*>.out() { evaluator.addOutput(this) }
 
-                val evaluator = $evaluator
+            $cleanedContent
                 
-                fun StreamOutput<*>.out() { evaluator.addOutput(this) }
-
-                fun content() {
-                    ${cleanedContent}
-                }
-
-                fun run() {
-                    content()
-                    
-                    try {
-                        log.info { "Script evaluation started" }
-                        evaluator.eval(${sampleRate}f)
-                            .map { it.get() }
-                            .also {
-                                it.mapNotNull { it.exception }
-                                        .map { log.error(it) { "Error during evaluation" }; it }
-                                        .firstOrNull()?.let { throw it }
-                            }
-                            .all { it.finished }
-                    } catch (e : java.lang.InterruptedException) {
-                        log.info { "Script evaluation interrupted" }
-                        // nothing to do
-                    } catch (e : Exception) {
-                        log.error(e) { "Script evaluation failed" } 
-                        e.printStackTrace(System.err)
-                        evaluator.close()
-                        System.exit(1)
-                    } finally {
-                        evaluator.close() 
-                        log.info { "Evaluator closed" }
+            try {
+                log.info { "Script evaluation started" }
+                evaluator.eval(${sampleRate}f)
+                    .map { it.get() }
+                    .also {
+                        it.mapNotNull { it.exception }
+                                .map { log.error(it) { "Error during evaluation" }; it }
+                                .firstOrNull()?.let { throw it }
                     }
-                }
+                    .all { it.finished }
+            } catch (e : java.lang.InterruptedException) {
+                log.info { "Script evaluation interrupted" }
+                // nothing to do
+            } catch (e : Exception) {
+                log.error(e) { "Script evaluation failed" } 
+                e.printStackTrace(System.err)
+                evaluator.close()
+                System.exit(1)
+            } finally {
+                evaluator.close() 
+                log.info { "Evaluator closed" }
             }
+            
+            Unit
         """.trimIndent()
 
         log.debug { "Evaluating the following script: \n$scriptContent" }
-        val compileTask = executor.submit(Callable<File> {
+        val compileTask = executor.submit(Callable {
             compile(scriptContent)
         })
-        val jarFile = try {
+        val compileResult = try {
             compileTask.get(30000, TimeUnit.MILLISECONDS)!!
         } catch (e: ExecutionException) {
             log.error(e) { "Can't compile the script:\n$scriptContent" }
@@ -113,7 +113,7 @@ class ScriptRunner(
         task = executor.submit(Callable {
             return@Callable try {
                 startCountDown.countDown()
-                run(jarFile)
+                run(compileResult)
                 null
             } catch (e: Throwable) {
                 log.error(e) { "Error while evaluating the following script: \n$scriptContent" }
@@ -126,44 +126,36 @@ class ScriptRunner(
         return this
     }
 
-    private fun compile(script: String): File {
-        val scriptFile = File(createTempDir("wavebeans-script"), "WaveBeansScript.kt")
-        val jarFile = File(createTempDir("wavebeans-script"), "wavebeans.jar")
+    private fun compile(script: String): ReplCompileResult.CompiledClasses {
+        val scriptCompilationConfiguration = ScriptCompilationConfiguration {
+            dependencies.append(JvmDependency(
+                    System.getProperty("java.class.path").split(":").map { File(it) }
+            ))
+        }
+        val compiler = JvmReplCompiler(scriptCompilationConfiguration)
+        val compilerState = compiler.createState()
 
-        scriptFile.writeText(script)
-
-        val kotlinc = "kotlinc"
-        val kotlinHome = System.getenv("KOTLIN_HOME")
-                ?.takeIf { File("$it/$kotlinc").exists() }
-                ?: System.getenv("PATH")
-                        .split(":")
-                        .firstOrNull { File("$it/$kotlinc").exists() }
-                ?: throw IllegalStateException("$kotlinc is not located, make sure it is available via either" +
-                        " PATH or KOTLIN_HOME environment variable")
-
-        val compileCall = CommandRunner(
-                "$kotlinHome/$kotlinc",
-                "-d", jarFile.absolutePath, scriptFile.absolutePath,
-                "-cp", System.getProperty("java.class.path"),
-                "-jvm-target", "1.8"
-        ).call()
-
-        if (compileCall.exitCode != 0) {
-            throw IllegalStateException("Can't compile the script. \n${String(compileCall.output)}")
+        return when (val compileResult = compiler.compile(compilerState, ReplCodeLine(0, 0, script))) {
+            is ReplCompileResult.CompiledClasses -> compileResult
+            is ReplCompileResult.Incomplete -> throw IllegalStateException("[Compilation Incomplete] $compileResult")
+            is ReplCompileResult.Error -> throw IllegalStateException("[Compilation Error] ${compileResult.location ?: "UNKNOWN"}: ${compileResult.message}")
         }
 
-        return jarFile
     }
 
-    private fun run(jarFile: File) {
-        try {
-            WaveBeansClassLoader.addClassLoader(ScriptClassLoader(jarFile))
-            val scriptClazz = WaveBeansClassLoader.classForName("io.wavebeans.script.WaveBeansScript")
-            val scriptInstance = scriptClazz.constructors.first().newInstance()
-            val runMethod = scriptClazz.getMethod("run")
-            runMethod.invoke(scriptInstance)
-        } catch (e: InvocationTargetException) {
-            throw e.cause ?: e
+    private fun run(compileResult: ReplCompileResult.CompiledClasses) {
+        val configuration = ScriptEvaluationConfiguration { }
+        val evaluator = JvmReplEvaluator(configuration)
+        val evaluatorState = evaluator.createState()
+        when (val result = evaluator.eval(evaluatorState, compileResult)) {
+            is ReplEvalResult.Error.Runtime -> {
+                throw java.lang.IllegalStateException("message: ${result.message} cause:${result.cause}")
+            }
+            is ReplEvalResult.UnitResult -> {
+                // nothing to do
+            }
+            else -> throw UnsupportedOperationException("EvalResult $result is not supported")
+
         }
     }
 
