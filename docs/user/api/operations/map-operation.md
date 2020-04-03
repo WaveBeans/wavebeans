@@ -14,7 +14,7 @@ Map operation
 Overview
 --------
 
-Map operation allows you to either alter the value of the object you're working with, or completely change the type of the stream. There is a set of types which are already define and you can work with, or you may define your own, please follow the [Types section of API reference document](../readme.md#types).
+Map operation allows you to either alter the value of the object you're working with, or completely change the type of the stream. There is a set of types which are already define and you can work with, or you may define your own, please follow the [Types section of API reference document](../#types).
 
 There are two main ways to define the map operation: via Lambda function or defining a proper class. The main difference is either you want to bypass any parameters or if the data provided inside the function is enough for you. Please follow [functions documentation](../functions.md) to get more information about nuances and limitations of each specific approach.
 

@@ -41,7 +41,7 @@ import java.util.concurrent.TimeUnit.NANOSECONDS
    )
 ```
 
-*Note: Don't forget to follow general rules to [execute the stream](../../exe/readme.md)*
+*Note: Don't forget to follow general rules to [execute the stream](../../exe/)*
 
 The generated output will look like this (first few rows):
 

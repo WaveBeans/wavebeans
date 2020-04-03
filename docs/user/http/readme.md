@@ -21,7 +21,7 @@
 
 ## Overview
 
-WaveBeans framework allows expose to access some of the data to be expose via HTTP API. While the stream is being evaluated you may start the HTTP Server. It is possible via [CLI](../cli/readme.md#http-api) or in your application.
+WaveBeans framework allows expose to access some of the data to be expose via HTTP API. While the stream is being evaluated you may start the HTTP Server. It is possible via [CLI](../cli/#http-api) or in your application.
 
 Http Service provides access to different underlying service implementations which has different purpose with REST API:
 * [Table Service](#table-service): querying [tables](../api/outputs/table-output.md).

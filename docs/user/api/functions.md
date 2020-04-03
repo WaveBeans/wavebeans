@@ -39,7 +39,7 @@ fun apply(argument: Pair<Sample, Double>): Sample { // `argument` type is specif
 }
 ```
 
-For more information please follow [Kotlin documentation]((https://kotlinlang.org/docs/reference/multi-declarations.html)).
+For more information please follow [Kotlin documentation](https://kotlinlang.org/docs/reference/multi-declarations.html).
 
 ## Lambda function
 
