@@ -287,6 +287,54 @@ object FnSpec : Spek({
             }
         }
 
+        describe("Fn type") {
+            describe("As lambda") {
+                val fn = Fn.wrap<Int, Int> { it * 42 }
+
+                class Afn(initParameters: FnInitParameters) : Fn<Int, Int>(initParameters) {
+                    override fun apply(argument: Int): Int {
+                        val f = initParams.fn<Int, Int>("fn")
+                        return f.apply(argument)
+                    }
+                }
+
+                it("should be indirectly instantiated and executed") {
+                    assertThat(
+                            Fn.instantiate(
+                                    Afn::class.java,
+                                    FnInitParameters().add("fn", fn)
+                            ).apply(1)
+                    ).isEqualTo(1 * 42)
+
+                }
+            }
+
+            describe("As class") {
+                class TheAnswerFn : Fn<Int, Int>() {
+                    override fun apply(argument: Int): Int {
+                        return argument * 42
+                    }
+                }
+
+                class Afn(initParameters: FnInitParameters) : Fn<Int, Int>(initParameters) {
+                    override fun apply(argument: Int): Int {
+                        val f = initParams.fn<Int, Int>("fn")
+                        return f.apply(argument)
+                    }
+                }
+
+                it("should be indirectly instantiated and executed") {
+                    assertThat(
+                            Fn.instantiate(
+                                    Afn::class.java,
+                                    FnInitParameters().add("fn", TheAnswerFn())
+                            ).apply(1)
+                    ).isEqualTo(1 * 42)
+
+                }
+            }
+        }
+
         describe("Nullable custom types") {
             data class CustomType(
                     val long: Long,

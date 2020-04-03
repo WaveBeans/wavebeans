@@ -6,6 +6,7 @@ FFT operation
 **Table of Contents**
 
 - [Overview](#overview)
+- [Window Functions](#window-functions)
 - [FFT Sample](#fft-sample)
 - [Storing to CSV](#storing-to-csv)
 
@@ -31,6 +32,31 @@ Let's get an example:
 ```
 
 That stream will calculate FFT based on 401 samples, but before FFT calculation it will be aligned with zero-padding to 512 samples. And each 401 samples of source stream will return one FFT sample, and while stream lasts it generates the stream of FFT samples -- `BeanStream<FftSample>`, in fact it generates forward [STFT](https://en.wikipedia.org/wiki/Short-time_Fourier_transform).
+
+Window Functions
+--------
+
+It is usual to apply the window function over the input on FFT calculation. In order to do this you just need to add an extra call in the chain to the function you want to apply:
+
+```kotlin
+// use one of the predefined functions
+440.sine()
+        .window(401)
+        .hamming()
+        .fft(512)
+
+// or define your own
+440.sine()
+        .window(401)
+        .windowFunction { (i, n) ->
+            val halfN = n / 2.0
+            sampleOf(1.0 - abs((i - halfN) / halfN))
+        }
+        .fft(512)
+
+```
+
+For more details follow [mapping with window function documentation](map-window-function.md)
 
 FFT Sample
 --------
