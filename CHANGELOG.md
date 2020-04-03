@@ -4,13 +4,13 @@ Version 0.0.3 on 2020-04-03
 * Execution: **Breaking changes** `Overseer.eval()` now returns different type of result. Follow [docs](/docs/user/exe/readme.md)
 * CLI: Using Kotlin Scripting as main engine. No need to install Kotlin SDK anymore
 * Support of different [window functions](https://en.wikipedia.org/wiki/Window_function):
-  * [Documentation](/docs/user/lib/operation/map-window-function.md)
-  * Implementation for [Sample](/docs/user/lib/operation/map-window-function.md#stream-of-sample-type) type:
+  * [Documentation](/docs/user/lib/operations/map-window-function.md)
+  * Implementation for [Sample](/docs/user/lib/operations/map-window-function.md#stream-of-sample-type) type:
     * [rectangular](https://en.wikipedia.org/wiki/Window_function#Rectangular_window)
     * [triangular](https://en.wikipedia.org/wiki/Window_function#Triangular_window)
     * [blackman](https://en.wikipedia.org/wiki/Window_function#Blackman_window)
     * [hamming](https://en.wikipedia.org/wiki/Window_function#Hann_and_Hamming_windows)
-  * Generic implementation for [any type](/docs/user/lib/operation/map-window-function.md#stream-of-any-type)
+  * Generic implementation for [any type](/docs/user/lib/operations/map-window-function.md#stream-of-any-type)
 * Better support for types using through HTTP/Table service, distributed execution and measuring for different purposes:
     * `FftSample`
     * `Window<T>`
