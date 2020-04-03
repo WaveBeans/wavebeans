@@ -60,6 +60,7 @@ abstract class Fn<T, R>(val initParams: FnInitParameters = FnInitParameters()) {
          * ```
          */
         fun <T, R> wrap(fn: (T) -> R): Fn<T, R> {
+            WaveBeansClassLoader.addClassLoader(fn::class.java.classLoader)
             return WrapFn(FnInitParameters().add(fnClazz, fn::class.jvmName))
         }
 
