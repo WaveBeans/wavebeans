@@ -1,1 +1,0 @@
-* Detecting valid classloader depenging on the environment you're running in (i.e. regular app, Jupyter, scripting, etc)

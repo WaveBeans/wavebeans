@@ -8,7 +8,7 @@ How to do a release?
 
 0. Assumptions:
 
-    * Every branch/feature pushes the description `.md` file into `.release` directory. Every new line will be prepended with `*`.
+    * Every branch/feature pushes the description `.md` file into `.release` directory.
 
 1. Locally:
 
