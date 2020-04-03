@@ -96,7 +96,7 @@ The following builtin types are supported out of the box for convenience:
  
 All types follow the same pattern which is new-line separated json objects, but has different value schemas:
 
-```metadata json
+```json
 { 
   "offset": 123,// the offset as Long number in nanoseconds
   "value": ...  // value specific schema
@@ -107,7 +107,7 @@ All types follow the same pattern which is new-line separated json objects, but 
 
 The FFT Sample returned as full object with every single value calculated (e.g. magnitude, phase, etc), despite the fact in the program usage it is being calculated on the fly. This is how the object looks like:
  
-```metadata json
+```json
 { 
     "index": 0,                 // Int value of the index of the FFT sample
     "binCount":   4,            // Int value of the bins count
@@ -125,7 +125,7 @@ The FFT Sample returned as full object with every single value calculated (e.g. 
 
 If the stream is some windowed serializable type T, it'll return the following schema:
 
-```metadata json
+```json
 {
     "size": 4, // Int value of the window size
     "step": 2, // Int value of the windown step
@@ -139,7 +139,7 @@ The type `T` must be either builtin type or custom type with provided mechanism 
 
 If the stream is some list of serializable type T, it'll return the objects as an array:
 
-```metadata json
+```json
 [
   obj1,
   obj2,
