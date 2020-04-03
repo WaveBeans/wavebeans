@@ -24,8 +24,6 @@ WaveBeans CLI is the tool to automate various tasks related to audio signal proc
 
 The tool requires to have JRE 8+ installed and be configured properly. Please follow installation instructions, [OpenJDK](https://openjdk.java.net/install/)
 
-Kotlin installed, kotlinc which can be located either via KOTLIN_HOME or PATH. Follow instructions on [official page](https://kotlinlang.org/docs/tutorials/command-line.html)
-
 ## Installation instructions
 
 * Choose the appropriate version
