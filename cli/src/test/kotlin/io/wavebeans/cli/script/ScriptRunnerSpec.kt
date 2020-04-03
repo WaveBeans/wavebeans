@@ -99,7 +99,7 @@ object ScriptRunnerSpec : Spek({
                 it("should run with exception explaining the reason") {
                     assertThat(catch { eval(script) })
                             .isNotNull()
-                            .message().isNotNull().contains("noSuchMethod()")
+                            .message().isNotNull().contains("noSuchMethod")
                 }
             }
 
