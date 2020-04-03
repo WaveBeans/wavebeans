@@ -215,7 +215,7 @@ a > b // true
 
 Using certain operations you can convert one type to another, and that new type can be used further down by the stream and then be converted to the one which is supported out of the box or used down to the SinkBean and be stored using that type. Or you can even return that type out of the Input and use all the way through to the end of the stream. Or use within windowing, or convert the FftSample directly. It's not limited, it's up to your requirement and understanding.
 
-However there is a nuance. In distributed mode you may require to define that type in certain way, please follow the [documentation](../exe/readme.md).
+However there is a nuance. In distributed mode you may require to define that type in certain way, please follow the [documentation](../exe/).
 
 Here is an example to illustrate how it may look like. It generates a set of samples based on cosine mathematical function, then group it by 10 samples, and get 2 first samples out of the group, and then outputs it to a CSV file with three columns: time, first sample and second sample.
 

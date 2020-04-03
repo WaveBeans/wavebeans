@@ -24,7 +24,7 @@
 WaveBeans framework allows expose to access some of the data to be expose via HTTP API. While the stream is being evaluated you may start the HTTP Server. It is possible via [CLI](../cli/readme.md#http-api) or in your application.
 
 Http Service provides access to different underlying service implementations which has different purpose with REST API:
-* [Table Service](#table-service): querying [tables](../lib/outputs/table-output.md).
+* [Table Service](#table-service): querying [tables](../api/outputs/table-output.md).
 
 If everything is good, the service returns 200 OK HTTP code.
 
@@ -57,9 +57,9 @@ server.close()
 
 ## Table Service
 
-Table Service allows you to query data being stored in [tables](../lib/outputs/table-output.md). All methods are start with `/table` path, then the name of the table is specified `/table/{tableName}` and then after it the method with its parameters.
+Table Service allows you to query data being stored in [tables](../api/outputs/table-output.md). All methods are start with `/table` path, then the name of the table is specified `/table/{tableName}` and then after it the method with its parameters.
 
-Following methods available, mostly this methods are exposed from [table query functionality](../lib/outputs/table-output.md#querying):
+Following methods available, mostly this methods are exposed from [table query functionality](../api/outputs/table-output.md#querying):
 
 * Getting last Interval: `/table/{tableName}/last?interval={interval}[&sampleRate={sampleRate}]`:
     * `tableName` -- the name of the table to query, if the table can't be found the API call with return `404 Not Found` HTTP code.
@@ -201,7 +201,7 @@ JsonBeanStreamReader.register(B::class, BSerializer())
 
 ### Measuring
 
-The table service has time as an argument, but the data in stream is in samples interpreted according to defined sample rate. Moreover, some of the streams group samples together working with grouped sample as one complex sample. Also you may define the type which is not known to the system and it is impossible to measure it automatically. HTTP Table service uses similar to [projection operation](../lib/operations/projection-operation.md) way of measurement, please follow [appropriate section](../lib/operations/projection-operation.md#working-with-different-types) for more details.
+The table service has time as an argument, but the data in stream is in samples interpreted according to defined sample rate. Moreover, some of the streams group samples together working with grouped sample as one complex sample. Also you may define the type which is not known to the system and it is impossible to measure it automatically. HTTP Table service uses similar to [projection operation](../api/operations/projection-operation.md) way of measurement, please follow [appropriate section](../api/operations/projection-operation.md#working-with-different-types) for more details.
 
 ## Helper Types
 

@@ -139,7 +139,7 @@ Otherwise, if you don't call it that lines of code won't be evaluated. Also, if 
 
 ### HTTP API
 
-WaveBeans has built HTTP API to run variety of queries while the stream is being evaluated. More about exact functionality read in [HTTP API reference](../http/readme.md). CLI supports running the HTTP API along with your script. 
+WaveBeans has built HTTP API to run variety of queries while the stream is being evaluated. More about exact functionality read in [HTTP API reference](../http/). CLI supports running the HTTP API along with your script. 
 
 To start the server specify the port you want to run it on via `--http` flag. The range of ports from 1 to 65536, though on Unix-like system to run on ports less than 1024 administrator privileges are required, and overall is not recommended to avoid interfering with standard services.
 
@@ -147,7 +147,7 @@ When the script is stop running the HTTP server is also being shutdown, however 
 
 #### Example with Table API
 
-HTTP Service may provide different APIs, in this example we'll take a look at using it via calling Table API. Tables allows to store values and query it later. More about it you can read in [Table Output reference](../lib/outputs/table-output.md) and [Table Service API](../http/readme.md#table-service).
+HTTP Service may provide different APIs, in this example we'll take a look at using it via calling Table API. Tables allows to store values and query it later. More about it you can read in [Table Output reference](../api/outputs/table-output.md) and [Table Service HTTP API](../http/#table-service).
 
 First of all let's create the `script.kts` with the following content:
 

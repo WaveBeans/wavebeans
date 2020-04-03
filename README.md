@@ -15,7 +15,7 @@ Everything using one tool in single- or multi-threaded environment, or even dist
 
 ## Quick links
 
-* [API reference](docs/user/lib/readme.md)
+* [API reference](docs/user/api/readme.md)
 * [Execution reference](docs/user/exe/readme.md)
 * [Command line tool reference](docs/user/cli/readme.md)
 * [Change log](CHANGELOG.md)
@@ -85,7 +85,7 @@ fun main() {
 }
 ```
 
-For more follow [usage documentation](docs/user/lib/readme.md) and [project documentation](lib/readme.md). 
+For more follow [usage documentation](docs/user/api/readme.md) and [project documentation](lib/readme.md). 
 
 #### Logging
 
