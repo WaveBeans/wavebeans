@@ -1,6 +1,6 @@
 # WaveBeans
 
-[ ![Download](https://api.bintray.com/packages/wavebeans/wavebeans/wavebeans/images/download.svg?version=0.0.2) ](https://bintray.com/wavebeans/wavebeans/wavebeans/0.0.2/link)
+[ ![Download](https://api.bintray.com/packages/wavebeans/wavebeans/wavebeans/images/download.svg?version=0.0.3) ](https://bintray.com/wavebeans/wavebeans/wavebeans/0.0.3/link)
 
 A set of tools to process audio signals using Kotlin/Java/Scala/etc. You can either use it via command line or develop your own program which can be run as a part of you application:
 
