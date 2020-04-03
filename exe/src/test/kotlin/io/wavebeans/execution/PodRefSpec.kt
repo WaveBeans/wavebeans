@@ -22,7 +22,6 @@ import org.spekframework.spek2.style.specification.describe
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.full.createType
 
-@ExperimentalStdlibApi
 class PodRefSpec : Spek({
 
     describe("One bean per pod") {

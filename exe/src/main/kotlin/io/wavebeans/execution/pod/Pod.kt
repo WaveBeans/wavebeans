@@ -19,7 +19,6 @@ interface Pod : Closeable {
 
     fun inputs(): List<AnyBean>
 
-    @ExperimentalStdlibApi
     fun call(call: Call): PodCallResult {
         return try {
             val start = System.nanoTime()

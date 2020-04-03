@@ -57,7 +57,6 @@ class ScriptRunner(
             
             val log = logger {}
             
-            @kotlin.ExperimentalStdlibApi
             class WaveBeansScript {
 
                 val evaluator = $evaluator

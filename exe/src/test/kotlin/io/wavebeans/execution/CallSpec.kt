@@ -11,12 +11,10 @@ import kotlin.reflect.full.starProjectedType
 import kotlin.reflect.typeOf
 
 
-@ExperimentalStdlibApi
 @Suppress("UNCHECKED_CAST")
 inline fun <reified T : Any> call(value: String): T =
         Call.parseRequest("method?param=$value").param("param", typeOf<T>()) as T
 
-@ExperimentalStdlibApi
 object CallSpec : Spek({
 
     describe("valid request parse") {

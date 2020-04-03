@@ -14,7 +14,6 @@ import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.io.File
 
-@ExperimentalStdlibApi
 class PodBuilderSpec : Spek({
     val ids = mutableMapOf<AnyBean, Int>()
 

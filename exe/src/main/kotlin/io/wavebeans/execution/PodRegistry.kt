@@ -11,7 +11,6 @@ import kotlin.reflect.KType
 import kotlin.reflect.full.isSupertypeOf
 import kotlin.reflect.typeOf
 
-@ExperimentalStdlibApi
 object PodRegistry {
 
     private val log = KotlinLogging.logger { }

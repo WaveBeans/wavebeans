@@ -17,7 +17,6 @@ import org.spekframework.spek2.style.specification.describe
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Future
 
-@ExperimentalStdlibApi
 class PodProxyIteratorTester<T : Any, ARRAY_T : Any>(
         val pointedTo: Pod,
         converter: (PodCallResult) -> List<ARRAY_T>?,
@@ -69,7 +68,6 @@ class PodProxyIteratorTester<T : Any, ARRAY_T : Any>(
     )
 }
 
-@ExperimentalStdlibApi
 object PodProxyIteratorSpec : Spek({
     describe("Partition size = 1, buckets = 1") {
         val iterator = PodProxyIteratorTester(

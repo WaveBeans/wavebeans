@@ -3,7 +3,6 @@ package io.wavebeans.execution
 import mu.KotlinLogging
 import java.util.concurrent.Future
 
-@ExperimentalStdlibApi
 class BushController(val key: BushKey, val pods: List<PodRef>, threads: Int, sampleRate: Float) {
 
     companion object {

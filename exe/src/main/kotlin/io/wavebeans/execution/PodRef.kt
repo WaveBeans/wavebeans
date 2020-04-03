@@ -36,7 +36,6 @@ data class PodRef(
          */
         val splitToPartitions: Int? = null
 ) {
-    @ExperimentalStdlibApi
     fun instantiate(sampleRate: Float): Pod {
         try {
             val proxies = podProxies.map {

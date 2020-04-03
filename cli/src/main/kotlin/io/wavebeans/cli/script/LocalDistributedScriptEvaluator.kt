@@ -4,7 +4,6 @@ import io.wavebeans.execution.*
 import io.wavebeans.lib.io.StreamOutput
 import java.util.concurrent.Future
 
-@ExperimentalStdlibApi
 class LocalDistributedScriptEvaluator(
         private val partitions: Int,
         private val threads: Int

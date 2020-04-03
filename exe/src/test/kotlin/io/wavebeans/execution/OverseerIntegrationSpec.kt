@@ -24,10 +24,8 @@ import kotlin.system.measureTimeMillis
 
 val log = KotlinLogging.logger {}
 
-@ExperimentalStdlibApi
 object OverseerIntegrationSpec : Spek({
 
-    @ExperimentalStdlibApi
     fun runOnOverseer(
             outputs: List<StreamOutput<out Any>>,
             threads: Int = 2,

@@ -35,6 +35,10 @@ allprojects {
         jvmTarget = "1.8"
     }
 
+    tasks.withType<KotlinCompile>().all {
+        kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlin.ExperimentalStdlibApi"
+    }
+
     dependencies {
         implementation(kotlin("stdlib-jdk8"))
         implementation(kotlin("reflect"))
