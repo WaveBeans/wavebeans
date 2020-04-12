@@ -118,7 +118,7 @@ class Bush(
                 "[$id][$this] Call to pod=$podKey, request=$request " +
                         "took ${System.currentTimeMillis() - start}ms and ended up with error"
             }
-            PodCallResult.wrap(call, e)
+            PodCallResult.error(call, e)
         }
         res.complete(r)
         return res

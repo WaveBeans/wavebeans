@@ -7,10 +7,8 @@ import assertk.assertions.isTrue
 import com.nhaarman.mockitokotlin2.mock
 import io.wavebeans.execution.*
 import io.wavebeans.execution.medium.PodCallResult
-import io.wavebeans.execution.medium.sampleArrayList
 import io.wavebeans.execution.pod.Pod
 import io.wavebeans.execution.pod.PodKey
-import io.wavebeans.lib.ZeroSample
 import io.wavebeans.lib.sampleOf
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe

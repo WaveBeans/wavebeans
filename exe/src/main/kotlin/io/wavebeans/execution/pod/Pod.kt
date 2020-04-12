@@ -40,15 +40,15 @@ interface Pod : Closeable {
             val callTime = (System.nanoTime() - start) / 1_000_000.0
             if (callTime > 50) log.warn { "[$this][call=$call] Call time ${callTime}ms" }
 
-            val r = PodCallResult.wrap(call, result)
+            val r = PodCallResult.ok(call, result)
             val resultTime = (System.nanoTime() - start) / 1_000_000.0 - callTime
             if (resultTime > 50) log.warn { "[$this][call=$call] Result wrap time ${resultTime}ms" }
 
             r
         } catch (e: InvocationTargetException) {
-            PodCallResult.wrap(call, e.targetException)
+            PodCallResult.error(call, e.targetException)
         } catch (e: Throwable) {
-            PodCallResult.wrap(call, e)
+            PodCallResult.error(call, e)
         }
     }
 

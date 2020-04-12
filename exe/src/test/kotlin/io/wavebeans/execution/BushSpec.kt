@@ -3,7 +3,8 @@ package io.wavebeans.execution
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
-import io.wavebeans.execution.medium.long
+import io.wavebeans.execution.medium.PodCallResultWithSerialization
+import io.wavebeans.execution.medium.value
 import io.wavebeans.execution.pod.Pod
 import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.lib.AnyBean
@@ -63,7 +64,7 @@ object BushSpec : Spek({
                     prop("method") { it.method }.isEqualTo(method)
                     prop("params") { it.params }.isEmpty()
                 }
-                prop("byteArray") { it.byteArray }.isNull()
+                prop("byteArray") { (it as PodCallResultWithSerialization).byteArray }.isNull()
                 prop("exception") { it.exception }.isNull()
             }
 
@@ -76,7 +77,7 @@ object BushSpec : Spek({
                     prop("method") { it.method }.isEqualTo(method)
                     prop("params") { it.params }.isEmpty()
                 }
-                prop("byteArray") { it.byteArray }.isNull()
+                prop("byteArray") { (it as PodCallResultWithSerialization).byteArray }.isNull()
                 prop("exception") { it.exception }
                         .isNotNull()
                         .isInstanceOf(IllegalStateException::class)
@@ -92,7 +93,7 @@ object BushSpec : Spek({
                     prop("method") { it.method }.isEqualTo(method)
                     prop("params") { it.params }.isEmpty()
                 }
-                prop("byteArray") { it.byteArray }.isNull()
+                prop("byteArray") { (it as PodCallResultWithSerialization).byteArray }.isNull()
                 prop("exception") { it.exception }
                         .isNotNull()
                         .isInstanceOf(UnsupportedOperationException::class)
@@ -108,7 +109,7 @@ object BushSpec : Spek({
                     prop("method") { it.method }.isEqualTo(method)
                     prop("params") { it.params }.isEmpty()
                 }
-                prop("byteArray") { it.byteArray }.isNull()
+                prop("byteArray") { (it as PodCallResultWithSerialization).byteArray }.isNull()
                 prop("exception") { it.exception }
                         .isNotNull()
                         .isInstanceOf(NotImplementedError::class)
@@ -124,9 +125,9 @@ object BushSpec : Spek({
                     prop("method") { it.method }.isEqualTo(method)
                     prop("params") { it.params }.isEqualTo(mapOf("value" to "123"))
                 }
-                prop("byteArray") { it.byteArray }.isNotNull()
+                prop("byteArray") { (it as PodCallResultWithSerialization).byteArray }.isNotNull()
                 prop("exception") { it.exception }.isNull()
-                prop("asLong") { it.long() }.isEqualTo(123L)
+                prop("asLong") { it.value<Long>() }.isEqualTo(123L)
             }
 
         }

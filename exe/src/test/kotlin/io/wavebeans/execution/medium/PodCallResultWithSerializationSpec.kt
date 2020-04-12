@@ -11,18 +11,17 @@ import io.wavebeans.lib.math.r
 import io.wavebeans.lib.sampleOf
 import io.wavebeans.lib.stream.fft.FftSample
 import io.wavebeans.lib.stream.window.Window
-import io.wavebeans.lib.stream.window.WindowStreamParams
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 
-object PodCallResultSpec : Spek({
+object PodCallResultWithSerializationSpec : Spek({
 
     describe("Wrapping value") {
 
-        fun result(value: Any?): PodCallResult = PodCallResult.wrap(
+        fun result(value: Medium?): PodCallResultWithSerialization = PodCallResultWithSerializationBuilder().ok(
                 Call.parseRequest("method?param=value"),
                 value
-        )
+        ) as PodCallResultWithSerialization
 
         describe("Wrapping Long") {
 
@@ -30,12 +29,12 @@ object PodCallResultSpec : Spek({
 
             it("should have non empty byteArray") { assertThat(result.byteArray).isNotNull() }
             it("should have empty exception") { assertThat(result.exception).isNull() }
-            it("should return valid value") { assertThat(result.long()).isEqualTo(123L) }
+            it("should return valid value") { assertThat(result.decodeLong()).isEqualTo(123L) }
 
             describe("More Longs") {
-                it("should wrap MAX_VALUE") { assertThat(result(Long.MAX_VALUE).long()).isEqualTo(Long.MAX_VALUE) }
-                it("should wrap MIN_VALUE") { assertThat(result(Long.MIN_VALUE).long()).isEqualTo(Long.MIN_VALUE) }
-                it("should wrap 0L") { assertThat(result(0L).long()).isEqualTo(0L) }
+                it("should wrap MAX_VALUE") { assertThat(result(Long.MAX_VALUE).decodeLong()).isEqualTo(Long.MAX_VALUE) }
+                it("should wrap MIN_VALUE") { assertThat(result(Long.MIN_VALUE).decodeLong()).isEqualTo(Long.MIN_VALUE) }
+                it("should wrap 0L") { assertThat(result(0L).decodeLong()).isEqualTo(0L) }
             }
         }
 
@@ -170,7 +169,7 @@ object PodCallResultSpec : Spek({
 
     describe("Wrapping errors") {
 
-        fun result(value: Throwable): PodCallResult = PodCallResult.wrap(
+        fun result(value: Throwable): PodCallResult = PodCallResult.error(
                 Call.parseRequest("method?param=value"),
                 value
         )
@@ -178,9 +177,7 @@ object PodCallResultSpec : Spek({
         describe("Wrapping Exception") {
             val result = result(IllegalStateException("test message"))
 
-            assertThat(catch { result.throwIfError() })
-                    .isNotNull()
-                    .cause()
+            assertThat(result.exception)
                     .isNotNull()
                     .isInstanceOf(IllegalStateException::class)
                     .hasMessage("test message")
@@ -189,9 +186,7 @@ object PodCallResultSpec : Spek({
         describe("Wrapping Error") {
             val result = result(NotImplementedError("test message"))
 
-            assertThat(catch { result.throwIfError() })
-                    .isNotNull()
-                    .cause()
+            assertThat(result.exception)
                     .isNotNull()
                     .isInstanceOf(NotImplementedError::class)
                     .hasMessage("test message")

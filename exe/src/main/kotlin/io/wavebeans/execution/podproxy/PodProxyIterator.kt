@@ -4,7 +4,7 @@ import io.wavebeans.execution.BushCallerRepository
 import io.wavebeans.execution.PodDiscovery
 import io.wavebeans.execution.medium.Medium
 import io.wavebeans.execution.medium.MediumConverter
-import io.wavebeans.execution.medium.long
+import io.wavebeans.execution.medium.value
 import io.wavebeans.execution.pod.DEFAULT_PARTITION_SIZE
 import io.wavebeans.execution.pod.PodKey
 import mu.KotlinLogging
@@ -33,7 +33,7 @@ class PodProxyIterator(
 
     init {
         iteratorKey = caller.call("iteratorStart?sampleRate=$sampleRate&partitionIdx=${readingPartition}")
-                .get(5000, TimeUnit.MILLISECONDS).long()
+                .get(5000, TimeUnit.MILLISECONDS).value()
         log.trace { "Created iterator [Pod=$pod] iteratorKey=$iteratorKey" }
     }
 
