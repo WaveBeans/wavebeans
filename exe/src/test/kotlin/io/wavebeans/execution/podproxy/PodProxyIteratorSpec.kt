@@ -61,8 +61,6 @@ class PodProxyIteratorTester<T : Any, ARRAY_T : Any>(
             readingPartition = 0,
             podDiscovery = podDiscovery,
             bushCallerRepository = bushCallerRepository,
-            converter = converter,
-            elementExtractor = elementExtractor,
             partitionSize = partitionSize,
             prefetchBucketAmount = prefetchBucketAmount
     )

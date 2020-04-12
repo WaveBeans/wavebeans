@@ -29,11 +29,7 @@ fun newTestStreamingPod(seq: List<Int>, partition: Int = 0, partitionSize: Int =
     return object : StreamingPod<Sample, IntStream>(
             bean = IntStream(seq),
             podKey = PodKey(1, partition),
-            partitionSize = partitionSize,
-            converter = { list ->
-                val i = list.iterator()
-                createSampleArray(list.size) { i.next() }
-            }
+            partitionSize = partitionSize
     ) {}
 }
 
@@ -42,11 +38,7 @@ fun newTestSplittingPod(seq: List<Int>, partitionCount: Int): SplittingPod<Sampl
             bean = IntStream(seq),
             podKey = PodKey(1, 0),
             partitionCount = partitionCount,
-            partitionSize = 1,
-            converter = { list ->
-                val i = list.iterator()
-                createSampleArray(list.size) { i.next() }
-            }
+            partitionSize = 1
     ) {}
 }
 

@@ -53,12 +53,10 @@ class MergingPodProxyTester(
         override fun create(bushKey: BushKey, podKey: PodKey): BushCaller = bushCaller(podKey)
     }
 
-    val podProxy = object : MergingPodProxy<Sample, SampleArray>(
+    val podProxy = object : MergingPodProxy(
             forPartition = 0,
             bushCallerRepository = bushCallerRepository,
             podDiscovery = podDiscovery,
-            converter = { it.nullableSampleArrayList() },
-            elementExtractor = { arr, i -> if (i < arr.size) arr[i] else null },
             prefetchBucketAmount = timeToReadAtOnce,
             partitionSize = partitionSize
     ) {
@@ -83,7 +81,7 @@ object MergingPodProxySpec : Spek({
         val seq = podProxyTester.podProxy.asSequence(20.0f)
         it("should create a sequence") { assertThat(seq).isNotNull() }
         it("should call iteratorStart twice") { assertThat(podProxyTester.iteratorStartCounter).isEqualTo(2) }
-        val res = seq.take(12).map { it.asInt() }.toList()
+        val res = seq.take(12).map { (it as Sample).asInt() }.toList()
         it("should read all samples") { assertThat(res).isEqualTo((0..11).toList()) }
         it("should call iteratorNext 4 times") {
             assertThat(podProxyTester.iteratorNextCounter).isEqualTo(4)
@@ -103,7 +101,7 @@ object MergingPodProxySpec : Spek({
         val seq = podProxyTester.podProxy.asSequence(20.0f)
         it("should create a sequence") { assertThat(seq).isNotNull() }
         it("should call iteratorStart twice") { assertThat(podProxyTester.iteratorStartCounter).isEqualTo(2) }
-        val res = seq.take(12).map { it.asInt() }.toList()
+        val res = seq.take(12).map { (it as Sample).asInt() }.toList()
         it("should read all samples") { assertThat(res).isEqualTo((1..12).toList()) }
         it("should call iteratorNext 4 times") {
             assertThat(podProxyTester.iteratorNextCounter).isEqualTo(4)

@@ -8,6 +8,5 @@ class AnyStreamingPod(
         podKey: PodKey
 ) : StreamingPod<Any, BeanStream<Any>>(
         bean = bean,
-        podKey = podKey,
-        converter = MediumConverter::convert
+        podKey = podKey
 )

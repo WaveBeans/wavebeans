@@ -1,6 +1,5 @@
 package io.wavebeans.execution.medium
 
-import io.wavebeans.execution.pod.TransferContainer
 import io.wavebeans.lib.Sample
 import io.wavebeans.lib.stream.fft.FftSample
 import io.wavebeans.lib.stream.window.Window
@@ -8,7 +7,7 @@ import io.wavebeans.lib.stream.window.Window
 @Suppress("UNCHECKED_CAST")
 object MediumConverter {
 
-    fun convert(o: List<Any>): TransferContainer {
+    fun convert(o: List<Any>): Any {
         return when (val e1 = o.firstOrNull()) {
             is Sample -> {
                 val list = o as List<Sample>
@@ -54,7 +53,7 @@ object MediumConverter {
     }
 
     @Suppress("IMPLICIT_CAST_TO_ANY")
-    fun <T> extractElement(container: TransferContainer, at: Int): T {
+    fun extractElement(container: Any, at: Int): Any? {
         return when (container) {
             is SampleArray -> if (at < container.size) container[at] else null
             is WindowSampleArray -> {
@@ -81,6 +80,6 @@ object MediumConverter {
                 }
             }
             else -> throw UnsupportedOperationException("${container::class} is not supported")
-        } as T
+        }
     }
 }

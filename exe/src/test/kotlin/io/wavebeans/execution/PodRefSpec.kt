@@ -240,9 +240,9 @@ private fun Assert<Pod>.proxies() = prop("proxies") {
 
 private fun Assert<Pod>.podKey() = prop("podKey") { it.podKey }
 
-private fun Assert<StreamingPodProxy<*, *>>.pointedTo() = prop("pointedTo") { it.pointedTo }
-private fun Assert<MergingPodProxy<*, *>>.readsFrom() = prop("pointedTo") { it.readsFrom }
-private fun Assert<PodProxy<*>>.forPartition() = prop("forPartition") { it.forPartition }
+private fun Assert<StreamingPodProxy>.pointedTo() = prop("pointedTo") { it.pointedTo }
+private fun Assert<MergingPodProxy>.readsFrom() = prop("pointedTo") { it.readsFrom }
+private fun Assert<PodProxy>.forPartition() = prop("forPartition") { it.forPartition }
 
 internal class TestPartitionableStreamingInput(
         override val parameters: BeanParams

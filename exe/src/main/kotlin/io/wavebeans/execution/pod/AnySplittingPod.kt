@@ -10,6 +10,5 @@ class AnySplittingPod(
 ) : SplittingPod<Any, BeanStream<Any>>(
         bean = bean,
         podKey = podKey,
-        partitionCount = partitionCount,
-        converter = MediumConverter::convert
+        partitionCount = partitionCount
 )
