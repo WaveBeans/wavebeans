@@ -2,8 +2,8 @@ package io.wavebeans.execution.podproxy
 
 import io.wavebeans.execution.BushCallerRepository
 import io.wavebeans.execution.PodDiscovery
+import io.wavebeans.execution.medium.Medium
 import io.wavebeans.execution.medium.MediumConverter
-import io.wavebeans.execution.medium.PodCallResult
 import io.wavebeans.execution.medium.long
 import io.wavebeans.execution.pod.DEFAULT_PARTITION_SIZE
 import io.wavebeans.execution.pod.PodKey
@@ -37,22 +37,14 @@ class PodProxyIterator(
         log.trace { "Created iterator [Pod=$pod] iteratorKey=$iteratorKey" }
     }
 
-    private var buckets: List<Any>? = null
+    private var buckets: List<Medium>? = null
     private var bucketPointer = 0
     private var pointer = 0
     private var nextEl: Any? = null
 
     override fun hasNext(): Boolean {
         if (nextEl != null) return true
-        val s = tryReadBuckets()
-        return if (s != null
-                && s.isNotEmpty()
-                && bucketPointer < s.size
-                && pointer < partitionSize) {
-            return tryReadNextEl()
-        } else {
-            false
-        }
+        return tryReadNextEl()
     }
 
     override fun next(): Any {
@@ -87,7 +79,7 @@ class PodProxyIterator(
                 pointer = 0
                 return null
             }
-            buckets = MediumConverter.convert(podResult)
+            buckets = podResult.toMediumList()
             log.trace { "[$this] iteratorNext(pod=$pod, iteratorKey=$iteratorKey) result was converted to buckets=$buckets" }
             bucketPointer = 0
             pointer = 0

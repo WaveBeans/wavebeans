@@ -13,7 +13,7 @@ import java.io.ObjectOutputStream
 
 class PodCallResult(val call: Call, val byteArray: ByteArray?, val exception: Throwable?, val type: String) {
     companion object {
-        fun wrap(call: Call, value: Any?): PodCallResult {
+        fun wrap(call: Call, value: Medium?): PodCallResult {
             val (byteArray, type) = when (value) {
                 null -> Pair(null, "Null")
                 is Unit -> Pair(null, "Unit")
@@ -31,6 +31,16 @@ class PodCallResult(val call: Call, val byteArray: ByteArray?, val exception: Th
         }
 
         fun wrap(call: Call, exception: Throwable): PodCallResult = PodCallResult(call, null, exception, "Exception")
+    }
+
+    fun toMediumList(): List<Medium>? {
+        return when (throwIfError().type) {
+            "List<SampleArray>" -> nullableSampleArrayList()
+            "List<WindowSampleArray>" -> nullableWindowSampleArrayList()
+            "List<Array<FftSample>>" -> nullableFftSampleArrayList()
+            "List<Array<DoubleArray>>" -> nullableDoubleArrayArrayList()
+            else -> throw UnsupportedOperationException("$type is not supported")
+        }
     }
 
     fun isNull(): Boolean = this.byteArray == null && this.exception == null

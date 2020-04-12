@@ -139,7 +139,7 @@ abstract class AbstractPod<T : Any, B : BeanStream<T>>(
                                     // if partition is full or no iterations left -- dump the partition to the buffer
                                     buffers
                                             .filter { partitionCount == 1 || it.value.first == partitionIdx }
-                                            .forEach { it.value.second.add(MediumConverter.convert(list)) }
+                                            .forEach { it.value.second.add(MediumConverter.listToMedium(list)) }
                                     partitionIdx = (partitionIdx + 1) % partitionCount
                                     list = ArrayList(partitionSize)
                                     leftToReadForPartition = partitionSize
@@ -154,7 +154,7 @@ abstract class AbstractPod<T : Any, B : BeanStream<T>>(
                                 if (list.isNotEmpty()) {
                                     buffers
                                             .filter { partitionCount == 1 || it.value.first == partitionIdx }
-                                            .forEach { it.value.second.add(MediumConverter.convert(list)) }
+                                            .forEach { it.value.second.add(MediumConverter.listToMedium(list)) }
                                 }
                                 break
                             }
