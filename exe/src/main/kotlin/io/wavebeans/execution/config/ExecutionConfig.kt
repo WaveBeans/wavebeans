@@ -25,12 +25,4 @@ object ExecutionConfig {
         podCallResultBuilder = PlainPodCallResultBuilder()
         mediumBuilder = PlainMediumBuilder()
     }
-
-    /**
-     * Initializes config for distributed processing mode
-     */
-    fun initForDistributedProcessing() {
-        podCallResultBuilder = SerializingPodCallResultBuilder()
-    }
-
 }

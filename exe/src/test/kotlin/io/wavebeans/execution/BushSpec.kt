@@ -18,8 +18,8 @@ val random = Random(1234)
 object BushSpec : Spek({
 
     val modes = mapOf(
-//            "Distributed" to { ExecutionConfig.initForDistributedProcessing() },
-            "Parallel" to { ExecutionConfig.initForMultiThreadedProcessing() }
+//            "Distributed" to ....
+            "Multi-threaded" to { ExecutionConfig.initForMultiThreadedProcessing() }
     )
 
     modes.forEach {

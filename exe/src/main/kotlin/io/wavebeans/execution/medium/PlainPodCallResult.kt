@@ -12,11 +12,11 @@ class PlainPodCallResultBuilder : PodCallResultBuilder {
 class PlainPodCallResult(
         override val call: Call,
         override val exception: Throwable?,
-        val any: Any?
+        val obj: Any?
 ) : PodCallResult {
 
-    override fun isNull(): Boolean = any == null
+    override fun isNull(): Boolean = obj == null
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> value(clazz: KClass<T>): T? = any as T
+    override fun <T : Any> value(clazz: KClass<T>): T? = obj as T
 }
