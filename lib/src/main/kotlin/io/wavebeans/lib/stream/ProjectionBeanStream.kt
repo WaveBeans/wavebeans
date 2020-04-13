@@ -1,17 +1,12 @@
 package io.wavebeans.lib.stream
 
-import com.sun.media.sound.FFT
 import io.wavebeans.lib.*
 import io.wavebeans.lib.stream.fft.FftSample
 import io.wavebeans.lib.stream.window.Window
-import io.wavebeans.lib.stream.window.WindowStream
-import io.wavebeans.lib.stream.window.WindowStreamParams
 import kotlinx.serialization.Serializable
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.KClass
-import kotlin.reflect.KType
 import kotlin.reflect.full.isSubclassOf
-import kotlin.reflect.full.isSupertypeOf
 
 @Serializable
 data class ProjectionBeanStreamParams(
