@@ -1,10 +1,6 @@
 package io.wavebeans.execution.medium
 
-import io.wavebeans.lib.Sample
-import io.wavebeans.lib.stream.fft.FftSample
-import io.wavebeans.lib.stream.window.Window
-
-interface Serializer {
+interface MediumSerializer {
     fun size(): Int
 
     fun writeTo(buf: ByteArray, at: Int)
@@ -13,7 +9,7 @@ interface Serializer {
 }
 
 interface Medium {
-    fun serializer(): Serializer
+    fun serializer(): MediumSerializer
 
     fun extractElement(at: Int): Any?
 }

@@ -8,7 +8,7 @@ class ListMedium(
         fun create(items: List<Any>) = ListMedium(items)
     }
 
-    override fun serializer(): Serializer {
+    override fun serializer(): MediumSerializer {
         TODO()
 //        val l = items.encodeBytesAndType()
 //        return SerializedObj(l.first, l.second)

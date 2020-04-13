@@ -36,7 +36,7 @@ class WindowSampleMedium(
 
     }
 
-    override fun serializer(): Serializer {
+    override fun serializer(): MediumSerializer {
         TODO("Not yet implemented")
     }
 

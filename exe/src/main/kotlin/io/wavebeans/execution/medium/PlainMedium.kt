@@ -5,7 +5,7 @@ package io.wavebeans.execution.medium
  */
 class PlainMedium(val items: List<Any>) : Medium {
 
-    override fun serializer(): Serializer {
+    override fun serializer(): MediumSerializer {
         throw UnsupportedOperationException("That medium only for multi-threaded execution. It can't serialize")
     }
 
