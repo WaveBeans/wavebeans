@@ -3,8 +3,8 @@ package io.wavebeans.cli.script
 import kotlin.reflect.KClass
 
 enum class RunMode(val id: String, val clazz: KClass<out ScriptEvaluator>) {
-    LOCAL("local", LocalScriptEvaluator::class),
-    LOCAL_DISTRIBUTED("local-distributed", LocalDistributedScriptEvaluator::class)
+    LOCAL("single-threaded", SingleThreadedScriptEvaluator::class),
+    LOCAL_DISTRIBUTED("multi-threaded", MultiThreadedScriptEvaluator::class)
     ;
 
     companion object {

@@ -77,7 +77,7 @@ fun main() {
 
     // this code launches it in single threaded mode,
     // follow execution documentation for details
-    LocalOverseer(listOf(out)).use { overseer ->
+    SingleThreadedOverseer(listOf(out)).use { overseer ->
         if (!overseer.eval(44100.0f).all { it.get() }) {
             println("Execution failed. Check logs")
         }

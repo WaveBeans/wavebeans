@@ -62,24 +62,27 @@ class PodProxyIterator(
         }
     }
 
-    private fun tryReadBuckets(): List<Any>? {
+    private fun tryReadBuckets(): List<Medium>? {
         if (buckets == null || bucketPointer >= buckets?.size ?: 0) {
             log.trace { "[$this] Calling iteratorNext(pod=$pod, iteratorKey=$iteratorKey)" }
 
-            val podResult = caller.call(
+            val podCallResult = caller.call(
                     "iteratorNext" +
                             "?iteratorKey=$iteratorKey" +
                             "&buckets=$prefetchBucketAmount"
             ).get(5000, TimeUnit.MILLISECONDS)
 
-            if (podResult.isNull()) {
+            if (podCallResult.exception != null) {
+                throw IllegalStateException("Error while trying to read next bucket [iteratorKey=$iteratorKey,buckets=$buckets]", podCallResult.exception)
+            }
+            if (podCallResult.isNull()) {
                 log.trace { "[$this] iteratorNext(pod=$pod, iteratorKey=$iteratorKey) returned null" }
                 buckets = null
                 bucketPointer = 0
                 pointer = 0
                 return null
             }
-            buckets = podResult.toMediumList()
+            buckets = podCallResult.value()
             log.trace { "[$this] iteratorNext(pod=$pod, iteratorKey=$iteratorKey) result was converted to buckets=$buckets" }
             bucketPointer = 0
             pointer = 0
@@ -90,7 +93,7 @@ class PodProxyIterator(
     private fun tryReadNextEl(): Boolean {
         val s = tryReadBuckets() ?: return false
         val bucket = s[bucketPointer]
-        val el = MediumConverter.extractElement(bucket, pointer) ?: return false
+        val el = bucket.extractElement(pointer) ?: return false
 
         if (++pointer >= partitionSize) {
             pointer = 0

@@ -38,10 +38,10 @@ val stream2 = 880.sine().trim(1000).toCsv()
 val outputs = listOf(stream1, stream2)
 ```
 
-2. Instantiate the `LocalOverseer` providing the list of the outputs as a constructor parameter:
+2. Instantiate the `SingleThreadedOverseer` providing the list of the outputs as a constructor parameter:
 
 ```kotlin
-val overseer = LocalOverseer(outputs)
+val overseer = SingleThreadedOverseer(outputs)
 ```
 
 3. Invoke `eval()` function of the created overseer object specifying the desired sample rate as a [Float number](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-float/index.html), i.e. 44100Hz as `44100.0f`. The method call returns the list of [Future](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html) objects that allows you to wait for results, one Future correspond to one output. The easiest way would be just to wait for all futures to resolve. You may check the results when the future object is resolved when `get()` function is called, it returns the `ExecutionResult` value. That class has field `finished` and it is `true` if the output was evaluated successfully, otherwise, if it is `false`, the execution of the output has failed and it's worth to check the `exception` field.
@@ -50,7 +50,7 @@ val overseer = LocalOverseer(outputs)
 overseer.eval(44100.0f).all { it.get().finished }
 ```
 
-4. When the overseer is evaluated it's needed to be closed:
+4. When the overseer has finished evaluating, it needs to be closed:
 
 ```kotlin
 overseer.close()
@@ -59,7 +59,7 @@ overseer.close()
 Now when we know all the steps, it's better to provide a short code snippet to summarize everything, assuming the `outputs` and `sampleRate` variables are already defined:
 
 ```kotlin
-LocalOverseer(outputs).use { overseer ->
+SingleThreadedOverseer(outputs).use { overseer ->
     val results = overseer.eval(sampleRate).map { it.get() }
     if (!results.all { it.finished }) {
         println("Execution failed.")
@@ -69,18 +69,18 @@ LocalOverseer(outputs).use { overseer ->
 }
 ```
 
-Internally, `LocalOverseer` creates a single-threaded execution pool, so your main thread remains runnable, that's why to avoid further running we're blocking the current thread on get calls to futures. You may implement it differently, just keep that in mind.
+Internally, `SingleThreadedOverseer` creates a single-threaded execution pool, so your main thread remains runnable, that's why to avoid further running we're blocking the current thread on get calls to futures. You may implement it differently, just keep that in mind.
 
 Multi-threaded mode
 -----
 
-Multi-threaded mode allows you to parallelize your execution by partitioning the stream and running using multiple threads. It is launched exactly the same as single-threaded mode, the only difference is you need to instantiate a different type of overseer specifying number of partitions to split by and the number of threads to execute the streams on:
+Multi-threaded mode allows you to parallelize your execution by partitioning the stream and running using multiple threads. It is launched exactly the same as single-threaded mode, the only difference is you need to instantiate a different type of overseer specifying number of partitions to split by, and the number of threads to execute the streams on:
 
 ```kotlin
-val overseer = LocalDistributedOverseer(outputs, threads, partitions)
+val overseer = MultiThreadedOverseer(outputs, threads, partitions)
 ```
 
-A little more details about how that's happening. While streams are being prepared to run in parallel mode the Topology is built. The topology is built the following way:
+A little more details about how that's happening. While streams are being prepared to run in parallel mode, the Topology is built in the following way:
 1. All operations in the stream including inputs and outputs are represented as Beans -- the atomic entity in the topology. Beans are connected to each other, providing pieces of data when it is requested. 
 2. All beans that can be partitioned are being split up, so the same bean could process different operations in parallel by processing different parts of the stream, some beans which doesn't allow partitioning will merge the parts together.
 3. After all beans are defined they are being grouped into Pods. A pod is similar entity to a bean, works very similarly, but pod groups one or more beans together, and encapsulates the communication over the network if required.

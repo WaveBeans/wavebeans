@@ -1,11 +1,16 @@
 package io.wavebeans.execution
 
+import io.wavebeans.execution.config.ExecutionConfig
 import io.wavebeans.lib.io.StreamOutput
 import mu.KotlinLogging
 import java.util.concurrent.Future
 import java.util.concurrent.atomic.AtomicInteger
 
-class LocalDistributedOverseer(
+/**
+ * Launches whole topology on specified number of threads. Some beans are being partitioned if they support that.
+ * All beans are being evaluated in parallel, the order of execution is not guaranteed.
+ */
+class MultiThreadedOverseer(
         override val outputs: List<StreamOutput<out Any>>,
         private val threadsCount: Int,
         private val partitionsCount: Int
@@ -23,6 +28,7 @@ class LocalDistributedOverseer(
             .groupBeans()
 
     override fun eval(sampleRate: Float): List<Future<ExecutionResult>> {
+        ExecutionConfig.initForParallelProcessing()
         log.info { "Deploying topology: ${TopologySerializer.serialize(topology, TopologySerializer.jsonPretty)}" }
         val pods = PodBuilder(topology).build()
         log.info { "Pods: $pods" }

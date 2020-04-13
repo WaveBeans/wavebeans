@@ -3,7 +3,7 @@ package io.wavebeans.execution.pod
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNull
-import io.wavebeans.execution.medium.SampleArray
+import io.wavebeans.execution.medium.SampleMedium
 import io.wavebeans.execution.newTestStreamingPod
 import io.wavebeans.lib.asInt
 import org.spekframework.spek2.Spek
@@ -102,6 +102,6 @@ object StreamingPodSpec : Spek({
 })
 
 private fun List<Any>?.toIntSamples(): List<Int>? = this
-        ?.map { it as SampleArray }
-        ?.flatMap { it.asList() }
+        ?.map { it as SampleMedium }
+        ?.flatMap { it.samples.asList() }
         ?.map { it.asInt() }

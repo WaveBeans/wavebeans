@@ -10,7 +10,7 @@ import io.ktor.server.testing.TestApplicationEngine
 import io.ktor.server.testing.createTestEnvironment
 import io.ktor.server.testing.handleRequest
 import io.ktor.util.KtorExperimentalAPI
-import io.wavebeans.execution.LocalOverseer
+import io.wavebeans.execution.SingleThreadedOverseer
 import io.wavebeans.lib.asDouble
 import io.wavebeans.lib.asInt
 import io.wavebeans.lib.asLong
@@ -43,7 +43,7 @@ object HttpServiceSpec : Spek({
                 val o = 440.sine().trim(100).toTable("table1", 1.s)
                 val elementRegex = elementRegex("-?\\d+\\.\\d+([eE]?-\\d+)?")
 
-                val overseer = LocalOverseer(listOf(o))
+                val overseer = SingleThreadedOverseer(listOf(o))
                 overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
                 after { overseer.close() }
 
@@ -93,7 +93,7 @@ object HttpServiceSpec : Spek({
                 val o = 440.sine().map { A(it.asLong()) }.trim(100).toTable("table2", 1.s)
                 val elementRegex = elementRegex("\\{\"v\":-?\\d+}")
 
-                val overseer = LocalOverseer(listOf(o))
+                val overseer = SingleThreadedOverseer(listOf(o))
                 overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
                 after { overseer.close() }
 
@@ -143,7 +143,7 @@ object HttpServiceSpec : Spek({
 
                 val elementRegex = elementRegex("\\{\"v\":\"-?[0-9a-fA-F]+\"}")
 
-                val overseer = LocalOverseer(listOf(o))
+                val overseer = SingleThreadedOverseer(listOf(o))
                 overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
                 after { overseer.close() }
 
@@ -172,7 +172,7 @@ object HttpServiceSpec : Spek({
                             "\"time\":\\d+" +
                             "\\}")
 
-                    val overseer = LocalOverseer(listOf(o))
+                    val overseer = SingleThreadedOverseer(listOf(o))
                     overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
                     after { overseer.close() }
 
@@ -195,7 +195,7 @@ object HttpServiceSpec : Spek({
                             "\"sampleType\":\"[\\w\\.$\\_]+\"" +
                             "\\}")
 
-                    val overseer = LocalOverseer(listOf(o))
+                    val overseer = SingleThreadedOverseer(listOf(o))
                     overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
                     after { overseer.close() }
 
@@ -213,7 +213,7 @@ object HttpServiceSpec : Spek({
                     val o = 440.sine().trim(100).window(401).map { it.elements.map { it.asDouble() } }.toTable("listDouble")
                     val elementRegex = elementRegex("\\[[-eE\\d\\.\\,]+\\]")
 
-                    val overseer = LocalOverseer(listOf(o))
+                    val overseer = SingleThreadedOverseer(listOf(o))
                     overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
                     after { overseer.close() }
 
@@ -231,7 +231,7 @@ object HttpServiceSpec : Spek({
                     val o = 440.sine().trim(100).window(401).map { it.elements.map { it.asInt() } }.toTable("listInt")
                     val elementRegex = elementRegex("\\[[-\\d\\,]+\\]")
 
-                    val overseer = LocalOverseer(listOf(o))
+                    val overseer = SingleThreadedOverseer(listOf(o))
                     overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
                     after { overseer.close() }
 
@@ -259,7 +259,7 @@ object HttpServiceSpec : Spek({
                             "\"sampleType\":\"[\\w\\.$\\_]+\"" +
                             "\\}")
 
-                    val overseer = LocalOverseer(listOf(o))
+                    val overseer = SingleThreadedOverseer(listOf(o))
                     overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
                     after { overseer.close() }
 

@@ -1,11 +1,11 @@
 package io.wavebeans.execution.medium
 
 import io.wavebeans.execution.Call
-import io.wavebeans.execution.config.Config
+import io.wavebeans.execution.config.ExecutionConfig
 import kotlin.reflect.KClass
 
 interface PodCallResultBuilder {
-    fun ok(call: Call, value: Medium?): PodCallResult
+    fun ok(call: Call, value: Any?): PodCallResult
 
     fun error(call: Call, exception: Throwable): PodCallResult
 }
@@ -13,16 +13,14 @@ interface PodCallResultBuilder {
 interface PodCallResult {
 
     companion object {
-        fun ok(call: Call, value: Medium?): PodCallResult = Config.podCallResultBuilder().ok(call, value)
+        fun ok(call: Call, value: Any?): PodCallResult = ExecutionConfig.podCallResultBuilder().ok(call, value)
 
-        fun error(call: Call, exception: Throwable): PodCallResult = Config.podCallResultBuilder().error(call, exception)
+        fun error(call: Call, exception: Throwable): PodCallResult = ExecutionConfig.podCallResultBuilder().error(call, exception)
     }
 
     val call: Call
 
     val exception: Throwable?
-
-    fun toMediumList(): List<Medium>?
 
     fun isNull(): Boolean
 

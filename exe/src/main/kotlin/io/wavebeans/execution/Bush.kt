@@ -12,10 +12,10 @@ import kotlin.random.Random
 
 typealias BushKey = Int
 
-data class ExecutionResult(val finished: Boolean, val exception: Exception?) {
+data class ExecutionResult(val finished: Boolean, val exception: Throwable?) {
     companion object {
         fun success() = ExecutionResult(true, null)
-        fun error(e: Exception) = ExecutionResult(false, e)
+        fun error(e: Throwable) = ExecutionResult(false, e)
     }
 }
 
@@ -59,7 +59,7 @@ class Bush(
                     log.debug { "Tick pod $pod has finished as it is over [isDraining=$isDraining]" }
                     tickFinished[pod]!!.complete(ExecutionResult.success())
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 log.debug(e) { "Tick pod $pod has finished due to error" }
                 tickFinished[pod]!!.complete(ExecutionResult.error(e))
             }

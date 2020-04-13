@@ -10,9 +10,9 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * Sequentially launches all specified outputs.
+ * Sequentially launches all specified outputs in the order they've specified.
  */
-class LocalOverseer(
+class SingleThreadedOverseer(
         override val outputs: List<StreamOutput<out Any>>
 ) : Overseer {
 
@@ -32,7 +32,6 @@ class LocalOverseer(
                         var i = 0L
                         try {
                             out.writer(sampleRate).use { writer ->
-                                @Suppress("ControlFlowWithEmptyBody")
                                 while (!earlyFinish.get() && writer.write()) {
                                     i++
                                     sleep(0)

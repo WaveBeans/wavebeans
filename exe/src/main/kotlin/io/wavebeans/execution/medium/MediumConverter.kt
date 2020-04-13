@@ -4,74 +4,38 @@ import io.wavebeans.lib.Sample
 import io.wavebeans.lib.stream.fft.FftSample
 import io.wavebeans.lib.stream.window.Window
 
-typealias Medium = Any
+interface Serializer {
+    fun size(): Int
+
+    fun writeTo(buf: ByteArray, at: Int)
+
+    fun type(): String
+}
+
+interface Medium {
+    fun serializer(): Serializer
+
+    fun extractElement(at: Int): Any?
+}
 
 @Suppress("UNCHECKED_CAST")
 object MediumConverter {
 
     fun listToMedium(objects: List<Any>): Medium {
-        return when (val e1 = objects.firstOrNull()) {
-            is Sample -> {
-                val list = objects as List<Sample>
-                val i = list.iterator()
-                createSampleArray(list.size) { i.next() }
-            }
+        require(objects.isNotEmpty()) { "Can't create medium around empty list" }
+        return when (val e1 = objects.first()) {
+            is Sample -> SampleMedium.create(objects as List<Sample>)
             is FftSample -> {
-                val list = objects as List<FftSample>
-                val i = list.iterator()
-                createFftSampleArray(list.size) { i.next() }
+                FftSampleArrayMedium.create(objects as List<FftSample>)
             }
             is Window<*> -> {
                 when (val e2 = e1.elements.firstOrNull()) {
-                    is Sample -> {
-                        val list = objects as List<Window<Sample>>
-                        val i = list.iterator()
-                        createWindowSampleArray(list.size, e1.size, e1.step) { i.next() }
-                    }
+                    is Sample -> WindowSampleMedium.create(objects as List<Window<Sample>>)
                     else -> throw UnsupportedOperationException("${e2!!::class} is not supported")
                 }
             }
-            is List<*> -> {
-                when (val e2 = e1.firstOrNull()) {
-                    is Int -> (objects as List<List<Int>>).map { it.toIntArray() }.toTypedArray()
-                    is Long -> (objects as List<List<Long>>).map { it.toLongArray() }.toTypedArray()
-                    is Float -> (objects as List<List<Float>>).map { it.toFloatArray() }.toTypedArray()
-                    is Double -> (objects as List<List<Double>>).map { it.toDoubleArray() }.toTypedArray()
-                    else -> throw UnsupportedOperationException("${e2!!::class} is not supported")
-                }
-            }
-            else -> throw UnsupportedOperationException("${e1!!::class} is not supported")
-        }
-    }
-
-    @Suppress("IMPLICIT_CAST_TO_ANY")
-    fun extractElement(medium: Medium, at: Int): Any? {
-        return when (medium) {
-            is SampleArray -> if (at < medium.size) medium[at] else null
-            is WindowSampleArray -> {
-                val size = medium.windowSize
-                val step = medium.windowStep
-                val windowSampleArray = medium.sampleArray
-                if (at < windowSampleArray.size)
-                    Window.ofSamples(size, step, windowSampleArray[at].toList())
-                else
-                    null
-            }
-            is Array<*> -> {
-                when (val el = medium.firstOrNull()) {
-                    el == null -> null
-                    is FftSample -> {
-                        val list = medium as Array<FftSample>
-                        if (at < list.size) list[at] else null
-                    }
-                    is DoubleArray -> {
-                        val list = medium as Array<DoubleArray>
-                        if (at < list.size) list[at].toList() else null
-                    }
-                    else -> throw UnsupportedOperationException("${el!!::class} is not supported")
-                }
-            }
-            else -> throw UnsupportedOperationException("${medium::class} is not supported")
+            is List<*> -> ListMedium.create(objects)
+            else -> throw UnsupportedOperationException("${e1::class} is not supported")
         }
     }
 }

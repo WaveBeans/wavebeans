@@ -3,7 +3,7 @@ package io.wavebeans.execution
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
-import io.wavebeans.execution.medium.PodCallResultWithSerialization
+import io.wavebeans.execution.config.ExecutionConfig
 import io.wavebeans.execution.medium.value
 import io.wavebeans.execution.pod.Pod
 import io.wavebeans.execution.pod.PodKey
@@ -17,122 +17,126 @@ val random = Random(1234)
 
 object BushSpec : Spek({
 
-    describe("Bush should call pod method. 1 pod per bush") {
+    val modes = mapOf(
+//            "Distributed" to { ExecutionConfig.initForDistributedProcessing() },
+            "Parallel" to { ExecutionConfig.initForParallelProcessing() }
+    )
 
-        val podKey = PodKey(random.nextInt() + 2, 0)
-        val pod = object : Pod {
+    modes.forEach {
+        describe("Mode: ${it.key}") {
 
-            override fun isFinished(): Boolean = throw UnsupportedOperationException()
+            beforeGroup { it.value() }
 
-            override fun close() {}
+            describe("Bush should call pod method. 1 pod per bush") {
 
-            override fun inputs(): List<AnyBean> = throw UnsupportedOperationException()
+                val podKey = PodKey(random.nextInt() + 2, 0)
+                val pod = object : Pod {
 
-            override fun iteratorStart(sampleRate: Float, partitionIdx: Int): Long = throw UnsupportedOperationException()
+                    override fun isFinished(): Boolean = throw UnsupportedOperationException()
 
-            override fun iteratorNext(iteratorKey: Long, buckets: Int): List<Sample>? = throw UnsupportedOperationException()
+                    override fun close() {}
 
-            override val podKey: PodKey
-                get() = podKey
+                    override fun inputs(): List<AnyBean> = throw UnsupportedOperationException()
 
-            fun methodWithNoParamsAndNoReturn(): Unit = Unit
+                    override fun iteratorStart(sampleRate: Float, partitionIdx: Int): Long = throw UnsupportedOperationException()
 
-            fun throwsIllegalStateException(): Unit = throw IllegalStateException("test message")
+                    override fun iteratorNext(iteratorKey: Long, buckets: Int): List<Sample>? = throw UnsupportedOperationException()
 
-            fun throwsUnsupportedOperationException(): Unit = throw UnsupportedOperationException("test message")
+                    override val podKey: PodKey
+                        get() = podKey
 
-            fun throwsNotImplementedError(): Unit = throw NotImplementedError("test message")
+                    fun methodWithNoParamsAndNoReturn(): Unit = Unit
 
-            fun convertsIntToLong(value: Int): Long = value.toLong()
+                    fun throwsIllegalStateException(): Unit = throw IllegalStateException("test message")
 
-        }
-        val bush = Bush(
-                LocalDistributedOverseer.bushKeySeq.incrementAndGet(), // avoid clashing of ids with other tests
-                1
-        )
-                .also { it.addPod(pod) }
-                .also { it.start() }
+                    fun throwsUnsupportedOperationException(): Unit = throw UnsupportedOperationException("test message")
 
-        after {
-            bush.close()
-        }
+                    fun throwsNotImplementedError(): Unit = throw NotImplementedError("test message")
 
-        it("should not have params and return nothing") {
-            val method = "methodWithNoParamsAndNoReturn"
-            assertThat(bush.call(podKey, method).get()).all {
-                prop("call") { it.call }.all {
-                    prop("method") { it.method }.isEqualTo(method)
-                    prop("params") { it.params }.isEmpty()
+                    fun convertsIntToLong(value: Int): Long = value.toLong()
+
                 }
-                prop("byteArray") { (it as PodCallResultWithSerialization).byteArray }.isNull()
-                prop("exception") { it.exception }.isNull()
-            }
+                val bush = Bush(
+                        MultiThreadedOverseer.bushKeySeq.incrementAndGet(), // avoid clashing of ids with other tests
+                        1
+                )
+                        .also { it.addPod(pod) }
+                        .also { it.start() }
 
-        }
-
-        it("should return IllegalStateException") {
-            val method = "throwsIllegalStateException"
-            assertThat(bush.call(podKey, method).get()).all {
-                prop("call") { it.call }.all {
-                    prop("method") { it.method }.isEqualTo(method)
-                    prop("params") { it.params }.isEmpty()
+                after {
+                    bush.close()
                 }
-                prop("byteArray") { (it as PodCallResultWithSerialization).byteArray }.isNull()
-                prop("exception") { it.exception }
-                        .isNotNull()
-                        .isInstanceOf(IllegalStateException::class)
-                        .hasMessage("test message")
-            }
 
-        }
+                it("should not have params and return nothing") {
+                    val method = "methodWithNoParamsAndNoReturn"
+                    assertThat(bush.call(podKey, method).get()).all {
+                        prop("call") { it.call }.all {
+                            prop("method") { it.method }.isEqualTo(method)
+                            prop("params") { it.params }.isEmpty()
+                        }
+                        prop("exception") { it.exception }.isNull()
+                    }
 
-        it("should return UnsupportedOperationException") {
-            val method = "throwsUnsupportedOperationException"
-            assertThat(bush.call(podKey, method).get()).all {
-                prop("call") { it.call }.all {
-                    prop("method") { it.method }.isEqualTo(method)
-                    prop("params") { it.params }.isEmpty()
                 }
-                prop("byteArray") { (it as PodCallResultWithSerialization).byteArray }.isNull()
-                prop("exception") { it.exception }
-                        .isNotNull()
-                        .isInstanceOf(UnsupportedOperationException::class)
-                        .hasMessage("test message")
-            }
 
-        }
+                it("should return IllegalStateException") {
+                    val method = "throwsIllegalStateException"
+                    assertThat(bush.call(podKey, method).get()).all {
+                        prop("call") { it.call }.all {
+                            prop("method") { it.method }.isEqualTo(method)
+                            prop("params") { it.params }.isEmpty()
+                        }
+                        prop("exception") { it.exception }
+                                .isNotNull()
+                                .isInstanceOf(IllegalStateException::class)
+                                .hasMessage("test message")
+                    }
 
-        it("should return NotImplementedError") {
-            val method = "throwsNotImplementedError"
-            assertThat(bush.call(podKey, method).get()).all {
-                prop("call") { it.call }.all {
-                    prop("method") { it.method }.isEqualTo(method)
-                    prop("params") { it.params }.isEmpty()
                 }
-                prop("byteArray") { (it as PodCallResultWithSerialization).byteArray }.isNull()
-                prop("exception") { it.exception }
-                        .isNotNull()
-                        .isInstanceOf(NotImplementedError::class)
-                        .hasMessage("test message")
-            }
 
-        }
+                it("should return UnsupportedOperationException") {
+                    val method = "throwsUnsupportedOperationException"
+                    assertThat(bush.call(podKey, method).get()).all {
+                        prop("call") { it.call }.all {
+                            prop("method") { it.method }.isEqualTo(method)
+                            prop("params") { it.params }.isEmpty()
+                        }
+                        prop("exception") { it.exception }
+                                .isNotNull()
+                                .isInstanceOf(UnsupportedOperationException::class)
+                                .hasMessage("test message")
+                    }
 
-        it("should have int convertsIntToLong and return long") {
-            val method = "convertsIntToLong"
-            assertThat(bush.call(podKey, "$method?value=123").get()).all {
-                prop("call") { it.call }.all {
-                    prop("method") { it.method }.isEqualTo(method)
-                    prop("params") { it.params }.isEqualTo(mapOf("value" to "123"))
                 }
-                prop("byteArray") { (it as PodCallResultWithSerialization).byteArray }.isNotNull()
-                prop("exception") { it.exception }.isNull()
-                prop("asLong") { it.value<Long>() }.isEqualTo(123L)
+
+                it("should return NotImplementedError") {
+                    val method = "throwsNotImplementedError"
+                    assertThat(bush.call(podKey, method).get()).all {
+                        prop("call") { it.call }.all {
+                            prop("method") { it.method }.isEqualTo(method)
+                            prop("params") { it.params }.isEmpty()
+                        }
+                        prop("exception") { it.exception }
+                                .isNotNull()
+                                .isInstanceOf(NotImplementedError::class)
+                                .hasMessage("test message")
+                    }
+
+                }
+
+                it("should have int convertsIntToLong and return long") {
+                    val method = "convertsIntToLong"
+                    assertThat(bush.call(podKey, "$method?value=123").get()).all {
+                        prop("call") { it.call }.all {
+                            prop("method") { it.method }.isEqualTo(method)
+                            prop("params") { it.params }.isEqualTo(mapOf("value" to "123"))
+                        }
+                        prop("exception") { it.exception }.isNull()
+                        prop("asLong") { it.value<Long>() }.isEqualTo(123L)
+                    }
+
+                }
             }
-
         }
-
-
     }
-
 })
