@@ -1,6 +1,5 @@
 package io.wavebeans.execution.pod
 
-import io.wavebeans.execution.medium.MediumConverter
 import io.wavebeans.lib.BeanStream
 
 class AnySplittingPod(

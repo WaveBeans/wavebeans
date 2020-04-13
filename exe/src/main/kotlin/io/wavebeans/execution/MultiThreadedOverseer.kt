@@ -28,7 +28,7 @@ class MultiThreadedOverseer(
             .groupBeans()
 
     override fun eval(sampleRate: Float): List<Future<ExecutionResult>> {
-        ExecutionConfig.initForParallelProcessing()
+        ExecutionConfig.initForMultiThreadedProcessing()
         log.info { "Deploying topology: ${TopologySerializer.serialize(topology, TopologySerializer.jsonPretty)}" }
         val pods = PodBuilder(topology).build()
         log.info { "Pods: $pods" }

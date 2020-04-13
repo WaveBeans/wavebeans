@@ -1,12 +1,12 @@
 package io.wavebeans.execution.config
 
-import io.wavebeans.execution.medium.PlainPodCallResultBuilder
-import io.wavebeans.execution.medium.PodCallResultBuilder
-import io.wavebeans.execution.medium.SerializingPodCallResultBuilder
+import io.wavebeans.execution.medium.*
 
 object ExecutionConfig {
 
     private lateinit var podCallResultBuilder: PodCallResultBuilder
+
+    private lateinit var mediumBuilder: MediumBuilder
 
     /**
      * What builder to use build [io.wavebeans.execution.medium.PodCallResult]
@@ -14,10 +14,16 @@ object ExecutionConfig {
     fun podCallResultBuilder(): PodCallResultBuilder = podCallResultBuilder
 
     /**
+     * What builder to use build [io.wavebeans.execution.medium.PodCallResult]
+     */
+    fun mediumBuilder(): MediumBuilder = mediumBuilder
+
+    /**
      * Initializes config for parallel processing mode
      */
-    fun initForParallelProcessing() {
+    fun initForMultiThreadedProcessing() {
         podCallResultBuilder = PlainPodCallResultBuilder()
+        mediumBuilder = PlainMediumBuilder()
     }
 
     /**

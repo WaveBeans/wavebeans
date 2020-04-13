@@ -3,7 +3,6 @@ package io.wavebeans.execution.podproxy
 import io.wavebeans.execution.BushCallerRepository
 import io.wavebeans.execution.PodDiscovery
 import io.wavebeans.execution.medium.Medium
-import io.wavebeans.execution.medium.MediumConverter
 import io.wavebeans.execution.medium.value
 import io.wavebeans.execution.pod.DEFAULT_PARTITION_SIZE
 import io.wavebeans.execution.pod.PodKey

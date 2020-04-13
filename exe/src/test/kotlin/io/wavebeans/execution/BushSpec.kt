@@ -19,7 +19,7 @@ object BushSpec : Spek({
 
     val modes = mapOf(
 //            "Distributed" to { ExecutionConfig.initForDistributedProcessing() },
-            "Parallel" to { ExecutionConfig.initForParallelProcessing() }
+            "Parallel" to { ExecutionConfig.initForMultiThreadedProcessing() }
     )
 
     modes.forEach {

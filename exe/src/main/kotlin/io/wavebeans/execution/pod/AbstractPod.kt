@@ -1,6 +1,6 @@
 package io.wavebeans.execution.pod
 
-import io.wavebeans.execution.medium.MediumConverter
+import io.wavebeans.execution.config.ExecutionConfig
 import io.wavebeans.lib.BeanStream
 import mu.KotlinLogging
 import java.util.*
@@ -139,7 +139,7 @@ abstract class AbstractPod<T : Any, B : BeanStream<T>>(
                                     // if partition is full or no iterations left -- dump the partition to the buffer
                                     buffers
                                             .filter { partitionCount == 1 || it.value.first == partitionIdx }
-                                            .forEach { it.value.second.add(MediumConverter.listToMedium(list)) }
+                                            .forEach { it.value.second.add(ExecutionConfig.mediumBuilder().from(list)) }
                                     partitionIdx = (partitionIdx + 1) % partitionCount
                                     list = ArrayList(partitionSize)
                                     leftToReadForPartition = partitionSize
@@ -154,7 +154,7 @@ abstract class AbstractPod<T : Any, B : BeanStream<T>>(
                                 if (list.isNotEmpty()) {
                                     buffers
                                             .filter { partitionCount == 1 || it.value.first == partitionIdx }
-                                            .forEach { it.value.second.add(MediumConverter.listToMedium(list)) }
+                                            .forEach { it.value.second.add(ExecutionConfig.mediumBuilder().from(list)) }
                                 }
                                 break
                             }
