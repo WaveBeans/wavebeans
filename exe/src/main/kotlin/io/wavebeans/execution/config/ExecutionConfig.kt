@@ -2,7 +2,6 @@ package io.wavebeans.execution.config
 
 import io.wavebeans.execution.ExecutionThreadPool
 import io.wavebeans.execution.MultiThreadedExecutionThreadPool
-import io.wavebeans.execution.SingleThreadedExecutionThreadPool
 import io.wavebeans.execution.medium.*
 import mu.KotlinLogging
 
@@ -38,17 +37,6 @@ object ExecutionConfig {
     fun executionThreadPool(): ExecutionThreadPool {
         log.debug { "getting executionThreadPool. Stack Traces: ${Thread.currentThread().stackTrace.joinToString("\n")}" }
         return executionThreadPool
-    }
-
-
-    /**
-     * Initializes config for simgle threaded processing mode
-     */
-    fun initForSingleThreadedProcessing() {
-        podCallResultBuilder = PlainPodCallResultBuilder()
-        mediumBuilder = PlainMediumBuilder()
-        executionThreadPool = SingleThreadedExecutionThreadPool()
-        log.info { "Initialized to work in single-threaded mode" }
     }
 
     /**
