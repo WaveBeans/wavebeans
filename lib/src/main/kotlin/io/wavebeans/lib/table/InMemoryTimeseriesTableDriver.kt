@@ -1,10 +1,11 @@
 package io.wavebeans.lib.table
 
-import io.wavebeans.lib.*
+import io.wavebeans.lib.TimeMeasure
+import io.wavebeans.lib.s
 import mu.KotlinLogging
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 
 class InMemoryTimeseriesTableDriver<T : Any>(
@@ -14,20 +15,31 @@ class InMemoryTimeseriesTableDriver<T : Any>(
 
     companion object {
         private val log = KotlinLogging.logger { }
+        private val scheduledExecutor = Executors.newSingleThreadScheduledExecutor { Thread(it, "InMemoryTimeseriesTableDriver") }
+
+        init {
+            Runtime.getRuntime().addShutdownHook(Thread {
+                log.info { "Closing executor" }
+                scheduledExecutor.shutdown()
+                if (!scheduledExecutor.awaitTermination(5000, TimeUnit.MILLISECONDS)) {
+                    scheduledExecutor.shutdownNow()
+                }
+                log.info { "Closed executor" }
+            })
+        }
     }
 
     private data class Item<T : Any>(val timeMarker: TimeMeasure, val value: T)
 
     private val table = ConcurrentLinkedDeque<Item<T>>()
 
-    private var scheduledExecutor: ScheduledExecutorService? = null
+    private var cleanUpTask: ScheduledFuture<*>? = null
 
     override fun init() {
         log.debug { "[$this] Initializing driver" }
-        if (scheduledExecutor == null || scheduledExecutor!!.isShutdown) {
-            scheduledExecutor = Executors.newSingleThreadScheduledExecutor { Thread(it, this.toString()) }
+        if (cleanUpTask != null) {
+            cleanUpTask = scheduledExecutor.scheduleAtFixedRate({ performCleanup() }, 0, 5000, TimeUnit.MILLISECONDS)
         }
-        scheduledExecutor!!.scheduleAtFixedRate({ performCleanup() }, 0, 5000, TimeUnit.MILLISECONDS)
     }
 
     override fun reset() {
@@ -64,15 +76,9 @@ class InMemoryTimeseriesTableDriver<T : Any>(
     }
 
     override fun close() {
-        log.debug { "[$this] Shutting down..." }
-        val executor = scheduledExecutor
-        if (executor != null) {
-            executor.shutdown()
-            if (!executor.awaitTermination(5000, TimeUnit.MILLISECONDS)) {
-                log.debug { "[$this] Can't wait to shutdown. Forcing..." }
-                executor.shutdownNow()
-            }
-        }
+        log.debug { "[$this] Closing" }
+        cleanUpTask?.cancel(false)
+        cleanUpTask = null
         log.debug { "[$this] Closed" }
     }
 

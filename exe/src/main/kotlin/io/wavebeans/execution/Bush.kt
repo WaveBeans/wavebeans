@@ -1,5 +1,6 @@
 package io.wavebeans.execution
 
+import io.wavebeans.execution.config.ExecutionConfig
 import io.wavebeans.execution.medium.PodCallResult
 import io.wavebeans.execution.pod.Pod
 import io.wavebeans.execution.pod.PodKey
@@ -21,7 +22,6 @@ data class ExecutionResult(val finished: Boolean, val exception: Throwable?) {
 
 class Bush(
         val bushKey: BushKey,
-        val threadsCount: Int,
         val podDiscovery: PodDiscovery = PodDiscovery.default
 ) : Closeable {
 
@@ -29,14 +29,7 @@ class Bush(
         private val log = KotlinLogging.logger { }
     }
 
-    class NamedThreadFactory(val name: String) : ThreadFactory {
-        private var c = 0
-        override fun newThread(r: Runnable): Thread {
-            return Thread(ThreadGroup(name), r, "$name-${c++}")
-        }
-    }
-
-    private val workingPool = Executors.newFixedThreadPool(threadsCount, NamedThreadFactory("work"))
+    private val workingPool = ExecutionConfig.executionThreadPool()
 
     @Volatile
     private var isDraining = false
@@ -93,10 +86,6 @@ class Bush(
         pods.values.forEach {
             it.close()
             podDiscovery.unregisterPod(bushKey, it.podKey)
-        }
-        workingPool.shutdown()
-        if (!workingPool.awaitTermination(5000, TimeUnit.MILLISECONDS)) {
-            workingPool.shutdownNow()
         }
         podDiscovery.unregisterBush(bushKey)
     }

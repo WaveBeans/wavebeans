@@ -27,7 +27,7 @@ class SingleThreadedOverseer(
     override fun eval(sampleRate: Float): List<Future<ExecutionResult>> {
         return outputs
                 .map { out ->
-                    pool.submit(Callable<ExecutionResult> {
+                    pool.submit(Callable {
                         log.info { "[$out] Evaluating" }
                         var i = 0L
                         try {

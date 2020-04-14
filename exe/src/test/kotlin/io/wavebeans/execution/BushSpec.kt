@@ -23,9 +23,11 @@ object BushSpec : Spek({
     )
 
     modes.forEach {
+
+        beforeGroup { it.value() }
+
         describe("Mode: ${it.key}") {
 
-            beforeGroup { it.value() }
 
             describe("Bush should call pod method. 1 pod per bush") {
 
@@ -56,12 +58,16 @@ object BushSpec : Spek({
                     fun convertsIntToLong(value: Int): Long = value.toLong()
 
                 }
-                val bush = Bush(
-                        MultiThreadedOverseer.bushKeySeq.incrementAndGet(), // avoid clashing of ids with other tests
-                        1
-                )
-                        .also { it.addPod(pod) }
-                        .also { it.start() }
+
+                lateinit var bush: Bush
+
+                before {
+                    bush = Bush(
+                            MultiThreadedOverseer.bushKeySeq.incrementAndGet() // avoid clashing of ids with other tests
+                    )
+                            .also { it.addPod(pod) }
+                            .also { it.start() }
+                }
 
                 after {
                     bush.close()

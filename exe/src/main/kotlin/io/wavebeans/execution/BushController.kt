@@ -3,13 +3,13 @@ package io.wavebeans.execution
 import mu.KotlinLogging
 import java.util.concurrent.Future
 
-class BushController(val key: BushKey, val pods: List<PodRef>, threads: Int, sampleRate: Float) {
+class BushController(val key: BushKey, val pods: List<PodRef>, sampleRate: Float) {
 
     companion object {
         private val log = KotlinLogging.logger { }
     }
 
-    private val bush = Bush(key, threads)
+    private val bush = Bush(key)
             .also { b -> pods.forEach { b.addPod(it.instantiate(sampleRate)) } }
 
     fun start(): BushController {
