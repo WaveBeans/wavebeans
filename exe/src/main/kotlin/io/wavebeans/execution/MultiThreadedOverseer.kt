@@ -24,6 +24,8 @@ class MultiThreadedOverseer(
 
     private val controllers = mutableListOf<BushController>()
 
+    private val jobKey = System.currentTimeMillis().toInt()
+
     private val topology = outputs.buildTopology()
             .partition(partitionsCount)
             .groupBeans()
@@ -34,15 +36,16 @@ class MultiThreadedOverseer(
         log.info { "Deploying topology: ${TopologySerializer.serialize(topology, TopologySerializer.jsonPretty)}" }
         val pods = PodBuilder(topology).build()
         log.info { "Pods: $pods" }
-        controllers += BushController(bushKeySeq.incrementAndGet(), pods, sampleRate)
-                .start()
+        controllers += BushController()
+                .addBush(jobKey, bushKeySeq.incrementAndGet(), pods, sampleRate)
+                .start(jobKey)
         log.info { "All controllers (amount=${controllers.size}) are started" }
 
-        return controllers.flatMap { it.getAllFutures() }
+        return controllers.flatMap { it.getAllFutures(jobKey) }
     }
 
     override fun close() {
-        controllers.forEach { it.close() }
+        controllers.forEach { it.close(jobKey) }
         log.info { "All controllers (amount=${controllers.size}) are closed" }
         ExecutionConfig.executionThreadPool().shutdown()
         if (!ExecutionConfig.executionThreadPool().awaitTermination(10000, TimeUnit.MILLISECONDS)) {
