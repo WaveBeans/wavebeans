@@ -4,8 +4,13 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
 import assertk.catch
+import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.whenever
 import io.wavebeans.execution.*
+import io.wavebeans.execution.config.ExecutionConfig
+import io.wavebeans.execution.medium.PlainMediumBuilder
+import io.wavebeans.execution.medium.PlainPodCallResultBuilder
 import io.wavebeans.execution.medium.PodCallResult
 import io.wavebeans.execution.pod.Pod
 import io.wavebeans.execution.pod.PodKey
@@ -20,7 +25,8 @@ class PodProxyTester(
         val pointedTo: Pod,
         val timeToReadAtOnce: Int = 1
 ) {
-    val podDiscovery: PodDiscovery = mock()
+    val podDiscovery = mock<PodDiscovery>()
+            .also { whenever(it.bushFor(any())).thenReturn(newBushKey()) }
 
     var iteratorStartCounter: Int = 0
         private set
@@ -63,6 +69,9 @@ class PodProxyTester(
 
 
 object StreamingPodProxySpec : Spek({
+
+    ExecutionConfig.podCallResultBuilder(PlainPodCallResultBuilder())
+    ExecutionConfig.mediumBuilder(PlainMediumBuilder())
 
     describe("Pod Proxy count amount of calls to Pod") {
         val podProxyTester = PodProxyTester(

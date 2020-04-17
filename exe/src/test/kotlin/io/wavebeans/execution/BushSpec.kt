@@ -28,7 +28,6 @@ object BushSpec : Spek({
 
         describe("Mode: ${it.key}") {
 
-
             describe("Bush should call pod method. 1 pod per bush") {
 
                 val podKey = PodKey(random.nextInt() + 2, 0)
@@ -61,15 +60,13 @@ object BushSpec : Spek({
 
                 lateinit var bush: Bush
 
-                before {
-                    bush = Bush(
-                            MultiThreadedOverseer.bushKeySeq.incrementAndGet() // avoid clashing of ids with other tests
-                    )
+                beforeGroup {
+                    bush = Bush(newBushKey())
                             .also { it.addPod(pod) }
                             .also { it.start() }
                 }
 
-                after {
+                afterGroup {
                     bush.close()
                 }
 

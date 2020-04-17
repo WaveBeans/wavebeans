@@ -68,12 +68,13 @@ object PodRegistry {
                     ?: throw IllegalStateException("Pod for `$beanType` is not found")
 
     private fun findRegisteredType(type: KType, registeredTypes: Set<KType>): KType? {
-        log.trace { "Searching type $type among $registeredTypes, type.arguments=${type.arguments}" }
         if (type in registeredTypes) // if the direct key exists return it
             return type
         // otherwise try to find an approximation
         return registeredTypes.firstOrNull {
             it.isSupertypeOf(type)
+        }.also {
+            log.trace { "Found $it for type $type among $registeredTypes, type.arguments=${type.arguments}" }
         }
     }
 

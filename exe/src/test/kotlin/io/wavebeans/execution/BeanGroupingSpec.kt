@@ -16,7 +16,7 @@ import org.spekframework.spek2.style.specification.describe
 import java.io.File
 import kotlin.reflect.full.isSubclassOf
 
-object BeanGroupSpec : Spek({
+object BeanGroupingSpec : Spek({
 
     beforeGroup {
         ids.clear()

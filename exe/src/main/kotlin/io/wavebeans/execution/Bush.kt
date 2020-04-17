@@ -7,11 +7,15 @@ import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.execution.pod.TickPod
 import mu.KotlinLogging
 import java.io.Closeable
+import java.util.*
 import java.util.concurrent.*
 import kotlin.math.abs
 import kotlin.random.Random
 
-typealias BushKey = Int
+typealias BushKey = UUID
+
+fun newBushKey(): BushKey = UUID.randomUUID()
+fun String.toBushKey(): BushKey = UUID.fromString(this)
 
 data class ExecutionResult(val finished: Boolean, val exception: Throwable?) {
     companion object {
@@ -75,6 +79,8 @@ class Bush(
         pods[pod.podKey] = pod
         podDiscovery.registerPod(bushKey, pod)
     }
+
+    fun pods(): List<Pod> = pods.values.toList()
 
     fun tickPodsFutures(): List<Future<ExecutionResult>> {
         return tickFinished.values.toList()

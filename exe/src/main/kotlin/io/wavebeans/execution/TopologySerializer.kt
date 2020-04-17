@@ -14,7 +14,7 @@ import io.wavebeans.lib.table.*
 
 object TopologySerializer {
 
-    private val paramsModule = SerializersModule {
+    val paramsModule = SerializersModule {
         polymorphic(BeanParams::class) {
             ChangeAmplitudeSampleStreamParams::class with ChangeAmplitudeSampleStreamParams.serializer()
             SineGeneratedInputParams::class with SineGeneratedInputParams.serializer()

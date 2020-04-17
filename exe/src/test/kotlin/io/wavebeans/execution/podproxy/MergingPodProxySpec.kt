@@ -3,8 +3,13 @@ package io.wavebeans.execution.podproxy
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
+import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.whenever
 import io.wavebeans.execution.*
+import io.wavebeans.execution.config.ExecutionConfig
+import io.wavebeans.execution.medium.PlainMediumBuilder
+import io.wavebeans.execution.medium.PlainPodCallResultBuilder
 import io.wavebeans.execution.medium.PodCallResult
 import io.wavebeans.execution.pod.Pod
 import io.wavebeans.execution.pod.PodKey
@@ -20,7 +25,8 @@ class MergingPodProxyTester(
         val timeToReadAtOnce: Int,
         val partitionSize: Int
 ) {
-    val podDiscovery: PodDiscovery = mock()
+    val podDiscovery = mock<PodDiscovery>()
+            .also { whenever(it.bushFor(any())).thenReturn(newBushKey()) }
 
     var iteratorStartCounter: Int = 0
         private set
@@ -65,6 +71,9 @@ class MergingPodProxyTester(
 
 
 object MergingPodProxySpec : Spek({
+
+    ExecutionConfig.podCallResultBuilder(PlainPodCallResultBuilder())
+    ExecutionConfig.mediumBuilder(PlainMediumBuilder())
 
     describe("Merging Pod Proxy for two Pods with partitionSize=2") {
         val podProxyTester = MergingPodProxyTester(

@@ -27,16 +27,36 @@ object ExecutionConfig {
     fun podCallResultBuilder(): PodCallResultBuilder = podCallResultBuilder
 
     /**
+     * Sets builder to use to build [io.wavebeans.execution.medium.PodCallResult]
+     */
+    fun podCallResultBuilder(podCallResultBuilder: PodCallResultBuilder) {
+        this.podCallResultBuilder = podCallResultBuilder
+    }
+
+    /**
      * Returns builder to use to build [io.wavebeans.execution.medium.Medium]
      */
     fun mediumBuilder(): MediumBuilder = mediumBuilder
 
     /**
+     * Sets builder to use to build [io.wavebeans.execution.medium.Medium]
+     */
+    fun mediumBuilder(mediumBuilder: MediumBuilder) {
+        this.mediumBuilder = mediumBuilder
+    }
+
+    /**
      * Returns shared thread pool to use for execution.
      */
     fun executionThreadPool(): ExecutionThreadPool {
-        log.debug { "getting executionThreadPool. Stack Traces: ${Thread.currentThread().stackTrace.joinToString("\n")}" }
         return executionThreadPool
+    }
+
+    /**
+     * Sets shared thread pool to use for execution.
+     */
+    fun executionThreadPool(executionThreadPool: ExecutionThreadPool) {
+        this.executionThreadPool = executionThreadPool
     }
 
     /**

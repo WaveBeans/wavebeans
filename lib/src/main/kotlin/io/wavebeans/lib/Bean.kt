@@ -58,4 +58,14 @@ interface SinglePartitionBean
 open class BeanParams
 
 @Serializable
-class NoParams : BeanParams()
+class NoParams : BeanParams() {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return javaClass.hashCode()
+    }
+}

@@ -3,6 +3,7 @@ package io.wavebeans.execution
 import io.wavebeans.execution.pod.Pod
 import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.lib.*
+import kotlinx.serialization.*
 import kotlin.reflect.KType
 import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.typeOf
@@ -11,6 +12,7 @@ import kotlin.reflect.typeOf
  * Class encapsulates all the information needed to create a [Pod] of the specific type.
  * The class remains serializable in order to be transferred and/or persisted.
  */
+@Serializable
 data class PodRef(
         /**
          * The key the pod should appear under.
@@ -123,10 +125,12 @@ data class PodRef(
  * Class encapsulates all the information required to create an instance of [PodProxy] of specific type.
  * The class remains serializable in order to be transferred and/or persisted.
  */
+@Serializable
 data class PodProxyRef(
         /**
          * [PodProxy] type to create it using [PodRegistry]
          */
+        @Serializable(with = KTypeSerializer::class)
         val type: KType,
         /**
          * A list of PodKeys to make API calls to. If multiple elements, then it is a merging pod proxy that reads from multiple Pod at once.
@@ -137,3 +141,4 @@ data class PodProxyRef(
          */
         val partition: Int
 )
+
