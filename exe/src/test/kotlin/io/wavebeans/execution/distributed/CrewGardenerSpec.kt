@@ -9,6 +9,7 @@ import io.ktor.http.*
 import io.ktor.http.HttpMethod.Companion.Delete
 import io.ktor.http.HttpMethod.Companion.Get
 import io.ktor.http.HttpMethod.Companion.Post
+import io.ktor.http.HttpMethod.Companion.Put
 import io.ktor.http.content.PartData
 import io.ktor.server.testing.*
 import io.ktor.utils.io.streams.asInput
@@ -20,12 +21,9 @@ import io.wavebeans.lib.stream.trim
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
-import mu.KotlinLogging
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.io.File
-import java.util.concurrent.Callable
-import kotlin.random.Random
 
 class CrewGardenerSpec : Spek({
     val testEngine = TestApplicationEngine(createTestEnvironment())
@@ -175,6 +173,23 @@ class CrewGardenerSpec : Spek({
             }
         }
 
+        describe("Start job") {
+            val jobKey = newJobKey()
+
+            it("should cancel the job") {
+                assertThat(handleRequest(Put, "/job?jobKey=$jobKey") {
+                    addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                }).all {
+                    requestHandled().isTrue()
+                    response().all {
+                        status().isNotNull().isEqualTo(HttpStatusCode.OK)
+                        content().isNotNull().isEqualTo("OK")
+                    }
+                }
+                verify(gardener).start(eq(jobKey))
+            }
+        }
+
         describe("Upload") {
             val jobKey = newJobKey()
             val jarFile by memoized {
@@ -313,66 +328,3 @@ private fun compileCode(codeFiles: Map<String, String>): File {
     return jarFile
 }
 
-data class CommandResult(
-        val exitCode: Int,
-        val output: ByteArray
-) {
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as CommandResult
-
-        if (exitCode != other.exitCode) return false
-        if (!output.contentEquals(other.output)) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = exitCode
-        result = 31 * result + output.contentHashCode()
-        return result
-    }
-}
-
-class CommandRunner(vararg commands: String) : Callable<CommandResult> {
-
-    private val cmds = commands.toList()
-
-    companion object {
-        private val log = KotlinLogging.logger { }
-    }
-
-    override fun call(): CommandResult {
-        val id = Random.nextInt(0xFFFF, Int.MAX_VALUE).toString(16)
-        log.debug { "[$id] Running command: ${cmds.joinToString(" ")}" }
-
-        val tempDir = createTempDir().also { it.deleteOnExit() }
-        val process = ProcessBuilder(*cmds.toTypedArray())
-                .directory(tempDir)
-                .start()
-
-        return try {
-            val exitCode = process.waitFor()
-            if (exitCode != 0) {
-                CommandResult(
-                        exitCode,
-                        process.errorStream.readBytes()
-                )
-            } else {
-                CommandResult(
-                        exitCode,
-                        process.inputStream.readBytes()
-                )
-            }
-        } catch (e: InterruptedException) {
-            log.debug { "[$id] Process $process destroying" }
-            process.destroy()
-            CommandResult(
-                    -1,
-                    process.inputStream.readBytes()
-            )
-        }.also { log.debug { "[$id] Exit=${it.exitCode}, Output:\n${String(it.output)}" } }
-    }
-}

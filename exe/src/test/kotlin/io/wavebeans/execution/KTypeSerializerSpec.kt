@@ -63,8 +63,8 @@ object KTypeSerializerSpec : Spek({
         it("should deserialize List<Int>") { assertThat(json.parse(KTypeSerializer, "\"kotlin.collections.List<kotlin.Int>\"")).isEqualTo(typeOf<List<Int>>()) }
         it("should deserialize TestGenericClass<out Int>") { assertThat(json.parse(KTypeSerializer, "\"io.wavebeans.execution.TestGenericClass<out kotlin.Int>\"")).isEqualTo(typeOf<TestGenericClass<out Int>>()) }
         it("should deserialize TestGenericClass<in Int>") { assertThat(json.parse(KTypeSerializer, "\"io.wavebeans.execution.TestGenericClass<in kotlin.Int>\"")).isEqualTo(typeOf<TestGenericClass<in Int>>()) }
-        it("should deserialize TestGenericClass<T> as TestGenericClass<Any>") { assertThat(json.parse(KTypeSerializer, "\"io.wavebeans.execution.TestGenericClass<T>\"")).isEqualTo(typeOf<TestGenericClass<Any>>()) }
-        it("should deserialize List<I> as List<Any>") { assertThat(json.parse(KTypeSerializer, "\"kotlin.collections.List<I>\"")).isEqualTo(typeOf<List<Any>>()) }
+        it("should deserialize TestGenericClass<T> as TestGenericClass<Any>") { assertThat(json.parse(KTypeSerializer, "\"io.wavebeans.execution.TestGenericClass<&T>\"")).isEqualTo(typeOf<TestGenericClass<Any>>()) }
+        it("should deserialize List<ABC> as List<Any>") { assertThat(json.parse(KTypeSerializer, "\"kotlin.collections.List<&ABC>\"")).isEqualTo(typeOf<List<Any>>()) }
         it("should deserialize List<Map<Int, String>>") {
             assertThat(json.parse(KTypeSerializer, "\"kotlin.collections.List<" +
                     "kotlin.collections.Map<kotlin.Int, kotlin.String>" +

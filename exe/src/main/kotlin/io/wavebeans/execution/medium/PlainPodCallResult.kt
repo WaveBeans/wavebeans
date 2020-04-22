@@ -18,5 +18,9 @@ class PlainPodCallResult(
     override fun isNull(): Boolean = obj == null
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> value(clazz: KClass<T>): T? = obj as T
+    override fun <T : Any> value(clazz: KClass<T>): T? = if (exception != null) throw exception else obj as T?
+
+    override fun toString(): String {
+        return "PlainPodCallResult(call=$call, exception=$exception, obj=$obj)"
+    }
 }

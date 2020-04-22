@@ -1,5 +1,9 @@
 package io.wavebeans.execution.distributed
 
+import com.uchuhimo.konf.Config
+import com.uchuhimo.konf.ConfigSpec
+import com.uchuhimo.konf.source.Source
+import com.uchuhimo.konf.source.hocon
 import io.ktor.application.Application
 import io.ktor.application.call
 import io.ktor.application.install
@@ -12,10 +16,7 @@ import io.ktor.http.content.streamProvider
 import io.ktor.request.receive
 import io.ktor.request.receiveMultipart
 import io.ktor.response.respond
-import io.ktor.routing.delete
-import io.ktor.routing.get
-import io.ktor.routing.post
-import io.ktor.routing.routing
+import io.ktor.routing.*
 import io.ktor.serialization.json
 import io.ktor.server.engine.ApplicationEngine
 import io.ktor.server.engine.applicationEngineEnvironment
@@ -25,6 +26,8 @@ import io.ktor.server.netty.Netty
 import io.ktor.util.getOrFail
 import io.wavebeans.execution.*
 import io.wavebeans.execution.config.ExecutionConfig
+import io.wavebeans.execution.medium.PlainMediumBuilder
+import io.wavebeans.execution.medium.PlainPodCallResultBuilder
 import io.wavebeans.lib.WaveBeansClassLoader
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
@@ -47,11 +50,32 @@ import java.util.jar.JarFile
 import kotlin.random.Random
 import kotlin.random.nextInt
 
-fun main() {
-    val advertisingHostAddress = "10.0.0.42"
-    val listeningPortRange = 40000..40000
-    val startingUpAttemptsCount = 10
-    val threadsNum = 4
+object CrewGardenderConfig : ConfigSpec() {
+    val advertisingHostAddress by optional("127.0.0.1", name = "advertisingHostAddress")
+    val listeningPortRange by required<IntRange>(name = "listeningPortRange")
+    val startingUpAttemptsCount by optional(10, name = "startingUpAttemptsCount")
+    val threadsNumber by required<Int>(name = "threadsNumber")
+}
+
+
+fun main(args: Array<String>) {
+    if (args.isEmpty()) {
+        throw IllegalArgumentException("Specify configuration file as a parameter.")
+    }
+    val log = KotlinLogging.logger { }
+    val configFilePath = args[0]
+
+    val config = Config { addSpec(CrewGardenderConfig) }.withSource(Source.from.hocon.file(configFilePath))
+
+    log.info {
+        "Staring Crew Gardener with following config:n\"" +
+                config.toMap().entries.joinToString("\n") { "${it.key} = ${it.value}" }
+    }
+
+    val advertisingHostAddress = config[CrewGardenderConfig.advertisingHostAddress]
+    val listeningPortRange = config[CrewGardenderConfig.listeningPortRange]
+    val startingUpAttemptsCount = config[CrewGardenderConfig.startingUpAttemptsCount]
+    val threadsNum = config[CrewGardenderConfig.threadsNumber]
 
     CrewGardener(
             advertisingHostAddress,
@@ -77,6 +101,8 @@ class CrewGardener(
 ) : Closeable {
 
     init {
+        ExecutionConfig.podCallResultBuilder(PlainPodCallResultBuilder())
+        ExecutionConfig.mediumBuilder(PlainMediumBuilder())
         ExecutionConfig.executionThreadPool(MultiThreadedExecutionThreadPool(threadsNumber))
     }
 
@@ -89,9 +115,13 @@ class CrewGardener(
     private val terminate = CountDownLatch(1)
 
     private lateinit var server: ApplicationEngine
-
     private val jobClassLoaders = ConcurrentHashMap<JobKey, CrewGardenerClassLoader>()
     private val jobFutures = ConcurrentHashMap<JobKey, MutableList<Future<ExecutionResult>>>()
+    private var listeningPort: Int = 0
+
+    fun listeningPort(): Int =
+            if (listeningPort > 0) listeningPort
+            else throw IllegalStateException("Crew Gardener is not listening yet. Please start first")
 
     fun start(waitAndClose: Boolean) {
         log.info {
@@ -105,7 +135,7 @@ class CrewGardener(
                     }
         }
 
-        var listeningPort = Random.nextInt(listeningPortRange)
+        listeningPort = Random.nextInt(listeningPortRange)
         var attempt = startingUpAttemptsCount
         while (attempt > 0) {
             try {
@@ -169,6 +199,10 @@ class CrewGardener(
     override fun close() {
         if (applicationEngine == null)
             server.stop(5000, 5000)
+    }
+
+    fun startJob(jobKey: JobKey) {
+        gardener.start(jobKey)
     }
 
     fun cancelJob(jobKey: JobKey) {
@@ -241,6 +275,11 @@ fun Application.crewGardenerApi(crewGardener: CrewGardener) {
         delete("/job") {
             val jobKey = call.request.queryParameters.getOrFail<String>("jobKey").toJobKey()
             crewGardener.cancelJob(jobKey)
+            call.respond("OK")
+        }
+        put("/job") {
+            val jobKey = call.request.queryParameters.getOrFail<String>("jobKey").toJobKey()
+            crewGardener.startJob(jobKey)
             call.respond("OK")
         }
         get("/terminate") {
