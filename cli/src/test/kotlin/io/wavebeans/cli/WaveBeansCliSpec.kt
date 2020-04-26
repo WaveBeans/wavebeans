@@ -116,7 +116,7 @@ object WaveBeansCliSpec : Spek({
             out.close()
 
             val pool = Executors.newSingleThreadExecutor()
-            after { pool.shutdownNow() }
+            afterGroup { pool.shutdownNow() }
             val result = pool.submit(Callable<List<String>> {
                 fun result(): List<String> {
                     return runBlocking {

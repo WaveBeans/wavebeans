@@ -15,7 +15,7 @@ data class JobDescriptor(
         val bushKey: BushKey,
         val podRefs: List<PodRef>,
         val sampleRate: Float,
-        val bush: Bush
+        val bush: LocalBush
 )
 
 class Gardener {
@@ -27,7 +27,7 @@ class Gardener {
     private val activeJobs = ConcurrentHashMap<JobKey, MutableList<JobDescriptor>>()
 
     fun plantBush(jobKey: JobKey, bushKey: BushKey, pods: List<PodRef>, sampleRate: Float): Gardener {
-        val bush = Bush(bushKey)
+        val bush = LocalBush(bushKey)
         pods.forEach { bush.addPod(it.instantiate(sampleRate)) }
         val bushDescriptor = JobDescriptor(bushKey, pods, sampleRate, bush)
         activeJobs.putIfAbsent(jobKey, CopyOnWriteArrayList())

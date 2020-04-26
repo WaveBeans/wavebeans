@@ -16,6 +16,7 @@ import io.ktor.http.content.streamProvider
 import io.ktor.request.receive
 import io.ktor.request.receiveMultipart
 import io.ktor.response.respond
+import io.ktor.response.respondOutputStream
 import io.ktor.routing.*
 import io.ktor.serialization.json
 import io.ktor.server.engine.ApplicationEngine
@@ -26,8 +27,11 @@ import io.ktor.server.netty.Netty
 import io.ktor.util.getOrFail
 import io.wavebeans.execution.*
 import io.wavebeans.execution.config.ExecutionConfig
+import io.wavebeans.execution.medium.MediumBuilder
 import io.wavebeans.execution.medium.PlainMediumBuilder
 import io.wavebeans.execution.medium.PlainPodCallResultBuilder
+import io.wavebeans.execution.medium.PodCallResultBuilder
+import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.lib.WaveBeansClassLoader
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
@@ -38,14 +42,12 @@ import kotlinx.serialization.modules.serializersModuleOf
 import mu.KotlinLogging
 import java.io.Closeable
 import java.io.File
+import java.io.OutputStream
 import java.net.InetAddress
 import java.net.URL
 import java.net.URLClassLoader
 import java.util.*
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.Future
+import java.util.concurrent.*
 import java.util.jar.JarFile
 import kotlin.random.Random
 import kotlin.random.nextInt
@@ -55,6 +57,9 @@ object CrewGardenderConfig : ConfigSpec() {
     val listeningPortRange by required<IntRange>(name = "listeningPortRange")
     val startingUpAttemptsCount by optional(10, name = "startingUpAttemptsCount")
     val threadsNumber by required<Int>(name = "threadsNumber")
+    val callTimeoutMillis by optional(5000L, name = "callTimeoutMillis")
+    val onServerShutdownGracePeriodMillis by optional(5000L, name = "onServerShutdownGracePeriodMillis")
+    val onServerShutdownTimeoutMillis by optional(5000L, name = "onServerShutdownTimeoutMillis")
 }
 
 
@@ -72,16 +77,14 @@ fun main(args: Array<String>) {
                 config.toMap().entries.joinToString("\n") { "${it.key} = ${it.value}" }
     }
 
-    val advertisingHostAddress = config[CrewGardenderConfig.advertisingHostAddress]
-    val listeningPortRange = config[CrewGardenderConfig.listeningPortRange]
-    val startingUpAttemptsCount = config[CrewGardenderConfig.startingUpAttemptsCount]
-    val threadsNum = config[CrewGardenderConfig.threadsNumber]
-
     CrewGardener(
-            advertisingHostAddress,
-            listeningPortRange,
-            startingUpAttemptsCount,
-            threadsNum
+            advertisingHostAddress = config[CrewGardenderConfig.advertisingHostAddress],
+            listeningPortRange = config[CrewGardenderConfig.listeningPortRange],
+            startingUpAttemptsCount = config[CrewGardenderConfig.startingUpAttemptsCount],
+            threadsNumber = config[CrewGardenderConfig.threadsNumber],
+            callTimeoutMillis = config[CrewGardenderConfig.callTimeoutMillis],
+            onServerShutdownGracePeriodMillis = config[CrewGardenderConfig.onServerShutdownGracePeriodMillis],
+            onServerShutdownTimeoutMillis = config[CrewGardenderConfig.onServerShutdownTimeoutMillis]
     ).start(waitAndClose = true)
 }
 
@@ -97,14 +100,14 @@ class CrewGardener(
         private val startingUpAttemptsCount: Int,
         private val threadsNumber: Int,
         private val applicationEngine: ApplicationEngine? = null,
-        private val gardener: Gardener = Gardener()
+        private val gardener: Gardener = Gardener(),
+        private val callTimeoutMillis: Long = 5000L,
+        private val onServerShutdownGracePeriodMillis: Long = 5000L,
+        private val onServerShutdownTimeoutMillis: Long = 5000L,
+        private val podCallResultBuilder: PodCallResultBuilder = PlainPodCallResultBuilder(),
+        private val mediumBuilder: MediumBuilder = PlainMediumBuilder(),
+        private val executionThreadPool: ExecutionThreadPool = MultiThreadedExecutionThreadPool(threadsNumber)
 ) : Closeable {
-
-    init {
-        ExecutionConfig.podCallResultBuilder(PlainPodCallResultBuilder())
-        ExecutionConfig.mediumBuilder(PlainMediumBuilder())
-        ExecutionConfig.executionThreadPool(MultiThreadedExecutionThreadPool(threadsNumber))
-    }
 
     companion object {
         private val log = KotlinLogging.logger { }
@@ -135,6 +138,10 @@ class CrewGardener(
                     }
         }
 
+        ExecutionConfig.podCallResultBuilder(podCallResultBuilder)
+        ExecutionConfig.mediumBuilder(mediumBuilder)
+        ExecutionConfig.executionThreadPool(executionThreadPool)
+
         listeningPort = Random.nextInt(listeningPortRange)
         var attempt = startingUpAttemptsCount
         while (attempt > 0) {
@@ -150,10 +157,8 @@ class CrewGardener(
                 listeningPort = Random.nextInt(listeningPortRange)
             }
         }
-        if (attempt == 0) {
-            log.error { "Can't start the Crew Gardener within $startingUpAttemptsCount attempts. Exiting" }
-            return
-        }
+        if (attempt == 0) throw IllegalStateException("Can't start the Crew Gardener within $startingUpAttemptsCount attempts.")
+
 
         log.info { "Crew Gardener API started on port $listeningPort" }
         if (waitAndClose) {
@@ -198,7 +203,7 @@ class CrewGardener(
 
     override fun close() {
         if (applicationEngine == null)
-            server.stop(5000, 5000)
+            server.stop(onServerShutdownGracePeriodMillis, onServerShutdownTimeoutMillis)
     }
 
     fun startJob(jobKey: JobKey) {
@@ -223,6 +228,19 @@ class CrewGardener(
         cl += codeFile.toURI().toURL()
         WaveBeansClassLoader.addClassLoader(cl)
     }
+
+    fun registerBushEndpoints(registerBushEndpointsRequest: RegisterBushEndpointsRequest) {
+        registerBushEndpointsRequest.bushEndpoints.forEach {
+            val bushKey = it.key.toBushKey()
+            PodDiscovery.default.registerBush(bushKey, RemoteBush(bushKey, it.value))
+        }
+    }
+
+    fun call(bushKey: BushKey, podKey: PodKey, request: String, outputStream: OutputStream) {
+        val bush = PodDiscovery.default.bush(bushKey) ?: throw IllegalStateException("Bush $bushKey not found")
+        if (bush !is LocalBush) throw IllegalStateException("Bush $bushKey is ${bush::class} but ${LocalBush::class} expected")
+        bush.call(podKey, request).get(callTimeoutMillis, TimeUnit.MILLISECONDS).writeTo(outputStream)
+    }
 }
 
 @Serializable
@@ -238,6 +256,12 @@ data class PlantBushRequest(
         val jobKey: JobKey,
         val jobContent: JobContent,
         val sampleRate: Float
+)
+
+@Serializable
+data class RegisterBushEndpointsRequest(
+        /* bushKey -> URL  */
+        val bushEndpoints: Map<String, String>
 )
 
 fun Application.crewGardenerApi(crewGardener: CrewGardener) {
@@ -257,10 +281,24 @@ fun Application.crewGardenerApi(crewGardener: CrewGardener) {
     routing {
         post("/bush") {
             val plantBushRequest = call.receive(PlantBushRequest::class)
-            log.trace { "/bush\nRequest body: $plantBushRequest" }
+            log.debug { "/bush\nRequest body: $plantBushRequest" }
             crewGardener.plantBush(plantBushRequest)
             call.respond("OK")
         }
+        post("/bush/endpoints") {
+            val registerBushEndpointsRequest = call.receive(RegisterBushEndpointsRequest::class)
+            log.debug { "/bush/endpoints\nRequest body: $registerBushEndpointsRequest" }
+            crewGardener.registerBushEndpoints(registerBushEndpointsRequest)
+            call.respond("OK")
+        }
+        get("/bush/call") {
+            val bushKey = call.request.queryParameters.getOrFail<String>("bushKey").toBushKey()
+            val podId = call.request.queryParameters.getOrFail<Int>("podId")
+            val podPartition = call.request.queryParameters.getOrFail<Int>("podPartition")
+            val request = call.request.queryParameters.getOrFail<String>("request")
+            call.respondOutputStream { crewGardener.call(bushKey, PodKey(podId, podPartition), request, this) }
+        }
+
         get("/job") {
             val jobKey = call.request.queryParameters.getOrFail<String>("jobKey").toJobKey()
             val jobContents = crewGardener.job(jobKey)
@@ -282,10 +320,12 @@ fun Application.crewGardenerApi(crewGardener: CrewGardener) {
             crewGardener.startJob(jobKey)
             call.respond("OK")
         }
+
         get("/terminate") {
             crewGardener.terminate()
             call.respond("Terminating")
         }
+
         post("/code/upload") {
             val multipart = call.receiveMultipart()
             lateinit var jobKey: JobKey
@@ -306,6 +346,5 @@ fun Application.crewGardenerApi(crewGardener: CrewGardener) {
             }
             call.respond("OK")
         }
-
     }
 }

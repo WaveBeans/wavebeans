@@ -15,7 +15,7 @@ import kotlin.random.Random
 
 val random = Random(1234)
 
-object BushSpec : Spek({
+object LocalBushSpec : Spek({
 
     val modes = mapOf(
 //            "Distributed" to ....
@@ -58,10 +58,10 @@ object BushSpec : Spek({
 
                 }
 
-                lateinit var bush: Bush
+                lateinit var bush: LocalBush
 
                 beforeGroup {
-                    bush = Bush(newBushKey())
+                    bush = LocalBush(newBushKey())
                             .also { it.addPod(pod) }
                             .also { it.start() }
                 }

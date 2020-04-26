@@ -12,6 +12,7 @@ import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.stream.window.window
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
+import org.spekframework.spek2.style.specification.xdescribe
 import java.io.File
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
@@ -26,7 +27,7 @@ object DistributedOverseerSpec : Spek({
         pool.shutdownNow()
     }
 
-    describe("111") {
+    xdescribe("111") {
 
 
 

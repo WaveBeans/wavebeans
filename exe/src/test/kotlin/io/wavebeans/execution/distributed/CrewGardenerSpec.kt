@@ -14,6 +14,8 @@ import io.ktor.http.content.PartData
 import io.ktor.server.testing.*
 import io.ktor.utils.io.streams.asInput
 import io.wavebeans.execution.*
+import io.wavebeans.execution.medium.PodCallResult
+import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.lib.WaveBeansClassLoader
 import io.wavebeans.lib.io.sine
 import io.wavebeans.lib.io.toDevNull
@@ -24,6 +26,8 @@ import kotlinx.serialization.json.JsonConfiguration
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.io.File
+import java.io.OutputStream
+import java.util.concurrent.CompletableFuture
 
 class CrewGardenerSpec : Spek({
     val testEngine = TestApplicationEngine(createTestEnvironment())
@@ -275,6 +279,68 @@ class CrewGardenerSpec : Spek({
             }
         }
 
+        describe("Register bush endpoints") {
+            val bushKey1 = newBushKey()
+            val bushKey2 = newBushKey()
+            it("should register") {
+                assertThat(handleRequest(Post, "/bush/endpoints") {
+                    addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                    val registerBushEndpointsRequest = RegisterBushEndpointsRequest(mapOf(
+                            bushKey1.toString() to "http://127.0.0.1:40000",
+                            bushKey2.toString() to "http://127.0.0.1:40001"
+                    ))
+                    val body = json.stringify(RegisterBushEndpointsRequest.serializer(), registerBushEndpointsRequest)
+                    setBody(body)
+                }).all {
+                    requestHandled().isTrue()
+                    response().all {
+                        status().isNotNull().isEqualTo(HttpStatusCode.OK)
+                        content().isNotNull().isEqualTo("OK")
+                    }
+                }
+            }
+            it("should discover remote bush 1") {
+                assertThat(PodDiscovery.default.bush(bushKey1))
+                        .isNotNull()
+                        .isInstanceOf(RemoteBush::class)
+                        .prop("endpoint") { it.endpoint }.isEqualTo("http://127.0.0.1:40000")
+            }
+            it("should discover remote bush 2") {
+                assertThat(PodDiscovery.default.bush(bushKey2))
+                        .isNotNull()
+                        .isInstanceOf(RemoteBush::class)
+                        .prop("endpoint") { it.endpoint }.isEqualTo("http://127.0.0.1:40001")
+            }
+        }
+
+        describe("Making calls to bushes") {
+            val bushKey = newBushKey()
+            val bush = mock<LocalBush>()
+            PodDiscovery.default.registerBush(bushKey, bush)
+
+            val podId = 0
+            val podPartition = 0
+            val request = "someMethod?param1=value&param2=3"
+
+            val podCallResult = mock<PodCallResult>()
+            val result = ByteArray(4) { it.toByte() }
+            whenever(podCallResult.writeTo(any()))
+                    .then { (it.arguments[0] as OutputStream).write(result) }
+            whenever(bush.call(PodKey(podId, podPartition), request))
+                    .thenReturn(CompletableFuture<PodCallResult>().also { it.complete(podCallResult) })
+
+            it("should call") {
+                assertThat(handleRequest(Get, "/bush/call?bushKey=$bushKey&podId=$podId&podPartition=$podPartition&request=${request.encodeURLParameter()}")).all {
+                    requestHandled().isTrue()
+                    response().all {
+                        status().isNotNull().isEqualTo(HttpStatusCode.OK)
+                        byteContent().isNotNull().isEqualTo(result)
+                    }
+                }
+            }
+
+        }
+
         describe("Terminating") {
             /* Though don't actually terminate as in real app. */
             it("should terminate") {
@@ -292,6 +358,7 @@ class CrewGardenerSpec : Spek({
 })
 
 private fun Assert<TestApplicationResponse>.content() = prop("content") { it.content }
+private fun Assert<TestApplicationResponse>.byteContent() = prop("content") { it.byteContent }
 
 private fun Assert<TestApplicationResponse>.status() = prop("status") { it.status() }
 

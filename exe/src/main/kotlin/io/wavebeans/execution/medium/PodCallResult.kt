@@ -2,12 +2,16 @@ package io.wavebeans.execution.medium
 
 import io.wavebeans.execution.Call
 import io.wavebeans.execution.config.ExecutionConfig
+import java.io.InputStream
+import java.io.OutputStream
 import kotlin.reflect.KClass
 
 interface PodCallResultBuilder {
     fun ok(call: Call, value: Any?): PodCallResult
 
     fun error(call: Call, exception: Throwable): PodCallResult
+
+    fun fromInputStream(toInputStream: InputStream): PodCallResult
 }
 
 interface PodCallResult {
@@ -25,6 +29,8 @@ interface PodCallResult {
     fun isNull(): Boolean
 
     fun <T : Any> value(clazz: KClass<T>): T?
+
+    fun writeTo(outputStream: OutputStream)
 }
 
 inline fun <reified T : Any> PodCallResult.valueOrNull(): T? = this.value(T::class)
