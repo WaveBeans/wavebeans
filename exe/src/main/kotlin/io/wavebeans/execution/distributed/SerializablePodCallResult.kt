@@ -94,7 +94,7 @@ internal class ExceptionObj(
             return ExceptionObj(
                     clazz = e::class.jvmName,
                     message = e.message ?: "",
-                    stackTrace = e.stackTrace.map { "${it.className}.${it.methodName}() [${it.fileName}:${it.lineNumber}]" },
+                    stackTrace = e.stackTrace.map { "${it.className}.${it.methodName}(${it.fileName}:${it.lineNumber})" },
                     cause = cause
             )
         }

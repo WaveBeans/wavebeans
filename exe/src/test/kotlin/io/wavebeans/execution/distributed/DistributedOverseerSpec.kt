@@ -28,32 +28,32 @@ object DistributedOverseerSpec : Spek({
     }
 
     describe("111") {
-        val gardeners = mutableListOf<Future<Unit>>()
-        gardeners += pool.submit(Callable { startCrewGardener(40001) })
-        gardeners += pool.submit(Callable { startCrewGardener(40002) })
-
-        Thread.sleep(10000) // wait for the start
-
-        val input = 440.sine()
-                .map { abs(it) } + 880.sine()
-
-        val output1 = input.trim(5000).toDevNull()
-        val output2 = input.window(401, 128).fft(512).trim(1000).toDevNull()
-
-        val overseer = DistributedOverseer(
-                listOf(output1, output2),
-                listOf(
-                        "http://127.0.0.1:40001",
-                        "http://127.0.0.1:40002"
-                ),
-                2
-        )
-
-        overseer.eval(44100.0f)
-
-        it("shouldn't throw any exceptions") {
-            assertThat(catch { gardeners.forEach { it.get() } }).isNull()
-        }
+//        val gardeners = mutableListOf<Future<Unit>>()
+//        gardeners += pool.submit(Callable { startCrewGardener(40001) })
+//        gardeners += pool.submit(Callable { startCrewGardener(40002) })
+//
+//        Thread.sleep(10000) // wait for the start
+//
+//        val input = 440.sine()
+//                .map { abs(it) } + 880.sine()
+//
+//        val output1 = input.trim(5000).toDevNull()
+//        val output2 = input.window(401, 128).fft(512).trim(1000).toDevNull()
+//
+//        val overseer = DistributedOverseer(
+//                listOf(output1, output2),
+//                listOf(
+//                        "http://127.0.0.1:40001",
+//                        "http://127.0.0.1:40002"
+//                ),
+//                2
+//        )
+//
+//        overseer.eval(44100.0f)
+//
+//        it("shouldn't throw any exceptions") {
+//            assertThat(catch { gardeners.forEach { it.get() } }).isNull()
+//        }
     }
 })
 

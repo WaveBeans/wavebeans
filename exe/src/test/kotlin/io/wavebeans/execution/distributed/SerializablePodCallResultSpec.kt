@@ -8,6 +8,7 @@ import io.wavebeans.execution.medium.PodCallResult
 import io.wavebeans.execution.medium.value
 import io.wavebeans.lib.Sample
 import io.wavebeans.lib.sampleOf
+import kotlinx.serialization.Serializable
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.io.ByteArrayInputStream
@@ -116,6 +117,34 @@ object SerializablePodCallResultSpec : Spek({
             it("should have empty exception") { assertThat(result.exception).isNull() }
             it("should return valid value") { assertThat(result.value<List<Sample>>()).isEqualTo(sampleList) }
         }
+
+        describe("Wrapping list of lists of objects") {
+            @Serializable
+            data class Obj(val a: Int)
+
+            val list = listOf(
+                    listOf(Obj(1), Obj(2), Obj(3)),
+                    listOf(Obj(4), Obj(5)),
+                    listOf(Obj(6))
+            )
+
+            val result by memoized { result(list) }
+
+            it("should have non empty obj") { assertThat(result.obj).isNotNull() }
+            it("should have empty exception") { assertThat(result.exception).isNull() }
+            it("should return valid value") { assertThat(result.value<List<List<Obj>>>()).isEqualTo(list) }
+        }
+
+        describe("Wrapping medium") {
+
+            val obj = SerializableMediumBuilder().from(listOf(sampleOf(1.0), sampleOf(1.1), sampleOf(-0.1)))
+
+            val result by memoized { result(obj) }
+
+            it("should have non empty obj") { assertThat(result.obj).isNotNull() }
+            it("should have empty exception") { assertThat(result.exception).isNull() }
+            it("should return valid value") { assertThat(result.value<SerializableMedium>()).isEqualTo(obj) }
+        }
     }
 
     describe("Wrapping errors") {
@@ -127,9 +156,9 @@ object SerializablePodCallResultSpec : Spek({
                 assertThat(result.exception)
                         .isNotNull()
                         .isInstanceOf(PodCallException::class).all {
-                            hasMessage("test message")
-                            prop("clazz") { it.clazz }.isEqualTo(IllegalStateException::class)
-                            prop("stackTrace") { it.stackTrace }.matchesPredicate { it.any { it.contains(SerializablePodCallResultSpec::class.simpleName!!) } }
+                            prop("clazz") { it.inherentExceptionClazz }.isEqualTo(IllegalStateException::class)
+                            prop("message") { it.inherentMessage }.isEqualTo("test message")
+                            prop("stackTrace") { it.inherentStackTrace }.matchesPredicate { it.any { it.contains(SerializablePodCallResultSpec::class.simpleName!!) } }
                             prop("cause") { it.cause }.isNull()
                         }
             }
@@ -142,13 +171,13 @@ object SerializablePodCallResultSpec : Spek({
                 assertThat(result.exception)
                         .isNotNull()
                         .isInstanceOf(PodCallException::class).all {
-                            hasMessage("test message")
-                            prop("clazz") { it.clazz }.isEqualTo(IllegalStateException::class)
-                            prop("stackTrace") { it.stackTrace }.matchesPredicate { it.any { it.contains(SerializablePodCallResultSpec::class.simpleName!!) } }
+                            prop("clazz") { it.inherentExceptionClazz }.isEqualTo(IllegalStateException::class)
+                            prop("message") { it.inherentMessage }.isEqualTo("test message")
+                            prop("stackTrace") { it.inherentStackTrace }.matchesPredicate { it.any { it.contains(SerializablePodCallResultSpec::class.simpleName!!) } }
                             prop("cause") { it.cause }.isNotNull().all {
-                                hasMessage("some cause")
-                                prop("clazz") { it.clazz }.isEqualTo(IllegalArgumentException::class)
-                                prop("stackTrace") { it.stackTrace }.matchesPredicate { it.any { it.contains(SerializablePodCallResultSpec::class.simpleName!!) } }
+                                prop("clazz") { it.inherentExceptionClazz }.isEqualTo(IllegalArgumentException::class)
+                                prop("message") { it.inherentMessage }.isEqualTo("some cause")
+                                prop("stackTrace") { it.inherentStackTrace }.matchesPredicate { it.any { it.contains(SerializablePodCallResultSpec::class.simpleName!!) } }
                                 prop("cause") { it.cause }.isNull()
                             }
                         }
@@ -162,9 +191,9 @@ object SerializablePodCallResultSpec : Spek({
                 assertThat(result.exception)
                         .isNotNull()
                         .isInstanceOf(PodCallException::class).all {
-                            hasMessage("test message")
-                            prop("clazz") { it.clazz }.isEqualTo(NotImplementedError::class)
-                            prop("stackTrace") { it.stackTrace }.matchesPredicate { it.any { it.contains(SerializablePodCallResultSpec::class.simpleName!!) } }
+                            prop("clazz") { it.inherentExceptionClazz }.isEqualTo(NotImplementedError::class)
+                            prop("message") { it.inherentMessage }.isEqualTo("test message")
+                            prop("stackTrace") { it.inherentStackTrace }.matchesPredicate { it.any { it.contains(SerializablePodCallResultSpec::class.simpleName!!) } }
                             prop("cause") { it.cause }.isNull()
                         }
             }
