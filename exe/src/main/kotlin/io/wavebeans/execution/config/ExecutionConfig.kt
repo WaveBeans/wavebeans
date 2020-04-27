@@ -13,6 +13,16 @@ object ExecutionConfig {
     private lateinit var executionThreadPool: ExecutionThreadPool
 
     /**
+     * The size of the one partition for the pods. Must be the same across whole deployment.
+     */
+    var partitionSize: Int = 512
+
+    /**
+     * Number of buckets to prefetch at once while reading over iterator.
+     */
+    var prefetchBucketAmount = 10
+
+    /**
      * Number of threads to use for [executionThreadPool] for current JVM instance.
      */
     var threadsLimitForJvm: Int = 1

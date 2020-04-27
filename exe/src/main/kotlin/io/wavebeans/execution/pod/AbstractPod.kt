@@ -11,9 +11,6 @@ import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.math.min
 
-// TODO consider moving to config
-const val DEFAULT_PARTITION_SIZE = 512
-
 /**
  * Base implementation of the [Pod].
  *
@@ -46,7 +43,7 @@ abstract class AbstractPod<T : Any, B : BeanStream<T>>(
         override val podKey: PodKey,
         val bean: B,
         val partitionCount: Int,
-        val partitionSize: Int = DEFAULT_PARTITION_SIZE
+        val partitionSize: Int = ExecutionConfig.partitionSize
 ) : Pod {
 
     companion object {
