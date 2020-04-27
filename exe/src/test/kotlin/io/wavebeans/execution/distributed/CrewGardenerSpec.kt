@@ -28,19 +28,22 @@ import org.spekframework.spek2.style.specification.describe
 import java.io.File
 import java.io.OutputStream
 import java.util.concurrent.CompletableFuture
+import kotlin.random.Random
 
 class CrewGardenerSpec : Spek({
     val testEngine = TestApplicationEngine(createTestEnvironment())
     testEngine.start(wait = false)
 
     val gardener: Gardener = mock()
+    val podDiscovery = object : PodDiscovery() {}
     val crewGardener = CrewGardener(
             advertisingHostAddress = "127.0.0.1",
             listeningPortRange = 40000..50000,
             startingUpAttemptsCount = 10,
             threadsNumber = 1,
             applicationEngine = testEngine,
-            gardener = gardener
+            gardener = gardener,
+            podDiscovery = podDiscovery
     )
 
     Thread { crewGardener.start(waitAndClose = true) }.start()
@@ -282,13 +285,19 @@ class CrewGardenerSpec : Spek({
         describe("Register bush endpoints") {
             val bushKey1 = newBushKey()
             val bushKey2 = newBushKey()
+            val podKey1 = PodKey(Random.nextInt(0, 10000000), 0)
+            val podKey2 = PodKey(Random.nextInt(0, 10000000), 0)
+            val podKey3 = PodKey(Random.nextInt(0, 10000000), 0)
+            val podKey4 = PodKey(Random.nextInt(0, 10000000), 0)
             it("should register") {
                 assertThat(handleRequest(Post, "/bush/endpoints") {
                     addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-                    val registerBushEndpointsRequest = RegisterBushEndpointsRequest(mapOf(
-                            bushKey1.toString() to "http://127.0.0.1:40000",
-                            bushKey2.toString() to "http://127.0.0.1:40001"
-                    ))
+                    val registerBushEndpointsRequest = RegisterBushEndpointsRequest(
+                            listOf(
+                                    BushEndpoint(bushKey1, "http://127.0.0.1:40000", listOf(podKey1, podKey2)),
+                                    BushEndpoint(bushKey2, "http://127.0.0.1:40001", listOf(podKey3, podKey4))
+                            )
+                    )
                     val body = json.stringify(RegisterBushEndpointsRequest.serializer(), registerBushEndpointsRequest)
                     setBody(body)
                 }).all {
@@ -300,23 +309,31 @@ class CrewGardenerSpec : Spek({
                 }
             }
             it("should discover remote bush 1") {
-                assertThat(PodDiscovery.default.bush(bushKey1))
+                assertThat(podDiscovery.bush(bushKey1))
                         .isNotNull()
                         .isInstanceOf(RemoteBush::class)
                         .prop("endpoint") { it.endpoint }.isEqualTo("http://127.0.0.1:40000")
             }
             it("should discover remote bush 2") {
-                assertThat(PodDiscovery.default.bush(bushKey2))
+                assertThat(podDiscovery.bush(bushKey2))
                         .isNotNull()
                         .isInstanceOf(RemoteBush::class)
                         .prop("endpoint") { it.endpoint }.isEqualTo("http://127.0.0.1:40001")
+            }
+            it("should discover pods on remote bush 1") {
+                assertThat(podDiscovery.bushFor(podKey1)).isEqualTo(bushKey1)
+                assertThat(podDiscovery.bushFor(podKey2)).isEqualTo(bushKey1)
+            }
+            it("should discover pods on remote bush 2") {
+                assertThat(podDiscovery.bushFor(podKey3)).isEqualTo(bushKey2)
+                assertThat(podDiscovery.bushFor(podKey4)).isEqualTo(bushKey2)
             }
         }
 
         describe("Making calls to bushes") {
             val bushKey = newBushKey()
             val bush = mock<LocalBush>()
-            PodDiscovery.default.registerBush(bushKey, bush)
+            podDiscovery.registerBush(bushKey, bush)
 
             val podId = 0
             val podPartition = 0

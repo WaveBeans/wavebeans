@@ -22,13 +22,16 @@ interface PodCallResult {
         fun error(call: Call, exception: Throwable): PodCallResult = ExecutionConfig.podCallResultBuilder().error(call, exception)
     }
 
+    val obj: Any?
+
     val call: Call
 
     val exception: Throwable?
 
-    fun isNull(): Boolean
+    fun isNull(): Boolean = obj == null
 
-    fun <T : Any> value(clazz: KClass<T>): T?
+    @Suppress("UNCHECKED_CAST")
+    fun <T : Any> value(clazz: KClass<T>): T? = if (exception != null) throw exception!! else obj as T?
 
     fun writeTo(outputStream: OutputStream)
 }

@@ -1,9 +1,9 @@
 package io.wavebeans.execution.distributed
 
+import assertk.all
 import assertk.assertThat
-import assertk.assertions.isEqualTo
-import assertk.assertions.isNotNull
-import assertk.assertions.prop
+import assertk.assertions.*
+import assertk.catch
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
@@ -18,16 +18,12 @@ import org.spekframework.spek2.style.specification.describe
 import java.io.InputStream
 import java.io.OutputStream
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ExecutionException
 
 class RemoteBushSpec : Spek({
     describe("Calling Remote bush") {
         val gardener = mock<Gardener>()
-        val jobKey = newJobKey()
-        val bushKey = newBushKey()
-        val remoteBush = RemoteBush(
-                bushKey,
-                "http://127.0.0.1:40000"
-        )
+        val podDiscovery = object : PodDiscovery() {}
 
         // mock pod call result serialization
         val podCallResult = mock<PodCallResult>()
@@ -42,18 +38,6 @@ class RemoteBushSpec : Spek({
                     r
                 }
 
-        // mock bush to return mocked pod call result
-        val bush = mock<LocalBush>()
-        whenever(bush.call(eq(PodKey(0, 0)), eq("/answer")))
-                .then {
-                    val completableFuture = CompletableFuture<PodCallResult>()
-                    completableFuture.complete(podCallResult)
-                    completableFuture
-                }
-
-        whenever(gardener.plantBush(eq(jobKey), eq(bushKey), any(), any()))
-                .then { PodDiscovery.default.registerBush(bushKey, bush); gardener }
-
         val crewGardener = CrewGardener(
                 advertisingHostAddress = "127.0.0.1",
                 listeningPortRange = 40000..40000,
@@ -62,12 +46,12 @@ class RemoteBushSpec : Spek({
                 gardener = gardener,
                 onServerShutdownGracePeriodMillis = 100,
                 onServerShutdownTimeoutMillis = 100,
-                podCallResultBuilder = podCallResultBuilder
+                podCallResultBuilder = podCallResultBuilder,
+                podDiscovery = podDiscovery
         )
 
         beforeGroup {
             crewGardener.start(waitAndClose = false)
-            crewGardener.plantBush(PlantBushRequest(jobKey, JobContent(bushKey, listOf(mock())), 44100.0f))
         }
 
         afterGroup {
@@ -75,15 +59,47 @@ class RemoteBushSpec : Spek({
             crewGardener.close()
         }
 
-        it("should start") {
-            assertThat(remoteBush.start()).isEqualTo(Unit)
+        describe("Properly working bush") {
+            val bushKey by memoized { newBushKey() }
+
+            val remoteBush by memoized {
+                // mock bush to return mocked pod call result
+                val bush = mock<LocalBush>()
+                whenever(bush.call(eq(PodKey(0, 0)), eq("/answer")))
+                        .then { CompletableFuture<PodCallResult>().also { it.complete(podCallResult) } }
+                podDiscovery.registerBush(bushKey, bush)
+
+                RemoteBush(bushKey, "http://127.0.0.1:40000")
+            }
+
+            it("should start") {
+                assertThat(remoteBush.start()).isEqualTo(Unit)
+            }
+
+            it("should make a call") {
+                assertThat(remoteBush.call(PodKey(0, 0), "/answer").get())
+                        .isNotNull()
+                        .prop("value") { it.value<String>() }.isEqualTo("42")
+            }
         }
 
-        it("should make a call") {
-            assertThat(remoteBush.call(PodKey(0, 0), "/answer").get())
-                    .isNotNull()
-                    .prop("value") { it.value<String>() }.isEqualTo("42")
+        describe("Pointing to non-existing bush") {
+            // no bush
+            val bushKey by memoized { newBushKey() }
+            val remoteBush by memoized { RemoteBush(bushKey, "http://127.0.0.1:40000") }
+
+            it("should start") {
+                assertThat(remoteBush.start()).isEqualTo(Unit)
+            }
+
+            it("should fail on call") {
+                assertThat(catch { remoteBush.call(PodKey(0, 0), "/answer").get() })
+                        .isNotNull().isInstanceOf(ExecutionException::class)
+                        .cause()
+                        .isNotNull().isInstanceOf(IllegalStateException::class)
+                        .message().isNotNull().contains("Non 200 code response during request")
+
+            }
         }
     }
-
 })

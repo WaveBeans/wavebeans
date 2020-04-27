@@ -65,7 +65,7 @@ class LocalBush(
 
     override fun addPod(pod: Pod) {
         pods[pod.podKey] = pod
-        podDiscovery.registerPod(bushKey, pod)
+        podDiscovery.registerPod(bushKey, pod.podKey)
     }
 
     override fun pods(): List<Pod> = pods.values.toList()

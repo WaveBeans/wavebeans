@@ -29,7 +29,6 @@ import io.wavebeans.execution.*
 import io.wavebeans.execution.config.ExecutionConfig
 import io.wavebeans.execution.medium.MediumBuilder
 import io.wavebeans.execution.medium.PlainMediumBuilder
-import io.wavebeans.execution.medium.PlainPodCallResultBuilder
 import io.wavebeans.execution.medium.PodCallResultBuilder
 import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.lib.WaveBeansClassLoader
@@ -43,6 +42,7 @@ import mu.KotlinLogging
 import java.io.Closeable
 import java.io.File
 import java.io.OutputStream
+import java.lang.Exception
 import java.net.InetAddress
 import java.net.URL
 import java.net.URLClassLoader
@@ -104,9 +104,10 @@ class CrewGardener(
         private val callTimeoutMillis: Long = 5000L,
         private val onServerShutdownGracePeriodMillis: Long = 5000L,
         private val onServerShutdownTimeoutMillis: Long = 5000L,
-        private val podCallResultBuilder: PodCallResultBuilder = PlainPodCallResultBuilder(),
-        private val mediumBuilder: MediumBuilder = PlainMediumBuilder(),
-        private val executionThreadPool: ExecutionThreadPool = MultiThreadedExecutionThreadPool(threadsNumber)
+        private val podCallResultBuilder: PodCallResultBuilder = SerializablePodCallResultBuilder(),
+        private val mediumBuilder: MediumBuilder = SerializableMediumBuilder(),
+        private val executionThreadPool: ExecutionThreadPool = MultiThreadedExecutionThreadPool(threadsNumber),
+        private val podDiscovery: PodDiscovery = PodDiscovery.default
 ) : Closeable {
 
     companion object {
@@ -230,16 +231,18 @@ class CrewGardener(
     }
 
     fun registerBushEndpoints(registerBushEndpointsRequest: RegisterBushEndpointsRequest) {
-        registerBushEndpointsRequest.bushEndpoints.forEach {
-            val bushKey = it.key.toBushKey()
-            PodDiscovery.default.registerBush(bushKey, RemoteBush(bushKey, it.value))
+        registerBushEndpointsRequest.bushEndpoints.forEach { bushEndpoint ->
+            val bushKey = bushEndpoint.bushKey
+            podDiscovery.registerBush(bushKey, RemoteBush(bushKey, bushEndpoint.url))
+            bushEndpoint.pods.forEach { podDiscovery.registerPod(bushKey, it) }
         }
     }
 
-    fun call(bushKey: BushKey, podKey: PodKey, request: String, outputStream: OutputStream) {
-        val bush = PodDiscovery.default.bush(bushKey) ?: throw IllegalStateException("Bush $bushKey not found")
+    fun call(bushKey: BushKey, podKey: PodKey, request: String): (OutputStream) -> Unit {
+        val bush = podDiscovery.bush(bushKey) ?: throw IllegalStateException("Bush $bushKey not found")
         if (bush !is LocalBush) throw IllegalStateException("Bush $bushKey is ${bush::class} but ${LocalBush::class} expected")
-        bush.call(podKey, request).get(callTimeoutMillis, TimeUnit.MILLISECONDS).writeTo(outputStream)
+        val podCallResult = bush.call(podKey, request).get(callTimeoutMillis, TimeUnit.MILLISECONDS)
+        return podCallResult::writeTo
     }
 }
 
@@ -260,8 +263,15 @@ data class PlantBushRequest(
 
 @Serializable
 data class RegisterBushEndpointsRequest(
-        /* bushKey -> URL  */
-        val bushEndpoints: Map<String, String>
+        val bushEndpoints: List<BushEndpoint>
+)
+
+@Serializable
+data class BushEndpoint(
+        @Serializable(with = UUIDSerializer::class)
+        val bushKey: BushKey,
+        val url: String,
+        val pods: List<PodKey>
 )
 
 fun Application.crewGardenerApi(crewGardener: CrewGardener) {
@@ -293,10 +303,18 @@ fun Application.crewGardenerApi(crewGardener: CrewGardener) {
         }
         get("/bush/call") {
             val bushKey = call.request.queryParameters.getOrFail<String>("bushKey").toBushKey()
-            val podId = call.request.queryParameters.getOrFail<Int>("podId")
-            val podPartition = call.request.queryParameters.getOrFail<Int>("podPartition")
+            val podKey = PodKey(
+                    call.request.queryParameters.getOrFail<Int>("podId"),
+                    call.request.queryParameters.getOrFail<Int>("podPartition")
+            )
             val request = call.request.queryParameters.getOrFail<String>("request")
-            call.respondOutputStream { crewGardener.call(bushKey, PodKey(podId, podPartition), request, this) }
+            try {
+                val write = crewGardener.call(bushKey, podKey, request)
+                call.respondOutputStream { write(this) }
+            } catch (e: Exception) {
+                log.error(e) { "Error during call to bushKey=$bushKey, podKey=$podKey, request=$request" }
+                call.respond(HttpStatusCode.InternalServerError, e.message ?: "Internal error")
+            }
         }
 
         get("/job") {

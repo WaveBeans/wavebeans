@@ -1,9 +1,11 @@
 package io.wavebeans.execution
 
+import kotlinx.serialization.Serializable
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 
+@Serializable
 data class Call(
         val method: String,
         val params: Map<String, String>

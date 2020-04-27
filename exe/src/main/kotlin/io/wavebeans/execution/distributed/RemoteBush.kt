@@ -5,6 +5,7 @@ import io.ktor.client.call.receive
 import io.ktor.client.engine.apache.Apache
 import io.ktor.client.request.get
 import io.ktor.client.statement.HttpStatement
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.encodeURLParameter
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.jvm.javaio.toInputStream
@@ -43,11 +44,19 @@ class RemoteBush(
     override fun call(podKey: PodKey, request: String): Future<PodCallResult> {
         val future = CompletableFuture<PodCallResult>()
         runBlocking {
-            client.get<HttpStatement>("$endpoint/bush/call?bushKey=$bushKey&podId=${podKey.id}" +
+            val req = "$endpoint/bush/call?bushKey=$bushKey&podId=${podKey.id}" +
                     "&podPartition=${podKey.partition}&request=${request.encodeURLParameter()}"
-            ).execute { response ->
-                val istream = response.receive<ByteReadChannel>().toInputStream()
-                future.complete(ExecutionConfig.podCallResultBuilder().fromInputStream(istream))
+            client.get<HttpStatement>(req).execute { response ->
+                try {
+                    if (response.status == HttpStatusCode.OK) {
+                        val istream = response.receive<ByteReadChannel>().toInputStream()
+                        future.complete(ExecutionConfig.podCallResultBuilder().fromInputStream(istream))
+                    } else {
+                        future.completeExceptionally(IllegalStateException("Non 200 code response during request: $req. Response: $response"))
+                    }
+                } catch (e: Throwable) {
+                    future.completeExceptionally(IllegalStateException("Unexpected error during request: $req. Response: $response", e))
+                }
             }
         }
         return future

@@ -17,13 +17,8 @@ class PlainPodCallResultBuilder : PodCallResultBuilder {
 class PlainPodCallResult(
         override val call: Call,
         override val exception: Throwable?,
-        val obj: Any?
+        override val obj: Any?
 ) : PodCallResult {
-
-    override fun isNull(): Boolean = obj == null
-
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> value(clazz: KClass<T>): T? = if (exception != null) throw exception else obj as T?
 
     override fun writeTo(outputStream: OutputStream) = throw UnsupportedOperationException("It doesn't support writing to stream")
 

@@ -1,14 +1,8 @@
 package io.wavebeans.execution
 
-import io.wavebeans.execution.pod.Pod
 import io.wavebeans.execution.pod.PodKey
 import mu.KotlinLogging
 import java.util.concurrent.ConcurrentHashMap
-
-data class PodInfo(
-        val bushKey: BushKey,
-        val pod: Pod
-)
 
 open class PodDiscovery protected constructor() {
 
@@ -18,18 +12,18 @@ open class PodDiscovery protected constructor() {
     }
 
     private val bushes = ConcurrentHashMap<BushKey, Bush>()
-    private val pods = ConcurrentHashMap<PodKey, PodInfo>()
+    private val pods = ConcurrentHashMap<PodKey, BushKey>()
 
     open fun bushFor(podKey: PodKey): BushKey {
-        val bushKey = pods[podKey]?.bushKey ?: throw IllegalStateException("Can't locate bush for pod with key $podKey")
+        val bushKey = pods[podKey] ?: throw IllegalStateException("Can't locate bush for pod with key $podKey")
         log.debug { "Requested bush for $podKey: $bushKey" }
         return bushKey
     }
 
-    open fun registerPod(bushKey: BushKey, pod: Pod) {
-        log.debug { "Registered pod ${pod.podKey} on Bush $bushKey" }
-        val value = pods.putIfAbsent(pod.podKey, PodInfo(bushKey, pod))
-        check(value == null) { "Pod with key `${pod.podKey}` already has value `$value`" }
+    open fun registerPod(bushKey: BushKey, podKey: PodKey) {
+        log.debug { "Registered pod $podKey on Bush $bushKey" }
+        val value = pods.putIfAbsent(podKey, bushKey)
+        check(value == null) { "Pod with key `$podKey` already has value `$value`" }
     }
 
     open fun registerBush(bushKey: BushKey, bush: Bush) {

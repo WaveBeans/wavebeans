@@ -12,10 +12,8 @@ import io.ktor.http.HttpStatusCode
 import io.wavebeans.execution.*
 import io.wavebeans.lib.io.StreamOutput
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
-import mu.KotlinLogging
 import java.util.concurrent.Future
 
 class DistributedOverseer(
@@ -38,9 +36,11 @@ class DistributedOverseer(
 
         HttpClient(Apache).use { client ->
             runBlocking {
+                val bushEndpoints = mutableListOf<BushEndpoint>()
                 distribution.entries.forEach { (location, pods) ->
                     // for now assume the code is accessible
                     // client.post("$location/code/upload")
+
                     // plant bush
                     val bushKey = newBushKey()
                     val response = client.post<HttpResponse>("$location/bush") {
@@ -52,8 +52,30 @@ class DistributedOverseer(
                     if (response.status != HttpStatusCode.OK)
                         throw IllegalStateException("Can't distribute pods for job $jobKey. Crew Gardener on $location " +
                                 "returned non 200 HTTP code. Response: $response ")
+
+                    bushEndpoints += BushEndpoint(bushKey, location, pods.map { it.key })
                 }
 
+                // register bush endpoints from other crew gardeners
+                val byLocation = bushEndpoints.groupBy { it.url }
+                byLocation.keys.forEach { location ->
+                    val request = RegisterBushEndpointsRequest(
+                            byLocation.filterKeys { it != location }
+                                    .map { it.value }
+                                    .flatten()
+                    )
+
+                    val response = client.post<HttpResponse>("$location/bush/endpoints") {
+                        header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                        body = json.stringify(RegisterBushEndpointsRequest.serializer(), request)
+                    }
+
+                    if (response.status != HttpStatusCode.OK)
+                        throw IllegalStateException("Can't register bush endpoints: $request. Crew Gardener on $location " +
+                                "returned non 200 HTTP code. Response: $response ")
+                }
+
+                // start the job for all crew gardeners
                 distribution.keys.forEach { location ->
                     val response = client.put<HttpResponse>("$location/job?jobKey=$jobKey")
                     if (response.status != HttpStatusCode.OK)
@@ -71,31 +93,3 @@ class DistributedOverseer(
 
 }
 
-class DistributionPlanner(
-        private val pods: List<PodRef>,
-        private val crewGardenersLocations: List<String>
-) {
-    companion object {
-        private val log = KotlinLogging.logger { }
-    }
-
-    fun distribute(): Map<String, List<PodRef>> {
-        val minimumCountPerLocation = pods.size / crewGardenersLocations.size
-        var additionalPodsCount = pods.size % crewGardenersLocations.size
-        val podsLeft = pods.toMutableList()
-
-        return crewGardenersLocations.map {
-            val count = minimumCountPerLocation + if (additionalPodsCount-- > 0) 1 else 0
-            val locationPods = (0 until count).map { podsLeft.removeFirst() }
-            it to locationPods
-        }.toMap().also {
-            log.info {
-                val json = Json(JsonConfiguration.Stable.copy(prettyPrint = true), TopologySerializer.paramsModule)
-                "Planned the following distribution:\n" +
-                        it.entries.joinToString("\n") {
-                            "${it.key} -> ${json.stringify(ListSerializer(PodRef.serializer()), it.value)}"
-                        }
-            }
-        }
-    }
-}

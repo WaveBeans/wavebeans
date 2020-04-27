@@ -15,6 +15,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime:$kotlinxSerializationRuntimeVersion")
 
     // distributed execution dependencies
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinxSerializationRuntimeVersion")
+
     implementation("commons-cli:commons-cli:1.4")
     implementation("ch.qos.logback:logback-classic:1.2.3")
 
