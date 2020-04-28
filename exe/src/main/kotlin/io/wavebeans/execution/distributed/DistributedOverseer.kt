@@ -1,95 +1,159 @@
 package io.wavebeans.execution.distributed
 
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.apache.Apache
-import io.ktor.client.request.header
-import io.ktor.client.request.post
-import io.ktor.client.request.put
-import io.ktor.client.statement.HttpResponse
-import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
-import io.ktor.http.HttpStatusCode
 import io.wavebeans.execution.*
 import io.wavebeans.lib.io.StreamOutput
-import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
-import java.util.concurrent.Future
+import mu.KotlinLogging
+import java.util.concurrent.*
 
 class DistributedOverseer(
         override val outputs: List<StreamOutput<out Any>>,
         private val crewGardenersLocations: List<String>,
-        partitionsCount: Int
+        partitionsCount: Int,
+        private val distributionPlanner: DistributionPlanner = EvenDistributionPlanner()
 ) : Overseer {
+
+    companion object {
+        private val log = KotlinLogging.logger { }
+    }
 
     private val topology = outputs.buildTopology()
             .partition(partitionsCount)
             .groupBeans()
+    private val jobKey = newJobKey()
+    private val locationFutures = ConcurrentHashMap<String, CompletableFuture<ExecutionResult>>()
+    private val crewGardenerCheckPool = Executors.newSingleThreadScheduledExecutor(NamedThreadFactory("crew-gardener-check"))
+    private val distribution by lazy {
+        distributionPlanner.distribute(topology.buildPods(), crewGardenersLocations).also {
+            log.info {
+                val json = Json(JsonConfiguration.Stable.copy(prettyPrint = true), TopologySerializer.paramsModule)
+                "Planned the even distribution:\n" +
+                        it.entries.joinToString("\n") {
+                            "${it.key} -> ${json.stringify(ListSerializer(PodRef.serializer()), it.value)}"
+                        }
+            }
+        }
+    }
 
+    private inner class CrewGardenerCheckJob(val location: String) : Runnable {
+
+        private val log = KotlinLogging.logger { }
+
+        private val future = CompletableFuture<ExecutionResult>()
+
+        private val crewGardenerService = CrewGardenerService.create(location)
+
+        fun start() {
+            locationFutures[location] = future
+            reschedule()
+        }
+
+        override fun run() {
+            try {
+                val result = fetchResult()
+                if (result != null) {
+                    if (result.exception != null) {
+                        log.info(result.exception) { "Completting with exception on $location for job $jobKey" }
+                        future.complete(ExecutionResult.error(result.exception))
+                    } else {
+                        log.info { "Completting successfully on $location for job $jobKey" }
+                        future.complete(ExecutionResult.success())
+                    }
+                } else {
+                    reschedule()
+                }
+            } catch (e: Throwable) {
+                log.info(e) { "Failed execution on $location for job $jobKey" }
+                future.completeExceptionally(e)
+            }
+        }
+
+        private fun reschedule() {
+            crewGardenerCheckPool.schedule(this, 1000, TimeUnit.MILLISECONDS)
+        }
+
+        fun fetchResult(): ExecutionResult? {
+            val response = crewGardenerService.jobStatus(jobKey).execute().throwIfError()
+            val result = response.body()
+                    ?: throw IllegalStateException("Expected non-empty response for request for job status on job $jobKey on $location")
+            return when {
+                result.all { it.status == FutureStatus.DONE || it.status == FutureStatus.CANCELLED || it.status == FutureStatus.FAILED }
+                        && result.any { it.status == FutureStatus.FAILED } -> {
+                    log.error { "Errors during job $jobKey execution:\n" + result.mapNotNull { it.exception }.joinToString("\n") }
+                    ExecutionResult.error(result.first { it.status == FutureStatus.FAILED }.exception!!.toException())
+                }
+                result.all { it.status == FutureStatus.DONE || it.status == FutureStatus.CANCELLED } -> {
+                    ExecutionResult.success()
+                }
+                else -> null
+            }
+        }
+    }
 
     override fun eval(sampleRate: Float): List<Future<ExecutionResult>> {
 
-        val distribution = DistributionPlanner(topology.buildPods(), crewGardenersLocations).distribute()
+        val bushEndpoints = plantBushes(distribution, jobKey, sampleRate)
+        bushEndpoints.forEach { CrewGardenerCheckJob(it.location).start() }
+        registerBushEndpoint(bushEndpoints)
+        startJob(distribution.keys, jobKey)
 
-        val jobKey = newJobKey()
-        val json = Json(JsonConfiguration.Stable, TopologySerializer.paramsModule)
+        return locationFutures.values.toList()
+    }
 
-        HttpClient(Apache).use { client ->
-            runBlocking {
-                val bushEndpoints = mutableListOf<BushEndpoint>()
-                distribution.entries.forEach { (location, pods) ->
-                    // for now assume the code is accessible
-                    // client.post("$location/code/upload")
+    private fun plantBushes(distribution: Map<String, List<PodRef>>, jobKey: JobKey, sampleRate: Float): List<BushEndpoint> {
+        val bushEndpoints = mutableListOf<BushEndpoint>()
+        distribution.entries.forEach { (location, pods) ->
+            // for now assume the code is accessible
+            // httpClient.post("$location/code/upload")
 
-                    // plant bush
-                    val bushKey = newBushKey()
-                    val response = client.post<HttpResponse>("$location/bush") {
-                        header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-                        val bushContent = JobContent(bushKey, pods)
-                        val plantBushRequest = PlantBushRequest(jobKey, bushContent, sampleRate)
-                        body = json.stringify(PlantBushRequest.serializer(), plantBushRequest)
-                    }
-                    if (response.status != HttpStatusCode.OK)
-                        throw IllegalStateException("Can't distribute pods for job $jobKey. Crew Gardener on $location " +
-                                "returned non 200 HTTP code. Response: $response ")
+            // plant bush
+            val bushKey = newBushKey()
+            val bushContent = JobContent(bushKey, pods)
+            val plantBushRequest = PlantBushRequest(jobKey, bushContent, sampleRate)
+            val crewGardenerService = CrewGardenerService.create(location)
+            crewGardenerService.plantBush(plantBushRequest).execute().throwIfError()
 
-                    bushEndpoints += BushEndpoint(bushKey, location, pods.map { it.key })
-                }
-
-                // register bush endpoints from other crew gardeners
-                val byLocation = bushEndpoints.groupBy { it.url }
-                byLocation.keys.forEach { location ->
-                    val request = RegisterBushEndpointsRequest(
-                            byLocation.filterKeys { it != location }
-                                    .map { it.value }
-                                    .flatten()
-                    )
-
-                    val response = client.post<HttpResponse>("$location/bush/endpoints") {
-                        header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-                        body = json.stringify(RegisterBushEndpointsRequest.serializer(), request)
-                    }
-
-                    if (response.status != HttpStatusCode.OK)
-                        throw IllegalStateException("Can't register bush endpoints: $request. Crew Gardener on $location " +
-                                "returned non 200 HTTP code. Response: $response ")
-                }
-
-                // start the job for all crew gardeners
-                distribution.keys.forEach { location ->
-                    val response = client.put<HttpResponse>("$location/job?jobKey=$jobKey")
-                    if (response.status != HttpStatusCode.OK)
-                        throw IllegalStateException("Can start job $jobKey. Crew Gardener on $location " +
-                                "returned non 200 HTTP code. Response: $response ")
-                }
-            }
+            bushEndpoints += BushEndpoint(bushKey, location, pods.map { it.key })
         }
-        return emptyList()
+        return bushEndpoints
+    }
+
+    private fun registerBushEndpoint(bushEndpoints: List<BushEndpoint>) {
+        // register bush endpoints from other crew gardeners
+        val byLocation = bushEndpoints.groupBy { it.location }
+        byLocation.keys.forEach { location ->
+            val request = RegisterBushEndpointsRequest(
+                    jobKey,
+                    byLocation.filterKeys { it != location }
+                            .map { it.value }
+                            .flatten()
+            )
+            CrewGardenerService.create(location).registerBushEndpoints(request).execute().throwIfError()
+        }
+
+    }
+
+    private fun startJob(locations: Set<String>, jobKey: JobKey) {
+        // start the job for all crew gardeners
+        locations.forEach { location ->
+            CrewGardenerService.create(location).startJob(jobKey).execute().throwIfError()
+        }
     }
 
     override fun close() {
-        TODO("Not yet implemented")
+        log.info { "Closing overseer for job $jobKey. Status of futures: $locationFutures" }
+        log.info { "Shutting down the Crew Gardener check pool" }
+        crewGardenerCheckPool.shutdown()
+        if (!crewGardenerCheckPool.awaitTermination(5000, TimeUnit.MILLISECONDS)) {
+            crewGardenerCheckPool.shutdownNow()
+        }
+        distribution.keys.forEach { location ->
+            log.info { "Stopping job $jobKey on Crew Gardener $location" }
+            CrewGardenerService.create(location).stopJob(jobKey).execute().throwIfError()
+        }
+        log.info { "Stopping http client" }
     }
-
 }
 

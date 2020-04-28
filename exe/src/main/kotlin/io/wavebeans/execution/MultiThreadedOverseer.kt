@@ -43,7 +43,7 @@ class MultiThreadedOverseer(
     }
 
     override fun close() {
-        controllers.forEach { it.cancel(jobKey) }
+        controllers.forEach { it.stop(jobKey) }
         log.info { "All controllers (amount=${controllers.size}) are closed" }
         ExecutionConfig.executionThreadPool().shutdown()
         if (!ExecutionConfig.executionThreadPool().awaitTermination(10000, TimeUnit.MILLISECONDS)) {

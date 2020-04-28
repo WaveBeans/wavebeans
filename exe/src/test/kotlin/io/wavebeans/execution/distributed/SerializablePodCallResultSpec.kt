@@ -155,7 +155,7 @@ object SerializablePodCallResultSpec : Spek({
             it("should be an exception") {
                 assertThat(result.exception)
                         .isNotNull()
-                        .isInstanceOf(PodCallException::class).all {
+                        .isInstanceOf(CallingException::class).all {
                             prop("clazz") { it.inherentExceptionClazz }.isEqualTo(IllegalStateException::class)
                             prop("message") { it.inherentMessage }.isEqualTo("test message")
                             prop("stackTrace") { it.inherentStackTrace }.matchesPredicate { it.any { it.contains(SerializablePodCallResultSpec::class.simpleName!!) } }
@@ -170,7 +170,7 @@ object SerializablePodCallResultSpec : Spek({
             it("should be an exception") {
                 assertThat(result.exception)
                         .isNotNull()
-                        .isInstanceOf(PodCallException::class).all {
+                        .isInstanceOf(CallingException::class).all {
                             prop("clazz") { it.inherentExceptionClazz }.isEqualTo(IllegalStateException::class)
                             prop("message") { it.inherentMessage }.isEqualTo("test message")
                             prop("stackTrace") { it.inherentStackTrace }.matchesPredicate { it.any { it.contains(SerializablePodCallResultSpec::class.simpleName!!) } }
@@ -190,7 +190,7 @@ object SerializablePodCallResultSpec : Spek({
             it("should be an error") {
                 assertThat(result.exception)
                         .isNotNull()
-                        .isInstanceOf(PodCallException::class).all {
+                        .isInstanceOf(CallingException::class).all {
                             prop("clazz") { it.inherentExceptionClazz }.isEqualTo(NotImplementedError::class)
                             prop("message") { it.inherentMessage }.isEqualTo("test message")
                             prop("stackTrace") { it.inherentStackTrace }.matchesPredicate { it.any { it.contains(SerializablePodCallResultSpec::class.simpleName!!) } }

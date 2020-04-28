@@ -65,7 +65,7 @@ object TableOutputSpec : Spek({
             repeat(500) { if (!writer.write()) throw IllegalStateException() }
         }
 
-        after {
+        afterGroup {
             writer.close()
         }
 
@@ -106,7 +106,7 @@ object TableOutputSpec : Spek({
                 (TableRegistry.instance().byName<Sample>(tableName) as InMemoryTimeseriesTableDriver).performCleanup()
             }
 
-            after {
+            afterGroup {
                 writer.close()
             }
 
@@ -158,7 +158,7 @@ object TableOutputSpec : Spek({
                     (TableRegistry.instance().byName<Sample>(tableName) as InMemoryTimeseriesTableDriver).performCleanup()
                 }
 
-                after {
+                afterGroup {
                     writer.close()
                 }
 
@@ -214,7 +214,7 @@ object TableOutputSpec : Spek({
                     (TableRegistry.instance().byName<Sample>(tableName) as InMemoryTimeseriesTableDriver).performCleanup()
                 }
 
-                after {
+                afterGroup {
                     writer.close()
                 }
 

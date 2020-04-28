@@ -28,7 +28,9 @@ import org.spekframework.spek2.style.specification.describe
 import java.io.File
 import java.io.OutputStream
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Future
 import kotlin.random.Random
+import kotlin.reflect.jvm.jvmName
 
 class CrewGardenerSpec : Spek({
     val testEngine = TestApplicationEngine(createTestEnvironment())
@@ -47,6 +49,7 @@ class CrewGardenerSpec : Spek({
     )
 
     Thread { crewGardener.start(waitAndClose = true) }.start()
+
     afterGroup {
         crewGardener.terminate()
         crewGardener.close()
@@ -55,8 +58,8 @@ class CrewGardenerSpec : Spek({
 
     val json = Json(JsonConfiguration.Stable, TopologySerializer.paramsModule)
 
-    with(testEngine) {
-        describe("Planting") {
+    describe("Planting") {
+        with(testEngine) {
             val pods1 = listOf(440.sine().trim(1000).toDevNull()).buildTopology().buildPods()
             val pods2 = listOf(880.sine().trim(500).toDevNull()).buildTopology().buildPods()
 
@@ -96,8 +99,10 @@ class CrewGardenerSpec : Spek({
                 verify(gardener).plantBush(eq(jobKey), eq(bushKey2), any(), eq(44100.0f))
             }
         }
+    }
 
-        describe("Describe job") {
+    describe("Describe job") {
+        with(testEngine) {
             it("should describe job") {
                 val jobKey = newJobKey()
                 val bushKey1 = newBushKey()
@@ -144,8 +149,10 @@ class CrewGardenerSpec : Spek({
                 }
             }
         }
+    }
 
-        describe("List jobs") {
+    describe("List jobs") {
+        with(testEngine) {
             it("should return list of jobs") {
                 val jobKey1 = newJobKey()
                 val jobKey2 = newJobKey()
@@ -162,8 +169,10 @@ class CrewGardenerSpec : Spek({
                 }
             }
         }
+    }
 
-        describe("Cancel job") {
+    describe("Cancel job") {
+        with(testEngine) {
             val jobKey = newJobKey()
 
             it("should cancel the job") {
@@ -176,11 +185,13 @@ class CrewGardenerSpec : Spek({
                         content().isNotNull().isEqualTo("OK")
                     }
                 }
-                verify(gardener).cancel(eq(jobKey))
+                verify(gardener).stop(eq(jobKey))
             }
         }
+    }
 
-        describe("Start job") {
+    describe("Start job") {
+        with(testEngine) {
             val jobKey = newJobKey()
 
             it("should cancel the job") {
@@ -196,8 +207,10 @@ class CrewGardenerSpec : Spek({
                 verify(gardener).start(eq(jobKey))
             }
         }
+    }
 
-        describe("Upload") {
+    describe("Upload") {
+        with(testEngine) {
             val jobKey = newJobKey()
             val jarFile by memoized {
                 compileCode(mapOf(
@@ -281,8 +294,11 @@ class CrewGardenerSpec : Spek({
                 }
             }
         }
+    }
 
-        describe("Register bush endpoints") {
+    describe("Register bush endpoints") {
+        with(testEngine) {
+            val jobKey = newJobKey()
             val bushKey1 = newBushKey()
             val bushKey2 = newBushKey()
             val podKey1 = PodKey(Random.nextInt(0, 10000000), 0)
@@ -293,6 +309,7 @@ class CrewGardenerSpec : Spek({
                 assertThat(handleRequest(Post, "/bush/endpoints") {
                     addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
                     val registerBushEndpointsRequest = RegisterBushEndpointsRequest(
+                            jobKey,
                             listOf(
                                     BushEndpoint(bushKey1, "http://127.0.0.1:40000", listOf(podKey1, podKey2)),
                                     BushEndpoint(bushKey2, "http://127.0.0.1:40001", listOf(podKey3, podKey4))
@@ -329,8 +346,84 @@ class CrewGardenerSpec : Spek({
                 assertThat(podDiscovery.bushFor(podKey4)).isEqualTo(bushKey2)
             }
         }
+    }
 
-        describe("Making calls to bushes") {
+    describe("Job status") {
+        with(testEngine) {
+            val jobKey = newJobKey()
+            val cancelledFuture = mock<Future<ExecutionResult>>()
+            whenever(cancelledFuture.isCancelled()).thenReturn(true)
+            whenever(gardener.getAllFutures(eq(jobKey))).thenReturn(
+                    listOf(
+                            // execution in progress
+                            CompletableFuture<ExecutionResult>(),
+                            // failed to execute
+                            CompletableFuture<ExecutionResult>()
+                                    .also { it.completeExceptionally(IllegalStateException("failed to execute")) },
+                            // finished with error
+                            CompletableFuture<ExecutionResult>()
+                                    .also { it.complete(ExecutionResult.error(IllegalArgumentException("finished with error", NotImplementedError("wat?")))) },
+                            // finished with success
+                            CompletableFuture<ExecutionResult>()
+                                    .also { it.complete(ExecutionResult.success()) },
+                            // execution cancelled
+                            cancelledFuture
+                    )
+            )
+
+            it("should return valid status") {
+                assertThat(handleRequest(Get, "/job/status?jobKey=$jobKey")).all {
+                    requestHandled().isTrue()
+                    response().all {
+                        status().isNotNull().isEqualTo(HttpStatusCode.OK)
+                        content().isNotNull()
+                                .prop("asJson") { json.parse(ListSerializer(JobStatus.serializer()), it) }.all {
+                                    eachIndexed(5) { status, i ->
+                                        when (i) {
+                                            0 -> status.all {
+                                                prop("status") { it.status }.isEqualTo(FutureStatus.IN_PROGRESS)
+                                                prop("exception") { it.exception }.isNull()
+                                            }
+                                            1 -> status.all {
+                                                prop("status") { it.status }.isEqualTo(FutureStatus.FAILED)
+                                                prop("exception") { it.exception }.isNotNull().all {
+                                                    prop("clazz") { it.clazz }.isEqualTo(IllegalStateException::class.jvmName)
+                                                    prop("message") { it.message }.isEqualTo("failed to execute")
+                                                    prop("cause") { it.cause }.isNull()
+                                                }
+                                            }
+                                            2 -> status.all {
+                                                prop("status") { it.status }.isEqualTo(FutureStatus.FAILED)
+                                                prop("exception") { it.exception }.isNotNull().all {
+                                                    prop("clazz") { it.clazz }.isEqualTo(IllegalArgumentException::class.jvmName)
+                                                    prop("message") { it.message }.isEqualTo("finished with error")
+                                                    prop("cause") { it.cause }.isNotNull().all {
+                                                        prop("clazz") { it.clazz }.isEqualTo(NotImplementedError::class.jvmName)
+                                                        prop("message") { it.message }.isEqualTo("wat?")
+                                                    }
+                                                }
+                                            }
+                                            3 -> status.all {
+                                                prop("status") { it.status }.isEqualTo(FutureStatus.DONE)
+                                                prop("exception") { it.exception }.isNull()
+                                            }
+                                            4 -> status.all {
+                                                prop("status") { it.status }.isEqualTo(FutureStatus.CANCELLED)
+                                                prop("exception") { it.exception }.isNull()
+                                            }
+                                        }
+
+                                    }
+                                }
+                    }
+                }
+
+            }
+        }
+    }
+
+    describe("Making calls to bushes") {
+        with(testEngine) {
             val bushKey = newBushKey()
             val bush = mock<LocalBush>()
             podDiscovery.registerBush(bushKey, bush)
@@ -355,10 +448,11 @@ class CrewGardenerSpec : Spek({
                     }
                 }
             }
-
         }
+    }
 
-        describe("Terminating") {
+    describe("Terminating") {
+        with(testEngine) {
             /* Though don't actually terminate as in real app. */
             it("should terminate") {
                 assertThat(handleRequest(Get, "/terminate")).all {
@@ -366,7 +460,7 @@ class CrewGardenerSpec : Spek({
                     response().all {
                         status().isNotNull().isEqualTo(HttpStatusCode.OK)
                         content().isNotNull().isEqualTo("Terminating")
-                        verify(gardener).cancelAll()
+                        verify(gardener).stopAll()
                     }
                 }
             }

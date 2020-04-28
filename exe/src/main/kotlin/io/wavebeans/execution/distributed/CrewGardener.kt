@@ -28,7 +28,6 @@ import io.ktor.util.getOrFail
 import io.wavebeans.execution.*
 import io.wavebeans.execution.config.ExecutionConfig
 import io.wavebeans.execution.medium.MediumBuilder
-import io.wavebeans.execution.medium.PlainMediumBuilder
 import io.wavebeans.execution.medium.PodCallResultBuilder
 import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.lib.WaveBeansClassLoader
@@ -46,6 +45,7 @@ import java.lang.Exception
 import java.net.InetAddress
 import java.net.URL
 import java.net.URLClassLoader
+import java.rmi.Remote
 import java.util.*
 import java.util.concurrent.*
 import java.util.jar.JarFile
@@ -77,7 +77,8 @@ fun main(args: Array<String>) {
                 config.toMap().entries.joinToString("\n") { "${it.key} = ${it.value}" }
     }
 
-    CrewGardener(
+
+    val crewGardener = CrewGardener(
             advertisingHostAddress = config[CrewGardenderConfig.advertisingHostAddress],
             listeningPortRange = config[CrewGardenderConfig.listeningPortRange],
             startingUpAttemptsCount = config[CrewGardenderConfig.startingUpAttemptsCount],
@@ -85,7 +86,15 @@ fun main(args: Array<String>) {
             callTimeoutMillis = config[CrewGardenderConfig.callTimeoutMillis],
             onServerShutdownGracePeriodMillis = config[CrewGardenderConfig.onServerShutdownGracePeriodMillis],
             onServerShutdownTimeoutMillis = config[CrewGardenderConfig.onServerShutdownTimeoutMillis]
-    ).start(waitAndClose = true)
+    )
+
+    Runtime.getRuntime().addShutdownHook(Thread {
+        log.info { "Got interruption signal. Terminating Crew Gardener" }
+        crewGardener.terminate()
+    })
+
+    crewGardener.start(waitAndClose = true)
+
 }
 
 class CrewGardenerClassLoader(parent: ClassLoader) : URLClassLoader(emptyArray(), parent) {
@@ -121,6 +130,7 @@ class CrewGardener(
     private lateinit var server: ApplicationEngine
     private val jobClassLoaders = ConcurrentHashMap<JobKey, CrewGardenerClassLoader>()
     private val jobFutures = ConcurrentHashMap<JobKey, MutableList<Future<ExecutionResult>>>()
+    private val remoteBushes = ConcurrentHashMap<JobKey, MutableList<RemoteBush>>()
     private var listeningPort: Int = 0
 
     fun listeningPort(): Int =
@@ -189,8 +199,12 @@ class CrewGardener(
 
     fun terminate() {
         log.info { "Terminating" }
-        gardener.cancelAll()
+        gardener.stopAll()
         terminate.countDown()
+        remoteBushes.values.flatten().forEach {
+            it.close()
+            podDiscovery.unregisterBush(it.bushKey)
+        }
     }
 
     fun plantBush(request: PlantBushRequest) {
@@ -211,8 +225,13 @@ class CrewGardener(
         gardener.start(jobKey)
     }
 
-    fun cancelJob(jobKey: JobKey) {
-        gardener.cancel(jobKey)
+    fun stopJob(jobKey: JobKey) {
+        gardener.stop(jobKey)
+        remoteBushes[jobKey]?.forEach {
+            it.close()
+            podDiscovery.unregisterBush(it.bushKey)
+        }
+        remoteBushes.remove(jobKey)
     }
 
     fun job(): List<JobKey> {
@@ -231,9 +250,13 @@ class CrewGardener(
     }
 
     fun registerBushEndpoints(registerBushEndpointsRequest: RegisterBushEndpointsRequest) {
+        remoteBushes.putIfAbsent(registerBushEndpointsRequest.jobKey, CopyOnWriteArrayList())
+        val remoteBushes = remoteBushes.getValue(registerBushEndpointsRequest.jobKey)
         registerBushEndpointsRequest.bushEndpoints.forEach { bushEndpoint ->
             val bushKey = bushEndpoint.bushKey
-            podDiscovery.registerBush(bushKey, RemoteBush(bushKey, bushEndpoint.url))
+            val remoteBush = RemoteBush(bushKey, bushEndpoint.location)
+            podDiscovery.registerBush(bushKey, remoteBush)
+            remoteBushes.add(remoteBush)
             bushEndpoint.pods.forEach { podDiscovery.registerPod(bushKey, it) }
         }
     }
@@ -244,7 +267,43 @@ class CrewGardener(
         val podCallResult = bush.call(podKey, request).get(callTimeoutMillis, TimeUnit.MILLISECONDS)
         return podCallResult::writeTo
     }
+
+    fun status(jobKey: JobKey): List<JobStatus> {
+        return gardener.getAllFutures(jobKey).map { future ->
+            when {
+                future.isDone -> {
+                    try {
+                        val result = future.get(5000, TimeUnit.MILLISECONDS)
+                        JobStatus(
+                                jobKey,
+                                if (result.exception == null) FutureStatus.DONE else FutureStatus.FAILED,
+                                result.exception?.let { ExceptionObj.create(it) }
+                        )
+                    } catch (e: ExecutionException) {
+                        JobStatus(jobKey, FutureStatus.FAILED, ExceptionObj.create(e.cause ?: e))
+                    }
+                }
+                future.isCancelled -> JobStatus(jobKey, FutureStatus.CANCELLED, null)
+                else -> JobStatus(jobKey, FutureStatus.IN_PROGRESS, null)
+            }
+        }
+    }
 }
+
+enum class FutureStatus {
+    IN_PROGRESS,
+    DONE,
+    CANCELLED,
+    FAILED
+}
+
+@Serializable
+data class JobStatus(
+        @Serializable(with = UUIDSerializer::class)
+        val jobKey: JobKey,
+        val status: FutureStatus,
+        val exception: ExceptionObj?
+)
 
 @Serializable
 data class JobContent(
@@ -263,6 +322,8 @@ data class PlantBushRequest(
 
 @Serializable
 data class RegisterBushEndpointsRequest(
+        @Serializable(with = UUIDSerializer::class)
+        val jobKey: JobKey,
         val bushEndpoints: List<BushEndpoint>
 )
 
@@ -270,7 +331,7 @@ data class RegisterBushEndpointsRequest(
 data class BushEndpoint(
         @Serializable(with = UUIDSerializer::class)
         val bushKey: BushKey,
-        val url: String,
+        val location: String,
         val pods: List<PodKey>
 )
 
@@ -328,9 +389,13 @@ fun Application.crewGardenerApi(crewGardener: CrewGardener) {
         get("/jobs") {
             call.respond(json.stringify(ListSerializer(UUIDSerializer), crewGardener.job()))
         }
+        get("/job/status") {
+            val jobKey = call.request.queryParameters.getOrFail<String>("jobKey").toJobKey()
+            call.respond(json.stringify(ListSerializer(JobStatus.serializer()), crewGardener.status(jobKey)))
+        }
         delete("/job") {
             val jobKey = call.request.queryParameters.getOrFail<String>("jobKey").toJobKey()
-            crewGardener.cancelJob(jobKey)
+            crewGardener.stopJob(jobKey)
             call.respond("OK")
         }
         put("/job") {

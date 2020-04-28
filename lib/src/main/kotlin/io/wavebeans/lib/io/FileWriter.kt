@@ -49,26 +49,30 @@ abstract class FileWriter<T : Any>(
         file.close()
         log.debug { "[$this] Temporary file $tmpFile closed" }
 
-        FileOutputStream(File(uri)).use { f ->
-            val header = header()
-            if (header != null) f.write(header)
+        if (tmpFile.exists()) {
+            FileOutputStream(File(uri)).use { f ->
+                val header = header()
+                if (header != null) f.write(header)
 
-            FileInputStream(tmpFile).use { tmpF ->
-                val buf = ByteArray(bufferSize)
-                do {
-                    val r = tmpF.read(buf)
-                    if (r != -1) f.write(buf, 0, r)
-                    log.trace { "[$this] Copied other $bufferSize bytes from $tmpFile to file with uri=$uri" }
-                } while (r != -1)
+                FileInputStream(tmpFile).use { tmpF ->
+                    val buf = ByteArray(bufferSize)
+                    do {
+                        val r = tmpF.read(buf)
+                        if (r != -1) f.write(buf, 0, r)
+                        log.trace { "[$this] Copied other $bufferSize bytes from $tmpFile to file with uri=$uri" }
+                    } while (r != -1)
+                }
+
+                val footer = footer()
+                if (footer != null) f.write(footer)
             }
-
-            val footer = footer()
-            if (footer != null) f.write(footer)
+            log.debug { "[$this] Temporary file $tmpFile copied over to file with uri=$uri" }
+            tmpFile.delete()
+            log.debug { "[$this] Temporary file $tmpFile deleted" }
+        } else {
+            log.debug { "[$this] Temporary file is not found. Seems everything is closed already." }
         }
-        log.debug { "[$this] Temporary file $tmpFile copied over to file with uri=$uri" }
 
-        tmpFile.delete()
-        log.debug { "[$this] Temporary file $tmpFile deleted" }
     }
 
 }

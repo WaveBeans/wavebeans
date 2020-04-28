@@ -48,15 +48,15 @@ class Gardener {
         return activeJobs[jobKey] ?: throw IllegalArgumentException("Job with key $jobKey is not found")
     }
 
-    fun cancel(jobKey: JobKey) {
+    fun stop(jobKey: JobKey) {
         activeJobs[jobKey]?.forEach { descriptor ->
             descriptor.bush.close()
             log.info { "JOB[$jobKey] BUSH[${descriptor.bushKey}] Closed. " }
         }
     }
 
-    fun cancelAll() {
-        activeJobs.keys.forEach { cancel(it) }
+    fun stopAll() {
+        activeJobs.keys.forEach { stop(it) }
     }
 
     fun getAllFutures(jobKey: JobKey): List<Future<ExecutionResult>> =

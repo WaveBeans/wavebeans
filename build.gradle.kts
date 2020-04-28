@@ -59,6 +59,7 @@ allprojects {
     }
 
     tasks.test {
+        systemProperty("SPEK_TIMEOUT", 0)
         useJUnitPlatform {
             includeEngines("spek2")
         }
