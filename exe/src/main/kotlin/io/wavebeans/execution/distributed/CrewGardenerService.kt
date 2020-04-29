@@ -6,12 +6,16 @@ import io.wavebeans.execution.JobKey
 import io.wavebeans.execution.TopologySerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
+import okhttp3.ConnectionPool
 import okhttp3.MediaType
+import okhttp3.OkHttpClient
 import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.http.*
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeUnit.*
 
 fun <T> Response<T>.throwIfError(): Response<T> {
     if (!this.isSuccessful) throw IllegalStateException("Request is on 200: $this")
@@ -21,11 +25,20 @@ fun <T> Response<T>.throwIfError(): Response<T> {
 interface CrewGardenerService {
 
     companion object {
+
+        private val connectionPool = ConnectionPool(10, 30, MINUTES)
+
         fun create(endpoint: String): CrewGardenerService {
             val json = Json(JsonConfiguration.Stable, TopologySerializer.paramsModule)
+            val client = OkHttpClient.Builder()
+                    .callTimeout(60000, MILLISECONDS)
+                    .connectTimeout(60000, MILLISECONDS)
+                    .connectionPool(connectionPool)
+                    .build()
             val retrofit = Retrofit.Builder()
                     .baseUrl(endpoint)
                     .addConverterFactory(json.asConverterFactory(MediaType.get("application/json")))
+                    .client(client)
                     .build()
             return retrofit.create(CrewGardenerService::class.java)
         }
