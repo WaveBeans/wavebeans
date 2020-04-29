@@ -3,7 +3,10 @@ package io.wavebeans.execution.distributed
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
+import assertk.assertions.support.fail
 import io.wavebeans.execution.SingleThreadedOverseer
+import io.wavebeans.execution.eachIndexed
+import io.wavebeans.execution.newJobKey
 import io.wavebeans.lib.io.magnitudeToCsv
 import io.wavebeans.lib.io.sine
 import io.wavebeans.lib.io.toCsv
@@ -18,6 +21,8 @@ import org.spekframework.spek2.Spek
 import org.spekframework.spek2.lifecycle.CachingMode.*
 import org.spekframework.spek2.style.specification.describe
 import java.io.File
+import java.io.IOException
+import java.lang.Thread.sleep
 import java.util.concurrent.Executors
 import kotlin.math.abs
 
@@ -28,9 +33,21 @@ object DistributedOverseerSpec : Spek({
 
     pool.submit { startCrewGardener(40001) }
     pool.submit { startCrewGardener(40002) }
-    Thread.sleep(5000) // wait for the start, need to get rid of it
 
     val crewGardenersLocations = listOf("http://127.0.0.1:40001", "http://127.0.0.1:40002")
+
+    crewGardenersLocations.forEach {
+        while (true) {
+            try {
+                if (CrewGardenerService.create(it).status().execute().isSuccessful)
+                    break
+            } catch (e: IOException) {
+                // continue trying
+            }
+            sleep(1)
+        }
+    }
+
     afterGroup {
         try {
             crewGardenersLocations.forEach { location ->
@@ -143,6 +160,17 @@ object DistributedOverseerSpec : Spek({
                 val exceptions = extractExceptions(runCall)
                 assertThat(exceptions).isEmpty()
             }
+            it("should contain 11 rows in output file") {
+                assertThat(file.readLines()).all {
+                    eachIndexed(11) { r, idx ->
+                        when (idx) {
+                            0 -> r.isEqualTo("index,value")
+                            in 1..10 -> r.isEqualTo("${idx - 1},${idx - 1}")
+                            else -> r.fail("index < 11", "index=$idx")
+                        }
+                    }
+                }
+            }
         }
 
         describe("Error runner") {
@@ -159,9 +187,9 @@ object DistributedOverseerSpec : Spek({
                 runCall = runner.run(inheritIO = false)
                 assertThat(runCall.exitCode).isEqualTo(0)
             }
-            it("shouldn't throw any exceptions to output") {
+            it("should throw two exceptions to output") {
                 val exceptions = extractExceptions(runCall)
-                assertThat(exceptions).isEmpty()
+                assertThat(exceptions).size().isEqualTo(2)
             }
         }
     }

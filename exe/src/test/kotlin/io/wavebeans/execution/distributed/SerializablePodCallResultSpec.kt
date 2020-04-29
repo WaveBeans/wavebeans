@@ -8,6 +8,7 @@ import io.wavebeans.execution.medium.PodCallResult
 import io.wavebeans.execution.medium.value
 import io.wavebeans.lib.Sample
 import io.wavebeans.lib.sampleOf
+import io.wavebeans.lib.stream.window.Window
 import kotlinx.serialization.Serializable
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
@@ -144,6 +145,17 @@ object SerializablePodCallResultSpec : Spek({
             it("should have non empty obj") { assertThat(result.obj).isNotNull() }
             it("should have empty exception") { assertThat(result.exception).isNull() }
             it("should return valid value") { assertThat(result.value<SerializableMedium>()).isEqualTo(obj) }
+        }
+
+        describe("Wrapping windows") {
+
+            val obj = Window<Int>(6, 2, listOf(1, 2, 3, 4, 5, 6)) { 0 }
+
+            val result by memoized { result(obj) }
+
+            it("should have non empty obj") { assertThat(result.obj).isNotNull() }
+            it("should have empty exception") { assertThat(result.exception).isNull() }
+            it("should return valid value") { assertThat(result.value<Window<Int>>()).isEqualTo(obj) }
         }
     }
 

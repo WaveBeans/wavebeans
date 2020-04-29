@@ -4,6 +4,7 @@ import kotlinx.serialization.Serializable
 import io.wavebeans.lib.BeanParams
 import io.wavebeans.lib.SinkBean
 import io.wavebeans.lib.WaveBeansClassLoader
+import kotlin.random.Random
 import kotlin.reflect.full.isSubclassOf
 
 interface BeanGroup
@@ -15,18 +16,16 @@ data class BeanGroupParams(
 ) : BeanParams()
 
 interface GroupIdResolver {
-    fun id(): Int
+    fun id(): Long
 }
 
-internal class DefaultGroupIdResolver(topology: Topology) : GroupIdResolver {
+internal class DefaultGroupIdResolver : GroupIdResolver {
 
-    private var idSeq = topology.refs.map { it.id }.max() ?: 0
-
-    override fun id(): Int = ++idSeq
+    override fun id(): Long = System.nanoTime() / 1_000_000_000 * 1_000_000_000 + Random.nextLong(0, 1_000_000_000)
 
 }
 
-fun Topology.groupBeans(idResolver: GroupIdResolver = DefaultGroupIdResolver(this)): Topology {
+fun Topology.groupBeans(idResolver: GroupIdResolver = DefaultGroupIdResolver()): Topology {
     val beanLinksTo = this.links.groupBy { it.to }
     val beanLinksFrom = this.links.groupBy { it.from }
     val beans = this.refs.groupBy { it.id }
@@ -95,8 +94,8 @@ fun Topology.groupBeans(idResolver: GroupIdResolver = DefaultGroupIdResolver(thi
             }
 
     // create new bean structure
-    val replacedBeans = mutableMapOf<Int, BeanRef>() // locate the group which absorbed the bean by its id
-    val groups = mutableMapOf<Set<Int>, Int>() // locate group by its internal ids
+    val replacedBeans = mutableMapOf<Long, BeanRef>() // locate the group which absorbed the bean by its id
+    val groups = mutableMapOf<Set<Long>, Long>() // locate group by its internal ids
     val beanRefs = strokes
             .filter { it.isNotEmpty() }
             .distinct()

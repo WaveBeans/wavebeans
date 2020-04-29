@@ -13,10 +13,10 @@ import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 
 object TopologySpec : Spek({
-    val ids = mutableMapOf<AnyBean, Int>()
+    val ids = mutableMapOf<AnyBean, Long>()
 
     val idResolver = object : IdResolver {
-        override fun id(bean: AnyBean): Int = ids[bean] ?: throw IllegalStateException("$bean is not found")
+        override fun id(bean: AnyBean): Long = ids[bean] ?: throw IllegalStateException("$bean is not found")
     }
 
     beforeGroup {
@@ -25,7 +25,7 @@ object TopologySpec : Spek({
 
 
     fun <T : AnyBean> T.n(id: Int): T {
-        ids[this] = id
+        ids[this] = id.toLong()
         return this
     }
 
@@ -56,7 +56,7 @@ object TopologySpec : Spek({
         it("should have connection between 4 and 3 nodes") { assertThat(topology.links).contains(BeanLink(4, 3)) }
 
         it("should have reference to input 1 node") {
-            assertThat(topology.refs.firstOrNull { it.id == 1 })
+            assertThat(topology.refs.firstOrNull { it.id == 1L })
                     .isNotNull()
                     .all {
                         matchesPredicate { it.type.endsWith("SineGeneratedInput") }
@@ -66,7 +66,7 @@ object TopologySpec : Spek({
         }
 
         it("should have reference to input 2 node") {
-            assertThat(topology.refs.firstOrNull { it.id == 3 })
+            assertThat(topology.refs.firstOrNull { it.id == 3L })
                     .isNotNull()
                     .all {
                         matchesPredicate { it.type.endsWith("SineGeneratedInput") }
@@ -76,7 +76,7 @@ object TopologySpec : Spek({
         }
 
         it("should have reference to output 1 node") {
-            assertThat(topology.refs.firstOrNull { it.id == 6 })
+            assertThat(topology.refs.firstOrNull { it.id == 6L })
                     .isNotNull()
                     .all {
                         matchesPredicate { it.type.endsWith("CsvStreamOutput") }
@@ -86,7 +86,7 @@ object TopologySpec : Spek({
         }
 
         it("should have reference to output 1 node") {
-            assertThat(topology.refs.firstOrNull { it.id == 8 })
+            assertThat(topology.refs.firstOrNull { it.id == 8L })
                     .isNotNull()
                     .all {
                         matchesPredicate { it.type.endsWith("CsvStreamOutput") }
@@ -154,19 +154,19 @@ object TopologySpec : Spek({
             assertThat(topology.refs.distinctBy { it.id }).isEqualTo(topology.refs)
         }
         it("Link following from 5 to 2 should have order 0") {
-            assertThat(topology.links.first { it.from == 5 && it.to == 2 })
+            assertThat(topology.links.first { it.from == 5L && it.to == 2L })
                     .prop("order") { it.order }
                     .isEqualTo(0)
         }
 
         it("Link following from 5 to 4 should have order 1") {
-            assertThat(topology.links.first { it.from == 5 && it.to == 4 })
+            assertThat(topology.links.first { it.from == 5L && it.to == 4L })
                     .prop("order") { it.order }
                     .isEqualTo(1)
         }
 
         it("All others links should have order 0") {
-            assertThat(topology.links.filterNot { it.from == 5 && (it.to == 4 || it.to == 2) })
+            assertThat(topology.links.filterNot { it.from == 5L && (it.to == 4L || it.to == 2L) })
                     .each { nodeLink ->
                         nodeLink.prop("order") { it.order }
                                 .isEqualTo(0)

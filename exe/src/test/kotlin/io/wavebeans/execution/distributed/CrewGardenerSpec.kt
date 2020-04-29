@@ -301,10 +301,10 @@ class CrewGardenerSpec : Spek({
             val jobKey = newJobKey()
             val bushKey1 = newBushKey()
             val bushKey2 = newBushKey()
-            val podKey1 = PodKey(Random.nextInt(0, 10000000), 0)
-            val podKey2 = PodKey(Random.nextInt(0, 10000000), 0)
-            val podKey3 = PodKey(Random.nextInt(0, 10000000), 0)
-            val podKey4 = PodKey(Random.nextInt(0, 10000000), 0)
+            val podKey1 = PodKey(Random.nextLong(0, 10000000), 0)
+            val podKey2 = PodKey(Random.nextLong(0, 10000000), 0)
+            val podKey3 = PodKey(Random.nextLong(0, 10000000), 0)
+            val podKey4 = PodKey(Random.nextLong(0, 10000000), 0)
             it("should register") {
                 assertThat(handleRequest(Post, "/bush/endpoints") {
                     addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
@@ -428,7 +428,7 @@ class CrewGardenerSpec : Spek({
             val bush = mock<LocalBush>()
             podDiscovery.registerBush(bushKey, bush)
 
-            val podId = 0
+            val podId = 0L
             val podPartition = 0
             val request = "someMethod?param1=value&param2=3"
 

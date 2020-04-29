@@ -44,7 +44,7 @@ interface CrewGardenerService {
     @GET("/bush/call")
     fun call(
             @Query("bushKey") bushKey: BushKey,
-            @Query("podId") podId: Int,
+            @Query("podId") podId: Long,
             @Query("podPartition") podPartition: Int,
             @Query("request") request: String
     ): Call<ResponseBody>
@@ -83,4 +83,8 @@ interface CrewGardenerService {
     fun registerBushEndpoints(
             @Body request: RegisterBushEndpointsRequest
     ): Call<ResponseBody>
+
+    @GET("/status")
+    fun status(): Call<ResponseBody>
+
 }

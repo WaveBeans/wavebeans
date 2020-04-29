@@ -40,12 +40,12 @@ fun newTestSplittingPod(seq: List<Int>, partitionCount: Int): SplittingPod<Sampl
     ) {}
 }
 
-infix fun Int.to(to: Int) = BeanLink(this, to)
+infix fun Int.to(to: Int) = BeanLink(this.toLong(), to.toLong())
 
 infix fun Double.to(to: Double) = BeanLink(
-        from = this.toInt(),
+        from = this.toLong(),
         fromPartition = (this * 10.0).toInt() % 10,
-        to = to.toInt(),
+        to = to.toLong(),
         toPartition = (to * 10.0).toInt() % 10
 )
 

@@ -350,6 +350,9 @@ fun Application.crewGardenerApi(crewGardener: CrewGardener) {
     install(CallLogging)
 
     routing {
+        get("/status") {
+            call.respond("OK")
+        }
         post("/bush") {
             val plantBushRequest = call.receive(PlantBushRequest::class)
             log.debug { "/bush\nRequest body: $plantBushRequest" }
@@ -365,7 +368,7 @@ fun Application.crewGardenerApi(crewGardener: CrewGardener) {
         get("/bush/call") {
             val bushKey = call.request.queryParameters.getOrFail<String>("bushKey").toBushKey()
             val podKey = PodKey(
-                    call.request.queryParameters.getOrFail<Int>("podId"),
+                    call.request.queryParameters.getOrFail<Long>("podId"),
                     call.request.queryParameters.getOrFail<Int>("podPartition")
             )
             val request = call.request.queryParameters.getOrFail<String>("request")

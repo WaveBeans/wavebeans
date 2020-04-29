@@ -30,7 +30,7 @@ object LocalBushSpec : Spek({
 
             describe("Bush should call pod method. 1 pod per bush") {
 
-                val podKey = PodKey(random.nextInt() + 2, 0)
+                val podKey = PodKey(random.nextLong() + 2, 0)
                 val pod = object : Pod {
 
                     override fun isFinished(): Boolean = throw UnsupportedOperationException()

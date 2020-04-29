@@ -13,7 +13,7 @@ fun run(outputs: List<StreamOutput<*>>) {
     val exceptions = distributed.eval(44100.0f).mapNotNull { it.get().exception }
     println(">>>> EXCEPTIONS")
     exceptions.forEach { e ->
-        e.printStackTrace()
+        e.printStackTrace(System.out)
         println("----SPLITTER----")
     }
     println("<<<< EXCEPTIONS")

@@ -3,28 +3,28 @@ package io.wavebeans.execution
 import io.wavebeans.lib.AnyBean
 import kotlinx.serialization.PolymorphicSerializer
 import kotlinx.serialization.Serializable
-import io.wavebeans.lib.Bean
 import io.wavebeans.lib.BeanParams
 import io.wavebeans.lib.io.StreamOutput
+import kotlin.random.Random
 import kotlin.reflect.KClass
 
 @Serializable
 data class BeanRef(
-        val id: Int,
+        val id: Long,
         val type: String,
         @Serializable(with = PolymorphicSerializer::class) val params: BeanParams,
         val partition: Int = 0
 ) {
     companion object {
-        fun create(id: Int, type: KClass<out Any>, parameters: BeanParams, partition: Int = 0): BeanRef =
+        fun create(id: Long, type: KClass<out Any>, parameters: BeanParams, partition: Int = 0): BeanRef =
                 BeanRef(id, type.qualifiedName!!, parameters, partition)
     }
 }
 
 @Serializable
 data class BeanLink(
-        val from: Int,
-        val to: Int,
+        val from: Long,
+        val to: Long,
         val fromPartition: Int = 0,
         val toPartition: Int = 0,
         val order: Int = 0
@@ -41,7 +41,7 @@ data class Topology(
         internal fun build(outputs: List<StreamOutput<*>>, idResolver: IdResolver): Topology {
             val refs = mutableListOf<BeanRef>()
             val links = mutableListOf<BeanLink>()
-            fun iterateOverNodes(node: AnyBean, sourceNodeId: Int?, order: Int) {
+            fun iterateOverNodes(node: AnyBean, sourceNodeId: Long?, order: Int) {
                 val id = idResolver.id(node)
 
                 refs += BeanRef.create(id, node::class, node.parameters)
@@ -65,24 +65,16 @@ data class Topology(
     }
 }
 
-fun List<StreamOutput<*>>.buildTopology(idResolver: IdResolver = IntSequenceIdResolver()): Topology = Topology.build(this, idResolver)
+fun List<StreamOutput<*>>.buildTopology(idResolver: IdResolver = TimestampSequenceIdResolver()): Topology = Topology.build(this, idResolver)
 
 interface IdResolver {
-    fun id(bean: AnyBean): Int
+    fun id(bean: AnyBean): Long
 }
 
-internal class IntSequenceIdResolver : IdResolver {
+internal class TimestampSequenceIdResolver : IdResolver {
 
-    companion object {
-        private var idSeq = 0
-    }
-
-    private val nodesRef = mutableMapOf<Int, Bean<*>>()
-
-    override fun id(bean: AnyBean): Int {
-        val id = nodesRef.entries.firstOrNull { it.value === bean }?.key ?: ++idSeq
-        nodesRef[id] = bean
-        return id
+    override fun id(bean: AnyBean): Long {
+        return System.nanoTime() / 1_000_000_000 * 1_000_000_000 + Random.nextLong(0, 1_000_000_000)
     }
 
 }

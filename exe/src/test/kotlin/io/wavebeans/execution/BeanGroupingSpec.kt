@@ -344,27 +344,27 @@ object BeanGroupingSpec : Spek({
 
 })
 
-private val ids = mutableMapOf<AnyBean, Int>()
+private val ids = mutableMapOf<AnyBean, Long>()
 
 private val idResolver = object : IdResolver {
-    override fun id(bean: AnyBean): Int = ids[bean] ?: throw IllegalStateException("$bean is not found")
+    override fun id(bean: AnyBean): Long = ids[bean] ?: throw IllegalStateException("$bean is not found")
 }
 
-private fun <T : AnyBean> T.n(id: Int): T {
+private fun <T : AnyBean> T.n(id: Long): T {
     ids[this] = id
     return this
 }
 
 private fun groupIdResolver() = object : GroupIdResolver {
-    var groupIdSeq = 100
-    override fun id(): Int = groupIdSeq++
+    var groupIdSeq = 100L
+    override fun id(): Long = groupIdSeq++
 }
 
 private fun Assert<List<BeanRef>>.bean(id: Int): Assert<BeanRef?> =
-        this.prop("[$id]") { it.singleOrNull { it.id == id } }
+        this.prop("[$id]") { it.singleOrNull { it.id == id.toLong() } }
 
 private fun Assert<List<BeanRef>>.bean(id: Double): Assert<BeanRef?> =
-        this.prop("[$id]") { it.singleOrNull { it.id == id.toInt() && it.partition == (id * 10.0).toInt() % 10 } }
+        this.prop("[$id]") { it.singleOrNull { it.id == id.toLong() && it.partition == (id * 10.0).toInt() % 10 } }
 
 private fun Assert<List<BeanRef>>.group(id: Int): Assert<BeanRef> =
         this.bean(id)
@@ -388,7 +388,7 @@ private fun Assert<BeanRef>.groupRefs(): Assert<List<BeanRef>> =
                 .prop("groupedBeansRefs") { it.beanRefs }
 
 private fun Assert<List<BeanRef>>.ids(): Assert<List<Int>> =
-        this.transform { list -> list.map { it.id } }
+        this.transform { list -> list.map { it.id.toInt() } }
 
 private fun Assert<BeanRef>.groupLinks(): Assert<List<BeanLink>> =
         this.prop("params") { it.params }

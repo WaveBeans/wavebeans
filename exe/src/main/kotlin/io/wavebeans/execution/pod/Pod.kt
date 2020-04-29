@@ -9,7 +9,7 @@ import java.io.Closeable
 import java.lang.reflect.InvocationTargetException
 
 @Serializable
-data class PodKey(val id: Int, val partition: Int)
+data class PodKey(val id: Long, val partition: Int)
 
 interface Pod : Closeable {
 
