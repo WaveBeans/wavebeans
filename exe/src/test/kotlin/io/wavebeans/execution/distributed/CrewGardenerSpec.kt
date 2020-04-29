@@ -387,19 +387,19 @@ class CrewGardenerSpec : Spek({
                                             1 -> status.all {
                                                 prop("status") { it.status }.isEqualTo(FutureStatus.FAILED)
                                                 prop("exception") { it.exception }.isNotNull().all {
-                                                    prop("clazz") { it.clazz }.isEqualTo(IllegalStateException::class.jvmName)
-                                                    prop("message") { it.message }.isEqualTo("failed to execute")
-                                                    prop("cause") { it.cause }.isNull()
+                                                    prop("clazz") { it.descriptor.clazz }.isEqualTo(IllegalStateException::class.jvmName)
+                                                    prop("message") { it.descriptor.message }.isEqualTo("failed to execute")
+                                                    prop("causes") { it.causes.fromProtoValue() }.isNotNull().isEmpty()
                                                 }
                                             }
                                             2 -> status.all {
                                                 prop("status") { it.status }.isEqualTo(FutureStatus.FAILED)
                                                 prop("exception") { it.exception }.isNotNull().all {
-                                                    prop("clazz") { it.clazz }.isEqualTo(IllegalArgumentException::class.jvmName)
-                                                    prop("message") { it.message }.isEqualTo("finished with error")
-                                                    prop("cause") { it.cause }.isNotNull().all {
-                                                        prop("clazz") { it.clazz }.isEqualTo(NotImplementedError::class.jvmName)
-                                                        prop("message") { it.message }.isEqualTo("wat?")
+                                                    prop("clazz") { it.descriptor.clazz }.isEqualTo(IllegalArgumentException::class.jvmName)
+                                                    prop("message") { it.descriptor.message }.isEqualTo("finished with error")
+                                                    prop("cause") { it.causes.fromProtoValue() }.isNotNull().eachIndexed(1) { v, _ ->
+                                                        v.prop("clazz") { it.clazz }.isEqualTo(NotImplementedError::class.jvmName)
+                                                        v.prop("message") { it.message }.isEqualTo("wat?")
                                                     }
                                                 }
                                             }

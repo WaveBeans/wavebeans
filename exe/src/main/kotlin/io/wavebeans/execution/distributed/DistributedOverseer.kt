@@ -85,7 +85,7 @@ class DistributedOverseer(
                 result.all { it.status == FutureStatus.DONE || it.status == FutureStatus.CANCELLED || it.status == FutureStatus.FAILED }
                         && result.any { it.status == FutureStatus.FAILED } -> {
                     log.error { "Errors during job $jobKey execution:\n" + result.mapNotNull { it.exception }.joinToString("\n") }
-                    ExecutionResult.error(result.first { it.status == FutureStatus.FAILED }.exception!!.toException())
+                    ExecutionResult.error(result.first { it.status == FutureStatus.FAILED }.exception?.toException() ?: IllegalStateException("Unknown error"))
                 }
                 result.all { it.status == FutureStatus.DONE || it.status == FutureStatus.CANCELLED } -> {
                     ExecutionResult.success()
@@ -144,7 +144,6 @@ class DistributedOverseer(
             )
             CrewGardenerService.create(location).registerBushEndpoints(request).execute().throwIfError()
         }
-
     }
 
     private fun startJob(locations: Set<String>, jobKey: JobKey) {

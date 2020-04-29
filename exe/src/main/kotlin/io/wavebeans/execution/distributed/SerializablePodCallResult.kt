@@ -1,11 +1,15 @@
 package io.wavebeans.execution.distributed
 
 import io.wavebeans.execution.Call
+import io.wavebeans.execution.distributed.proto.ByteArrayProtoValue
+import io.wavebeans.execution.distributed.proto.ProtoValue
+import io.wavebeans.execution.distributed.proto.toProtoValue
 import io.wavebeans.execution.medium.PodCallResult
 import io.wavebeans.execution.medium.PodCallResultBuilder
 import io.wavebeans.lib.WaveBeansClassLoader
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.protobuf.ProtoId
 import java.io.InputStream
 import java.io.OutputStream
 import kotlin.reflect.full.createInstance
@@ -30,14 +34,15 @@ class SerializablePodCallResultBuilder : PodCallResultBuilder {
         val obj = if (serializerClazzRef != nullType) {
             val cl = WaveBeansClassLoader.classForName(serializerClazzRef).kotlin
             val serializer = (cl.objectInstance ?: cl.createInstance()) as KSerializer<*>
-            container.objBuffer?.toObj(serializer)
+            container.objBuffer.fromProtoValue()?.toObj(serializer)
         } else {
             null
         }
+        val newObj = if (obj is ProtoValue<*>) obj.fromProtoValue() else obj
         return SerializablePodCallResult(
-                obj,
+                newObj,
                 container.call,
-                container.exception?.toException()
+                container.exception.fromProtoValue()?.toException()
         )
     }
 }
@@ -49,9 +54,22 @@ class SerializablePodCallResult(
 ) : PodCallResult {
 
     override fun writeTo(outputStream: OutputStream) {
-        val (serializer, buf) = if (obj != null) {
-            val s = SerializableRegistry.find(obj::class)
-            Pair(s::class.jvmName, obj.toByteArray(s))
+        val newObj = when (obj) {
+            is Long? -> obj.toProtoValue()
+            is Double? -> obj.toProtoValue()
+            is Float? -> obj.toProtoValue()
+            is Int? -> obj.toProtoValue()
+            is Boolean? -> obj.toProtoValue()
+            is ByteArray? -> obj.toProtoValue()
+            is DoubleArray? -> obj.toProtoValue()
+            is FloatArray? -> obj.toProtoValue()
+            is IntArray? -> obj.toProtoValue()
+            is LongArray? -> obj.toProtoValue()
+            else -> obj
+        }
+        val (serializer, buf) = if (newObj != null) {
+            val s = SerializableRegistry.find(newObj::class)
+            Pair(s::class.jvmName, newObj.toByteArray(s))
         } else {
             Pair(nullType, byteArrayOf())
         }
@@ -59,8 +77,8 @@ class SerializablePodCallResult(
         val containerBuf = SerializablePodCallResultContainer(
                 call,
                 serializer,
-                buf,
-                exception?.let { ExceptionObj.create(it) }
+                buf.toProtoValue(),
+                exception?.let { ExceptionObj.create(it) }.toProtoValue()
         ).toByteArray(SerializablePodCallResultContainer.serializer())
 
         outputStream.write(containerBuf)
@@ -74,8 +92,12 @@ class SerializablePodCallResult(
 
 @Serializable
 internal class SerializablePodCallResultContainer(
+        @ProtoId(1)
         val call: Call,
+        @ProtoId(2)
         val objSerializerRef: String,
-        val objBuffer: ByteArray?,
-        val exception: ExceptionObj?
+        @ProtoId(3)
+        val objBuffer: ByteArrayProtoValue,
+        @ProtoId(4)
+        val exception: ExceptionObjProtoValue
 )

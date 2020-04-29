@@ -1,13 +1,16 @@
 package io.wavebeans.execution
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.protobuf.ProtoId
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 
 @Serializable
 data class Call(
+        @ProtoId(1)
         val method: String,
+        @ProtoId(2)
         val params: Map<String, String>
 ) {
     companion object {

@@ -35,7 +35,7 @@ object ListObjectSerializer : KSerializer<List<Any>> {
             }
         }
         dec.endStructure(descriptor)
-        return list!!
+        return list ?: emptyList()
     }
 
     override fun serialize(encoder: Encoder, value: List<Any>) {
