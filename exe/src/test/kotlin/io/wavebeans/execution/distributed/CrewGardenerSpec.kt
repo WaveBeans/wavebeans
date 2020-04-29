@@ -477,32 +477,4 @@ private fun Assert<TestApplicationCall>.requestHandled() = prop("requestHandled"
 
 private fun Assert<TestApplicationCall>.response() = prop("response") { it.response }
 
-private fun compileCode(codeFiles: Map<String, String>): File {
-    val jarFile = File(createTempDir("wavebeans-script"), "wavebeans.jar")
-    val tempDir = createTempDir("wavebeans-test-code").also { it.deleteOnExit() }
-    val scriptFiles = codeFiles.entries.map { (name, content) ->
-        File(tempDir, name).also { it.writeText(content) }
-    }
-    val kotlinc = "kotlinc"
-    val kotlinHome = System.getenv("KOTLIN_HOME")
-            ?.takeIf { File("$it/$kotlinc").exists() }
-            ?: System.getenv("PATH")
-                    .split(":")
-                    .firstOrNull { File("$it/$kotlinc").exists() }
-            ?: throw IllegalStateException("$kotlinc is not located, make sure it is available via either" +
-                    " PATH or KOTLIN_HOME environment variable")
-
-    val compileCall = CommandRunner(
-            "$kotlinHome/$kotlinc",
-            "-d", jarFile.absolutePath, *scriptFiles.map { it.absolutePath }.toTypedArray(),
-            "-cp", System.getProperty("java.class.path"),
-            "-jvm-target", "1.8"
-    ).call()
-
-    if (compileCall.exitCode != 0) {
-        throw IllegalStateException("Can't compile the script. \n${String(compileCall.output)}")
-    }
-
-    return jarFile
-}
 

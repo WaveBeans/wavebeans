@@ -21,7 +21,7 @@ open class PodDiscovery protected constructor() {
     }
 
     open fun registerPod(bushKey: BushKey, podKey: PodKey) {
-        log.debug { "Registered pod $podKey on Bush $bushKey" }
+        log.debug { "Registering pod $podKey on Bush $bushKey" }
         val value = pods.putIfAbsent(podKey, bushKey)
         check(value == null) { "Pod with key `$podKey` already has value `$value`" }
     }

@@ -23,7 +23,7 @@ object WaveBeansClassLoader {
                 "Setting new class loader $classLoader from:\n" +
                         Thread.currentThread().stackTrace
                                 .drop(1)
-                                .joinToString("\n") { it.toString() }
+                                .joinToString("\n") { "\t at $it" }
             }
             classLoaders += classLoader
         }

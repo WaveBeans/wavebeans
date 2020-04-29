@@ -2,10 +2,7 @@ package io.wavebeans.execution.distributed
 
 import assertk.all
 import assertk.assertThat
-import assertk.assertions.isEmpty
-import assertk.assertions.isEqualTo
-import assertk.assertions.isGreaterThan
-import assertk.assertions.size
+import assertk.assertions.*
 import io.wavebeans.execution.SingleThreadedOverseer
 import io.wavebeans.lib.io.magnitudeToCsv
 import io.wavebeans.lib.io.sine
@@ -16,7 +13,9 @@ import io.wavebeans.lib.stream.plus
 import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.stream.window.hamming
 import io.wavebeans.lib.stream.window.window
+import mu.KotlinLogging
 import org.spekframework.spek2.Spek
+import org.spekframework.spek2.lifecycle.CachingMode.*
 import org.spekframework.spek2.style.specification.describe
 import java.io.File
 import java.util.concurrent.Executors
@@ -24,6 +23,7 @@ import kotlin.math.abs
 
 object DistributedOverseerSpec : Spek({
 
+    val log = KotlinLogging.logger {}
     val pool = Executors.newCachedThreadPool()
 
     pool.submit { startCrewGardener(40001) }
@@ -89,37 +89,81 @@ object DistributedOverseerSpec : Spek({
             }
         }
     }
+
+    describe("Running code not accessible by Crew Gardener") {
+        val file = File.createTempFile("testAppOut", ".csv")
+
+        fun codeFile(name: String): Pair<String, String> {
+            return name to this::class.java.getResourceAsStream("/testApp/$name").reader().readText()
+                    .replace(
+                            "/[*]FILE[*]/.*/[*]FILE[*]/".toRegex(),
+                            "File(\"${file.absolutePath}\")"
+                    )
+                    .replace(
+                            "/[*]CREW_GARDENER_LIST[*]/.*/[*]CREW_GARDENER_LIST[*]/".toRegex(),
+                            "listOf(\"http://127.0.0.1:40001\", \"http://127.0.0.1:40002\")"
+                    )
+                    .also { log.info { "$name:\n$it" } }
+        }
+
+        fun extractExceptions(runCall: CommandResult): List<String> {
+            return String(runCall.output)
+                    .replace(
+                            ".*>>>> EXCEPTIONS(.*)<<<< EXCEPTIONS.*".toRegex(RegexOption.DOT_MATCHES_ALL),
+                            "$1"
+                    )
+                    .trim()
+                    .split("----SPLITTER----")
+                    .filter { it.isNotEmpty() }
+        }
+
+        val jarFile by memoized(SCOPE) {
+            compileCode(mapOf(
+                    codeFile("Runner.kt"),
+                    codeFile("Success.kt"),
+                    codeFile("Error.kt")
+            ))
+        }
+
+        describe("Successful runner") {
+            val runner by memoized(SCOPE) {
+                CommandRunner(
+                        javaCmd(),
+                        "-cp", System.getProperty("java.class.path") + ":" + jarFile.absolutePath,
+                        "io.wavebeans.test.app.SuccessKt"
+                )
+            }
+
+            lateinit var runCall: CommandResult
+            it("should execute") {
+                runCall = runner.run(inheritIO = false)
+                assertThat(runCall.exitCode).isEqualTo(0)
+            }
+            it("shouldn't throw any exceptions to output") {
+                val exceptions = extractExceptions(runCall)
+                assertThat(exceptions).isEmpty()
+            }
+        }
+
+        describe("Error runner") {
+            val runner by memoized(SCOPE) {
+                CommandRunner(
+                        javaCmd(),
+                        "-cp", System.getProperty("java.class.path") + ":" + jarFile.absolutePath,
+                        "io.wavebeans.test.app.ErrorKt"
+                )
+            }
+
+            lateinit var runCall: CommandResult
+            it("should execute") {
+                runCall = runner.run(inheritIO = false)
+                assertThat(runCall.exitCode).isEqualTo(0)
+            }
+            it("shouldn't throw any exceptions to output") {
+                val exceptions = extractExceptions(runCall)
+                assertThat(exceptions).isEmpty()
+            }
+        }
+    }
 })
 
-fun startCrewGardener(port: Int) {
-    val confFile = File.createTempFile("crew-gardener-config", ".conf").also { it.deleteOnExit() }
-    confFile.writeText("""
-        crewGardenderConfig {
-            advertisingHostAddress: 127.0.0.1
-            listeningPortRange: {start: $port, end: $port}
-            threadsNumber: 1
-        }
-    """.trimIndent())
-
-    val java = "java"
-    val javaHome = System.getenv("JAVA_HOME")
-            ?.takeIf { File("$it/$java").exists() }
-            ?: System.getenv("PATH")
-                    .split(":")
-                    .firstOrNull { File("$it/$java").exists() }
-            ?: throw IllegalStateException("$java is not located, make sure it is available via either" +
-                    " PATH or JAVA_HOME environment variable")
-
-
-    val runner = CommandRunner(
-            "$javaHome/$java",
-            "-cp", System.getProperty("java.class.path"),
-            "io.wavebeans.execution.distributed.CrewGardenerKt", confFile.absolutePath
-    )
-    val runCall = runner.call()
-
-    if (runCall.exitCode != 0) {
-        throw IllegalStateException("Can't compile the script. \n${String(runCall.output)}")
-    }
-
-}

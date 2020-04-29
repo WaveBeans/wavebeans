@@ -6,19 +6,16 @@ import io.wavebeans.execution.JobKey
 import io.wavebeans.execution.TopologySerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
-import okhttp3.ConnectionPool
-import okhttp3.MediaType
-import okhttp3.OkHttpClient
-import okhttp3.ResponseBody
+import okhttp3.*
 import retrofit2.Call
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.http.*
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.TimeUnit.*
+import java.util.concurrent.TimeUnit.MILLISECONDS
+import java.util.concurrent.TimeUnit.MINUTES
 
 fun <T> Response<T>.throwIfError(): Response<T> {
-    if (!this.isSuccessful) throw IllegalStateException("Request is on 200: $this")
+    if (!this.isSuccessful) throw IllegalStateException("Unsuccessful request: $this")
     return this
 }
 
@@ -55,13 +52,13 @@ interface CrewGardenerService {
     @GET("/terminate")
     fun terminate(): Call<ResponseBody>
 
-    @DELETE("/job")
-    fun stopJob(
+    @PUT("/job")
+    fun startJob(
             @Query("jobKey") jobKey: JobKey
     ): Call<ResponseBody>
 
-    @PUT("/job")
-    fun startJob(
+    @DELETE("/job")
+    fun stopJob(
             @Query("jobKey") jobKey: JobKey
     ): Call<ResponseBody>
 
@@ -69,6 +66,13 @@ interface CrewGardenerService {
     fun jobStatus(
             @Query("jobKey") jobKey: JobKey
     ): Call<List<JobStatus>>
+
+    @Multipart
+    @POST("/code/upload")
+    fun uploadCode(
+            @Part("jobKey") jobKey: RequestBody,
+            @Part code: MultipartBody.Part
+    ): Call<ResponseBody>
 
     @POST("/bush")
     fun plantBush(

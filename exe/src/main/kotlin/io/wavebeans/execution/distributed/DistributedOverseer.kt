@@ -6,6 +6,9 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
 import mu.KotlinLogging
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
+import java.io.File
 import java.util.concurrent.*
 
 class DistributedOverseer(
@@ -105,14 +108,23 @@ class DistributedOverseer(
     private fun plantBushes(distribution: Map<String, List<PodRef>>, jobKey: JobKey, sampleRate: Float): List<BushEndpoint> {
         val bushEndpoints = mutableListOf<BushEndpoint>()
         distribution.entries.forEach { (location, pods) ->
-            // for now assume the code is accessible
-            // httpClient.post("$location/code/upload")
+            val crewGardenerService = CrewGardenerService.create(location)
+            // upload code to the crew gardener
+            System.getProperty("java.class.path").split(":")
+                    .filter { it.endsWith("code.jar") }
+                    .forEach { jarFileName ->
+                        log.info { "Uploading $jarFileName to $location" }
+                        val jarFile = File(jarFileName)
+                        val file = RequestBody.create(null, jarFile)
+                        val code = MultipartBody.Part.createFormData("code", jarFile.name, file)
+                        val jk = RequestBody.create(null, jobKey.toString())
+                        crewGardenerService.uploadCode(jk, code).execute().throwIfError()
+                    }
 
             // plant bush
             val bushKey = newBushKey()
             val bushContent = JobContent(bushKey, pods)
             val plantBushRequest = PlantBushRequest(jobKey, bushContent, sampleRate)
-            val crewGardenerService = CrewGardenerService.create(location)
             crewGardenerService.plantBush(plantBushRequest).execute().throwIfError()
 
             bushEndpoints += BushEndpoint(bushKey, location, pods.map { it.key })
