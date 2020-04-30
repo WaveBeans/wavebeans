@@ -9,7 +9,11 @@ import mu.KotlinLogging
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import java.io.File
+import java.io.FileOutputStream
 import java.util.concurrent.*
+import java.util.jar.JarEntry
+import java.util.jar.JarFile
+import java.util.jar.JarOutputStream
 
 class DistributedOverseer(
         override val outputs: List<StreamOutput<out Any>>,
@@ -20,6 +24,7 @@ class DistributedOverseer(
 
     companion object {
         private val log = KotlinLogging.logger { }
+        private val myClasses = startUpClasses().toSet()
     }
 
     private val topology = outputs.buildTopology()
@@ -85,7 +90,8 @@ class DistributedOverseer(
                 result.all { it.status == FutureStatus.DONE || it.status == FutureStatus.CANCELLED || it.status == FutureStatus.FAILED }
                         && result.any { it.status == FutureStatus.FAILED } -> {
                     log.error { "Errors during job $jobKey execution:\n" + result.mapNotNull { it.exception }.joinToString("\n") }
-                    ExecutionResult.error(result.first { it.status == FutureStatus.FAILED }.exception?.toException() ?: IllegalStateException("Unknown error"))
+                    ExecutionResult.error(result.first { it.status == FutureStatus.FAILED }.exception?.toException()
+                            ?: IllegalStateException("Unknown error"))
                 }
                 result.all { it.status == FutureStatus.DONE || it.status == FutureStatus.CANCELLED } -> {
                     ExecutionResult.success()
@@ -109,17 +115,55 @@ class DistributedOverseer(
         val bushEndpoints = mutableListOf<BushEndpoint>()
         distribution.entries.forEach { (location, pods) ->
             val crewGardenerService = CrewGardenerService.create(location)
-            // upload code to the crew gardener
-            System.getProperty("java.class.path").split(":")
-                    .filter { it.endsWith("code.jar") }
-                    .forEach { jarFileName ->
-                        log.info { "Uploading $jarFileName to $location" }
-                        val jarFile = File(jarFileName)
-                        val file = RequestBody.create(null, jarFile)
-                        val code = MultipartBody.Part.createFormData("code", jarFile.name, file)
-                        val jk = RequestBody.create(null, jobKey.toString())
-                        crewGardenerService.uploadCode(jk, code).execute().throwIfError()
+
+            // upload required code to the crew gardener
+            val gardenerCodeClasses = crewGardenerService.codeClasses().execute().body()
+                    ?: throw IllegalStateException("Can't fetch code classes from $location")
+
+            val absentClasses = myClasses - gardenerCodeClasses.toSet()
+            log.info { "Uploading following classes to crew gardener on $location:\n" + absentClasses.joinToString("\n") }
+
+            // pack all absent classes as single jar file
+            val jarDir = createTempDir("code").also { it.deleteOnExit() }
+            absentClasses.groupBy { it.location }.forEach { (l, classDescList) ->
+                val loc = File(l)
+                when {
+                    loc.isDirectory -> {
+                        classDescList.forEach {
+                            File(loc, it.classPath).copyTo(File(jarDir, it.classPath))
+                        }
                     }
+                    loc.extension == "jar" -> {
+                        val jarFile = JarFile(loc)
+                        jarFile.entries().asSequence()
+                                .filter { ClassDesc(l, it.name, it.crc, it.size) in classDescList }
+                                .forEach {
+                                    val outputFile = File(jarDir, it.name)
+                                    outputFile.parentFile.mkdirs()
+                                    outputFile.createNewFile()
+                                    val buf = jarFile.getInputStream(it).readBytes()
+                                    outputFile.writeBytes(buf)
+                                }
+                    }
+                    else -> throw UnsupportedOperationException("$loc is not supported")
+                }
+            }
+            val jarFile = File(createTempDir("code-jar"), "code.jar")
+            JarOutputStream(FileOutputStream(jarFile)).use { jos ->
+                absentClasses.forEach {
+                    val entry = JarEntry(it.classPath)
+                    jos.putNextEntry(entry)
+                    jos.write(File(jarDir, it.classPath).readBytes())
+                    jos.closeEntry()
+                }
+            }
+
+            // upload code file
+            log.info { "Uploading $jarFile to $location" }
+            val file = RequestBody.create(null, jarFile)
+            val code = MultipartBody.Part.createFormData("code", jarFile.name, file)
+            val jk = RequestBody.create(null, jobKey.toString())
+            crewGardenerService.uploadCode(jk, code).execute().throwIfError()
 
             // plant bush
             val bushKey = newBushKey()

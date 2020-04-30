@@ -29,6 +29,10 @@ object WaveBeansClassLoader {
         }
     }
 
+    fun removeClassLoader(classLoader: ClassLoader): Boolean {
+        return classLoaders.remove(classLoader)
+    }
+
     fun classForName(name: String): Class<*> {
         val i = classLoaders.iterator()
         while (i.hasNext()) {

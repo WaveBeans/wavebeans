@@ -209,6 +209,27 @@ class CrewGardenerSpec : Spek({
         }
     }
 
+    describe("Startup classes") {
+        with(testEngine) {
+            it("should enlist startup classes") {
+                assertThat(handleRequest(Get, "/code/classes") {
+                    addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                }).all {
+                    requestHandled().isTrue()
+                    response().all {
+                        status().isNotNull().isEqualTo(HttpStatusCode.OK)
+                        content().isNotNull().all {
+                            prop("json") { json.parse(ListSerializer(ClassDesc.serializer()), it) }.all {
+                                isNotEmpty()
+                                matchesPredicate { it.any { it.classPath.contains("wavebeans")}  }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     describe("Upload") {
         with(testEngine) {
             val jobKey = newJobKey()

@@ -74,6 +74,9 @@ interface CrewGardenerService {
             @Part code: MultipartBody.Part
     ): Call<ResponseBody>
 
+    @GET("/code/classes")
+    fun codeClasses(): Call<List<ClassDesc>>
+
     @POST("/bush")
     fun plantBush(
             @Body request: PlantBushRequest

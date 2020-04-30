@@ -45,7 +45,6 @@ import java.lang.Exception
 import java.net.InetAddress
 import java.net.URL
 import java.net.URLClassLoader
-import java.rmi.Remote
 import java.util.*
 import java.util.concurrent.*
 import java.util.jar.JarFile
@@ -126,6 +125,7 @@ class CrewGardener(
     val tempDir = createTempDir("wavebeans-crew-gardener")
 
     private val terminate = CountDownLatch(1)
+    private val startupClasses = startUpClasses()
 
     private lateinit var server: ApplicationEngine
     private val jobClassLoaders = ConcurrentHashMap<JobKey, CrewGardenerClassLoader>()
@@ -232,6 +232,7 @@ class CrewGardener(
             podDiscovery.unregisterBush(it.bushKey)
         }
         remoteBushes.remove(jobKey)
+        jobClassLoaders.remove(jobKey)?.let { WaveBeansClassLoader.removeClassLoader(it) }
     }
 
     fun job(): List<JobKey> {
@@ -288,6 +289,8 @@ class CrewGardener(
             }
         }
     }
+
+    fun startupClasses(): List<ClassDesc> = startupClasses
 }
 
 enum class FutureStatus {
@@ -380,7 +383,6 @@ fun Application.crewGardenerApi(crewGardener: CrewGardener) {
                 call.respond(HttpStatusCode.InternalServerError, e.message ?: "Internal error")
             }
         }
-
         get("/job") {
             val jobKey = call.request.queryParameters.getOrFail<String>("jobKey").toJobKey()
             val jobContents = crewGardener.job(jobKey)
@@ -406,12 +408,10 @@ fun Application.crewGardenerApi(crewGardener: CrewGardener) {
             crewGardener.startJob(jobKey)
             call.respond("OK")
         }
-
         get("/terminate") {
             crewGardener.terminate()
             call.respond("Terminating")
         }
-
         post("/code/upload") {
             val multipart = call.receiveMultipart()
             lateinit var jobKey: JobKey
@@ -431,6 +431,9 @@ fun Application.crewGardenerApi(crewGardener: CrewGardener) {
                 part.dispose()
             }
             call.respond("OK")
+        }
+        get("/code/classes") {
+            call.respond(crewGardener.startupClasses())
         }
     }
 }

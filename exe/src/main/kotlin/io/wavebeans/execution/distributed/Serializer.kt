@@ -13,7 +13,7 @@ var serializationLogTracing = false
 
 private val log = KotlinLogging.logger {}
 
-internal fun <T> T.toByteArray(serializer: KSerializer<T>): ByteArray =
+internal fun <T: Any> T.toByteArray(serializer: KSerializer<T>): ByteArray =
         try {
             val buf = ProtoBuf(encodeDefaults = false).dump(serializer, this)
             val result = if (serializationCompression) {
@@ -36,7 +36,8 @@ internal fun <T> T.toByteArray(serializer: KSerializer<T>): ByteArray =
                 buf
             }
             log.trace {
-                "[serializer=$serializer,serializationCompression=$serializationCompression,serializationCompressionLevel=$serializationCompressionLevel] $this" +
+                "[serializer=$serializer,serializationCompression=$serializationCompression," +
+                        "serializationCompressionLevel=$serializationCompressionLevel] ${this::class}" +
                         " serialized (${result.size}bytes)" +
                         if (serializationLogTracing)
                             ", as hex:\n" + result.asSequence()
