@@ -13,7 +13,7 @@ var serializationLogTracing = false
 
 private val log = KotlinLogging.logger {}
 
-internal fun <T: Any> T.toByteArray(serializer: KSerializer<T>): ByteArray =
+internal fun <T: Any> T.asByteArray(serializer: KSerializer<T>): ByteArray =
         try {
             val buf = ProtoBuf(encodeDefaults = false).dump(serializer, this)
             val result = if (serializationCompression) {
@@ -52,10 +52,11 @@ internal fun <T: Any> T.toByteArray(serializer: KSerializer<T>): ByteArray =
             result
 
         } catch (e: Throwable) {
+            if (e is OutOfMemoryError) throw e // most likely no resources to handle. Just fail
             throw IllegalStateException("Can't serialize with `$serializer` object: $this", e)
         }
 
-internal fun <T> ByteArray.toObj(serializer: KSerializer<T>): T =
+internal fun <T> ByteArray.asObj(serializer: KSerializer<T>): T =
         try {
             val buf = if (serializationCompression) {
                 val baos = ByteArrayOutputStream()
@@ -72,6 +73,7 @@ internal fun <T> ByteArray.toObj(serializer: KSerializer<T>): T =
             }
             ProtoBuf(encodeDefaults = false).load(serializer, buf)
         } catch (e: Throwable) {
+            if (e is OutOfMemoryError) throw e // most likely no resources to handle. Just fail
             throw IllegalStateException("Can't deserialize with `$serializer` the buffer " +
                     "as hex (${this.size}bytes):\n${
                     this.asSequence()

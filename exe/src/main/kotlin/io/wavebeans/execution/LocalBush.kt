@@ -45,6 +45,7 @@ class LocalBush(
                     tickFinished[pod]!!.complete(ExecutionResult.success())
                 }
             } catch (e: Throwable) {
+                if (e is OutOfMemoryError) throw e // most likely no resources to handle. Just fail
                 log.debug(e) { "Tick pod $pod has finished due to error" }
                 tickFinished[pod]!!.complete(ExecutionResult.error(e))
             }
@@ -97,6 +98,7 @@ class LocalBush(
             log.trace { "[$id][$this] Call to pod=$podKey, request=$request took ${System.currentTimeMillis() - start}ms" }
             retVal
         } catch (e: Throwable) {
+            if (e is OutOfMemoryError) throw e // most likely no resources to handle. Just fail
             log.info(e) {
                 "[$id][$this] Call to pod=$podKey, request=$request " +
                         "took ${System.currentTimeMillis() - start}ms and ended up with error"

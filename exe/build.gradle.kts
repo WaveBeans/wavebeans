@@ -1,7 +1,13 @@
 plugins {
     val kotlinVersion: String by System.getProperties()
+    application
 
     id("org.jetbrains.kotlin.plugin.serialization") version kotlinVersion
+}
+
+application {
+    mainClassName = "io.wavebeans.execution.distributed.CrewGardenerKt"
+    applicationName = "crew-gardener"
 }
 
 dependencies {

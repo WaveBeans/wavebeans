@@ -1,15 +1,15 @@
 package io.wavebeans.cli
 
 import assertk.assertThat
-import assertk.assertions.isNotEmpty
-import assertk.assertions.isTrue
-import assertk.assertions.matches
+import assertk.assertions.*
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.features.ClientRequestException
 import io.ktor.client.request.get
 import io.wavebeans.cli.WaveBeansCli.Companion.name
 import io.wavebeans.cli.WaveBeansCli.Companion.options
+import io.wavebeans.execution.PodDiscovery
+import io.wavebeans.execution.distributed.CrewGardener
 import io.wavebeans.lib.WaveBeansClassLoader
 import kotlinx.coroutines.runBlocking
 import org.apache.commons.cli.DefaultParser
@@ -22,7 +22,6 @@ import java.lang.Thread.sleep
 import java.net.URL
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.SECONDS
 
 object WaveBeansCliSpec : Spek({
@@ -74,7 +73,7 @@ object WaveBeansCliSpec : Spek({
             }
         }
 
-        describe("Short-living from executed on distributed environment") {
+        describe("Short-living from executed on multi-threaded environment") {
             val scriptFile = File.createTempFile("test", "kts").also { it.deleteOnExit() }
             val file = File.createTempFile("test", "csv").also { it.deleteOnExit() }
             scriptFile.writeBytes("440.sine().trim(1).toCsv(\"file://${file.absolutePath}\").out()".toByteArray())
@@ -84,7 +83,7 @@ object WaveBeansCliSpec : Spek({
                             name,
                             "--execute-file", scriptFile.absolutePath,
                             "--time",
-                            "--run-mode", "local-distributed",
+                            "--run-mode", "multi-thread",
                             "--threads", "1",
                             "--partitions", "1"
                     )),
@@ -94,7 +93,58 @@ object WaveBeansCliSpec : Spek({
             out.close()
 
             it("should execute") { assertThat(cli.tryScriptExecution()).isTrue() }
-            it("should generate non empty file") { assertThat(file.readText()).isNotEmpty() }
+            it("should generate non empty file") { assertThat(file.readLines()).size().isGreaterThan(1) }
+            it("should output time to console") {
+                assertThat(String(out.toByteArray())).matches(Regex("\\d+\\.\\d+sec\\s*"))
+            }
+        }
+
+        describe("Short-living from executed on distributed environment") {
+
+            val portRange = 40000..40001
+            val gardeners = portRange.map {
+                CrewGardener(
+                        advertisingHostAddress = "127.0.0.1",
+                        listeningPortRange = it..it,
+                        startingUpAttemptsCount = 1,
+                        threadsNumber = 2,
+                        onServerShutdownGracePeriodMillis = 100,
+                        onServerShutdownTimeoutMillis = 100,
+                        podDiscovery = object : PodDiscovery() {}
+                )
+            }
+
+            beforeGroup {
+                gardeners.forEach { it.start(waitAndClose = false) }
+            }
+
+            afterGroup {
+                gardeners.forEach {
+                    it.terminate()
+                    it.close()
+                }
+            }
+
+            val scriptFile = File.createTempFile("test", "kts").also { it.deleteOnExit() }
+            val file = File.createTempFile("test", "csv").also { it.deleteOnExit() }
+            scriptFile.writeBytes("440.sine().map{ it }.trim(1).toCsv(\"file://${file.absolutePath}\").out()".toByteArray())
+            val out = ByteArrayOutputStream()
+            val cli = WaveBeansCli(
+                    cli = DefaultParser().parse(options, arrayOf(
+                            name,
+                            "--execute-file", scriptFile.absolutePath,
+                            "--time",
+                            "--run-mode", "distributed",
+                            "--partitions", "2",
+                            "--crew-gardeners", portRange.map { "http://127.0.0.1:$it" }.joinToString(",")
+                    )),
+                    printer = PrintWriter(out)
+            )
+            out.flush()
+            out.close()
+
+            it("should execute") { assertThat(cli.tryScriptExecution()).isTrue() }
+            it("should generate non empty file") { assertThat(file.readLines()).size().isGreaterThan(1) }
             it("should output time to console") {
                 assertThat(String(out.toByteArray())).matches(Regex("\\d+\\.\\d+sec\\s*"))
             }

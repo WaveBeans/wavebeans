@@ -41,7 +41,6 @@ import mu.KotlinLogging
 import java.io.Closeable
 import java.io.File
 import java.io.OutputStream
-import java.lang.Exception
 import java.net.InetAddress
 import java.net.URL
 import java.net.URLClassLoader
@@ -120,6 +119,7 @@ class CrewGardener(
 
     companion object {
         private val log = KotlinLogging.logger { }
+        private val jvmCrewGardeners = ConcurrentHashMap<Int, CrewGardener>()
     }
 
     val tempDir = createTempDir("wavebeans-crew-gardener")
@@ -127,24 +127,51 @@ class CrewGardener(
     private val terminate = CountDownLatch(1)
     private val startupClasses = startUpClasses()
 
+    class JobState(
+            val jobKey: JobKey,
+            val classLoader: CrewGardenerClassLoader,
+            val futures: MutableList<Future<ExecutionResult>>,
+            val remoteBushes: MutableList<RemoteBush>
+    ) {
+        companion object {
+            fun create(jobKey: JobKey): JobState {
+                val cl = CrewGardenerClassLoader(CrewGardenerClassLoader(this::class.java.classLoader))
+                WaveBeansClassLoader.addClassLoader(cl)
+                return JobState(
+                        jobKey,
+                        cl,
+                        CopyOnWriteArrayList(),
+                        CopyOnWriteArrayList()
+                )
+            }
+        }
+    }
+
     private lateinit var server: ApplicationEngine
-    private val jobClassLoaders = ConcurrentHashMap<JobKey, CrewGardenerClassLoader>()
-    private val jobFutures = ConcurrentHashMap<JobKey, MutableList<Future<ExecutionResult>>>()
-    private val remoteBushes = ConcurrentHashMap<JobKey, MutableList<RemoteBush>>()
     private var listeningPort: Int = 0
+    private var startedFrom: List<StackTraceElement>? = null
+
+    private val jobStates = ConcurrentHashMap<JobKey, JobState>()
+    private fun jobStates(jobKey: JobKey): JobState {
+        return jobStates.computeIfAbsent(jobKey) { JobState.create(jobKey) }
+    }
 
     fun listeningPort(): Int =
             if (listeningPort > 0) listeningPort
             else throw IllegalStateException("Crew Gardener is not listening yet. Please start first")
 
     fun start(waitAndClose: Boolean) {
+        if (startedFrom != null)
+            throw IllegalStateException("Crew Gardener $this is already started from: " +
+                    startedFrom!!.joinToString("\n") { "\tat $it" })
+        startedFrom = Thread.currentThread().stackTrace.toList()
         log.info {
             "Advertising on host:\n" +
                     InetAddress.getAllByName(advertisingHostAddress).joinToString("\n") {
                         """
-                        canonicalHostName = ${it.canonicalHostName}
-                        hostAddress = ${it.hostAddress}
-                        hostName = ${it.hostName}
+                        \tcanonicalHostName = ${it.canonicalHostName}
+                        \thostAddress = ${it.hostAddress}
+                        \thostName = ${it.hostName}
                     """.trimIndent()
                     }
         }
@@ -163,15 +190,20 @@ class CrewGardener(
                 attempt--
                 log.debug(e) {
                     "Can't start server on port $listeningPort. Choosing random port within range " +
-                            "$listeningPortRange. Left $attempt attempts before quit."
+                            "$listeningPortRange. Left $attempt attempts before quit.\n" +
+                            "Another started crew gardeners on the same JVM:\n" +
+                            jvmCrewGardeners.entries.joinToString("\n\n") {
+                                "on ${it.key}: ${it.value}" +
+                                        "started from:\n " + it.value.startedFrom?.joinToString("\n") { "\tat $it" }
+                            }
                 }
                 listeningPort = Random.nextInt(listeningPortRange)
             }
         }
         if (attempt == 0) throw IllegalStateException("Can't start the Crew Gardener within $startingUpAttemptsCount attempts.")
 
-
         log.info { "Crew Gardener API started on port $listeningPort" }
+        jvmCrewGardeners[listeningPort] = this
         if (waitAndClose) {
             terminate.await()
             log.info { "Crew Gardener terminating" }
@@ -201,16 +233,12 @@ class CrewGardener(
         log.info { "Terminating" }
         gardener.stopAll()
         terminate.countDown()
-        remoteBushes.values.flatten().forEach {
-            it.close()
-            podDiscovery.unregisterBush(it.bushKey)
-        }
+        stopAll()
     }
 
     fun plantBush(request: PlantBushRequest) {
         gardener.plantBush(request.jobKey, request.jobContent.bushKey, request.jobContent.pods, request.sampleRate)
-        jobFutures.putIfAbsent(request.jobKey, CopyOnWriteArrayList<Future<ExecutionResult>>())
-        jobFutures.getValue(request.jobKey).addAll(gardener.getAllFutures(request.jobKey))
+        jobStates(request.jobKey).futures.addAll(gardener.getAllFutures(request.jobKey))
     }
 
     fun job(jobKey: JobKey): List<JobContent> =
@@ -227,12 +255,17 @@ class CrewGardener(
 
     fun stopJob(jobKey: JobKey) {
         gardener.stop(jobKey)
-        remoteBushes[jobKey]?.forEach {
-            it.close()
-            podDiscovery.unregisterBush(it.bushKey)
+        jobStates.remove(jobKey)?.let { jobState ->
+            jobState.remoteBushes.forEach { bush ->
+                bush.close()
+                podDiscovery.unregisterBush(bush.bushKey)
+            }
+            WaveBeansClassLoader.removeClassLoader(jobState.classLoader)
         }
-        remoteBushes.remove(jobKey)
-        jobClassLoaders.remove(jobKey)?.let { WaveBeansClassLoader.removeClassLoader(it) }
+    }
+
+    fun stopAll() {
+        jobStates.keys.forEach { stopJob(it) }
     }
 
     fun job(): List<JobKey> {
@@ -244,15 +277,12 @@ class CrewGardener(
             "[JobKey $jobKey] Registering code from jar $codeFile. Code file content:\n" +
                     JarFile(codeFile).entries().asSequence().joinToString("\n") { "${it.name} size=${it.size}bytes crc=${it.crc}" }
         }
-        jobClassLoaders.putIfAbsent(jobKey, CrewGardenerClassLoader(this::class.java.classLoader))
-        val cl = jobClassLoaders.getValue(jobKey)
-        cl += codeFile.toURI().toURL()
-        WaveBeansClassLoader.addClassLoader(cl)
+
+        jobStates(jobKey).classLoader += codeFile.toURI().toURL()
     }
 
     fun registerBushEndpoints(registerBushEndpointsRequest: RegisterBushEndpointsRequest) {
-        remoteBushes.putIfAbsent(registerBushEndpointsRequest.jobKey, CopyOnWriteArrayList())
-        val remoteBushes = remoteBushes.getValue(registerBushEndpointsRequest.jobKey)
+        val remoteBushes = jobStates(registerBushEndpointsRequest.jobKey).remoteBushes
         registerBushEndpointsRequest.bushEndpoints.forEach { bushEndpoint ->
             val bushKey = bushEndpoint.bushKey
             val remoteBush = RemoteBush(bushKey, bushEndpoint.location)

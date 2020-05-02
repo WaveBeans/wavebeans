@@ -29,12 +29,12 @@ class SerializablePodCallResultBuilder : PodCallResultBuilder {
 
     override fun fromInputStream(toInputStream: InputStream): PodCallResult {
         val bytes = toInputStream.readBytes()
-        val container = bytes.toObj(SerializablePodCallResultContainer.serializer())
+        val container = bytes.asObj(SerializablePodCallResultContainer.serializer())
         val serializerClazzRef = container.objSerializerRef
         val obj = if (serializerClazzRef != nullType) {
             val cl = WaveBeansClassLoader.classForName(serializerClazzRef).kotlin
             val serializer = (cl.objectInstance ?: cl.createInstance()) as KSerializer<*>
-            container.objBuffer.fromProtoValue()?.toObj(serializer)
+            container.objBuffer.fromProtoValue()?.asObj(serializer)
         } else {
             null
         }
@@ -69,7 +69,7 @@ class SerializablePodCallResult(
         }
         val (serializer, buf) = if (newObj != null) {
             val s = SerializableRegistry.find(newObj::class)
-            Pair(s::class.jvmName, newObj.toByteArray(s))
+            Pair(s::class.jvmName, newObj.asByteArray(s))
         } else {
             Pair(nullType, byteArrayOf())
         }
@@ -79,7 +79,7 @@ class SerializablePodCallResult(
                 serializer,
                 buf.toProtoValue(),
                 exception?.let { ExceptionObj.create(it) }.toProtoValue()
-        ).toByteArray(SerializablePodCallResultContainer.serializer())
+        ).asByteArray(SerializablePodCallResultContainer.serializer())
 
         outputStream.write(containerBuf)
         outputStream.flush()

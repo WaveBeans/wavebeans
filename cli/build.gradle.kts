@@ -25,4 +25,5 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-main-kts:$kotlinVersion")
 
     testImplementation("io.ktor:ktor-client-cio:$ktorVersion")
+    testImplementation("io.ktor:ktor-server-test-host:$ktorVersion")
 }

@@ -18,8 +18,9 @@ import java.util.jar.JarOutputStream
 class DistributedOverseer(
         override val outputs: List<StreamOutput<out Any>>,
         private val crewGardenersLocations: List<String>,
-        partitionsCount: Int,
-        private val distributionPlanner: DistributionPlanner = EvenDistributionPlanner()
+        private val partitionsCount: Int,
+        private val distributionPlanner: DistributionPlanner = EvenDistributionPlanner(),
+        private val additionalClasses: Map<String, File> = emptyMap()
 ) : Overseer {
 
     companion object {
@@ -73,6 +74,7 @@ class DistributedOverseer(
                     reschedule()
                 }
             } catch (e: Throwable) {
+                if (e is OutOfMemoryError) throw e // most likely no resources to handle. Just fail
                 log.info(e) { "Failed execution on $location for job $jobKey" }
                 future.completeExceptionally(e)
             }
@@ -102,7 +104,14 @@ class DistributedOverseer(
     }
 
     override fun eval(sampleRate: Float): List<Future<ExecutionResult>> {
-
+        log.info {
+            "Starting distributed evaluation with following parameters:\n" +
+                    "        outputs=$outputs,\n" +
+                    "        crewGardenersLocations=$crewGardenersLocations,\n" +
+                    "        partitionsCount=$partitionsCount,\n" +
+                    "        distributionPlanner=$distributionPlanner,\n" +
+                    "        additionalClasses=$additionalClasses"
+        }
         val bushEndpoints = plantBushes(distribution, jobKey, sampleRate)
         bushEndpoints.forEach { CrewGardenerCheckJob(it.location).start() }
         registerBushEndpoint(bushEndpoints)
@@ -147,6 +156,9 @@ class DistributedOverseer(
                     }
                     else -> throw UnsupportedOperationException("$loc is not supported")
                 }
+            }
+            additionalClasses.forEach {
+                it.value.copyTo(File(jarDir, it.key))
             }
             val jarFile = File(createTempDir("code-jar"), "code.jar")
             JarOutputStream(FileOutputStream(jarFile)).use { jos ->

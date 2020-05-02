@@ -50,6 +50,7 @@ class RemoteBush(
 
             }
         } catch (e: Throwable) {
+            if (e is OutOfMemoryError) throw e // most likely no resources to handle. Just fail
             future.completeExceptionally(IllegalStateException("Unexpected error during request: $req.", e))
         }
 

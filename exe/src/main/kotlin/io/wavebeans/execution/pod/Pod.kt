@@ -51,6 +51,7 @@ interface Pod : Closeable {
         } catch (e: InvocationTargetException) {
             PodCallResult.error(call, e.targetException)
         } catch (e: Throwable) {
+            if (e is OutOfMemoryError) throw e // most likely no resources to handle. Just fail
             PodCallResult.error(call, e)
         }
     }

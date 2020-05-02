@@ -4,7 +4,8 @@ import kotlin.reflect.KClass
 
 enum class RunMode(val id: String, val clazz: KClass<out ScriptEvaluator>) {
     LOCAL("single-threaded", SingleThreadedScriptEvaluator::class),
-    LOCAL_DISTRIBUTED("multi-threaded", MultiThreadedScriptEvaluator::class)
+    MULTI_THREADED("multi-threaded", MultiThreadedScriptEvaluator::class),
+    DISTRIBUTED("distributed", DistributedScriptEvaluator::class)
     ;
 
     companion object {
