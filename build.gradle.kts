@@ -63,7 +63,7 @@ allprojects {
         useJUnitPlatform {
             includeEngines("spek2")
         }
-        maxHeapSize = "1024m"
+        maxHeapSize = "2g"
     }
 
     tasks.jar {
