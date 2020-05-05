@@ -1,16 +1,15 @@
 package io.wavebeans.execution.distributed
 
-import com.sun.javaws.Main.systemExit
 import com.uchuhimo.konf.Config
 import com.uchuhimo.konf.source.Source
 import com.uchuhimo.konf.source.hocon
 import mu.KotlinLogging
 import java.io.PrintStream
-import java.lang.Exception
 import java.util.concurrent.Callable
 import java.util.concurrent.CountDownLatch
 import java.util.jar.JarFile
 import java.util.jar.Manifest
+import kotlin.system.exitProcess
 
 fun main(args: Array<String>) {
     val facilitatorCli = FacilitatorCli(System.out, args)
@@ -19,7 +18,7 @@ fun main(args: Array<String>) {
         facilitatorCli.stop()
     })
 
-    systemExit(facilitatorCli.call())
+    exitProcess(facilitatorCli.call())
 }
 
 class FacilitatorCli(
