@@ -8,7 +8,7 @@ import java.util.concurrent.Future
 
 class DistributedScriptEvaluator(
         private val partitions: Int,
-        private val crewGardenerLocations: List<String>
+        private val facilitatorLocations: List<String>
 ) : ScriptEvaluator, SupportClassUploading {
 
     override val outputs = ArrayList<StreamOutput<*>>()
@@ -19,7 +19,7 @@ class DistributedScriptEvaluator(
     override fun eval(sampleRate: Float): List<Future<ExecutionResult>> {
         overseer = DistributedOverseer(
                 outputs,
-                crewGardenerLocations,
+                facilitatorLocations,
                 partitions,
                 additionalClasses = additionalClasses ?: emptyMap(),
                 ignoreLocations = listOf(

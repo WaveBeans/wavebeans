@@ -16,7 +16,7 @@ class RemoteBush(
         val endpoint: String
 ) : Bush {
 
-    private val crewGardenerService = CrewGardenerService.create(endpoint)
+    private val facilitatorService = FacilitatorService.create(endpoint)
 
     companion object {
         private val log = KotlinLogging.logger {}
@@ -41,7 +41,7 @@ class RemoteBush(
         log.trace { "Making bush call $req" }
         val future = CompletableFuture<PodCallResult>()
         try {
-            val response = crewGardenerService.call(bushKey, podKey.id, podKey.partition, request).execute()
+            val response = facilitatorService.call(bushKey, podKey.id, podKey.partition, request).execute()
             if (response.code() == 200) {
                 val istream = response.body()!!.byteStream()
                 future.complete(ExecutionConfig.podCallResultBuilder().fromInputStream(istream))

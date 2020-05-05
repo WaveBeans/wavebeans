@@ -9,7 +9,7 @@ import io.ktor.client.request.get
 import io.wavebeans.cli.WaveBeansCli.Companion.name
 import io.wavebeans.cli.WaveBeansCli.Companion.options
 import io.wavebeans.execution.PodDiscovery
-import io.wavebeans.execution.distributed.CrewGardener
+import io.wavebeans.execution.distributed.Facilitator
 import io.wavebeans.lib.WaveBeansClassLoader
 import kotlinx.coroutines.runBlocking
 import org.apache.commons.cli.DefaultParser
@@ -103,7 +103,7 @@ object WaveBeansCliSpec : Spek({
 
             val portRange = 40000..40001
             val gardeners = portRange.map {
-                CrewGardener(
+                Facilitator(
                         advertisingHostAddress = "127.0.0.1",
                         listeningPortRange = it..it,
                         startingUpAttemptsCount = 1,
@@ -115,7 +115,7 @@ object WaveBeansCliSpec : Spek({
             }
 
             beforeGroup {
-                gardeners.forEach { it.start(waitAndClose = false) }
+                gardeners.forEach { it.start() }
             }
 
             afterGroup {
@@ -136,7 +136,7 @@ object WaveBeansCliSpec : Spek({
                             "--time",
                             "--run-mode", "distributed",
                             "--partitions", "2",
-                            "--crew-gardeners", portRange.map { "http://127.0.0.1:$it" }.joinToString(",")
+                            "--facilitators", portRange.map { "http://127.0.0.1:$it" }.joinToString(",")
                     )),
                     printer = PrintWriter(out)
             )

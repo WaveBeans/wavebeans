@@ -2,10 +2,10 @@ package io.wavebeans.execution.distributed
 
 import java.io.File
 
-fun startCrewGardener(port: Int) {
-    val confFile = File.createTempFile("crew-gardener-config", ".conf").also { it.deleteOnExit() }
+fun startFacilitator(port: Int) {
+    val confFile = File.createTempFile("facilitator-config", ".conf").also { it.deleteOnExit() }
     confFile.writeText("""
-        crewGardenderConfig {
+        facilitatorConfig {
             advertisingHostAddress: 127.0.0.1
             listeningPortRange: {start: $port, end: $port}
             threadsNumber: 1
@@ -15,7 +15,7 @@ fun startCrewGardener(port: Int) {
     val runner = CommandRunner(
             javaCmd(),
             "-cp", System.getProperty("java.class.path"),
-            "io.wavebeans.execution.distributed.CrewGardenerKt", confFile.absolutePath
+            "io.wavebeans.execution.distributed.FacilitatorCliKt", confFile.absolutePath
     )
     val runCall = runner.run()
 

@@ -6,8 +6,8 @@ plugins {
 }
 
 application {
-    mainClassName = "io.wavebeans.execution.distributed.CrewGardenerKt"
-    applicationName = "crew-gardener"
+    mainClassName = "io.wavebeans.execution.distributed.FacilitatorCliKt"
+    applicationName = "wavebeans-facilitator"
 }
 
 dependencies {

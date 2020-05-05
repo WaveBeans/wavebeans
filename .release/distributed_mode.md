@@ -1,0 +1,1 @@
+* The first version of launching in Distributed mode. Follow the [docs](/docs/user/exe/readme.md#distributed-mode)

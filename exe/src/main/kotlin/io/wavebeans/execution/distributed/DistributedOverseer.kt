@@ -17,7 +17,7 @@ import java.util.jar.JarOutputStream
 
 class DistributedOverseer(
         override val outputs: List<StreamOutput<out Any>>,
-        private val crewGardenersLocations: List<String>,
+        private val facilitatorLocations: List<String>,
         private val partitionsCount: Int,
         private val distributionPlanner: DistributionPlanner = EvenDistributionPlanner(),
         private val additionalClasses: Map<String, File> = emptyMap(),
@@ -36,9 +36,9 @@ class DistributedOverseer(
             .groupBeans()
     private val jobKey = newJobKey()
     private val locationFutures = ConcurrentHashMap<String, CompletableFuture<ExecutionResult>>()
-    private val crewGardenerCheckPool = Executors.newSingleThreadScheduledExecutor(NamedThreadFactory("crew-gardener-check"))
+    private val facilitatorsCheckPool = Executors.newSingleThreadScheduledExecutor(NamedThreadFactory("facilitators-check"))
     private val distribution by lazy {
-        distributionPlanner.distribute(topology.buildPods(), crewGardenersLocations).also {
+        distributionPlanner.distribute(topology.buildPods(), facilitatorLocations).also {
             log.info {
                 val json = Json(JsonConfiguration.Stable.copy(prettyPrint = true), TopologySerializer.paramsModule)
                 "Planned the even distribution:\n" +
@@ -49,13 +49,13 @@ class DistributedOverseer(
         }
     }
 
-    private inner class CrewGardenerCheckJob(val location: String) : Runnable {
+    private inner class FacilitatorCheckJob(val location: String) : Runnable {
 
         private val log = KotlinLogging.logger { }
 
         private val future = CompletableFuture<ExecutionResult>()
 
-        private val crewGardenerService = CrewGardenerService.create(location)
+        private val facilitatorService = FacilitatorService.create(location)
 
         fun start() {
             locationFutures[location] = future
@@ -84,11 +84,11 @@ class DistributedOverseer(
         }
 
         private fun reschedule() {
-            crewGardenerCheckPool.schedule(this, 1000, TimeUnit.MILLISECONDS)
+            facilitatorsCheckPool.schedule(this, 1000, TimeUnit.MILLISECONDS)
         }
 
         fun fetchResult(): ExecutionResult? {
-            val response = crewGardenerService.jobStatus(jobKey).execute().throwIfError()
+            val response = facilitatorService.jobStatus(jobKey).execute().throwIfError()
             val result = response.body()
                     ?: throw IllegalStateException("Expected non-empty response for request for job status on job $jobKey on $location")
             return when {
@@ -110,13 +110,13 @@ class DistributedOverseer(
         log.info {
             "Starting distributed evaluation with following parameters:\n" +
                     "        outputs=$outputs,\n" +
-                    "        crewGardenersLocations=$crewGardenersLocations,\n" +
+                    "        facilitatorLocations=$facilitatorLocations,\n" +
                     "        partitionsCount=$partitionsCount,\n" +
                     "        distributionPlanner=$distributionPlanner,\n" +
                     "        additionalClasses=$additionalClasses"
         }
         val bushEndpoints = plantBushes(distribution, jobKey, sampleRate)
-        bushEndpoints.forEach { CrewGardenerCheckJob(it.location).start() }
+        bushEndpoints.forEach { FacilitatorCheckJob(it.location).start() }
         registerBushEndpoint(bushEndpoints)
         startJob(distribution.keys, jobKey)
 
@@ -127,16 +127,16 @@ class DistributedOverseer(
         val bushEndpoints = mutableListOf<BushEndpoint>()
         distribution.entries
                 .forEach { (location, pods) ->
-                    val crewGardenerService = CrewGardenerService.create(location)
+                    val facilitatorService = FacilitatorService.create(location)
 
-                    // upload required code to the crew gardener
-                    val gardenerCodeClasses = crewGardenerService.codeClasses().execute().body()
+                    // upload required code to the facilitator
+                    val gardenerCodeClasses = facilitatorService.codeClasses().execute().body()
                             ?: throw IllegalStateException("Can't fetch code classes from $location")
 
                     val classesWithoutLocation = gardenerCodeClasses.asSequence().map { it.copy(location = "") }.toSet()
                     val absentClasses = myClasses
                             .filter { it.copy(location = "") !in classesWithoutLocation }
-                    log.info { "Uploading following classes to crew gardener on $location:\n" + absentClasses.joinToString("\n") }
+                    log.info { "Uploading following classes to facilitator on $location:\n" + absentClasses.joinToString("\n") }
 
                     // pack all absent classes as single jar file
                     val jarDir = createTempDir("code").also { it.deleteOnExit() }
@@ -190,13 +190,13 @@ class DistributedOverseer(
                     val file = RequestBody.create(null, jarFile)
                     val code = MultipartBody.Part.createFormData("code", jarFile.name, file)
                     val jk = RequestBody.create(null, jobKey.toString())
-                    crewGardenerService.uploadCode(jk, code).execute().throwIfError()
+                    facilitatorService.uploadCode(jk, code).execute().throwIfError()
 
                     // plant bush
                     val bushKey = newBushKey()
                     val bushContent = JobContent(bushKey, pods)
                     val plantBushRequest = PlantBushRequest(jobKey, bushContent, sampleRate)
-                    crewGardenerService.plantBush(plantBushRequest).execute().throwIfError()
+                    facilitatorService.plantBush(plantBushRequest).execute().throwIfError()
 
                     bushEndpoints += BushEndpoint(bushKey, location, pods.map { it.key })
                 }
@@ -204,7 +204,7 @@ class DistributedOverseer(
     }
 
     private fun registerBushEndpoint(bushEndpoints: List<BushEndpoint>) {
-        // register bush endpoints from other crew gardeners
+        // register bush endpoints from other facilitators
         val byLocation = bushEndpoints.groupBy { it.location }
         byLocation.keys.forEach { location ->
             val request = RegisterBushEndpointsRequest(
@@ -213,27 +213,27 @@ class DistributedOverseer(
                             .map { it.value }
                             .flatten()
             )
-            CrewGardenerService.create(location).registerBushEndpoints(request).execute().throwIfError()
+            FacilitatorService.create(location).registerBushEndpoints(request).execute().throwIfError()
         }
     }
 
     private fun startJob(locations: Set<String>, jobKey: JobKey) {
-        // start the job for all crew gardeners
+        // start the job for all facilitators
         locations.forEach { location ->
-            CrewGardenerService.create(location).startJob(jobKey).execute().throwIfError()
+            FacilitatorService.create(location).startJob(jobKey).execute().throwIfError()
         }
     }
 
     override fun close() {
         log.info { "Closing overseer for job $jobKey. Status of futures: $locationFutures" }
-        log.info { "Shutting down the Crew Gardener check pool" }
-        crewGardenerCheckPool.shutdown()
-        if (!crewGardenerCheckPool.awaitTermination(5000, TimeUnit.MILLISECONDS)) {
-            crewGardenerCheckPool.shutdownNow()
+        log.info { "Shutting down the Facilitator check pool" }
+        facilitatorsCheckPool.shutdown()
+        if (!facilitatorsCheckPool.awaitTermination(5000, TimeUnit.MILLISECONDS)) {
+            facilitatorsCheckPool.shutdownNow()
         }
         distribution.keys.forEach { location ->
-            log.info { "Stopping job $jobKey on Crew Gardener $location" }
-            CrewGardenerService.create(location).stopJob(jobKey).execute().throwIfError()
+            log.info { "Stopping job $jobKey on Facilitator $location" }
+            FacilitatorService.create(location).stopJob(jobKey).execute().throwIfError()
         }
         log.info { "Stopping http client" }
     }

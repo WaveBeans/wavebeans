@@ -40,7 +40,7 @@ class RemoteBushSpec : Spek({
                     r
                 }
 
-        val crewGardener = CrewGardener(
+        val facilitator = Facilitator(
                 advertisingHostAddress = "127.0.0.1",
                 listeningPortRange = 40000..40000,
                 startingUpAttemptsCount = 1,
@@ -53,12 +53,12 @@ class RemoteBushSpec : Spek({
         )
 
         beforeGroup {
-            crewGardener.start(waitAndClose = false)
+            facilitator.start()
         }
 
         afterGroup {
-            crewGardener.terminate()
-            crewGardener.close()
+            facilitator.terminate()
+            facilitator.close()
         }
 
         describe("Properly working bush") {

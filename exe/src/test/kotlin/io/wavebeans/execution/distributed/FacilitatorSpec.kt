@@ -32,13 +32,13 @@ import java.util.concurrent.Future
 import kotlin.random.Random
 import kotlin.reflect.jvm.jvmName
 
-class CrewGardenerSpec : Spek({
+class FacilitatorSpec : Spek({
     val testEngine = TestApplicationEngine(createTestEnvironment())
     testEngine.start(wait = false)
 
     val gardener: Gardener = mock()
     val podDiscovery = object : PodDiscovery() {}
-    val crewGardener = CrewGardener(
+    val facilitator = Facilitator(
             advertisingHostAddress = "127.0.0.1",
             listeningPortRange = 40000..50000,
             startingUpAttemptsCount = 10,
@@ -48,11 +48,11 @@ class CrewGardenerSpec : Spek({
             podDiscovery = podDiscovery
     )
 
-    Thread { crewGardener.start(waitAndClose = true) }.start()
+    Thread { facilitator.start().waitAndClose() }.start()
 
     afterGroup {
-        crewGardener.terminate()
-        crewGardener.close()
+        facilitator.terminate()
+        facilitator.close()
         testEngine.stop(1000, 1000)
     }
 
@@ -221,7 +221,7 @@ class CrewGardenerSpec : Spek({
                         content().isNotNull().all {
                             prop("json") { json.parse(ListSerializer(ClassDesc.serializer()), it) }.all {
                                 isNotEmpty()
-                                matchesPredicate { it.any { it.classPath.contains("wavebeans")}  }
+                                matchesPredicate { it.any { it.classPath.contains("wavebeans") } }
                             }
                         }
                     }

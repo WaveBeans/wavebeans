@@ -6,7 +6,6 @@ import assertk.assertions.*
 import assertk.assertions.support.fail
 import io.wavebeans.execution.SingleThreadedOverseer
 import io.wavebeans.execution.eachIndexed
-import io.wavebeans.execution.newJobKey
 import io.wavebeans.lib.io.magnitudeToCsv
 import io.wavebeans.lib.io.sine
 import io.wavebeans.lib.io.toCsv
@@ -31,15 +30,15 @@ object DistributedOverseerSpec : Spek({
     val log = KotlinLogging.logger {}
     val pool = Executors.newCachedThreadPool()
 
-    pool.submit { startCrewGardener(40001) }
-    pool.submit { startCrewGardener(40002) }
+    pool.submit { startFacilitator(40001) }
+    pool.submit { startFacilitator(40002) }
 
-    val crewGardenersLocations = listOf("http://127.0.0.1:40001", "http://127.0.0.1:40002")
+    val facilitatorsLocations = listOf("http://127.0.0.1:40001", "http://127.0.0.1:40002")
 
-    crewGardenersLocations.forEach {
+    facilitatorsLocations.forEach {
         while (true) {
             try {
-                if (CrewGardenerService.create(it).status().execute().isSuccessful)
+                if (FacilitatorService.create(it).status().execute().isSuccessful)
                     break
             } catch (e: IOException) {
                 // continue trying
@@ -50,15 +49,15 @@ object DistributedOverseerSpec : Spek({
 
     afterGroup {
         try {
-            crewGardenersLocations.forEach { location ->
-                CrewGardenerService.create(location).terminate()
+            facilitatorsLocations.forEach { location ->
+                FacilitatorService.create(location).terminate()
             }
         } finally {
             pool.shutdownNow()
         }
     }
 
-    describe("Running code accessible by Crew Gardener without extra loading") {
+    describe("Running code accessible by Facilitator without extra loading") {
         val outputs = {
             val file1 = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
             val file2 = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
@@ -78,7 +77,7 @@ object DistributedOverseerSpec : Spek({
         val outputsDistributed = outputs()
         val distributed = DistributedOverseer(
                 outputsDistributed.map { it.first },
-                crewGardenersLocations,
+                facilitatorsLocations,
                 2
         )
 
@@ -107,7 +106,7 @@ object DistributedOverseerSpec : Spek({
         }
     }
 
-    describe("Running code not accessible by Crew Gardener") {
+    describe("Running code not accessible by Facilitator") {
         val file = File.createTempFile("testAppOut", ".csv")
 
         fun codeFile(name: String): Pair<String, String> {
@@ -117,7 +116,7 @@ object DistributedOverseerSpec : Spek({
                             "File(\"${file.absolutePath}\")"
                     )
                     .replace(
-                            "/[*]CREW_GARDENER_LIST[*]/.*/[*]CREW_GARDENER_LIST[*]/".toRegex(),
+                            "/[*]FACILITATOR_LIST[*]/.*/[*]FACILITATOR_LIST[*]/".toRegex(),
                             "listOf(\"http://127.0.0.1:40001\", \"http://127.0.0.1:40002\")"
                     )
                     .also { log.info { "$name:\n$it" } }

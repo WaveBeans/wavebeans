@@ -19,13 +19,13 @@ fun <T> Response<T>.throwIfError(): Response<T> {
     return this
 }
 
-interface CrewGardenerService {
+interface FacilitatorService {
 
     companion object {
 
         private val connectionPool = ConnectionPool(10, 30, MINUTES)
 
-        fun create(endpoint: String): CrewGardenerService {
+        fun create(endpoint: String): FacilitatorService {
             val json = Json(JsonConfiguration.Stable, TopologySerializer.paramsModule)
             val client = OkHttpClient.Builder()
                     .callTimeout(60000, MILLISECONDS)
@@ -37,7 +37,7 @@ interface CrewGardenerService {
                     .addConverterFactory(json.asConverterFactory(MediaType.get("application/json")))
                     .client(client)
                     .build()
-            return retrofit.create(CrewGardenerService::class.java)
+            return retrofit.create(FacilitatorService::class.java)
         }
     }
 
