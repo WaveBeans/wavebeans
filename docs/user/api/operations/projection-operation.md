@@ -86,5 +86,5 @@ The following types have built-in support:
 * `Number` -- always return 1 
 * `Sample` -- always return 1 
 * `FftSample` -- measured as the `window.step` it is built on top of. 
-* `List<T>` -- measured as a sum of length of all corresponding elements of type `T`. Doesn't support nullable elements, will throw an exception.
+* `List<T>` -- measured as a sum of lengths of all corresponding elements of specified type `T`. Doesn't support nullable types, will throw an exception if hit on one.
 * `Window<T>` -- measured as `sizeOfTheSample * window.step`, where `sizeOfTheSample` is measure of the first element.
