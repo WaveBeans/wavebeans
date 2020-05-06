@@ -207,6 +207,7 @@ internal fun FftSample.encode(buf: ByteArray, at: Int): Int {
     writeLong(this.index, buf, pointer); pointer += 8
     writeInt(this.binCount, buf, pointer); pointer += 4
     writeInt(this.samplesCount, buf, pointer); pointer += 4
+    writeInt(this.samplesLength, buf, pointer); pointer += 4
     writeInt(this.sampleRate.toBits(), buf, pointer); pointer += 4
     writeInt(this.fft.size, buf, pointer); pointer += 4
     this.fft.forEach {
@@ -221,6 +222,7 @@ internal fun decodeFftSample(buf: ByteArray, from: Int): Pair<FftSample, Int> {
     val index = readLong(buf, pointer); pointer += 8
     val binCount = readInt(buf, pointer); pointer += 4
     val samplesCount = readInt(buf, pointer); pointer += 4
+    val samplesLength = readInt(buf, pointer); pointer += 4
     val sampleRate = Float.fromBits(readInt(buf, pointer)); pointer += 4
     val fftSize = readInt(buf, pointer); pointer += 4
     val fft = ArrayList<ComplexNumber>(fftSize)
@@ -231,7 +233,7 @@ internal fun decodeFftSample(buf: ByteArray, from: Int): Pair<FftSample, Int> {
     }
 
     return Pair(
-            FftSample(index, binCount, samplesCount, sampleRate, fft),
+            FftSample(index, binCount, samplesCount, samplesLength, sampleRate, fft),
             pointer
     )
 }
