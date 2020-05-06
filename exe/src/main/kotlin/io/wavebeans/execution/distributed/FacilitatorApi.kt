@@ -15,6 +15,7 @@ import io.ktor.response.respond
 import io.ktor.response.respondOutputStream
 import io.ktor.routing.*
 import io.ktor.serialization.json
+import io.ktor.server.engine.BaseApplicationResponse
 import io.ktor.util.getOrFail
 import io.wavebeans.execution.*
 import io.wavebeans.execution.pod.PodKey
@@ -25,6 +26,7 @@ import kotlinx.serialization.modules.plus
 import kotlinx.serialization.modules.serializersModuleOf
 import mu.KotlinLogging
 import java.io.File
+import java.io.PrintStream
 import java.util.*
 
 fun Application.facilitatorApi(facilitator: Facilitator) {
@@ -66,7 +68,15 @@ fun Application.facilitatorApi(facilitator: Facilitator) {
             val request = call.request.queryParameters.getOrFail<String>("request")
             try {
                 val write = facilitator.call(bushKey, podKey, request)
-                call.respondOutputStream { write(this) }
+                call.respondOutputStream {
+                    try {
+                        write(this)
+                    } catch (e: Exception) {
+                        val printStream = PrintStream(this)
+                        printStream.println("-----ERROR----")
+                        e.printStackTrace(printStream)
+                    }
+                }
             } catch (e: Exception) {
                 log.error(e) { "Error during call to bushKey=$bushKey, podKey=$podKey, request=$request" }
                 call.respond(HttpStatusCode.InternalServerError, e.message ?: "Internal error")

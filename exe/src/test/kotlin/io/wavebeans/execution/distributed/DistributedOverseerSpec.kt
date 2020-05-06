@@ -1,23 +1,24 @@
 package io.wavebeans.execution.distributed
 
+import assertk.Assert
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
 import assertk.assertions.support.fail
 import io.wavebeans.execution.SingleThreadedOverseer
 import io.wavebeans.execution.eachIndexed
-import io.wavebeans.lib.io.magnitudeToCsv
-import io.wavebeans.lib.io.sine
-import io.wavebeans.lib.io.toCsv
+import io.wavebeans.lib.Sample
+import io.wavebeans.lib.io.*
+import io.wavebeans.lib.plus
+import io.wavebeans.lib.stream.*
 import io.wavebeans.lib.stream.fft.fft
-import io.wavebeans.lib.stream.map
-import io.wavebeans.lib.stream.plus
-import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.stream.window.hamming
 import io.wavebeans.lib.stream.window.window
+import kotlinx.serialization.Serializable
 import mu.KotlinLogging
 import org.spekframework.spek2.Spek
-import org.spekframework.spek2.lifecycle.CachingMode.*
+import org.spekframework.spek2.lifecycle.CachingMode.SCOPE
+import org.spekframework.spek2.style.specification.Suite
 import org.spekframework.spek2.style.specification.describe
 import java.io.File
 import java.io.IOException
@@ -57,51 +58,139 @@ object DistributedOverseerSpec : Spek({
         }
     }
 
+
     describe("Running code accessible by Facilitator without extra loading") {
-        val outputs = {
-            val file1 = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
-            val file2 = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
-            val input = 440.sine().map { abs(it) } + 880.sine()
-            val output1 = input
-                    .trim(500)
-                    .toCsv("file:///${file1.absolutePath}")
-            val output2 = input
-                    .window(101, 25)
-                    .hamming()
-                    .fft(128)
-                    .trim(500)
-                    .magnitudeToCsv("file:///${file2.absolutePath}")
-            listOf(output1 to file1, output2 to file2)
-        }
 
-        val outputsDistributed = outputs()
-        val distributed = DistributedOverseer(
-                outputsDistributed.map { it.first },
-                facilitatorsLocations,
-                2
-        )
+        fun Suite.assertExecution(outputs: () -> List<Pair<StreamOutput<out Any>, File>>) {
+            val outputsDistributed = outputs()
+            val distributed = DistributedOverseer(
+                    outputsDistributed.map { it.first },
+                    facilitatorsLocations,
+                    2
+            )
 
-        val outputsSingle = outputs()
-        val single = SingleThreadedOverseer(outputsSingle.map { it.first })
+            val outputsSingle = outputs()
+            val single = SingleThreadedOverseer(outputsSingle.map { it.first })
 
-        it("shouldn't throw any exceptions", timeout = 0) {
-            val exceptions = distributed.eval(44100.0f).mapNotNull { it.get().exception }
-            distributed.close()
-            assertThat(exceptions).isEmpty()
-        }
-        it("shouldn't throw any exceptions") {
-            val exceptions = single.eval(44100.0f).mapNotNull { it.get().exception }
-            single.close()
-            assertThat(exceptions).isEmpty()
-        }
-        it("should have the same output") {
-            assertThat(outputsDistributed[0].second.readLines()).all {
-                size().isGreaterThan(1)
-                isEqualTo(outputsSingle[0].second.readLines())
+            it("shouldn't throw any exceptions") {
+                val exceptions = distributed.eval(44100.0f).mapNotNull { it.get().exception }
+                distributed.close()
+                assertThat(exceptions).isEmpty()
             }
-            assertThat(outputsDistributed[1].second.readLines()).all {
-                size().isGreaterThan(1)
-                isEqualTo(outputsSingle[1].second.readLines())
+            it("shouldn't throw any exceptions") {
+                val exceptions = single.eval(44100.0f).mapNotNull { it.get().exception }
+                single.close()
+                assertThat(exceptions).isEmpty()
+            }
+            it("should have the same output") {
+                assertThat(outputsDistributed).eachIndexed { o, i ->
+                    o.prop("fileContent") { it.second.readLines() }.all {
+                        size().isGreaterThan(1)
+                        isEqualTo(outputsSingle[i].second.readLines())
+                    }
+                }
+            }
+        }
+
+        describe("Using builtin functions and types") {
+            val outputs = {
+                val file1 = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
+                val file2 = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
+                val input = 440.sine().map { abs(it) } + 880.sine()
+                val output1 = input
+                        .trim(500)
+                        .toCsv("file:///${file1.absolutePath}")
+                val output2 = input
+                        .window(101, 25)
+                        .hamming()
+                        .fft(128)
+                        .trim(500)
+                        .magnitudeToCsv("file:///${file2.absolutePath}")
+                listOf(output1 to file1, output2 to file2)
+            }
+
+            assertExecution(outputs)
+        }
+
+        describe("Using custom types") {
+
+            @Serializable
+            data class MySample(val v: Sample)
+
+            SampleCountMeasurement.registerType(MySample::class) { 1 }
+
+            val outputs = {
+
+                val file1 = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
+                val input = 440.sine().map { MySample(abs(it)) }
+                        .merge(with = 880.sine().map { MySample(it) }) { (a, b) -> MySample(a?.v + b?.v) }
+                val output1 = input
+                        .trim(500)
+                        .toCsv(
+                                uri = "file:///${file1.absolutePath}",
+                                header = listOf("index", "value"),
+                                elementSerializer = { (i, _, v) ->
+                                    listOf(i.toString(), v.v.toString())
+                                }
+                        )
+                listOf(output1 to file1)
+            }
+
+            assertExecution(outputs)
+        }
+    }
+
+    describe("Failing on error") {
+
+        fun Suite.assertExecutionExceptions(outputs: () -> List<StreamOutput<out Any>>, assertBlock: Assert<List<Throwable>>.() -> Unit) {
+            val outputsDistributed = outputs()
+            val distributed = DistributedOverseer(
+                    outputsDistributed,
+                    facilitatorsLocations,
+                    2
+            )
+
+            it("should throw exceptions") {
+                val exceptions = distributed.eval(44100.0f).mapNotNull { it.get().exception }
+                distributed.close()
+                assertBlock(assertThat(exceptions))
+            }
+        }
+
+        describe("Used non serializable class") {
+
+            data class NonSerializable(val v: Sample)
+
+            val outputs = {
+                val input = 440.sine().map { NonSerializable(it) }
+                val output1 = input
+                        .trim(500)
+                        .toDevNull()
+                listOf(output1)
+            }
+
+            assertExecutionExceptions(outputs) {
+                isNotEmpty()
+                size().isEqualTo(1)
+                prop("first") { it.first() }.message().isNotNull().contains("NonSerializable")
+            }
+        }
+
+        describe("Exception during execution of some bean") {
+            val outputs = {
+                val input = 440.sine().map { check(false) { "Doesn't work" }; it }
+                val output1 = input
+                        .trim(500)
+                        .toDevNull()
+                listOf(output1)
+            }
+
+            assertExecutionExceptions(outputs) {
+                isNotEmpty()
+                size().isEqualTo(1)
+                prop("first") { it.first() }
+                        .cause().isNotNull()
+                        .message().isNotNull().contains("Doesn't work")
             }
         }
     }
@@ -193,4 +282,5 @@ object DistributedOverseerSpec : Spek({
         }
     }
 })
+
 

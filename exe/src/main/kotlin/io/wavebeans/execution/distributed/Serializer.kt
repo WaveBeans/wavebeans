@@ -52,7 +52,7 @@ internal fun <T: Any> T.asByteArray(serializer: KSerializer<T>): ByteArray =
             result
 
         } catch (e: Throwable) {
-            if (e is OutOfMemoryError) throw e // most likely no resources to handle. Just fail
+            if (e is OutOfMemoryError) throw e // most likely no resources to handle. Just fail as is
             throw IllegalStateException("Can't serialize with `$serializer` object: $this", e)
         }
 
