@@ -82,7 +82,7 @@ And now you can use it:
 
 If you won't register the type, during execution you'll have an exception like `class my.wavebeans.DoubleSample is not registered within SampleCountMeasurement, use registerType() function or extend your class with Measured interface`
 
-The following types are built-in:
+The following types have built-in support:
 * `Number` -- always return 1 
 * `Sample` -- always return 1 
 * `FftSample` -- measured as the `window.step` it is built on top of. 
