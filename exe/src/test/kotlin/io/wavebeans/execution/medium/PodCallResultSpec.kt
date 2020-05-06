@@ -128,8 +128,8 @@ object PodCallResultSpec : Spek({
 
         describe("Wrapping List<FftSampleArray>") {
             val obj = listOf(
-                    createFftSampleArray(2) { i -> FftSample(i.toLong(), i, i, i * 123.0f, listOf(i.r, i.i)) },
-                    createFftSampleArray(2) { i -> FftSample(i.toLong(), i, i, i * 123.0f, listOf(i.r, i.i)) }
+                    createFftSampleArray(2) { i -> FftSample(i.toLong(), i, i, i, i * 123.0f, listOf(i.r, i.i)) },
+                    createFftSampleArray(2) { i -> FftSample(i.toLong(), i, i, i, i * 123.0f, listOf(i.r, i.i)) }
             )
             val result = result(obj)
 

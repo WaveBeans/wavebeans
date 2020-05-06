@@ -55,19 +55,36 @@ Working with different types
 
 Projection operation is defined for `Sample` and `Window<Sample>` types out of the box, but it's not limited to them. Only thing you need to keep in mind, that projection calculates time when the stream is being executed and the sample rate is provided, so it needs a way to convert the size of your type to samples to correctly calculate time markers, i.e. for `Sample` the size is always 1, for windowed samples the size is th size of the window step.
 
-To define your own type you need to register it before it's being executed:
+To use your own type you need to define how to measure it
+
+One way is to implement the `io.wavebeans.lib.stream.Measured` interface for you class:
 
 ```kotlin
+data class DoubleSample(val one: Sample, val two: Sample) : Measured {
+    override fun measure(): Int = 2
+}
+```
 
+Another way is to register it before it's being executed, preferrably to be used for the classes you can't extend like SDK classes:
+
+```kotlin
 data class DoubleSample(val one: Sample, val two: Sample)
-
 SampleCountMeasurement.registerType(DoubleSample::class) { 2 }
+```
 
+And now you can use it:
+
+```kotlin
 440.sine().window(2)
-        .map { DoubleSample(it.elements.first(), it.elements.drop(1).first()) }
+        .map { DoubleSample(it.elements[0], it.elements[1]) }
         .rangeProjection(100, 200)
 ```
 
-If you won't register the type, during execution you'll have an exception like `class my.wavebeans.DoubleSample is not registered within SampleCountMeasurement, use registerType() function`
+If you won't register the type, during execution you'll have an exception like `class my.wavebeans.DoubleSample is not registered within SampleCountMeasurement, use registerType() function or extend your class with Measured interface`
 
-If you use windowed type, you just need to define the calculation of your type, the Window will be calculated automatically, by applying the formula `sizeOfTheSample * window.step`. 
+The following types are built-in:
+* `Number` -- always return 1 
+* `Sample` -- always return 1 
+* `FftSample` -- measured as the `window.step` it is built on top of. 
+* `List<T>` -- measured as a sum of length of all corresponding elements of type `T`. Doesn't support nullable elements, will throw an exception.
+* `Window<T>` -- measured as `sizeOfTheSample * window.step`, where `sizeOfTheSample` is measure of the first element.

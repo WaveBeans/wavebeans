@@ -1,17 +1,8 @@
 package io.wavebeans.lib.stream
 
-import com.sun.media.sound.FFT
 import io.wavebeans.lib.*
-import io.wavebeans.lib.stream.fft.FftSample
-import io.wavebeans.lib.stream.window.Window
-import io.wavebeans.lib.stream.window.WindowStream
-import io.wavebeans.lib.stream.window.WindowStreamParams
 import kotlinx.serialization.Serializable
 import java.util.concurrent.TimeUnit
-import kotlin.reflect.KClass
-import kotlin.reflect.KType
-import kotlin.reflect.full.isSubclassOf
-import kotlin.reflect.full.isSupertypeOf
 
 @Serializable
 data class ProjectionBeanStreamParams(
@@ -74,28 +65,3 @@ fun <T : Any> BeanStream<T>.rangeProjection(start: Long, end: Long? = null, time
     return ProjectionBeanStream(this, ProjectionBeanStreamParams(start, end, timeUnit))
 }
 
-@Suppress("UNCHECKED_CAST")
-object SampleCountMeasurement {
-
-    private val types = mutableMapOf<KClass<*>, (Any) -> Int>()
-
-    init {
-        registerType(Number::class) { 1 }
-        registerType(Sample::class) { 1 }
-        registerType(Window::class) { window -> window.step * samplesInObject(window.elements.first()) }
-        registerType(FftSample::class) { it.samplesCount }
-        registerType(List::class) { it.size * samplesInObject(it.first() ?: throw IllegalStateException("List of nullable types is not supported")) }
-    }
-
-    fun <T : Any> registerType(clazz: KClass<T>, measurer: (T) -> Int) {
-        check(types.put(clazz, measurer as (Any) -> Int) == null) { "$clazz is already registered" }
-    }
-
-    fun samplesInObject(obj: Any): Int {
-        return types.filterKeys { obj::class.isSubclassOf(it) }
-                .map { it.value }
-                .firstOrNull()
-                ?.invoke(obj)
-                ?: throw IllegalStateException("${obj::class} is not registered within ${SampleCountMeasurement::class.simpleName}, use registerType() function")
-    }
-}
