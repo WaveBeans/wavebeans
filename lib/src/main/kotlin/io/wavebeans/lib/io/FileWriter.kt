@@ -2,10 +2,8 @@ package io.wavebeans.lib.io
 
 import io.wavebeans.lib.BeanStream
 import mu.KotlinLogging
-import java.io.BufferedOutputStream
-import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
+import java.io.*
+import java.lang.Exception
 import java.net.URI
 
 abstract class FileWriter<T : Any>(
@@ -43,11 +41,27 @@ abstract class FileWriter<T : Any>(
     protected abstract fun serialize(element: T): ByteArray
 
     override fun close() {
-        log.debug { "[$this] Closing the writer" }
-        buffer.close()
-        log.debug { "[$this] Buffer closed" }
-        file.close()
-        log.debug { "[$this] Temporary file $tmpFile closed" }
+        log.info { "[$this] Closing the writer" }
+        try {
+            buffer.close()
+            log.debug { "[$this] Buffer closed" }
+        } catch (e: IOException) {
+            // ignore if buffer was already closed
+            if ((e.message ?: "").contains("Closed"))
+                log.warn(e) { "[$this] Buffer was already closed earlier" }
+            else
+                throw e
+        }
+        try {
+            file.close()
+            log.debug { "[$this] Temporary file $tmpFile closed" }
+        } catch (e: IOException) {
+            // ignore if buffer was already closed
+            if ((e.message ?: "").contains("Closed"))
+                log.warn(e) { "[$this] Temporary file $tmpFile was already closed earlier" }
+            else
+                throw e
+        }
 
         if (tmpFile.exists()) {
             FileOutputStream(File(uri)).use { f ->
@@ -70,7 +84,7 @@ abstract class FileWriter<T : Any>(
             tmpFile.delete()
             log.debug { "[$this] Temporary file $tmpFile deleted" }
         } else {
-            log.debug { "[$this] Temporary file is not found. Seems everything is closed already." }
+            log.warn { "[$this] Temporary file is not found. Seems everything is closed already." }
         }
 
     }
