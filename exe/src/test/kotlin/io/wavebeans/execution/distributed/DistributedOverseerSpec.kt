@@ -115,22 +115,27 @@ object DistributedOverseerSpec : Spek({
         describe("Using custom types") {
 
             @Serializable
-            data class MySample(val v: Sample)
+            data class InnerSample(val v: Sample) : Measured {
+                override fun measure(): Int = SampleCountMeasurement.samplesInObject(v)
+            }
 
-            SampleCountMeasurement.registerType(MySample::class) { 1 }
+            @Serializable
+            data class MySample(val v: InnerSample) : Measured {
+                override fun measure(): Int = SampleCountMeasurement.samplesInObject(v)
+            }
 
             val outputs = {
 
                 val file1 = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
-                val input = 440.sine().map { MySample(abs(it)) }
-                        .merge(with = 880.sine().map { MySample(it) }) { (a, b) -> MySample(a?.v + b?.v) }
+                val input = 440.sine().map { MySample(InnerSample(abs(it))) }
+                        .merge(with = 880.sine().map { MySample(InnerSample(it)) }) { (a, b) -> MySample(InnerSample(a?.v?.v + b?.v?.v)) }
                 val output1 = input
                         .trim(500)
                         .toCsv(
                                 uri = "file:///${file1.absolutePath}",
                                 header = listOf("index", "value"),
                                 elementSerializer = { (i, _, v) ->
-                                    listOf(i.toString(), v.v.toString())
+                                    listOf(i.toString(), v.v.v.toString())
                                 }
                         )
                 listOf(output1 to file1)
@@ -226,7 +231,8 @@ object DistributedOverseerSpec : Spek({
             compileCode(mapOf(
                     codeFile("Runner.kt"),
                     codeFile("Success.kt"),
-                    codeFile("Error.kt")
+                    codeFile("Error.kt"),
+                    codeFile("CustomType.kt")
             ))
         }
 
@@ -236,6 +242,37 @@ object DistributedOverseerSpec : Spek({
                         javaCmd(),
                         "-cp", System.getProperty("java.class.path") + ":" + jarFile.absolutePath,
                         "io.wavebeans.test.app.SuccessKt"
+                )
+            }
+
+            lateinit var runCall: CommandResult
+            it("should execute") {
+                runCall = runner.run(inheritIO = false)
+                assertThat(runCall.exitCode).isEqualTo(0)
+            }
+            it("shouldn't throw any exceptions to output") {
+                val exceptions = extractExceptions(runCall)
+                assertThat(exceptions).isEmpty()
+            }
+            it("should contain 11 rows in output file") {
+                assertThat(file.readLines()).all {
+                    eachIndexed(11) { r, idx ->
+                        when (idx) {
+                            0 -> r.isEqualTo("index,value")
+                            in 1..10 -> r.isEqualTo("${idx - 1},${idx - 1}")
+                            else -> r.fail("index < 11", "index=$idx")
+                        }
+                    }
+                }
+            }
+        }
+
+        describe("Custom type runner") {
+            val runner by memoized(SCOPE) {
+                CommandRunner(
+                        javaCmd(),
+                        "-cp", System.getProperty("java.class.path") + ":" + jarFile.absolutePath,
+                        "io.wavebeans.test.app.CustomTypeKt"
                 )
             }
 

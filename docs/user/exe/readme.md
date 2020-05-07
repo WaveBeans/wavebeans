@@ -81,7 +81,7 @@ A little more details about how that's happening. While streams are being prepar
 1. All operations in the stream including inputs and outputs are represented as Beans -- the atomic entity in the topology. Beans are connected to each other, providing pieces of data when it is requested. 
 2. All beans that can be partitioned are being split up, so the same bean could process different operations in parallel by processing different parts of the stream, some beans which doesn't allow partitioning will merge the parts together.
 3. After all beans are defined they are being grouped into Pods. A pod is similar entity to a bean, works very similarly, but pod groups one or more beans together, and encapsulates the communication over the network if required.
-4. A set of pods is being deployed onto a Bush which is controlled by the Bush Controller. In multi-threaded mode you would need to define amount of threads for this bush, and only one bush is being used in that case. Multiple amount of bushes are reserved for multi-node deployment. 
+4. A set of pods is being deployed onto a Bush which is controlled by the Gardener. In multi-threaded mode you would need to define amount of threads for this bush, and only one bush is being used in that case. Multiple amount of bushes are reserved for distributed deployment. 
 
 The amount of pods and amount of threads may not correspond to each other, moreover you wouldn't even benefit from it as threads won't be 100% utilized. The model uses asynchronous mechanism of execution splitting up evaluation in small tasks, though it may even run this way on a single thread. The number of threads should be around the number of partitions or less, however that always depends on the topology.
 
@@ -92,6 +92,8 @@ There is one important thing that is drastically different between the single-th
 Distributed mode allows to spread the execution across multiple servers in the same network. It is similar to multi-threaded execution but has a few key differences: the data is transfered over the network, hence it should be serializable, all participants in the flow is recommended to run the very same version to avoid any glitches. 
 
 A few things you need to get acquinted before the start. Firstly, in distributed modes there are two main participants: Facilitator and Distributed Overseer (simply Overseer further down). Secondly, the actual execution happens across a few nodes, so for the storage always use something that is accessible from any of your machines, i.e. NFS, HDFS, S3, etc.
+
+The distributed mode is very similar to multi-threaded one, with only exception that in distributed mode multiple threads additionally communicate with each other over the network.
 
 ### Overseer
 
@@ -147,7 +149,23 @@ wavebeans-facilitator --help
 
 ### Serialization
 
-[TODO]
+To be able to transfer objects over the network, they are needed to be serialized. All main types are already made serializable, but if you define your own type you need to make it serializable yourself. 
+ 
+If you're using primitive types like String or Integer, you don't need to define its serialization routine. 
+
+If you use classes which uses primitive values or another serizalizable class as its fields, it is enough to mark such class with `kotlinx.serialization.Serializable` annotation:
+
+```kotlin
+import kotlinx.serialization.*
+
+@Serializable
+class InnerType(val field: String)
+
+@Serializable
+data class MyType(val field1: Int, val field2: InnerType)
+```
+
+For more serialization techniques follow official documentation of [`kotlinx.serialization`](https://github.com/Kotlin/kotlinx.serialization)
 
 ### Fault-tolerance
 
