@@ -29,9 +29,9 @@ class Gardener {
     fun plantBush(jobKey: JobKey, bushKey: BushKey, pods: List<PodRef>, sampleRate: Float): Gardener {
         val bush = LocalBush(bushKey)
         pods.forEach { bush.addPod(it.instantiate(sampleRate)) }
-        val bushDescriptor = JobDescriptor(bushKey, pods, sampleRate, bush)
+        val jobDescriptor = JobDescriptor(bushKey, pods, sampleRate, bush)
         activeJobs.putIfAbsent(jobKey, CopyOnWriteArrayList())
-        activeJobs.getValue(jobKey).add(bushDescriptor)
+        activeJobs.getValue(jobKey).add(jobDescriptor)
         log.info { "JOB[$jobKey] New Bush added with pods=${pods} with sampleRate=$sampleRate" }
         return this
     }
@@ -49,7 +49,7 @@ class Gardener {
     }
 
     fun stop(jobKey: JobKey) {
-        activeJobs[jobKey]?.forEach { descriptor ->
+        activeJobs.remove(jobKey)?.forEach { descriptor ->
             descriptor.bush.close()
             log.info { "JOB[$jobKey] BUSH[${descriptor.bushKey}] Closed. " }
         }

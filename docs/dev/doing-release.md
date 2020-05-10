@@ -3,8 +3,20 @@ How to do a release?
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+- [What this document is about](#what-this-document-is-about)
+
+- [What this document is about](#what-this-document-is-about)
+- [Release steps](#release-steps)
+
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
+What this document is about
+------
+
+This document describe the process of making releases. Some of this position may be automated but currently is not done.
+
+Release steps
+------
 
 0. Assumptions:
 

@@ -77,15 +77,7 @@ class Facilitator(
     private lateinit var server: ApplicationEngine
     private var listeningPort: Int = 0
     private var startedFrom: List<StackTraceElement>? = null
-
     private val jobStates = ConcurrentHashMap<JobKey, JobState>()
-    private fun jobStates(jobKey: JobKey): JobState {
-        return jobStates.computeIfAbsent(jobKey) { JobState.create(jobKey) }
-    }
-
-    fun listeningPort(): Int =
-            if (listeningPort > 0) listeningPort
-            else throw IllegalStateException("Facilitator is not listening yet. Please start first")
 
     fun start(): Facilitator {
         if (startedFrom != null)
@@ -134,72 +126,11 @@ class Facilitator(
         return this
     }
 
-    fun waitAndClose() {
-        terminate.await()
-        log.info { "Facilitator terminating" }
-        close()
-        log.info { "Facilitator stopped" }
-    }
+    fun listeningPort(): Int =
+            if (listeningPort > 0) listeningPort
+            else throw IllegalStateException("Facilitator is not listening yet. Please start first")
 
-    private fun startApi(serverPort: Int) {
-        if (applicationEngine == null) {
-            val env = applicationEngineEnvironment {
-                module {
-                    facilitatorApi(this@Facilitator)
-                }
-                connector {
-                    host = "0.0.0.0"
-                    port = serverPort
-                }
-            }
-            server = embeddedServer(Netty, env).start()
-        } else {
-            applicationEngine.application.facilitatorApi(this)
-        }
-    }
-
-    fun terminate() {
-        log.info { "Terminating" }
-        gardener.stopAll()
-        terminate.countDown()
-        stopAll()
-    }
-
-    fun plantBush(request: PlantBushRequest) {
-        gardener.plantBush(request.jobKey, request.jobContent.bushKey, request.jobContent.pods, request.sampleRate)
-        jobStates(request.jobKey).futures.addAll(gardener.getAllFutures(request.jobKey))
-    }
-
-    fun job(jobKey: JobKey): List<JobContent> =
-            gardener.job(jobKey).map { JobContent(it.bushKey, it.podRefs) }
-
-    override fun close() {
-        if (applicationEngine == null)
-            server.stop(onServerShutdownGracePeriodMillis, onServerShutdownTimeoutMillis)
-    }
-
-    fun startJob(jobKey: JobKey) {
-        gardener.start(jobKey)
-    }
-
-    fun stopJob(jobKey: JobKey) {
-        gardener.stop(jobKey)
-        jobStates.remove(jobKey)?.let { jobState ->
-            jobState.remoteBushes.forEach { bush ->
-                bush.close()
-                podDiscovery.unregisterBush(bush.bushKey)
-            }
-            WaveBeansClassLoader.removeClassLoader(jobState.classLoader)
-        }
-    }
-
-    fun stopAll() {
-        jobStates.keys.forEach { stopJob(it) }
-    }
-
-    fun job(): List<JobKey> {
-        return gardener.jobs()
-    }
+    fun startupClasses(): List<ClassDesc> = startupClasses
 
     fun registerCode(jobKey: JobKey, codeFile: File) {
         log.info {
@@ -208,6 +139,11 @@ class Facilitator(
         }
 
         jobStates(jobKey).classLoader += codeFile.toURI().toURL()
+    }
+
+    fun plantBush(request: PlantBushRequest) {
+        gardener.plantBush(request.jobKey, request.jobContent.bushKey, request.jobContent.pods, request.sampleRate)
+        jobStates(request.jobKey).futures.addAll(gardener.getAllFutures(request.jobKey))
     }
 
     fun registerBushEndpoints(registerBushEndpointsRequest: RegisterBushEndpointsRequest) {
@@ -221,12 +157,16 @@ class Facilitator(
         }
     }
 
-    fun call(bushKey: BushKey, podKey: PodKey, request: String): (OutputStream) -> Unit {
-        val bush = podDiscovery.bush(bushKey) ?: throw IllegalStateException("Bush $bushKey not found")
-        if (bush !is LocalBush) throw IllegalStateException("Bush $bushKey is ${bush::class} but ${LocalBush::class} expected")
-        val podCallResult = bush.call(podKey, request).get(callTimeoutMillis, TimeUnit.MILLISECONDS)
-        return podCallResult::writeTo
+    fun startJob(jobKey: JobKey) {
+        gardener.start(jobKey)
     }
+
+    fun jobs(): List<JobKey> {
+        return gardener.jobs()
+    }
+
+    fun describeJob(jobKey: JobKey): List<JobContent> =
+            gardener.job(jobKey).map { JobContent(it.bushKey, it.podRefs) }
 
     fun status(jobKey: JobKey): List<JobStatus> {
         return gardener.getAllFutures(jobKey).map { future ->
@@ -249,7 +189,67 @@ class Facilitator(
         }
     }
 
-    fun startupClasses(): List<ClassDesc> = startupClasses
+    fun call(bushKey: BushKey, podKey: PodKey, request: String): (OutputStream) -> Unit {
+        val bush = podDiscovery.bush(bushKey) ?: throw IllegalStateException("Bush $bushKey not found")
+        if (bush !is LocalBush) throw IllegalStateException("Bush $bushKey is ${bush::class} but ${LocalBush::class} expected")
+        val podCallResult = bush.call(podKey, request).get(callTimeoutMillis, TimeUnit.MILLISECONDS)
+        return podCallResult::writeTo
+    }
+
+    fun stopJob(jobKey: JobKey) {
+        gardener.stop(jobKey)
+        jobStates.remove(jobKey)?.let { jobState ->
+            jobState.remoteBushes.forEach { bush ->
+                bush.close()
+                podDiscovery.unregisterBush(bush.bushKey)
+            }
+            WaveBeansClassLoader.removeClassLoader(jobState.classLoader)
+        }
+    }
+
+    fun stopAll() {
+        jobStates.keys.forEach { stopJob(it) }
+    }
+
+    fun waitAndClose() {
+        terminate.await()
+        log.info { "Facilitator terminating" }
+        close()
+        log.info { "Facilitator stopped" }
+    }
+
+    fun terminate() {
+        log.info { "Terminating" }
+        gardener.stopAll()
+        terminate.countDown()
+        stopAll()
+    }
+
+    override fun close() {
+        if (applicationEngine == null)
+            server.stop(onServerShutdownGracePeriodMillis, onServerShutdownTimeoutMillis)
+    }
+
+    private fun startApi(serverPort: Int) {
+        if (applicationEngine == null) {
+            val env = applicationEngineEnvironment {
+                module {
+                    facilitatorApi(this@Facilitator)
+                }
+                connector {
+                    host = "0.0.0.0"
+                    port = serverPort
+                }
+            }
+            server = embeddedServer(Netty, env).start()
+        } else {
+            applicationEngine.application.facilitatorApi(this)
+        }
+    }
+
+    private fun jobStates(jobKey: JobKey): JobState {
+        return jobStates.computeIfAbsent(jobKey) { JobState.create(jobKey) }
+    }
 }
 
 

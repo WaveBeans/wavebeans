@@ -8,6 +8,10 @@
 - [Single-threaded mode](#single-threaded-mode)
 - [Multi-threaded mode](#multi-threaded-mode)
 - [Distributed mode](#distributed-mode)
+  - [Overseer](#overseer)
+  - [Facilitators](#facilitators)
+  - [Serialization](#serialization)
+  - [Fault-tolerance](#fault-tolerance)
 - [Using writers](#using-writers)
 - [Using sequence](#using-sequence)
 

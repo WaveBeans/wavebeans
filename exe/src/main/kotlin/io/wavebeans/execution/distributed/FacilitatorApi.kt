@@ -15,7 +15,6 @@ import io.ktor.response.respond
 import io.ktor.response.respondOutputStream
 import io.ktor.routing.*
 import io.ktor.serialization.json
-import io.ktor.server.engine.BaseApplicationResponse
 import io.ktor.util.getOrFail
 import io.wavebeans.execution.*
 import io.wavebeans.execution.pod.PodKey
@@ -84,14 +83,14 @@ fun Application.facilitatorApi(facilitator: Facilitator) {
         }
         get("/job") {
             val jobKey = call.request.queryParameters.getOrFail<String>("jobKey").toJobKey()
-            val jobContents = facilitator.job(jobKey)
+            val jobContents = facilitator.describeJob(jobKey)
             if (jobContents.isNotEmpty())
                 call.respond(jobContents)
             else
                 call.respond(HttpStatusCode.NotFound, "Not found")
         }
         get("/jobs") {
-            call.respond(json.stringify(ListSerializer(UUIDSerializer), facilitator.job()))
+            call.respond(json.stringify(ListSerializer(UUIDSerializer), facilitator.jobs()))
         }
         get("/job/status") {
             val jobKey = call.request.queryParameters.getOrFail<String>("jobKey").toJobKey()
