@@ -3,6 +3,7 @@ package io.wavebeans.lib.stream.fft
 import io.wavebeans.lib.*
 import io.wavebeans.lib.math.ComplexNumber
 import io.wavebeans.lib.math.r
+import io.wavebeans.lib.stream.Measured
 import io.wavebeans.lib.stream.window.Window
 import kotlinx.serialization.Serializable
 import kotlin.math.PI
@@ -26,6 +27,10 @@ data class FftSample(
          */
         val samplesCount: Int,
         /**
+         * The actual length of the sample it is built on. Calculated based on the underlying window.
+         */
+        val samplesLength: Int,
+        /**
          * Sample rate which was used to calculate the FFT
          */
         val sampleRate: Float,
@@ -33,7 +38,9 @@ data class FftSample(
          * The list of [ComplexNumber]s which is calculated FFT. Use [magnitude] and [phase] methods to extract magnitude and phase respectively.
          */
         val fft: List<ComplexNumber>
-) {
+) : Measured {
+
+    override fun measure(): Int = samplesLength
 
     /**
      * Gets the magnitude values for this FFT calculation. It is returned in logarithmic scale, using only first half of the FFT.
@@ -107,6 +114,7 @@ class FftStream(
                             index = idx++,
                             binCount = parameters.n,
                             samplesCount = m,
+                            samplesLength = window.step,
                             fft = fft.toList(),
                             sampleRate = sampleRate
                     )

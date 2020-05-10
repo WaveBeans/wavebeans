@@ -2,8 +2,10 @@ package io.wavebeans.lib.stream.window
 
 import io.wavebeans.lib.Sample
 import io.wavebeans.lib.ZeroSample
+import io.wavebeans.lib.stream.Measured
+import io.wavebeans.lib.stream.SampleCountMeasurement
 
-data class Window<T: Any>(
+data class Window<T : Any>(
         /**
          * The size of the window it was created with.
          */
@@ -25,7 +27,9 @@ data class Window<T: Any>(
          * by this function.
          */
         val zeroEl: () -> T
-) {
+) : Measured {
+
+    override fun measure(): Int = step * SampleCountMeasurement.samplesInObject(elements.first())
 
     init {
         require(size >= 1) { "Size should be more than 0" }
