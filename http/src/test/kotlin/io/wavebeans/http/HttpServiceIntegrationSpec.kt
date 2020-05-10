@@ -10,7 +10,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.request.get
 import io.ktor.util.KtorExperimentalAPI
-import io.wavebeans.execution.LocalOverseer
+import io.wavebeans.execution.SingleThreadedOverseer
 import io.wavebeans.lib.io.sine
 import io.wavebeans.lib.s
 import io.wavebeans.lib.table.toTable
@@ -28,7 +28,7 @@ object HttpServiceIntegrationSpec : Spek({
         val o = 440.sine().toTable("tableIntegration1", 1.s)
         val elementRegex = elementRegex("-?\\d+\\.\\d+([eE]?-\\d+)?")
 
-        val overseer = LocalOverseer(listOf(o))
+        val overseer = SingleThreadedOverseer(listOf(o))
         overseer.eval(44100.0f)
         after { overseer.close() }
 

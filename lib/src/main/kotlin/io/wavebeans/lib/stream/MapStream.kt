@@ -1,7 +1,6 @@
 package io.wavebeans.lib.stream
 
 import io.wavebeans.lib.*
-import jdk.nashorn.internal.runtime.regexp.joni.Config.log
 import kotlinx.serialization.*
 import mu.KotlinLogging
 import kotlin.reflect.jvm.jvmName

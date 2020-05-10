@@ -7,20 +7,16 @@ import assertk.assertions.isTrue
 import com.nhaarman.mockitokotlin2.mock
 import io.wavebeans.execution.*
 import io.wavebeans.execution.medium.PodCallResult
-import io.wavebeans.execution.medium.sampleArrayList
 import io.wavebeans.execution.pod.Pod
 import io.wavebeans.execution.pod.PodKey
-import io.wavebeans.lib.ZeroSample
 import io.wavebeans.lib.sampleOf
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Future
 
-class PodProxyIteratorTester<T : Any, ARRAY_T : Any>(
+class PodProxyIteratorTester(
         val pointedTo: Pod,
-        converter: (PodCallResult) -> List<ARRAY_T>?,
-        elementExtractor: (ARRAY_T, Int) -> T?,
         partitionSize: Int = 1,
         prefetchBucketAmount: Int = 1
 ) {
@@ -61,8 +57,6 @@ class PodProxyIteratorTester<T : Any, ARRAY_T : Any>(
             readingPartition = 0,
             podDiscovery = podDiscovery,
             bushCallerRepository = bushCallerRepository,
-            converter = converter,
-            elementExtractor = elementExtractor,
             partitionSize = partitionSize,
             prefetchBucketAmount = prefetchBucketAmount
     )
@@ -71,9 +65,7 @@ class PodProxyIteratorTester<T : Any, ARRAY_T : Any>(
 object PodProxyIteratorSpec : Spek({
     describe("Partition size = 1, buckets = 1") {
         val iterator = PodProxyIteratorTester(
-                pointedTo = newTestStreamingPod((1..2).toList()),
-                converter = { r -> r.sampleArrayList() },
-                elementExtractor = { arr, i -> if (i < arr.size) arr[i] else null }
+                pointedTo = newTestStreamingPod((1..2).toList())
         )
 
         it("should have some elements") { assertThat(iterator.iterator.hasNext()).isTrue() }
@@ -85,8 +77,6 @@ object PodProxyIteratorSpec : Spek({
     describe("Partition size = 2, buckets = 1.") {
         val iterator = PodProxyIteratorTester(
                 pointedTo = newTestStreamingPod((1..4).toList(), partitionSize = 2),
-                converter = { r -> r.sampleArrayList() },
-                elementExtractor = { arr, i -> if (i < arr.size) arr[i] else null },
                 partitionSize = 2
         )
 
@@ -104,8 +94,6 @@ object PodProxyIteratorSpec : Spek({
     describe("Partition size = 2, buckets = 1. Not enough data to fill in full buckets") {
         val iterator = PodProxyIteratorTester(
                 pointedTo = newTestStreamingPod((1..3).toList(), partitionSize = 2),
-                converter = { r -> r.sampleArrayList() },
-                elementExtractor = { arr, i -> if (i < arr.size) arr[i] else null },
                 partitionSize = 2
         )
 

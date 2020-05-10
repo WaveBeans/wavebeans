@@ -2,8 +2,8 @@ package io.wavebeans.execution.podproxy
 
 import io.wavebeans.execution.BushCallerRepository
 import io.wavebeans.execution.PodDiscovery
-import io.wavebeans.execution.medium.PodCallResult
-import io.wavebeans.execution.medium.long
+import io.wavebeans.execution.medium.Medium
+import io.wavebeans.execution.medium.value
 import io.wavebeans.execution.pod.DEFAULT_PARTITION_SIZE
 import io.wavebeans.execution.pod.PodKey
 import mu.KotlinLogging
@@ -12,17 +12,15 @@ import java.util.concurrent.TimeUnit
 // TODO consider providing via Config
 const val DEFAULT_PREFETCH_BUCKET_AMOUNT = 10
 
-class PodProxyIterator<T : Any, ARRAY_T>(
+class PodProxyIterator(
         val sampleRate: Float,
         val pod: PodKey,
         val readingPartition: Int,
         val podDiscovery: PodDiscovery = PodDiscovery.default,
         val bushCallerRepository: BushCallerRepository = BushCallerRepository.default(podDiscovery),
-        val converter: (PodCallResult) -> List<ARRAY_T>?,
-        val elementExtractor: (ARRAY_T, Int) -> T?,
         val prefetchBucketAmount: Int = DEFAULT_PREFETCH_BUCKET_AMOUNT,
         val partitionSize: Int = DEFAULT_PARTITION_SIZE
-) : Iterator<T> {
+) : Iterator<Any> {
 
     companion object {
         private val log = KotlinLogging.logger { }
@@ -34,29 +32,21 @@ class PodProxyIterator<T : Any, ARRAY_T>(
 
     init {
         iteratorKey = caller.call("iteratorStart?sampleRate=$sampleRate&partitionIdx=${readingPartition}")
-                .get(5000, TimeUnit.MILLISECONDS).long()
+                .get(5000, TimeUnit.MILLISECONDS).value()
         log.trace { "Created iterator [Pod=$pod] iteratorKey=$iteratorKey" }
     }
 
-    private var buckets: List<ARRAY_T>? = null
+    private var buckets: List<Medium>? = null
     private var bucketPointer = 0
     private var pointer = 0
-    private var nextEl: T? = null
+    private var nextEl: Any? = null
 
     override fun hasNext(): Boolean {
         if (nextEl != null) return true
-        val s = tryReadBuckets()
-        return if (s != null
-                && s.isNotEmpty()
-                && bucketPointer < s.size
-                && pointer < partitionSize) {
-            return tryReadNextEl()
-        } else {
-            false
-        }
+        return tryReadNextEl()
     }
 
-    override fun next(): T {
+    override fun next(): Any {
         if (nextEl != null) {
             val el = nextEl!!
             nextEl = null
@@ -71,24 +61,27 @@ class PodProxyIterator<T : Any, ARRAY_T>(
         }
     }
 
-    private fun tryReadBuckets(): List<ARRAY_T>? {
+    private fun tryReadBuckets(): List<Medium>? {
         if (buckets == null || bucketPointer >= buckets?.size ?: 0) {
             log.trace { "[$this] Calling iteratorNext(pod=$pod, iteratorKey=$iteratorKey)" }
 
-            val podResult = caller.call(
+            val podCallResult = caller.call(
                     "iteratorNext" +
                             "?iteratorKey=$iteratorKey" +
                             "&buckets=$prefetchBucketAmount"
             ).get(5000, TimeUnit.MILLISECONDS)
 
-            if (podResult.isNull()) {
+            if (podCallResult.exception != null) {
+                throw IllegalStateException("Error while trying to read next bucket [iteratorKey=$iteratorKey,buckets=$buckets]", podCallResult.exception)
+            }
+            if (podCallResult.isNull()) {
                 log.trace { "[$this] iteratorNext(pod=$pod, iteratorKey=$iteratorKey) returned null" }
                 buckets = null
                 bucketPointer = 0
                 pointer = 0
                 return null
             }
-            buckets = converter(podResult)
+            buckets = podCallResult.value()
             log.trace { "[$this] iteratorNext(pod=$pod, iteratorKey=$iteratorKey) result was converted to buckets=$buckets" }
             bucketPointer = 0
             pointer = 0
@@ -99,7 +92,7 @@ class PodProxyIterator<T : Any, ARRAY_T>(
     private fun tryReadNextEl(): Boolean {
         val s = tryReadBuckets() ?: return false
         val bucket = s[bucketPointer]
-        val el = elementExtractor(bucket, pointer) ?: return false
+        val el = bucket.extractElement(pointer) ?: return false
 
         if (++pointer >= partitionSize) {
             pointer = 0

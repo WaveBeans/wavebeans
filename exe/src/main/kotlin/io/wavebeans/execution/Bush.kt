@@ -1,5 +1,6 @@
 package io.wavebeans.execution
 
+import io.wavebeans.execution.config.ExecutionConfig
 import io.wavebeans.execution.medium.PodCallResult
 import io.wavebeans.execution.pod.Pod
 import io.wavebeans.execution.pod.PodKey
@@ -12,16 +13,15 @@ import kotlin.random.Random
 
 typealias BushKey = Int
 
-data class ExecutionResult(val finished: Boolean, val exception: Exception?) {
+data class ExecutionResult(val finished: Boolean, val exception: Throwable?) {
     companion object {
         fun success() = ExecutionResult(true, null)
-        fun error(e: Exception) = ExecutionResult(false, e)
+        fun error(e: Throwable) = ExecutionResult(false, e)
     }
 }
 
 class Bush(
         val bushKey: BushKey,
-        val threadsCount: Int,
         val podDiscovery: PodDiscovery = PodDiscovery.default
 ) : Closeable {
 
@@ -29,14 +29,7 @@ class Bush(
         private val log = KotlinLogging.logger { }
     }
 
-    class NamedThreadFactory(val name: String) : ThreadFactory {
-        private var c = 0
-        override fun newThread(r: Runnable): Thread {
-            return Thread(ThreadGroup(name), r, "$name-${c++}")
-        }
-    }
-
-    private val workingPool = Executors.newFixedThreadPool(threadsCount, NamedThreadFactory("work"))
+    private val workingPool = ExecutionConfig.executionThreadPool()
 
     @Volatile
     private var isDraining = false
@@ -59,7 +52,7 @@ class Bush(
                     log.debug { "Tick pod $pod has finished as it is over [isDraining=$isDraining]" }
                     tickFinished[pod]!!.complete(ExecutionResult.success())
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 log.debug(e) { "Tick pod $pod has finished due to error" }
                 tickFinished[pod]!!.complete(ExecutionResult.error(e))
             }
@@ -94,10 +87,6 @@ class Bush(
             it.close()
             podDiscovery.unregisterPod(bushKey, it.podKey)
         }
-        workingPool.shutdown()
-        if (!workingPool.awaitTermination(5000, TimeUnit.MILLISECONDS)) {
-            workingPool.shutdownNow()
-        }
         podDiscovery.unregisterBush(bushKey)
     }
 
@@ -118,7 +107,7 @@ class Bush(
                 "[$id][$this] Call to pod=$podKey, request=$request " +
                         "took ${System.currentTimeMillis() - start}ms and ended up with error"
             }
-            PodCallResult.wrap(call, e)
+            PodCallResult.error(call, e)
         }
         res.complete(r)
         return res

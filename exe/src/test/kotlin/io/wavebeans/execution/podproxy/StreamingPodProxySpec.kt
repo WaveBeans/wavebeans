@@ -7,8 +7,6 @@ import assertk.catch
 import com.nhaarman.mockitokotlin2.mock
 import io.wavebeans.execution.*
 import io.wavebeans.execution.medium.PodCallResult
-import io.wavebeans.execution.medium.SampleArray
-import io.wavebeans.execution.medium.nullableSampleArrayList
 import io.wavebeans.execution.pod.Pod
 import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.lib.Sample
@@ -53,13 +51,11 @@ class PodProxyTester(
         override fun create(bushKey: BushKey, podKey: PodKey): BushCaller = bushCaller
     }
 
-    val podProxy = object : StreamingPodProxy<Sample, SampleArray>(
+    val podProxy = object : StreamingPodProxy(
             pointedTo = pointedTo.podKey,
             forPartition = 0,
             bushCallerRepository = bushCallerRepository,
             podDiscovery = podDiscovery,
-            converter = { it.nullableSampleArrayList() },
-            elementExtractor = { arr, i -> if (i < arr.size) arr[i] else null },
             prefetchBucketAmount = timeToReadAtOnce,
             partitionSize = 1
     ) {}
@@ -77,7 +73,7 @@ object StreamingPodProxySpec : Spek({
         val seq = podProxyTester.podProxy.asSequence(20.0f)
         it("should create a sequence") { assertThat(seq).isNotNull() }
         it("should call iteratorStart once") { assertThat(podProxyTester.iteratorStartCounter).isEqualTo(1) }
-        val res = seq.take(10).map { it.asInt() }.toList()
+        val res = seq.take(10).map { (it as Sample).asInt() }.toList()
         it("should read all samples") { assertThat(res).isEqualTo((1..10).toList()) }
         it("should call iteratorNext 2 times") {
             assertThat(podProxyTester.iteratorNextCounter).isEqualTo(2)
@@ -95,13 +91,13 @@ object StreamingPodProxySpec : Spek({
             it("should have value on 1st iteration") {
                 assertThat(iterator).all {
                     prop("hasNext") { it.hasNext() }.isEqualTo(true)
-                    prop("next") { it.next().asInt() }.isEqualTo(1)
+                    prop("next") { (it.next() as Sample).asInt() }.isEqualTo(1)
                 }
             }
             it("should have value on 2nd iteration") {
                 assertThat(iterator).all {
                     prop("hasNext") { it.hasNext() }.isEqualTo(true)
-                    prop("next") { it.next().asInt() }.isEqualTo(2)
+                    prop("next") { (it.next() as Sample).asInt() }.isEqualTo(2)
                 }
             }
             it("should not have value on 3rd iteration") {
@@ -126,13 +122,13 @@ object StreamingPodProxySpec : Spek({
             it("should have value on 1st iteration") {
                 assertThat(iterator).all {
                     prop("hasNext") { it.hasNext() }.isEqualTo(true)
-                    prop("next") { it.next().asInt() }.isEqualTo(1)
+                    prop("next") { (it.next() as Sample).asInt() }.isEqualTo(1)
                 }
             }
             it("should have value on 2nd iteration") {
                 assertThat(iterator).all {
                     prop("hasNext") { it.hasNext() }.isEqualTo(true)
-                    prop("next") { it.next().asInt() }.isEqualTo(2)
+                    prop("next") { (it.next() as Sample).asInt() }.isEqualTo(2)
                 }
             }
             it("should not have value on 3rd iteration") {

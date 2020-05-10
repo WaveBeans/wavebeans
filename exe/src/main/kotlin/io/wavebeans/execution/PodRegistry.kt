@@ -15,13 +15,12 @@ object PodRegistry {
 
     private val log = KotlinLogging.logger { }
 
-    private val podProxyRegistry = mutableMapOf<KType, KFunction<AnyPodProxy>>()
-    private val mergingPodProxyRegistry = mutableMapOf<KType, KFunction<MergingPodProxy<*, *>>>()
+    private val podProxyRegistry = mutableMapOf<KType, KFunction<PodProxy>>()
+    private val mergingPodProxyRegistry = mutableMapOf<KType, KFunction<MergingPodProxy>>()
     private val podRegistry = mutableMapOf<KType, KFunction<Pod>>()
     private val splittingPodRegistry = mutableMapOf<KType, KFunction<Pod>>()
 
     init {
-        registerPodProxy(typeOf<FiniteStream<Sample>>(), FiniteSampleStreamPodProxy::class.constructors.first())
         registerPodProxy(typeOf<BeanStream<*>>(), AnyStreamPodProxy::class.constructors.first())
 
         registerMergingPodProxy(typeOf<BeanStream<*>>(), AnyStreamMergingPodProxy::class.constructors.first())
@@ -32,11 +31,11 @@ object PodRegistry {
         registerSplittingPod(typeOf<BeanStream<*>>(), AnySplittingPod::class.constructors.single { it.parameters.size == 3 })
     }
 
-    fun registerPodProxy(outputType: KType, constructor: KFunction<PodProxy<*>>) {
+    fun registerPodProxy(outputType: KType, constructor: KFunction<PodProxy>) {
         podProxyRegistry[outputType] = constructor
     }
 
-    fun registerMergingPodProxy(outputType: KType, constructor: KFunction<MergingPodProxy<*, *>>) {
+    fun registerMergingPodProxy(outputType: KType, constructor: KFunction<MergingPodProxy>) {
         mergingPodProxyRegistry[outputType] = constructor
     }
 
@@ -48,11 +47,11 @@ object PodRegistry {
         splittingPodRegistry[inputType] = constructor
     }
 
-    fun createPodProxy(beanType: KType, podKey: PodKey, forPartition: Int): AnyPodProxy =
+    fun createPodProxy(beanType: KType, podKey: PodKey, forPartition: Int): PodProxy =
             podProxyRegistry[findRegisteredType(beanType, podProxyRegistry.keys)]?.call(podKey, forPartition)
                     ?: throw IllegalStateException("PodProxy for `$beanType` is not found")
 
-    fun createMergingPodProxy(beanType: KType, podKeys: List<PodKey>, forPartition: Int): AnyPodProxy =
+    fun createMergingPodProxy(beanType: KType, podKeys: List<PodKey>, forPartition: Int): PodProxy =
             mergingPodProxyRegistry[findRegisteredType(beanType, mergingPodProxyRegistry.keys)]?.call(podKeys, forPartition)
                     ?: throw IllegalStateException("PodProxy for `$beanType` is not found")
 

@@ -5,9 +5,8 @@ import io.wavebeans.lib.*
 abstract class StreamingPod<T : Any, B : BeanStream<T>>(
         bean: B,
         podKey: PodKey,
-        converter: (List<T>) -> TransferContainer,
         partitionSize: Int = DEFAULT_PARTITION_SIZE
-) : AbstractPod<T, B>(podKey, bean, 1, converter, partitionSize) {
+) : AbstractPod<T, B>(podKey, bean, 1, partitionSize) {
 
     override fun inputs(): List<AnyBean> = listOf(bean)
 

@@ -5,8 +5,6 @@ import assertk.all
 import assertk.assertions.isEqualTo
 import assertk.assertions.support.fail
 import assertk.assertions.support.show
-import io.wavebeans.execution.medium.SampleArray
-import io.wavebeans.execution.medium.createSampleArray
 import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.execution.pod.SplittingPod
 import io.wavebeans.execution.pod.StreamingPod
@@ -29,11 +27,7 @@ fun newTestStreamingPod(seq: List<Int>, partition: Int = 0, partitionSize: Int =
     return object : StreamingPod<Sample, IntStream>(
             bean = IntStream(seq),
             podKey = PodKey(1, partition),
-            partitionSize = partitionSize,
-            converter = { list ->
-                val i = list.iterator()
-                createSampleArray(list.size) { i.next() }
-            }
+            partitionSize = partitionSize
     ) {}
 }
 
@@ -42,11 +36,7 @@ fun newTestSplittingPod(seq: List<Int>, partitionCount: Int): SplittingPod<Sampl
             bean = IntStream(seq),
             podKey = PodKey(1, 0),
             partitionCount = partitionCount,
-            partitionSize = 1,
-            converter = { list ->
-                val i = list.iterator()
-                createSampleArray(list.size) { i.next() }
-            }
+            partitionSize = 1
     ) {}
 }
 
