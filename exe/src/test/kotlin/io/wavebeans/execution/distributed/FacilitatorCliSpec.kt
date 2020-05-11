@@ -18,7 +18,8 @@ object FacilitatorCliSpec : Spek({
         it("should return 0 exit code") { assertThat(cli.call()).isEqualTo(0) }
         it("should have specific output") {
             assertThat(String(ostream.toByteArray())).isEqualTo(
-                    "The following config attributes of facilitatorConfig are supported- advertisingHostAddress: [simple type, class java.lang.String] <optional>. The name the Facilitator is advertised under. Default value: 127.0.0.1\n" +
+                    "The following config attributes of facilitatorConfig are supported:\n" +
+                            "- advertisingHostAddress: [simple type, class java.lang.String] <optional>. The name the Facilitator is advertised under. Default value: 127.0.0.1\n" +
                             "- listeningPortRange: [simple type, class kotlin.ranges.IntRange] <required>. The range facilitator will choose the port randomly from. Whichever won't be occupied. Default value: N/A\n" +
                             "- startingUpAttemptsCount: [simple type, class java.lang.Integer] <optional>. The number of attempts the facilitator will try to make to bind to port. Default value: 10\n" +
                             "- threadsNumber: [simple type, class java.lang.Integer] <required>. The capacity of working pool for this facilitator. It is going to be shared across all jobs. Default value: N/A\n" +
