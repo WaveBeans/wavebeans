@@ -32,7 +32,7 @@ class FacilitatorCli(
         private const val printVersionOption = "--version"
     }
 
-    private lateinit var facilitator: Facilitator
+    private var facilitator: Facilitator? = null
 
     private val startLatch = CountDownLatch(1)
 
@@ -41,7 +41,7 @@ class FacilitatorCli(
     }
 
     fun stop() {
-        facilitator.terminate()
+        facilitator?.terminate()
     }
 
     override fun call(): Int {
@@ -55,7 +55,7 @@ class FacilitatorCli(
         lateinit var configFilePath: String
         when (args[0].toLowerCase()) {
             configDescribeOption -> {
-                printWriter.println("The following config attributes of facilitatorConfig are supported" + FacilitatorConfig.items.joinToString("\n") {
+                printWriter.println("The following config attributes of facilitatorConfig are supported:\n" + FacilitatorConfig.items.joinToString("\n") {
                     "- ${it.name}: ${it.type} <${if (it.isRequired) "required" else "optional"}>. ${it.description}. " +
                             "Default value: ${if (it.isOptional) it.asOptionalItem.default?.toString() else "N/A"}"
                 })
@@ -107,14 +107,14 @@ class FacilitatorCli(
                 onServerShutdownTimeoutMillis = config[FacilitatorConfig.onServerShutdownTimeoutMillis]
         )
 
-        facilitator.start()
+        facilitator!!.start()
 
         startLatch.countDown()
 
-        printWriter.println("Listening on port ${facilitator.listeningPort()}")
+        printWriter.println("Listening on port ${facilitator!!.listeningPort()}")
         printWriter.flush()
 
-        facilitator.waitAndClose()
+        facilitator!!.waitAndClose()
 
         return 0
     }

@@ -95,7 +95,6 @@ publishing {
     }
 }
 
-
 bintray {
     user = findProperty("bintray.user")?.toString() ?: ""
     key = findProperty("bintray.key")?.toString() ?: ""
@@ -111,4 +110,3 @@ bintray {
         })
     })
 }
-
