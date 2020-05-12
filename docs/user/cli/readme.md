@@ -95,7 +95,7 @@ As was stated above, you may execute inline script (`-e` or `--execute`) or scri
 
 **Run mode**
 
-You may choose in what mode to run (`-m` or `--run-mode`). By default you'll run it just on  a single thread (`single-threaded`), but you may chooose to run in multi-threaded environment (`multi-threaded`) or ditsributed (`distributed`).
+You may choose in what mode to run (`-m` or `--run-mode`). By default you'll run it just on  a single thread (`single-threaded`), but you may choose to run in multi-threaded environment (`multi-threaded`) or distributed (`distributed`).
 
 For `multi-threaded` mode you need to pass additional parameters:
 * how many partitioned your processing topology will be tried to split up to: `-p` or `--partitions`. You may benefit from using it, but that is not guaranteed. Each partition is processed separately, the stream is broken down by chunks of a few hundreds samples, which are processed in parallel. Not all of the operations support partitioning, so you may end up just using one partition even if you specify more.
