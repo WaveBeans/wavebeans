@@ -64,14 +64,14 @@ class LocalBush(
                 }
     }
 
-    override fun addPod(pod: Pod) {
+    fun addPod(pod: Pod) {
         pods[pod.podKey] = pod
         podDiscovery.registerPod(bushKey, pod.podKey)
     }
 
-    override fun pods(): List<Pod> = pods.values.toList()
+    fun pods(): List<Pod> = pods.values.toList()
 
-    override fun tickPodsFutures(): List<Future<ExecutionResult>> {
+    fun tickPodsFutures(): List<Future<ExecutionResult>> {
         return tickFinished.values.toList()
     }
 

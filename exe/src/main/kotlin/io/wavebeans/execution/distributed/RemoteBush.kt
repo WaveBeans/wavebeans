@@ -24,18 +24,6 @@ class RemoteBush(
 
     override fun start() {}
 
-    override fun addPod(pod: Pod) {
-        TODO()
-    }
-
-    override fun pods(): List<Pod> {
-        TODO()
-    }
-
-    override fun tickPodsFutures(): List<Future<ExecutionResult>> {
-        TODO()
-    }
-
     override fun call(podKey: PodKey, request: String): Future<PodCallResult> {
         val req = "$endpoint/bush/call?bushKey=$bushKey&podId=${podKey.id}&podPartition=${podKey.partition}&request=$request"
         log.trace { "Making bush call $req" }

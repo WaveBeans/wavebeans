@@ -25,12 +25,6 @@ interface Bush : Closeable {
 
     fun start()
 
-    fun addPod(pod: Pod)
-
-    fun pods(): List<Pod>
-
-    fun tickPodsFutures(): List<Future<ExecutionResult>>
-
     fun call(podKey: PodKey, request: String): Future<PodCallResult>
 
 }

@@ -2,8 +2,12 @@ package io.wavebeans.execution.config
 
 import io.wavebeans.execution.ExecutionThreadPool
 import io.wavebeans.execution.MultiThreadedExecutionThreadPool
-import io.wavebeans.execution.medium.*
+import io.wavebeans.execution.medium.MediumBuilder
+import io.wavebeans.execution.medium.PlainMediumBuilder
+import io.wavebeans.execution.medium.PlainPodCallResultBuilder
+import io.wavebeans.execution.medium.PodCallResultBuilder
 import mu.KotlinLogging
+import java.util.zip.Deflater
 
 object ExecutionConfig {
 
@@ -30,6 +34,24 @@ object ExecutionConfig {
             require(value > 0) { "Number of threads should be more than 0" }
             field = value
         }
+
+    /**
+     * Whether use ZIP compression of the serizalied objects dursing transfer. May put additional presure on CPU
+     */
+    var serializationCompression = true
+
+    /**
+     * If [serializationCompression] enabled, that defines the level of compression 0-9:
+     *  0: Compression level for no compression.
+     *  1: Compression level for fastest compression.
+     *  9: Compression level for best compression.
+     */
+    var serializationCompressionLevel = Deflater.BEST_COMPRESSION
+
+    /**
+     * When log is traced whether to also log the content of the buffer as hex doc.
+     */
+    var serializationLogTracing = false
 
     /**
      * Returns builder to use to build [io.wavebeans.execution.medium.PodCallResult]

@@ -1,5 +1,8 @@
 package io.wavebeans.execution.distributed
 
+import io.wavebeans.execution.config.ExecutionConfig.serializationCompression
+import io.wavebeans.execution.config.ExecutionConfig.serializationCompressionLevel
+import io.wavebeans.execution.config.ExecutionConfig.serializationLogTracing
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.protobuf.ProtoBuf
 import mu.KotlinLogging
@@ -7,9 +10,6 @@ import java.io.ByteArrayOutputStream
 import java.util.zip.Deflater
 import java.util.zip.Inflater
 
-var serializationCompression = true
-var serializationCompressionLevel = Deflater.BEST_COMPRESSION
-var serializationLogTracing = false
 
 private val log = KotlinLogging.logger {}
 

@@ -18,8 +18,6 @@ class SerializableMedium(
         val items: List<Any>
 ) : Medium {
 
-    override fun serializer(): MediumSerializer = TODO()
-
     override fun extractElement(at: Int): Any? {
         return if (at < items.size) items[at] else null
     }

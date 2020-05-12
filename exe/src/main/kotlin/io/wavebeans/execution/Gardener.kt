@@ -1,15 +1,9 @@
 package io.wavebeans.execution
 
 import mu.KotlinLogging
-import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Future
-
-typealias JobKey = UUID
-
-fun newJobKey(): JobKey = UUID.randomUUID()
-fun String.toJobKey(): JobKey = UUID.fromString(this)
 
 data class JobDescriptor(
         val bushKey: BushKey,

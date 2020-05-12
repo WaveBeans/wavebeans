@@ -5,7 +5,6 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isNull
 import io.wavebeans.execution.config.ExecutionConfig
 import io.wavebeans.execution.medium.PlainMedium
-import io.wavebeans.execution.medium.SampleMedium
 import io.wavebeans.execution.newTestSplittingPod
 import io.wavebeans.lib.Sample
 import io.wavebeans.lib.asInt
