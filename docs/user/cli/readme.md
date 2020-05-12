@@ -95,14 +95,14 @@ As was stated above, you may execute inline script (`-e` or `--execute`) or scri
 
 **Run mode**
 
-You may choose in what mode to run (`-m` or `--run-mode`). By default you'll run it just on  a single thread (`single-threaded`), but you may chooose to run in multi-threaded environment (`multi-threaded`) or ditsributed (`distributed`).
+You may choose in what mode to run (`-m` or `--run-mode`). By default you'll run it just on  a single thread (`single-threaded`), but you may choose to run in multi-threaded environment (`multi-threaded`) or distributed (`distributed`).
 
 For `multi-threaded` mode you need to pass additional parameters:
 * how many partitioned your processing topology will be tried to split up to: `-p` or `--partitions`. You may benefit from using it, but that is not guaranteed. Each partition is processed separately, the stream is broken down by chunks of a few hundreds samples, which are processed in parallel. Not all of the operations support partitioning, so you may end up just using one partition even if you specify more.
 * to be able to benefit from parallel processing you need to specify number of threads to use: `-t` or `--threads`. Each thread will be heavily used, so there is no point of specifying more threads than you have cores available. Also, you need to make sure your processing topology can be split up into specified number if threads, otherwise threads gonna be underutilized.
 
-For `distributed` mode, firstly, you need to make sure facilitators are started and available. Follow [execution docs](../exe/readme.md#facilitators) for more details. The following are required as parameters:
-* the same as for multi-threaded, how many partitioned your processing topology will be tried to split up to: `-p` or `--partitions`. You may benefit from using it, but that is not guaranteed. Each partition is processed separately, the stream is broken down by chunks of a few hundreds samples, which are processed in parallel. Not all of the operations support partitioning, so you may end up just using one partition even if you specify more.
+For `distributed` mode, firstly, you need to make sure facilitators are started and available. Follow [execution docs](../exe/readme.md#facilitators) for more details. The following parameters are required to start processing:
+* the same as for multi-threaded, how many partitioned your processing topology will be tried to split up to: `-p` or `--partitions`. 
 * the list of facilitators: `-l` or `--facilitators`. The comma-separated Facilitator endpoints to run on, i.e. `http://10.0.0.1:4000,http://10.0.0.2:4000`. The execution will be spread over all facilitators automatically.
 
 **More information about execution**

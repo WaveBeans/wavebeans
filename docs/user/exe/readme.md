@@ -126,7 +126,7 @@ Facilitator is launched as a separate process within isolated JVM, so you can li
 wavebeans-facilitator facilator.conf
 ```
 
-You'll see the port it is listening on when it is started and some log output:
+You'll see the port it is listening on when it is started:
 
 ```text
 Listening on port 4000
@@ -143,7 +143,7 @@ facilitatorConfig {
 
 It requires two items:
 * `listeningPortRange` -- the range of ports to choose from during start up. Chooses the first random port if it's not occupied. If you want to specify specific port, make `start` and `end` the same.
-* `threadsNumber` -- the number of worker threads to be used to execute the stream. It may use some more threads for different purposes, but they are not going to be that heavily occupied like that one. Consider specifying no more than you have CPU cores/vCPUs available.
+* `threadsNumber` -- the number of worker threads to be used to execute the stream. It may use a few more threads for different purposes, but they are not going to be that heavily occupied like that one. Consider specifying no more than you have CPU cores/vCPUs available.
 
 The rest of the items are optional and always can be found if called for help:
 
