@@ -126,7 +126,7 @@ Facilitator is launched as a separate process within isolated JVM, so you can li
 wavebeans-facilitator facilator.conf
 ```
 
-You'll see the port it is listening on when it is started and some log output:
+You'll see the port it is listening on when it is started:
 
 ```text
 Listening on port 4000
