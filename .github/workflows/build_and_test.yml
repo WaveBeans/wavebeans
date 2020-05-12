@@ -8,6 +8,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - uses: WaveBeans/wavebeans/docker-build@master
+      - uses: WaveBeans/wavebeans/docker/gh-build@master
         with:
           args: ./gradlew test
