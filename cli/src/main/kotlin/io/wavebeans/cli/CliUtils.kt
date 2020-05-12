@@ -20,6 +20,7 @@ fun <T> CommandLine.get(option: Option, forceToRequire: Boolean = false, convert
                     try {
                         converter(s)
                     } catch (e: Throwable) {
+                        if (e is OutOfMemoryError) throw e // most likely no resources to handle. Just fail
                         throw IllegalArgumentException("Can't convert `${option.argName}`: $s", e)
                     }
                 }

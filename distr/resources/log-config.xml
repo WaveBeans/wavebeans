@@ -1,9 +1,9 @@
 <configuration debug="false">
 
-    <timestamp key="creationTime" datePattern="yyyyMMdd'T'HHmmss"/>
+    <timestamp key="creationTime" datePattern="yyyy-MM-dd'T'HH-mm-ss"/>
 
     <appender name="FILE" class="ch.qos.logback.core.FileAppender">
-        <file>logs/wavebeans-cli-${creationTime}.log</file>
+        <file>logs/wavebeans-${creationTime}.log</file>
         <encoder>
             <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>

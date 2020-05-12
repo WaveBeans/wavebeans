@@ -23,16 +23,6 @@ interface MediumSerializer {
 interface Medium {
 
     /**
-     * Gets the medium serializer.
-     *
-     * @throws UnsupportedOperationException if that medium doesn't support the serialization. Mainly thrown for
-     * debug purposes as by design that shouldn't happen in real world scenarios.
-     *
-     * @return [MediumSerializer] that can be used to serialize medium to [ByteArray]
-     */
-    fun serializer(): MediumSerializer
-
-    /**
      * Extract element at specified index.
      *
      * @param at the 0-based index of the element to extract.

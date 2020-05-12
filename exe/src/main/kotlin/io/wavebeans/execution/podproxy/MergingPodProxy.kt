@@ -1,7 +1,7 @@
 package io.wavebeans.execution.podproxy
 
 import io.wavebeans.execution.*
-import io.wavebeans.execution.pod.DEFAULT_PARTITION_SIZE
+import io.wavebeans.execution.config.ExecutionConfig
 import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.lib.AnyBean
 import io.wavebeans.lib.BeanParams
@@ -11,8 +11,8 @@ abstract class MergingPodProxy(
         override val forPartition: Int,
         val podDiscovery: PodDiscovery = PodDiscovery.default,
         val bushCallerRepository: BushCallerRepository = BushCallerRepository.default(podDiscovery),
-        val prefetchBucketAmount: Int = DEFAULT_PREFETCH_BUCKET_AMOUNT,
-        val partitionSize: Int = DEFAULT_PARTITION_SIZE
+        val prefetchBucketAmount: Int = ExecutionConfig.prefetchBucketAmount,
+        val partitionSize: Int = ExecutionConfig.partitionSize
 ) : BeanStream<Any>, PodProxy {
 
     abstract val readsFrom: List<PodKey>

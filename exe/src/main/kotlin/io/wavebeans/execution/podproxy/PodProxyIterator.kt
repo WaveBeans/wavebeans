@@ -2,15 +2,13 @@ package io.wavebeans.execution.podproxy
 
 import io.wavebeans.execution.BushCallerRepository
 import io.wavebeans.execution.PodDiscovery
+import io.wavebeans.execution.config.ExecutionConfig
 import io.wavebeans.execution.medium.Medium
 import io.wavebeans.execution.medium.value
-import io.wavebeans.execution.pod.DEFAULT_PARTITION_SIZE
 import io.wavebeans.execution.pod.PodKey
 import mu.KotlinLogging
 import java.util.concurrent.TimeUnit
 
-// TODO consider providing via Config
-const val DEFAULT_PREFETCH_BUCKET_AMOUNT = 10
 
 class PodProxyIterator(
         val sampleRate: Float,
@@ -18,8 +16,8 @@ class PodProxyIterator(
         val readingPartition: Int,
         val podDiscovery: PodDiscovery = PodDiscovery.default,
         val bushCallerRepository: BushCallerRepository = BushCallerRepository.default(podDiscovery),
-        val prefetchBucketAmount: Int = DEFAULT_PREFETCH_BUCKET_AMOUNT,
-        val partitionSize: Int = DEFAULT_PARTITION_SIZE
+        val prefetchBucketAmount: Int = ExecutionConfig.prefetchBucketAmount,
+        val partitionSize: Int = ExecutionConfig.partitionSize
 ) : Iterator<Any> {
 
     companion object {

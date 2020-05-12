@@ -15,10 +15,10 @@ import org.spekframework.spek2.style.specification.describe
 import java.io.File
 
 class PodBuilderSpec : Spek({
-    val ids = mutableMapOf<AnyBean, Int>()
+    val ids = mutableMapOf<AnyBean, Long>()
 
     val idResolver = object : IdResolver {
-        override fun id(bean: AnyBean): Int = ids[bean] ?: throw IllegalStateException("$bean is not found")
+        override fun id(bean: AnyBean): Long = ids[bean] ?: throw IllegalStateException("$bean is not found")
     }
 
     beforeGroup {
@@ -27,7 +27,7 @@ class PodBuilderSpec : Spek({
 
 
     fun <T : AnyBean> T.n(id: Int): T {
-        ids[this] = id
+        ids[this] = id.toLong()
         return this
     }
 
@@ -47,7 +47,7 @@ class PodBuilderSpec : Spek({
 
         it("should have 8 pods") { assertThat(pods).size().isEqualTo(8) }
         it("should have 8 unique ids") {
-            assertThat(pods.map { it.key.id }.distinct().sorted()).isEqualTo((1..8).toList())
+            assertThat(pods.map { it.key.id.toInt() }.distinct().sorted()).isEqualTo((1..8).toList())
         }
     }
 
@@ -64,7 +64,7 @@ class PodBuilderSpec : Spek({
 
         it("should have 8 pods") { assertThat(pods).size().isEqualTo(8) }
         it("should have 8 unique ids") {
-            assertThat(pods.map { it.key.id }.distinct().sorted()).isEqualTo((1..8).toList())
+            assertThat(pods.map { it.key.id.toInt() }.distinct().sorted()).isEqualTo((1..8).toList())
         }
     }
 
@@ -82,7 +82,7 @@ class PodBuilderSpec : Spek({
 
         it("should have 8 pods") { assertThat(pods).size().isEqualTo(7) }
         it("should have 5 unique ids") {
-            assertThat(pods.map { it.key.id }.distinct().sorted()).isEqualTo((1..5).toList())
+            assertThat(pods.map { it.key.id.toInt() }.distinct().sorted()).isEqualTo((1..5).toList())
         }
     }
 
@@ -103,7 +103,7 @@ class PodBuilderSpec : Spek({
 
         it("should have 12 pods") { assertThat(pods).size().isEqualTo(11) }
         it("should have 8 unique ids") {
-            assertThat(pods.map { it.key.id }.distinct().sorted()).isEqualTo((1..8).toList())
+            assertThat(pods.map { it.key.id.toInt() }.distinct().sorted()).isEqualTo((1..8).toList())
         }
         it("should have correct links -- proxies and partitions") {
             assertThat(pods).all {
@@ -215,7 +215,7 @@ class PodBuilderSpec : Spek({
 
         it("should have 7 pods") { assertThat(pods).size().isEqualTo(7) }
         it("should have 6 unique ids") {
-            assertThat(pods.map { it.key.id }.distinct().sorted()).isEqualTo((1..6).toList())
+            assertThat(pods.map { it.key.id.toInt() }.distinct().sorted()).isEqualTo((1..6).toList())
         }
         it("should have pods of specific type") {
             assertThat(pods).all {
@@ -288,7 +288,7 @@ class PodBuilderSpec : Spek({
 
             it("should have one pod") { assertThat(pods).size().isEqualTo(1) }
             it("should have unique id") {
-                assertThat(pods.map { it.key.id }.distinct().sorted()).isEqualTo((100..100).toList())
+                assertThat(pods.map { it.key.id.toInt() }.distinct().sorted()).isEqualTo((100..100).toList())
             }
             it("should have pods of specific type") {
                 assertThat(pods).all {
@@ -315,7 +315,7 @@ class PodBuilderSpec : Spek({
 
             it("should have 4 pods") { assertThat(pods).size().isEqualTo(4) }
             it("should have unique id") {
-                assertThat(pods.map { it.key.id }.distinct().sorted()).isEqualTo((listOf(1, 2, 100)))
+                assertThat(pods.map { it.key.id.toInt() }.distinct().sorted()).isEqualTo((listOf(1, 2, 100)))
             }
             it("should have pods of specific type") {
                 assertThat(pods).all {
@@ -360,7 +360,7 @@ class PodBuilderSpec : Spek({
 
             it("should have 4 pods") { assertThat(pods).size().isEqualTo(3) }
             it("should have unique ids") {
-                assertThat(pods.map { it.key.id }.distinct().sorted()).isEqualTo((100..102).toList())
+                assertThat(pods.map { it.key.id.toInt() }.distinct().sorted()).isEqualTo((100..102).toList())
             }
             it("should have pods of specific type") {
                 assertThat(pods).all {
@@ -412,7 +412,7 @@ class PodBuilderSpec : Spek({
 
             it("should have 9 pods") { assertThat(pods).size().isEqualTo(9) }
             it("should have unique ids") {
-                assertThat(pods.map { it.key.id }.distinct().sorted()).isEqualTo(listOf(1, 4, 7) + (100..103).toList())
+                assertThat(pods.map { it.key.id.toInt() }.distinct().sorted()).isEqualTo(listOf(1, 4, 7) + (100..103).toList())
             }
             it("should have pods of specific type") {
                 assertThat(pods).all {
@@ -488,7 +488,7 @@ class PodBuilderSpec : Spek({
                     .buildPods()
             it("should have 3 pods") { assertThat(pods).size().isEqualTo(3) }
             it("should have unique ids") {
-                assertThat(pods.map { it.key.id }.distinct().sorted()).isEqualTo(listOf(1, 2) + (100..100).toList())
+                assertThat(pods.map { it.key.id.toInt() }.distinct().sorted()).isEqualTo(listOf(1, 2) + (100..100).toList())
             }
             it("should have pods of specific type") {
                 assertThat(pods).all {
@@ -514,8 +514,8 @@ class PodBuilderSpec : Spek({
 })
 
 private fun groupIdResolver() = object : GroupIdResolver {
-    var groupIdSeq = 100
-    override fun id(): Int = groupIdSeq++
+    var groupIdSeq = 100L
+    override fun id(): Long = groupIdSeq++
 }
 
 
@@ -523,7 +523,7 @@ private fun Assert<PodRef>.partition() = this.prop("partition") { it.key.partiti
 private fun Assert<PodRef>.splitToPartitions() = this.prop("splitToPartitions") { it.splitToPartitions }
 
 private fun Assert<List<PodRef>>.podWithKey(name: String, id: Int) =
-        prop(name) { ps -> ps.filter { it.key.id == id }.sortedBy { it.key.partition } }
+        prop(name) { ps -> ps.filter { it.key.id == id.toLong() }.sortedBy { it.key.partition } }
 
 private fun Assert<PodRef>.podProxies() =
         prop("pod proxies") { it.podProxies }

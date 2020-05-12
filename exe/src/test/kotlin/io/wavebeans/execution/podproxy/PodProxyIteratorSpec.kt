@@ -4,8 +4,13 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isTrue
+import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.whenever
 import io.wavebeans.execution.*
+import io.wavebeans.execution.config.ExecutionConfig
+import io.wavebeans.execution.medium.PlainMediumBuilder
+import io.wavebeans.execution.medium.PlainPodCallResultBuilder
 import io.wavebeans.execution.medium.PodCallResult
 import io.wavebeans.execution.pod.Pod
 import io.wavebeans.execution.pod.PodKey
@@ -20,7 +25,8 @@ class PodProxyIteratorTester(
         partitionSize: Int = 1,
         prefetchBucketAmount: Int = 1
 ) {
-    val podDiscovery: PodDiscovery = mock()
+    val podDiscovery = mock<PodDiscovery>()
+            .also { whenever(it.bushFor(any())).thenReturn(newBushKey()) }
 
     var iteratorStartCounter: Int = 0
         private set
@@ -60,9 +66,14 @@ class PodProxyIteratorTester(
             partitionSize = partitionSize,
             prefetchBucketAmount = prefetchBucketAmount
     )
+
 }
 
 object PodProxyIteratorSpec : Spek({
+
+    ExecutionConfig.podCallResultBuilder(PlainPodCallResultBuilder())
+    ExecutionConfig.mediumBuilder(PlainMediumBuilder())
+
     describe("Partition size = 1, buckets = 1") {
         val iterator = PodProxyIteratorTester(
                 pointedTo = newTestStreamingPod((1..2).toList())

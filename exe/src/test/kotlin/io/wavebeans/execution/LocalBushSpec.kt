@@ -15,7 +15,7 @@ import kotlin.random.Random
 
 val random = Random(1234)
 
-object BushSpec : Spek({
+object LocalBushSpec : Spek({
 
     val modes = mapOf(
 //            "Distributed" to ....
@@ -28,10 +28,9 @@ object BushSpec : Spek({
 
         describe("Mode: ${it.key}") {
 
-
             describe("Bush should call pod method. 1 pod per bush") {
 
-                val podKey = PodKey(random.nextInt() + 2, 0)
+                val podKey = PodKey(random.nextLong() + 2, 0)
                 val pod = object : Pod {
 
                     override fun isFinished(): Boolean = throw UnsupportedOperationException()
@@ -59,17 +58,15 @@ object BushSpec : Spek({
 
                 }
 
-                lateinit var bush: Bush
+                lateinit var bush: LocalBush
 
-                before {
-                    bush = Bush(
-                            MultiThreadedOverseer.bushKeySeq.incrementAndGet() // avoid clashing of ids with other tests
-                    )
+                beforeGroup {
+                    bush = LocalBush(newBushKey())
                             .also { it.addPod(pod) }
                             .also { it.start() }
                 }
 
-                after {
+                afterGroup {
                     bush.close()
                 }
 

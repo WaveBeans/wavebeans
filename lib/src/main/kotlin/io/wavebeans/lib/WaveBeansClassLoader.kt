@@ -23,10 +23,14 @@ object WaveBeansClassLoader {
                 "Setting new class loader $classLoader from:\n" +
                         Thread.currentThread().stackTrace
                                 .drop(1)
-                                .joinToString("\n") { it.toString() }
+                                .joinToString("\n") { "\t at $it" }
             }
             classLoaders += classLoader
         }
+    }
+
+    fun removeClassLoader(classLoader: ClassLoader): Boolean {
+        return classLoaders.remove(classLoader)
     }
 
     fun classForName(name: String): Class<*> {

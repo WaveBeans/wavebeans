@@ -17,10 +17,10 @@ import org.spekframework.spek2.style.specification.describe
 
 object TopologyPartitionerSpec : Spek({
 
-    val ids = mutableMapOf<AnyBean, Int>()
+    val ids = mutableMapOf<AnyBean, Long>()
 
     val idResolver = object : IdResolver {
-        override fun id(bean: AnyBean): Int = ids[bean] ?: throw IllegalStateException("$bean is not found")
+        override fun id(bean: AnyBean): Long = ids[bean] ?: throw IllegalStateException("$bean is not found")
     }
 
     beforeGroup {
@@ -28,19 +28,19 @@ object TopologyPartitionerSpec : Spek({
     }
 
     fun <T : AnyBean> T.n(id: Int): T {
-        ids[this] = id
+        ids[this] = id.toLong()
         return this
     }
 
-    fun Topology.beansForId(id: Int) = this.refs.filter { it.id == id }
+    fun Topology.beansForId(id: Int) = this.refs.filter { it.id == id.toLong() }
 
     fun Topology.links(from: Int, to: Int): List<BeanLink> {
         return this.links
-                .filter { it.from == from && it.to == to }
+                .filter { it.from == from.toLong() && it.to == to.toLong() }
     }
 
     fun Topology.partitionLinks(from: Int, pFrom: Int, to: Int, pTo: Int): List<BeanLink> {
-        return this.links.filter { it.fromPartition == pFrom && it.from == from && it.toPartition == pTo && it.to == to }
+        return this.links.filter { it.fromPartition == pFrom && it.from == from.toLong() && it.toPartition == pTo && it.to == to.toLong() }
     }
 
     describe("Simple one-line topology") {

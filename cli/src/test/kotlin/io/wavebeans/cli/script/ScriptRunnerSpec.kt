@@ -3,6 +3,8 @@ package io.wavebeans.cli.script
 import assertk.assertThat
 import assertk.assertions.*
 import assertk.catch
+import io.wavebeans.execution.PodDiscovery
+import io.wavebeans.execution.distributed.Facilitator
 import io.wavebeans.lib.WaveBeansClassLoader
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
@@ -12,16 +14,43 @@ import java.util.concurrent.CancellationException
 
 object ScriptRunnerSpec : Spek({
 
+    val portRange = 40000..40001
+    val gardeners = portRange.map {
+        Facilitator(
+                advertisingHostAddress = "127.0.0.1",
+                listeningPortRange = it..it,
+                startingUpAttemptsCount = 1,
+                threadsNumber = 2,
+                onServerShutdownGracePeriodMillis = 100,
+                onServerShutdownTimeoutMillis = 100,
+                podDiscovery = object : PodDiscovery() {}
+        )
+    }
+
     beforeEachTest {
         WaveBeansClassLoader.reset()
     }
 
     arrayOf(
-            Pair(RunMode.LOCAL, emptyMap<String, Any>()),
-            Pair(RunMode.LOCAL_DISTRIBUTED, mapOf<String, Any>("partitions" to 2, "threads" to 2))
+            Pair(RunMode.DISTRIBUTED, mapOf("partitions" to 2, "facilitatorLocations" to portRange.map { "http://127.0.0.1:$it" })),
+            Pair(RunMode.MULTI_THREADED, mapOf<String, Any>("partitions" to 2, "threads" to 2)),
+            Pair(RunMode.LOCAL, emptyMap<String, Any>())
     ).forEach { (runMode, runOptions) ->
 
         describe("Running in $runMode mode with options=$runOptions") {
+
+            beforeGroup {
+                if (runMode == RunMode.DISTRIBUTED)
+                    gardeners.forEach { it.start() }
+            }
+
+            afterGroup {
+                if (runMode == RunMode.DISTRIBUTED)
+                    gardeners.forEach {
+                        it.terminate()
+                        it.close()
+                    }
+            }
 
             fun eval(script: String) = ScriptRunner(script, runMode = runMode, runOptions = runOptions).use {
                 it.start().awaitForResult()
@@ -29,10 +58,12 @@ object ScriptRunnerSpec : Spek({
 
             describe("Short-living script with one output") {
                 val script = """
-                    440.sine().trim(1).toDevNull().out()
+                    440.sine().map{ it }.trim(1).toDevNull().out()
                 """.trimIndent()
 
-                it("should run with no exceptions") { assertThat(eval(script)).isNull() }
+                it("should run with no exceptions") {
+                    assertThat(eval(script)).isNull()
+                }
             }
 
             describe("Short-living script with multiple outputs") {
@@ -52,7 +83,7 @@ object ScriptRunnerSpec : Spek({
                 val script = """
                     val i1 = 440.sine()
                     val i2 = 880.sine()
-                    
+
                     (i1 + i2).trim(1).toCsv("file://${file.absolutePath}").out()
                 """.trimIndent()
 
@@ -63,7 +94,7 @@ object ScriptRunnerSpec : Spek({
             describe("Long-living script interruption") {
                 val file = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
                 val script = """
-                    440.sine().trim(Long.MAX_VALUE).toCsv("file://${file.absolutePath}").out() // takes forever to finish
+                    440.sine().map{ it }.trim(Long.MAX_VALUE).toCsv("file://${file.absolutePath}").out() // takes forever to finish
                 """.trimIndent()
 
                 it("should return something after interruption") {
@@ -119,7 +150,7 @@ object ScriptRunnerSpec : Spek({
                 describe("one import") {
                     val script = """
                         import java.util.Date
-                        
+
                         Date()
                     """.trimIndent()
 
@@ -131,7 +162,7 @@ object ScriptRunnerSpec : Spek({
                     val script = """
                         import java.util.Date
                         import kotlin.collections.*
-                        
+
                         Date()
                         val a = emptyList<Int>()
                     """.trimIndent()
@@ -144,7 +175,7 @@ object ScriptRunnerSpec : Spek({
                 describe("several imports in one line") {
                     val script = """
                         import java.util.Date; import kotlin.collections.*
-                        
+
                         Date()
                         val a = emptyList<Int>()
                     """.trimIndent()
@@ -164,6 +195,7 @@ object ScriptRunnerSpec : Spek({
                     }
 
                     input(InputFn())
+                      .map { it }
                       .trim(1)
                       .toDevNull()
                       .out()
@@ -178,6 +210,7 @@ object ScriptRunnerSpec : Spek({
             describe("Defining function as lambda") {
                 val script = """
                     input { (i, _) -> sampleOf(i) }
+                      .map { it }
                       .trim(1)
                       .toDevNull()
                       .out()

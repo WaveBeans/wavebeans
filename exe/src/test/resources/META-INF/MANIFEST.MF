@@ -1,0 +1,1 @@
+WaveBeans-Version: TEST-VERSION-123

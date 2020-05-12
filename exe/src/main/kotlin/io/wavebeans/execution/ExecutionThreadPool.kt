@@ -78,13 +78,6 @@ abstract class AbstractExecutionThreadPool : ExecutionThreadPool {
     }
 }
 
-class NamedThreadFactory(val name: String) : ThreadFactory {
-    private var c = 0
-    override fun newThread(r: Runnable): Thread {
-        return Thread(ThreadGroup(name), r, "$name-${c++}")
-    }
-}
-
 class MultiThreadedExecutionThreadPool(threadsNum: Int) : AbstractExecutionThreadPool() {
 
     override val workingPool = Executors.newScheduledThreadPool(threadsNum, NamedThreadFactory("work"))

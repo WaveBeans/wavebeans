@@ -1,1 +1,1 @@
-include(":lib", ":cli", ":exe", ":http")
+include(":lib", ":cli", ":exe", ":http", ":distr")

@@ -95,7 +95,7 @@ object HttpServiceSpec : Spek({
 
                 val overseer = SingleThreadedOverseer(listOf(o))
                 overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
-                after { overseer.close() }
+                afterGroup { overseer.close() }
 
                 it("should return last 100ms") {
                     handleRequest(Get, "/table/table2/last?interval=100ms&sampleRate=44100.0").apply {
@@ -145,7 +145,7 @@ object HttpServiceSpec : Spek({
 
                 val overseer = SingleThreadedOverseer(listOf(o))
                 overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
-                after { overseer.close() }
+                afterGroup { overseer.close() }
 
                 it("should return last 100ms") {
                     handleRequest(Get, "/table/b/last?interval=1ms&sampleRate=44100.0").apply {
@@ -174,7 +174,7 @@ object HttpServiceSpec : Spek({
 
                     val overseer = SingleThreadedOverseer(listOf(o))
                     overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
-                    after { overseer.close() }
+                    afterGroup { overseer.close() }
 
                     it("should return last 100ms") {
                         handleRequest(Get, "/table/fft/last?interval=100ms").apply {
@@ -197,7 +197,7 @@ object HttpServiceSpec : Spek({
 
                     val overseer = SingleThreadedOverseer(listOf(o))
                     overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
-                    after { overseer.close() }
+                    afterGroup { overseer.close() }
 
                     it("should return last 100ms") {
                         handleRequest(Get, "/table/windowSample/last?interval=100ms").apply {
@@ -215,7 +215,7 @@ object HttpServiceSpec : Spek({
 
                     val overseer = SingleThreadedOverseer(listOf(o))
                     overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
-                    after { overseer.close() }
+                    afterGroup { overseer.close() }
 
                     it("should return last 100ms") {
                         handleRequest(Get, "/table/listDouble/last?interval=100ms").apply {
@@ -233,7 +233,7 @@ object HttpServiceSpec : Spek({
 
                     val overseer = SingleThreadedOverseer(listOf(o))
                     overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
-                    after { overseer.close() }
+                    afterGroup { overseer.close() }
 
                     it("should return last 100ms") {
                         handleRequest(Get, "/table/listInt/last?interval=100ms").apply {
@@ -261,7 +261,7 @@ object HttpServiceSpec : Spek({
 
                     val overseer = SingleThreadedOverseer(listOf(o))
                     overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
-                    after { overseer.close() }
+                    afterGroup { overseer.close() }
 
                     it("should return last 100ms") {
                         handleRequest(Get, "/table/windowA/last?interval=100ms").apply {

@@ -40,12 +40,13 @@ class WaveBeansCli(
         val m = Option("m", "run-mode", true, "Running script in distributed mode, specify exact overseer. Default is: ${RunMode.LOCAL.id}. Supported: ${RunMode.values().joinToString(", ") { it.id }}. ")
         val p = Option("p", "partitions", true, "Number of partitions to use in Distributed mode.")
         val t = Option("t", "threads", true, "Number of threads to use in Distributed mode.")
+        val l = Option("l", "facilitators", true, "Comma-separated list of facilitator locations, i.e. http://10.0.0.1:40000,http://10.0.0.2:40000")
         val s = Option("s", "sample-rate", true, "Sample rate in Hz to use for outputs. By default, it's 44100.")
         val v = Option("v", "version", false, "Prints version of the tool.")
         val debug = Option(null, "debug", false, "DEBUG level of logging in to file under `logs` directory. By default it is INFO")
         val http = Option(null, "http", true, "Run HTTP API on the specified port.")
         val httpWait = Option(null, "http-wait", true, "Time to wait after script finish to shutdown the server in seconds, by default it doesn't wait (0 value), -1 to wait indefinitely")
-        val options = Options().of(f, e, time, verbose, h, m, p, t, s, debug, v, http, httpWait)
+        val options = Options().of(f, e, time, verbose, h, m, p, t, l, s, debug, v, http, httpWait)
     }
 
     private val verbosePrint = cli.has(verbose)
@@ -70,8 +71,9 @@ class WaveBeansCli(
             val runMode = cli.get(m) { RunMode.byId(it) } ?: RunMode.LOCAL
             if (verbosePrint) printer.printLine("Running mode: ${runMode.id}")
             val runOptions = mutableMapOf<String, Any>()
-            if (runMode == RunMode.LOCAL_DISTRIBUTED && cli.has(p)) runOptions["partitions"] = cli.getRequired(p) { it.toInt() }
-            if (runMode == RunMode.LOCAL_DISTRIBUTED && cli.has(t)) runOptions["threads"] = cli.getRequired(t) { it.toInt() }
+            if (runMode in setOf(RunMode.MULTI_THREADED, RunMode.DISTRIBUTED) && cli.has(p)) runOptions["partitions"] = cli.getRequired(p) { it.toInt() }
+            if (runMode == RunMode.MULTI_THREADED && cli.has(t)) runOptions["threads"] = cli.getRequired(t) { it.toInt() }
+            if (runMode == RunMode.DISTRIBUTED && cli.has(l)) runOptions["facilitatorLocations"] = cli.getRequired(l) { it.split(",").map { it.trim() } }
             val sampleRate = cli.get(s) { it.toFloat() } ?: 44100.0f
 
             val httpWait = cli.get(httpWait) { it.toLong() } ?: 0

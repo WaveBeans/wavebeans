@@ -37,6 +37,7 @@ allprojects {
 
     tasks.withType<KotlinCompile>().all {
         kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlin.ExperimentalStdlibApi"
+        kotlinOptions.freeCompilerArgs += "-Xopt-in=io.ktor.util.KtorExperimentalAPI"
     }
 
     dependencies {
@@ -58,9 +59,11 @@ allprojects {
     }
 
     tasks.test {
+        systemProperty("SPEK_TIMEOUT", 0)
         useJUnitPlatform {
             includeEngines("spek2")
         }
+        maxHeapSize = "2g"
     }
 
     tasks.jar {
@@ -92,7 +95,6 @@ publishing {
     }
 }
 
-
 bintray {
     user = findProperty("bintray.user")?.toString() ?: ""
     key = findProperty("bintray.key")?.toString() ?: ""
@@ -108,4 +110,3 @@ bintray {
         })
     })
 }
-

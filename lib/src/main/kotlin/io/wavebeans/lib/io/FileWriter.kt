@@ -2,10 +2,8 @@ package io.wavebeans.lib.io
 
 import io.wavebeans.lib.BeanStream
 import mu.KotlinLogging
-import java.io.BufferedOutputStream
-import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
+import java.io.*
+import java.lang.Exception
 import java.net.URI
 
 abstract class FileWriter<T : Any>(
@@ -43,32 +41,52 @@ abstract class FileWriter<T : Any>(
     protected abstract fun serialize(element: T): ByteArray
 
     override fun close() {
-        log.debug { "[$this] Closing the writer" }
-        buffer.close()
-        log.debug { "[$this] Buffer closed" }
-        file.close()
-        log.debug { "[$this] Temporary file $tmpFile closed" }
-
-        FileOutputStream(File(uri)).use { f ->
-            val header = header()
-            if (header != null) f.write(header)
-
-            FileInputStream(tmpFile).use { tmpF ->
-                val buf = ByteArray(bufferSize)
-                do {
-                    val r = tmpF.read(buf)
-                    if (r != -1) f.write(buf, 0, r)
-                    log.trace { "[$this] Copied other $bufferSize bytes from $tmpFile to file with uri=$uri" }
-                } while (r != -1)
-            }
-
-            val footer = footer()
-            if (footer != null) f.write(footer)
+        log.info { "[$this] Closing the writer" }
+        try {
+            buffer.close()
+            log.debug { "[$this] Buffer closed" }
+        } catch (e: IOException) {
+            // ignore if buffer was already closed
+            if ((e.message ?: "").contains("Closed"))
+                log.warn(e) { "[$this] Buffer was already closed earlier" }
+            else
+                throw e
         }
-        log.debug { "[$this] Temporary file $tmpFile copied over to file with uri=$uri" }
+        try {
+            file.close()
+            log.debug { "[$this] Temporary file $tmpFile closed" }
+        } catch (e: IOException) {
+            // ignore if buffer was already closed
+            if ((e.message ?: "").contains("Closed"))
+                log.warn(e) { "[$this] Temporary file $tmpFile was already closed earlier" }
+            else
+                throw e
+        }
 
-        tmpFile.delete()
-        log.debug { "[$this] Temporary file $tmpFile deleted" }
+        if (tmpFile.exists()) {
+            FileOutputStream(File(uri)).use { f ->
+                val header = header()
+                if (header != null) f.write(header)
+
+                FileInputStream(tmpFile).use { tmpF ->
+                    val buf = ByteArray(bufferSize)
+                    do {
+                        val r = tmpF.read(buf)
+                        if (r != -1) f.write(buf, 0, r)
+                        log.trace { "[$this] Copied other $bufferSize bytes from $tmpFile to file with uri=$uri" }
+                    } while (r != -1)
+                }
+
+                val footer = footer()
+                if (footer != null) f.write(footer)
+            }
+            log.debug { "[$this] Temporary file $tmpFile copied over to file with uri=$uri" }
+            tmpFile.delete()
+            log.debug { "[$this] Temporary file $tmpFile deleted" }
+        } else {
+            log.warn { "[$this] Temporary file is not found. Seems everything is closed already." }
+        }
+
     }
 
 }

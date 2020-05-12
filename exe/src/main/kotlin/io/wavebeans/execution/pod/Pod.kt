@@ -3,11 +3,13 @@ package io.wavebeans.execution.pod
 import io.wavebeans.execution.Call
 import io.wavebeans.execution.medium.PodCallResult
 import io.wavebeans.lib.AnyBean
+import kotlinx.serialization.Serializable
 import mu.KotlinLogging
 import java.io.Closeable
 import java.lang.reflect.InvocationTargetException
 
-data class PodKey(val id: Int, val partition: Int)
+@Serializable
+data class PodKey(val id: Long, val partition: Int)
 
 interface Pod : Closeable {
 
@@ -49,6 +51,7 @@ interface Pod : Closeable {
         } catch (e: InvocationTargetException) {
             PodCallResult.error(call, e.targetException)
         } catch (e: Throwable) {
+            if (e is OutOfMemoryError) throw e // most likely no resources to handle. Just fail
             PodCallResult.error(call, e)
         }
     }
