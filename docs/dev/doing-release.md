@@ -36,12 +36,13 @@ This document describe the process of making releases. Some of this position may
      ./gradlew bintrayUpload -Pversion=$VERSION -Pbintray.user=$USER -Pbintray.key=$KEY
     ```
     2. Goto bintray.com, choose the wavebeans organization and publish artifacts.
-    3. Upload new version of cli tool:
-        * build locally via `./gradlew distTar distZip`
-        * on Bintray, select version, then `Actions > Upload Files`. Upload `cli/build/distributions/*.*`
+    3. Upload new version of the tool:
+        * build locally via `./gradlew :distr:distTar :distr:distZip`
+        * on Bintray, select version, then `Actions > Upload Files`. Upload `distr/build/distributions/*.*`
 
 3. GitHub:
     * Create the release with changes from changelog based on the pushed tag.
+    * Add the link to the version on BinTray.
 
 4. Merge tag to master.
 

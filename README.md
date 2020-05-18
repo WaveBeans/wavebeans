@@ -11,7 +11,7 @@ A set of tools to process audio signals using Kotlin/Java/Scala/etc. You can eit
 * make preparation for machine learning algorithms;
 * and many more.
 
-Everything using one tool in single- or multi-threaded environment, or even distributing computation across multiple nodes (WIP).
+Everything using one tool in single- or multi-threaded environment, or even distributing computation across multiple nodes.
 
 ## Quick links
 
