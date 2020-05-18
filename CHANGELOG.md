@@ -1,3 +1,13 @@
+Version 0.1.0 on 2020-05-18
+------
+
+Entering the **new era** with actual distributed processing. Now it's still Work In Progress though have some abilities to play around with.
+
+* The first version of evaluation in Distributed mode. Follow the [docs](/docs/user/exe/readme.md#distributed-mode).
+* Proper multi-threaded mode that doesn't require serialization in place. Follow the [docs](/docs/user/exe/readme.md#multi-threaded-mode).
+* [ [#52](https://github.com/WaveBeans/wavebeans/issues/52) ] Custom class that requires measurement needs to implement `Measured` interface. See [updated section of documentation](/docs/user/api/operations/projection-operation.md#working-with-different-types)
+* A first version of [Developer zone](/docs/dev/readme.md) -- a bunch of documents explaining ideas and architecture behind WaveBeans.
+
 Version 0.0.3 on 2020-04-03
 ------
 
