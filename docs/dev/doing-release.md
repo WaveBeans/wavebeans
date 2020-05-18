@@ -48,11 +48,17 @@ This document describe the process of making releases. Some of this position may
 
 5. Website `wavebeans.io`:
     1. Update documentation
+        ```bash
+       cd docs-build
+       ./build.sh
+        ```
     2. Update release notes: https://wavebeans.io/wavebeans/release_notes.html
-        * Update links from `/docs/user/lib` to `/docs/api`
+        * Update links from `/docs/user/api` to `/docs/api`
         * Update links from `/docs/user/http` to `/docs/http`
         * Update links from `/docs/user/cli` to `/docs/cli`
         * Update links from `/docs/user/exe` to `/docs/exe`
+        * Update links from `/docs/dev` to `/devzone`
+        * `readme.md` to `index.html`
         * `.md` to `.html`
 
 6. Social channels:
