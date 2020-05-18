@@ -1,2 +1,0 @@
-* Proper multi-threaded mode that doesn't require serialization in place.
- 
