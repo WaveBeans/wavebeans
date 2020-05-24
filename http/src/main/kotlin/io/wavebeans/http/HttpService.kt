@@ -17,6 +17,7 @@ class HttpService(
         val env = applicationEngineEnvironment {
             module {
                 tableService()
+                audioService()
             }
             connector {
                 host = "0.0.0.0"

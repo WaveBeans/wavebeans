@@ -87,7 +87,8 @@ class CsvStreamOutput<T : Any>(
     override fun writer(sampleRate: Float): Writer {
         var offset = 0L
         val charset = Charset.forName(parameters.encoding)
-        return object : FileWriter<T>(URI(parameters.uri), input, sampleRate) {
+        val writer = FileBufferedWriter(URI(parameters.uri))
+        return object : AbstractWriter<T>(input, sampleRate, writer) {
 
             override fun header(): ByteArray? = (parameters.header.joinToString(",") + "\n").toByteArray(charset)
 

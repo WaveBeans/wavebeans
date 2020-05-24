@@ -6,6 +6,9 @@ import java.io.Closeable
 
 interface TimeseriesTableDriver<T : Any> : Closeable {
 
+    /**
+     * Keeps the table name fpr this driver.
+     */
     val tableName: String
 
     /**
@@ -50,6 +53,17 @@ interface TimeseriesTableDriver<T : Any> : Closeable {
      */
     fun timeRange(from: TimeMeasure, to: TimeMeasure): BeanStream<T> {
         return TableDriverInput(TableDriverStreamParams(tableName, TimeRangeTableQuery(from, to)))
+    }
+
+    /**
+     * Continiously stream data out of the table, meaning it never ends and might be blocked if the data is not there.
+     * Interrupt on your own.
+     *
+     * @param offset starting offset to the past, if 0 than start with the very last sample at the moment.
+     * Specify as some big value to read from the beginning.
+     */
+    fun stream(offset: TimeMeasure): BeanStream<T> {
+        return TableDriverInput(TableDriverStreamParams(tableName, ContinuousReadTableQuery(offset)))
     }
 
     /**

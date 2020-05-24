@@ -28,7 +28,10 @@ private class ByteArrayFileOutputMock(
         get() = throw UnsupportedOperationException()
 
     override fun writer(sampleRate: Float): Writer {
-        return object : ByteArrayLEFileOutputWriter(file.toURI(), stream, bitDepth, sampleRate) {
+        return object : ByteArrayLEOutputWriter(stream, bitDepth, sampleRate, FileBufferedWriter(uri = file.toURI())) {
+
+            override fun incDataSize(value: Int) {}
+
             override fun header(): ByteArray? = null
 
             override fun footer(): ByteArray? = null

@@ -38,7 +38,13 @@ class CsvFftStreamOutput(
 
     override fun writer(sampleRate: Float): Writer {
         var offset = 0L
-        return object : FileWriter<FftSample>(URI(params.uri), stream, sampleRate) {
+        val writer = FileBufferedWriter(URI(params.uri))
+        return object : AbstractWriter<FftSample>(
+                stream,
+                sampleRate,
+                writer
+        ) {
+
             override fun header(): ByteArray? = null
 
             override fun footer(): ByteArray? = null

@@ -1,5 +1,6 @@
 package io.wavebeans.lib.table
 
+import assertk.Assert
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
@@ -9,10 +10,15 @@ import io.wavebeans.lib.stream.fft.fft
 import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.stream.window.Window
 import io.wavebeans.lib.stream.window.window
+import mu.KotlinLogging
 import org.spekframework.spek2.Spek
+import org.spekframework.spek2.lifecycle.CachingMode.*
 import org.spekframework.spek2.style.specification.describe
+import java.lang.Thread.sleep
+import java.util.concurrent.*
+import java.util.concurrent.TimeUnit.*
 
-object TableOutputSpec : Spek({
+object InMemoryTableOutputSpec : Spek({
     describe("Operations on closed table") {
         val tableName = "table1"
         val output = seqStream()
@@ -252,4 +258,150 @@ object TableOutputSpec : Spek({
             }
         }
     }
+
+    describe("Streaming data from table") {
+
+        describe("No initial offset") {
+            val tableName = "tableStream1"
+            val writer = seqStream().toTable(tableName, 25.ms).writer(1000.0f)
+            val table by memoized(SCOPE) {
+                TableRegistry.instance().byName<Sample>(tableName) as InMemoryTimeseriesTableDriver
+            }
+            val iterator by memoized(SCOPE) {
+                (table.stream(0.s).asSequence(1000.0f).iterator() as ContinuousReadTableIterator<Sample>)
+                        .also { it.perElementLog = true }
+            }
+
+            it("should prepare the iterator") {
+                assertThat(iterator).all {
+                    hasNext().isTrue()
+                    skippedToFrom().isFalse()
+                    skipped().isEqualTo(0L)
+                    returned().isEqualTo(0L)
+                }
+            }
+            it("should not read any elements within 100 ms") {
+                assertThat(iterator).all {
+                    tryTake(10, timeout = 100).isEmpty()
+                    skippedToFrom().isFalse()
+                    returned().isEqualTo(0L)
+                }
+            }
+
+            it("should perform clean up and remove 0 elements") { assertThat(table.performCleanup()).isEqualTo(0) }
+            it("should read first 25 elements") {
+                repeat(25) { if (!writer.write()) throw IllegalStateException() }
+                assertThat(iterator).all {
+                    take(25).eachIndexed(25) { s, i ->
+                        s.isCloseTo(0 * 1e-10 + i * 1e-10, 1e-14)
+                    }
+                    skippedToFrom().isTrue()
+                    returned().isEqualTo(25L)
+                }
+            }
+
+            it("should perform clean up and remove 0 elements") { assertThat(table.performCleanup()).isEqualTo(0) }
+            it("should read second 25 elements") {
+                repeat(25) { if (!writer.write()) throw IllegalStateException() }
+                assertThat(iterator).all {
+                    take(25).eachIndexed(25) { s, i ->
+                        s.isCloseTo(25 * 1e-10 + i * 1e-10, 1e-14)
+                    }
+                    skippedToFrom().isTrue()
+                    returned().isEqualTo(50L)
+                }
+            }
+
+            it("should perform clean up and remove 24 elements") { assertThat(table.performCleanup()).isEqualTo(24) }
+            it("should read third 25 elements") {
+                repeat(25) { if (!writer.write()) throw IllegalStateException() }
+                assertThat(iterator).all {
+                    take(25).eachIndexed(25) { s, i ->
+                        s.isCloseTo(50 * 1e-10 + i * 1e-10, 1e-14)
+                    }
+                    skippedToFrom().isTrue()
+                    returned().isEqualTo(75L)
+                }
+            }
+
+            it("should perform clean up and remove 25 elements") { assertThat(table.performCleanup()).isEqualTo(25) }
+            it("should not read any elements within 100 ms") {
+                assertThat(iterator).all {
+                    tryTake(10, timeout = 100).isEmpty()
+                    skippedToFrom().isFalse()
+                    returned().isEqualTo(75L)
+                }
+            }
+            it("should read only 5 elements within 100 ms") {
+                repeat(5) { if (!writer.write()) throw IllegalStateException() }
+                assertThat(iterator).all {
+                    tryTake(10, timeout = 100).eachIndexed(5) { s, i ->
+                        s.isCloseTo(75 * 1e-10 + i * 1e-10, 1e-14)
+                    }
+                    skippedToFrom().isTrue()
+                    returned().isEqualTo(80L)
+                }
+            }
+        }
+    }
+
+    describe("With some intial offset") {
+        val tableName = "tableStream2"
+        val writer = seqStream().toTable(tableName, 25.ms).writer(1000.0f)
+                // generate some initial data
+                .also { w -> repeat(10) { if (!w.write()) throw IllegalStateException() } }
+        val table by memoized(SCOPE) {
+            TableRegistry.instance().byName<Sample>(tableName) as InMemoryTimeseriesTableDriver
+        }
+        val iterator by memoized(SCOPE) {
+            (table.stream(5.ms).asSequence(1000.0f).iterator() as ContinuousReadTableIterator<Sample>)
+                    .also { it.perElementLog = true }
+        }
+
+        it("should read pregenerated 6 elements within 100 ms") {
+            assertThat(iterator).all {
+                tryTake(20, timeout = 100).eachIndexed(6) { s, i ->
+                    s.isCloseTo(4 * 1e-10 + i * 1e-10, 1e-14)
+                }
+                returned().isEqualTo(6L)
+            }
+        }
+        it("should read another 25 elements when they are already written") {
+            repeat(25) { if (!writer.write()) throw IllegalStateException() }
+            assertThat(iterator).all {
+                take(25).eachIndexed(25) { s, i ->
+                    s.isCloseTo(10 * 1e-10 + i * 1e-10, 1e-14)
+                }
+                returned().isEqualTo(31L)
+            }
+        }
+    }
 })
+
+//internal val executor = Executors.newCachedThreadPool()
+
+internal fun <T : Any> Assert<ContinuousReadTableIterator<T>>.take(count: Int): Assert<List<T>> = this.prop("take($count)") { it.take(count) }
+internal fun <T : Any> Assert<ContinuousReadTableIterator<T>>.skippedToFrom(): Assert<Boolean> = this.prop("skippedToFrom") { it.skippedToFrom }
+internal fun <T : Any> Assert<ContinuousReadTableIterator<T>>.skipped(): Assert<Long> = this.prop("skipped") { it.skipped }
+internal fun <T : Any> Assert<ContinuousReadTableIterator<T>>.returned(): Assert<Long> = this.prop("returned") { it.returned }
+internal fun <T : Any> Assert<ContinuousReadTableIterator<T>>.hasNext(): Assert<Boolean> = this.prop("hasNext") { it.hasNext() }
+
+internal fun <T : Any> Assert<ContinuousReadTableIterator<T>>.tryTake(count: Int, timeout: Long): Assert<List<T>> {
+    val log = KotlinLogging.logger { }
+    return this.prop("tryTake($count, timeout=$timeout)") { iterator ->
+        val l = mutableListOf<T>()
+        val started = CountDownLatch(1)
+        val t = Thread {
+            started.countDown()
+            repeat(count) { l += iterator.next() }
+        }
+        t.start()
+        started.await(5000, MILLISECONDS)
+        sleep(timeout)
+        log.debug { "Trying take $count elements failed for $timeout ms. Only retrieved: $l" }
+        t.interrupt()
+        l // return what we could have read
+    }
+}
+
+internal fun <T> Iterator<T>.take(count: Int): List<T> = (0 until count).map { this.next() }

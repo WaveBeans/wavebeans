@@ -1,8 +1,10 @@
 package io.wavebeans.lib.stream
 
 import io.wavebeans.lib.Sample
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSubclassOf
+import kotlin.reflect.jvm.jvmName
 
 @Suppress("UNCHECKED_CAST")
 object SampleCountMeasurement {
@@ -13,7 +15,10 @@ object SampleCountMeasurement {
         registerType(Number::class) { 1 }
         registerType(Sample::class) { 1 }
         registerType(List::class) { l ->
-            l.map { samplesInObject(it ?: throw IllegalStateException("List of nullable types is not supported")) }
+            l.asSequence()
+                    .map {
+                        samplesInObject(it ?: throw IllegalStateException("List of nullable types is not supported"))
+                    }
                     .sum()
         }
     }
@@ -22,14 +27,20 @@ object SampleCountMeasurement {
         check(types.put(clazz, measurer as (Any) -> Int) == null) { "$clazz is already registered" }
     }
 
+    private val cache = ConcurrentHashMap<String, (Any) -> Int>()
+
     fun samplesInObject(obj: Any): Int {
         return if (obj is Measured)
             obj.measure()
-        else types.filterKeys { obj::class.isSubclassOf(it) }
-                .map { it.value }
-                .firstOrNull()
-                ?.invoke(obj)
-                ?: throw IllegalStateException("${obj::class} is not registered within ${SampleCountMeasurement::class.simpleName}, use registerType() function " +
-                        "or extend your class with ${Measured::class.simpleName} interface")
+        else {
+            val measurer = cache[obj::class.jvmName]
+                    ?: types.entries.firstOrNull { obj::class.isSubclassOf(it.key) }
+                            ?.let { cache[it.key.jvmName] = it.value; it }
+                            ?.value
+                    ?: throw IllegalStateException("${obj::class} is not registered within ${SampleCountMeasurement::class.simpleName}," +
+                            " use registerType() function or extend your class with ${Measured::class.simpleName} interface")
+
+            measurer.invoke(obj)
+        }
     }
 }
