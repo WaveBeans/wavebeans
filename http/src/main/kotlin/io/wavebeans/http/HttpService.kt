@@ -8,7 +8,9 @@ import io.ktor.server.netty.Netty
 import java.io.Closeable
 
 class HttpService(
-        private val serverPort: Int = 8080
+        private val serverPort: Int = 8080,
+        private val gracePeriodMillis: Long = 5000,
+        private val timeoutMillis: Long = 5000
 ) : Closeable {
 
     lateinit var server: ApplicationEngine
@@ -29,7 +31,7 @@ class HttpService(
     }
 
     override fun close() {
-        server.stop(5000, 5000)
+        server.stop(gracePeriodMillis, timeoutMillis)
     }
 }
 

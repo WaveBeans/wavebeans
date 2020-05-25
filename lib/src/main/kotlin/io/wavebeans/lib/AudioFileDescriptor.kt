@@ -10,7 +10,8 @@ enum class BitDepth(val bits: Int, val bytesPerSample: Int) {
     BIT_64(64, 8);
 
     companion object {
-        fun of(bits: Int): BitDepth = values().firstOrNull { it.bits == bits } ?: throw UnsupportedOperationException("$bits is unsupported bit depth")
+        fun of(bits: Int): BitDepth = safelyOf(bits) ?: throw UnsupportedOperationException("$bits is unsupported bit depth")
+        fun safelyOf(bits: Int): BitDepth? = values().firstOrNull { it.bits == bits }
     }
 }
 

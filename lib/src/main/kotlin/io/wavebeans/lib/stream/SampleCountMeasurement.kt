@@ -1,6 +1,7 @@
 package io.wavebeans.lib.stream
 
 import io.wavebeans.lib.Sample
+import io.wavebeans.lib.SampleArray
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSubclassOf
@@ -14,6 +15,7 @@ object SampleCountMeasurement {
     init {
         registerType(Number::class) { 1 }
         registerType(Sample::class) { 1 }
+        registerType(SampleArray::class) { it.size }
         registerType(List::class) { l ->
             l.asSequence()
                     .map {

@@ -44,7 +44,7 @@ data class TimeMeasure(
 ) : Comparable<TimeMeasure> {
 
     companion object {
-        val regex = "(-?[0-9]+\\.?[0-9]*[eE]?-?[0-9]*)[fFlL]?(ns|us|ms|s|m|h|d)".toRegex()
+        val regex = "^(-?[0-9]+\\.?[0-9]*[eE]?-?[0-9]*)[fFlL]?(ns|us|ms|s|m|h|d)$".toRegex()
 
         fun parseOrNull(s: String): TimeMeasure? {
             if (s.length < 2) return null

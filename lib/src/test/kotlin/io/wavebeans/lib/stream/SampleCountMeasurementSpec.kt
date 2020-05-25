@@ -17,6 +17,10 @@ object SampleCountMeasurementSpec : Spek({
             val obj = sampleOf(1)
             assertThat(samplesInObject(obj)).isEqualTo(1)
         }
+        it("should measure sample array") {
+            val obj = listOf(sampleOf(1), sampleOf(1)).toDoubleArray()
+            assertThat(samplesInObject(obj)).isEqualTo(2)
+        }
         it("should measure list of samples") {
             val obj = listOf(sampleOf(1), sampleOf(1))
             assertThat(samplesInObject(obj)).isEqualTo(2)

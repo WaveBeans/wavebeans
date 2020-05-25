@@ -1,5 +1,6 @@
 package io.wavebeans.execution
 
+import io.wavebeans.execution.distributed.AnySerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.modules.SerializersModule
@@ -30,7 +31,7 @@ object TopologySerializer {
             InputParams::class with InputParamsSerializer
             FunctionMergedStreamParams::class with FunctionMergedStreamParamsSerializer
             ListAsInputParams::class with ListAsInputParamsSerializer
-            TableOutputParams::class with TableOutputParams.serializer()
+            TableOutputParams::class with TableOutputParamsSerializer
             TableDriverStreamParams::class with TableDriverStreamParams.serializer()
         }
         polymorphic(TableQuery::class) {
