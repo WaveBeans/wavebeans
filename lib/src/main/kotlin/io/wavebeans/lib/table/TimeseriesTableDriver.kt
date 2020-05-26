@@ -4,6 +4,9 @@ import io.wavebeans.lib.BeanStream
 import io.wavebeans.lib.TimeMeasure
 import java.io.Closeable
 
+/**
+ * Time series table keeps data in chronological order.
+ */
 interface TimeseriesTableDriver<T : Any> : Closeable {
 
     /**
@@ -22,7 +25,7 @@ interface TimeseriesTableDriver<T : Any> : Closeable {
     fun reset()
 
     /**
-     * Puts the new values into the table. Depending on implementation may require the [time]
+     * Puts new value into the table. Depending on implementation may require the [time]
      * to be always greater than [lastMarker].
      *
      * @param time the time marker of the value.

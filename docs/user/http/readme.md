@@ -14,6 +14,7 @@
   - [Custom types](#custom-types)
     - [Custom serializer](#custom-serializer)
   - [Measuring](#measuring)
+- [Audio Service](#audio-service)
 - [Helper Types](#helper-types)
   - [Time Measure](#time-measure)
 
@@ -202,6 +203,28 @@ JsonBeanStreamReader.register(B::class, BSerializer())
 ### Measuring
 
 The table service has time as an argument, but the data in stream is in samples interpreted according to defined sample rate. Moreover, some of the streams group samples together working with grouped sample as one complex sample. Also you may define the type which is not known to the system and it is impossible to measure it automatically. HTTP Table service uses similar to [projection operation](../api/operations/projection-operation.md) way of measurement, please follow [appropriate section](../api/operations/projection-operation.md#working-with-different-types) for more details.
+
+## Audio Service
+
+Audio service allows you to get access to table of [Samples](../api/readme.md#sample) (or [SampleArrays](../api/readme.md#samplearray)) and convert it to a well known format like WAV on the fly. Currently only streaming use case is available.
+
+To call the specific table to do an audio streaming, call the API over HTTP by path `/audio/{tableName}/stream/{format}`, where `tableName` is the name of the table you want to stream from, and `format` is the desired streaming format, at the moment `wav` is supported only.
+
+The full signature is:
+
+```text
+/audio/{tableName}/stream/{format}?bitDepth={bitDepth}&sourceType={sourceType}&limit={limit}&sampleRate={sampleRate}
+```
+
+Additional useful parameters:
+* `bitDepth` -- either 8, 16, 24, 32 or 64. The number oif bits per sample to stream. FYI, wav-format support up to 32 bits per sample. By default it is 16 bit.
+* `limit` -- interval to limit by, follow [Time Measure](#time-measure) rules. By default, it is unlimited as not specified. 
+
+Current limitations and considerations:
+* You need to specify `sampleRate` explicitly if it is different from 44100Hz. It should be the same the data is being stored into the table, otherwise it won't be converted automatically and you'll get data reproduced on higher or lower rate as format needs to define that value.
+* The table type doesn't contain currently the type of data it is keeping, so you need to define it explicitly. Parameter `sourceType` -- you can stream from `sample` or `sampleArray` table, by default it is `sample`.
+* The wav format requires to specify the length in the header. To make streaming possible the length value is populated with `Int.MAX_VALUE`. Depending on the number of bits and channels it may last for a few days nonstop. Then most players just stop playing sound, however the actual data is being transferred normally. 
+* Most of these limitations can be addressed in next releases.
 
 ## Helper Types
 
