@@ -1,44 +1,26 @@
 package io.wavebeans.lib.io
 
-import io.wavebeans.lib.BeanStream
 import mu.KotlinLogging
 import java.io.*
-import java.lang.Exception
 import java.net.URI
 
-abstract class FileWriter<T : Any>(
-        val uri: URI,
-        val stream: BeanStream<T>,
-        val sampleRate: Float
-) : Writer {
+class FileWriterDelegate(
+        val uri: URI
+) : WriterDelegate() {
 
     companion object {
         private val log = KotlinLogging.logger { }
     }
-
-    protected abstract fun header(): ByteArray?
-
-    protected abstract fun footer(): ByteArray?
 
     private val tmpFile = File.createTempFile("file-stream-output", ".tmp")
 
     private val file = FileOutputStream(tmpFile)
     private val bufferSize = 512 * 1024
     private val buffer = BufferedOutputStream(file, bufferSize)
-    private val sampleIterator = stream.asSequence(sampleRate).iterator()
 
-    override fun write(): Boolean {
-        return if (sampleIterator.hasNext()) {
-            val bytes = serialize(sampleIterator.next())
-            buffer.write(bytes, 0, bytes.size)
-            true
-        } else {
-            log.debug { "[$this uri=$uri] The stream is over" }
-            false
-        }
+    override fun write(b: Int) {
+        buffer.write(b)
     }
-
-    protected abstract fun serialize(element: T): ByteArray
 
     override fun close() {
         log.info { "[$this] Closing the writer" }
@@ -65,7 +47,7 @@ abstract class FileWriter<T : Any>(
 
         if (tmpFile.exists()) {
             FileOutputStream(File(uri)).use { f ->
-                val header = header()
+                val header = headerFn()
                 if (header != null) f.write(header)
 
                 FileInputStream(tmpFile).use { tmpF ->
@@ -77,7 +59,7 @@ abstract class FileWriter<T : Any>(
                     } while (r != -1)
                 }
 
-                val footer = footer()
+                val footer = footerFn()
                 if (footer != null) f.write(footer)
             }
             log.debug { "[$this] Temporary file $tmpFile copied over to file with uri=$uri" }
