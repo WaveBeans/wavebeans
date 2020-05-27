@@ -161,7 +161,7 @@ a - b < 0            // = true
 
 ### SampleArray
 
-SampleArray is the collection of Samples. It is might be used for certain use cases, i.e. optimization purposes of [Table API](outputs/table-output.md#sample-type). A sample array can be create out of the list of samples, or specifying a list of samples one by one, or base on window:
+SampleArray is the collection of Samples. It might be used for certain use cases, i.e. optimization purposes of [Table API](outputs/table-output.md#sample-type). A sample array can be created out of the list of samples, or specifying a list of samples one by one, or based on window:
 
 ```kotlin
 val sample1 = sampleOf(1)

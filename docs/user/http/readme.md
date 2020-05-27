@@ -216,7 +216,7 @@ The full signature is:
 /audio/{tableName}/stream/{format}?bitDepth={bitDepth}&sourceType={sourceType}&limit={limit}&sampleRate={sampleRate}
 ```
 
-Additional useful parameters:
+Additional useful parameters:SampleCountMeasurementSpec
 * `bitDepth` -- either 8, 16, 24, 32 or 64. The number oif bits per sample to stream. FYI, wav-format support up to 32 bits per sample. By default it is 16 bit.
 * `limit` -- interval to limit by, follow [Time Measure](#time-measure) rules. By default, it is unlimited as not specified. 
 
