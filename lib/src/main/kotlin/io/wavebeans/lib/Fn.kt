@@ -22,7 +22,7 @@ private const val fnClazz = "fnClazz"
  * and then restored on specific environment which differs from local one. Though, if [Bean]s run in single thread local
  * mode only, limitations are not that strict and using data out of closures may work.
  *
- * If you don't need to specify any paramters for the function execution, you may use [Fn.wrap] method to make instance
+ * If you don't need to specify any parameters for the function execution, you may use [Fn.wrap] method to make the instance.
  * of function out of lamda function.
  */
 @Serializable(with = FnSerializer::class)
