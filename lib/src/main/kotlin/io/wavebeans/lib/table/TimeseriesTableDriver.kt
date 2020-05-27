@@ -10,7 +10,7 @@ import java.io.Closeable
 interface TimeseriesTableDriver<T : Any> : Closeable {
 
     /**
-     * Keeps the table name fpr this driver.
+     * Keeps the table name for this driver.
      */
     val tableName: String
 
@@ -90,4 +90,3 @@ interface TimeseriesTableDriver<T : Any> : Closeable {
      */
     fun query(query: TableQuery): Sequence<T>
 }
-
