@@ -20,6 +20,7 @@ class DistributedScriptEvaluator(
         overseer = DistributedOverseer(
                 outputs,
                 facilitatorLocations,
+                emptyList(),
                 partitions,
                 additionalClasses = additionalClasses ?: emptyMap(),
                 ignoreLocations = listOf(

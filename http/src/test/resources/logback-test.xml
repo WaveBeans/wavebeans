@@ -6,6 +6,9 @@
         </encoder>
     </appender>
 
+    <logger name="io.grpc.netty.shaded.io.grpc.netty.NettyClientHandler" level="INFO" />
+    <logger name="io.grpc.netty.shaded.io.grpc.netty.NettyServerHandler" level="INFO" />
+
     <root level="debug">
         <appender-ref ref="STDOUT" />
     </root>

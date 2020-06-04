@@ -20,6 +20,7 @@ import io.wavebeans.lib.stream.fft.fft
 import io.wavebeans.lib.stream.map
 import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.stream.window.window
+import io.wavebeans.lib.table.TableRegistry
 import io.wavebeans.lib.table.toSampleTable
 import io.wavebeans.lib.table.toTable
 import kotlinx.serialization.*
@@ -37,7 +38,7 @@ object HttpServiceSpec : Spek({
 
         val engine = TestApplicationEngine(createTestEnvironment())
         engine.start(wait = false)
-        engine.application.tableService()
+        engine.application.tableService(TableRegistry.default)
         with(engine) {
             describe("Samples") {
                 val o = 440.sine().trim(100).toTable("table1", 1.s)
@@ -280,7 +281,7 @@ object HttpServiceSpec : Spek({
     describe("AudioService") {
         val engine = TestApplicationEngine(createTestEnvironment())
         engine.start(wait = false)
-        engine.application.audioService()
+        engine.application.audioService(TableRegistry.default)
 
         describe("Streaming Wav") {
             val o = 440.sine().toSampleTable("mySampleTable", 10.s)

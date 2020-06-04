@@ -15,6 +15,7 @@ dependencies {
     val ktorVersion: String by System.getProperties()
 
     implementation(project(":lib"))
+    implementation(project(":proto"))
 
     val kotlinxSerializationRuntimeVersion: String by System.getProperties()
 

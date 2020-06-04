@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package io.wavebeans.communicator;
+
+option java_multiple_files = true;
+
+service TableApi {
+  rpc FirstMarker (TableMarkerRequest) returns (TableMarkerResponse);
+  rpc LastMarker (TableMarkerRequest) returns (TableMarkerResponse);
+  rpc Put (TablePutRequest) returns (TablePutResponse);
+  rpc Reset (TableResetRequest) returns (TableResetResponse);
+
+  rpc InitQuery (TableInitQueryRequest) returns (TableInitQueryResponse);
+  rpc Query (TableQueryRequest) returns (stream Any);
+}
+
+message TimeMeasure {
+  int64 time = 1;
+  string timeUnit = 2;
+}
+
+message TableMarkerRequest {
+  string tableName = 1;
+}
+
+message TableMarkerResponse {
+  bool isNull = 1;
+  TimeMeasure marker = 2;
+}
+
+message TablePutRequest {
+  string tableName = 1;
+  TimeMeasure time = 2;
+  string valueType = 3;
+  bytes valueSerialized = 4;
+}
+
+message TablePutResponse {}
+
+message TableResetRequest {
+  string tableName = 1;
+}
+message TableResetResponse {}
+
+message TableInitQueryRequest {
+  string tableName = 1;
+  string queryAsJson = 2;
+}
+
+message TableInitQueryResponse {
+  string streamId = 1;
+  string serializerClass = 2;
+}
+
+message TableQueryRequest {
+  string streamId = 2;
+}
+
+message Any {
+  bytes valueSerialized = 1;
+}

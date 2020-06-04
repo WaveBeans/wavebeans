@@ -104,11 +104,8 @@ object WaveBeansCliSpec : Spek({
             val portRange = 40000..40001
             val gardeners = portRange.map {
                 Facilitator(
-                        advertisingHostAddress = "127.0.0.1",
-                        listeningPortRange = it..it,
-                        startingUpAttemptsCount = 1,
+                        communicatorPort = it,
                         threadsNumber = 2,
-                        onServerShutdownGracePeriodMillis = 100,
                         onServerShutdownTimeoutMillis = 100,
                         podDiscovery = object : PodDiscovery() {}
                 )
@@ -136,7 +133,7 @@ object WaveBeansCliSpec : Spek({
                             "--time",
                             "--run-mode", "distributed",
                             "--partitions", "2",
-                            "--facilitators", portRange.map { "http://127.0.0.1:$it" }.joinToString(",")
+                            "--facilitators", portRange.map { "127.0.0.1:$it" }.joinToString(",")
                     )),
                     printer = PrintWriter(out)
             )

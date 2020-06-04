@@ -1,0 +1,144 @@
+syntax = "proto3";
+
+package io.wavebeans.communicator;
+
+option java_multiple_files = true;
+
+service FacilitatorApi {
+  rpc Call (CallRequest) returns (stream CallPartialResponse);
+  rpc Terminate (TerminateRequest) returns (TerminateResponse);
+  rpc StartJob (StartJobRequest) returns (StartJobResponse);
+  rpc StopJob (StopJobRequest) returns (StopJobResponse);
+  rpc JobStatus (JobStatusRequest) returns (JobStatusResponse);
+  rpc DescribeJob (DescribeJobRequest) returns (DescribeJobResponse);
+  rpc ListJobs (ListJobsRequest) returns (ListJobsResponse);
+  rpc UploadCode (UploadCodeRequest) returns (UploadCodeResponse);
+  rpc CodeClasses (CodeClassesRequest) returns (stream CodeClassesPartialResponse);
+  rpc PlantBush (PlantBushRequest) returns (PlantBushResponse);
+  rpc RegisterBushEndpoints (RegisterBushEndpointsRequest) returns (RegisterBushEndpointsResponse);
+  rpc Status (StatusRequest) returns (StatusResponse);
+}
+
+message CallRequest {
+  string bushKey = 1;
+  int64 podId = 2;
+  int32 podPartition = 3;
+  string request = 4;
+}
+
+message CallPartialResponse {
+  bytes buffer = 1;
+}
+
+message TerminateRequest {}
+
+message TerminateResponse {}
+
+message StartJobRequest {
+  string jobKey = 1;
+}
+
+message StartJobResponse {}
+
+message StopJobRequest {
+  string jobKey = 1;
+}
+
+message StopJobResponse {}
+
+message JobStatusRequest {
+  string jobKey = 1;
+}
+
+message JobStatusResponse {
+  message JobStatus {
+    string jobKey = 1;
+    enum FutureStatus {
+      IN_PROGRESS = 0;
+      DONE = 1;
+      CANCELLED = 2;
+      FAILED = 3;
+    }
+    FutureStatus status = 2;
+    bool hasException = 3;
+    ExceptionObj exception = 4;
+  }
+  repeated JobStatus statuses = 1;
+}
+
+message ExceptionObj {
+  ExceptionDescriptor exceptionDescriptor = 1;
+  repeated ExceptionDescriptor causes = 2;
+}
+
+message ExceptionDescriptor {
+  string clazz = 1;
+  string message = 2;
+  repeated string stackTrace = 3;
+}
+
+message UploadCodeRequest {
+  string jobKey = 1;
+  bytes jarFileContent = 2;
+}
+
+message UploadCodeResponse {}
+
+message CodeClassesRequest {}
+
+message CodeClassesPartialResponse {
+  message ClassDesc {
+    string location = 1;
+    string classPath = 2;
+    int64 crc32 = 3;
+    int64 size = 4;
+  }
+  repeated ClassDesc classes = 1;
+}
+
+message PlantBushRequest {
+  string jobKey = 1;
+  JobContent jobContent = 2;
+  float sampleRate = 3;
+}
+
+message PlantBushResponse {}
+
+message JobContent {
+  string bushKey = 1;
+  // that is actually List<PodRef> serialized to json
+  string podsAsJson = 2;
+}
+
+message RegisterBushEndpointsRequest {
+  string jobKey = 1;
+  message BushEndpoint {
+    string bushKey = 1;
+    string location = 2;
+    message PodKey {
+      int64 id = 1;
+      int32 partition = 2;
+    }
+    repeated PodKey pods = 3;
+  }
+  repeated BushEndpoint bushEndpoints = 2;
+}
+
+message RegisterBushEndpointsResponse {}
+
+message StatusRequest {}
+message StatusResponse {}
+
+message DescribeJobRequest {
+  string jobKey = 1;
+}
+
+message DescribeJobResponse {
+  repeated JobContent jobContent = 1;
+}
+
+message ListJobsRequest {}
+message ListJobsResponse {
+  repeated string jobKeys = 1;
+}
+

@@ -40,7 +40,7 @@ class WaveBeansCli(
         val m = Option("m", "run-mode", true, "Running script in distributed mode, specify exact overseer. Default is: ${RunMode.LOCAL.id}. Supported: ${RunMode.values().joinToString(", ") { it.id }}. ")
         val p = Option("p", "partitions", true, "Number of partitions to use in Distributed mode.")
         val t = Option("t", "threads", true, "Number of threads to use in Distributed mode.")
-        val l = Option("l", "facilitators", true, "Comma-separated list of facilitator locations, i.e. http://10.0.0.1:40000,http://10.0.0.2:40000")
+        val l = Option("l", "facilitators", true, "Comma-separated list of facilitator locations, i.e. 10.0.0.1:40000,10.0.0.2:40000")
         val s = Option("s", "sample-rate", true, "Sample rate in Hz to use for outputs. By default, it's 44100.")
         val v = Option("v", "version", false, "Prints version of the tool.")
         val debug = Option(null, "debug", false, "DEBUG level of logging in to file under `logs` directory. By default it is INFO")
