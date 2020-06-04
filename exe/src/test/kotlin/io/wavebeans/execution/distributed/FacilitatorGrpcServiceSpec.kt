@@ -6,10 +6,6 @@ import assertk.assertThat
 import assertk.assertions.*
 import assertk.catch
 import com.nhaarman.mockitokotlin2.*
-import io.ktor.http.HttpMethod.Companion.Get
-import io.ktor.http.HttpStatusCode
-import io.ktor.http.encodeURLParameter
-import io.ktor.server.testing.*
 import io.wavebeans.communicator.FacilitatorApiClient
 import io.wavebeans.communicator.JobStatusResponse.JobStatus.FutureStatus.*
 import io.wavebeans.communicator.RegisterBushEndpointsRequest
@@ -36,9 +32,6 @@ import kotlin.random.Random
 import kotlin.reflect.jvm.jvmName
 
 class FacilitatorGrpcServiceSpec : Spek({
-    val testEngine = TestApplicationEngine(createTestEnvironment())
-    testEngine.start(wait = false)
-
     val gardener: Gardener = mock()
     val podDiscovery = object : PodDiscovery() {}
     val facilitator = Facilitator(
@@ -57,7 +50,6 @@ class FacilitatorGrpcServiceSpec : Spek({
         facilitatorApiClient.close()
         facilitator.terminate()
         facilitator.close()
-        testEngine.stop(1000, 1000)
     }
 
     val json = Json(JsonConfiguration.Stable, TopologySerializer.paramsModule)
@@ -387,13 +379,3 @@ class FacilitatorGrpcServiceSpec : Spek({
         }
     }
 })
-
-private fun Assert<TestApplicationResponse>.content() = prop("content") { it.content }
-
-private fun Assert<TestApplicationResponse>.status() = prop("status") { it.status() }
-
-private fun Assert<TestApplicationCall>.requestHandled() = prop("requestHandled") { it.requestHandled }
-
-private fun Assert<TestApplicationCall>.response() = prop("response") { it.response }
-
-
