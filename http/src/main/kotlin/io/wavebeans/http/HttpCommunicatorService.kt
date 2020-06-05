@@ -19,8 +19,8 @@ class HttpCommunicatorService(
     fun registerTable(tableName: String, facilitatorLocation: String) {
         log.info { "Registering remote table `$tableName` pointed to Facilitator on $facilitatorLocation" }
         val tableDriver = RemoteTimeseriesTableDriver<Any>(tableName, facilitatorLocation, Any::class)
-        tableRegistry.register(tableName, tableDriver)
         tableDriver.init()
+        tableRegistry.register(tableName, tableDriver)
     }
 
     fun unregisterTable(tableName: String) {

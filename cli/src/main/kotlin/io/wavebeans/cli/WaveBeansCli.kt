@@ -5,6 +5,8 @@ import ch.qos.logback.classic.LoggerContext
 import io.wavebeans.cli.script.RunMode
 import io.wavebeans.cli.script.ScriptRunner
 import io.wavebeans.http.HttpService
+import io.wavebeans.lib.table.TableRegistry
+import io.wavebeans.lib.table.TableRegistryImpl
 import org.apache.commons.cli.CommandLine
 import org.apache.commons.cli.Option
 import org.apache.commons.cli.Options
@@ -46,7 +48,8 @@ class WaveBeansCli(
         val debug = Option(null, "debug", false, "DEBUG level of logging in to file under `logs` directory. By default it is INFO")
         val http = Option(null, "http", true, "Run HTTP API on the specified port.")
         val httpWait = Option(null, "http-wait", true, "Time to wait after script finish to shutdown the server in seconds, by default it doesn't wait (0 value), -1 to wait indefinitely")
-        val options = Options().of(f, e, time, verbose, h, m, p, t, l, s, debug, v, http, httpWait)
+        val httpCommunicator = Option(null, "http-communicator-port", true, "The port Communicator will start on in Distributed mode.")
+        val options = Options().of(f, e, time, verbose, h, m, p, t, l, s, debug, v, http, httpWait, httpCommunicator)
     }
 
     private val verbosePrint = cli.has(verbose)
@@ -71,13 +74,28 @@ class WaveBeansCli(
             val runMode = cli.get(m) { RunMode.byId(it) } ?: RunMode.LOCAL
             if (verbosePrint) printer.printLine("Running mode: ${runMode.id}")
             val runOptions = mutableMapOf<String, Any>()
-            if (runMode in setOf(RunMode.MULTI_THREADED, RunMode.DISTRIBUTED) && cli.has(p)) runOptions["partitions"] = cli.getRequired(p) { it.toInt() }
-            if (runMode == RunMode.MULTI_THREADED && cli.has(t)) runOptions["threads"] = cli.getRequired(t) { it.toInt() }
-            if (runMode == RunMode.DISTRIBUTED && cli.has(l)) runOptions["facilitatorLocations"] = cli.getRequired(l) { it.split(",").map { it.trim() } }
+            if (runMode == RunMode.MULTI_THREADED) {
+                runOptions["threads"] = cli.getRequired(t) { it.toInt() }
+            }
+            if (runMode in setOf(RunMode.MULTI_THREADED, RunMode.DISTRIBUTED)) {
+                runOptions["partitions"] = cli.getRequired(p) { it.toInt() }
+            }
+            if (runMode == RunMode.DISTRIBUTED) {
+                runOptions["facilitatorLocations"] = cli.getRequired(l) { it.split(",").map(String::trim) }
+                if (cli.has(http)) {
+                    runOptions["httpLocations"] = cli.getRequired(httpCommunicator) { listOf("127.0.0.1:$it") }
+                }
+            }
             val sampleRate = cli.get(s) { it.toFloat() } ?: 44100.0f
 
             val httpWait = cli.get(httpWait) { it.toLong() } ?: 0
-            val httpService = cli.get(http) { HttpService(serverPort = it.toInt()) }?.start()
+            val httpService = cli.get(http) {
+                HttpService(
+                        serverPort = it.toInt(),
+                        communicatorPort = cli.get(httpCommunicator) { it.toInt() },
+                        tableRegistry = if (runMode == RunMode.DISTRIBUTED) TableRegistryImpl() else TableRegistry.default
+                )
+            }?.start()
             var cancellingAheadOfTime = false
 
             try {

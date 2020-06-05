@@ -193,7 +193,83 @@ object WaveBeansCliSpec : Spek({
             })
 
             it("should execute") { assertThat(cli.tryScriptExecution()).isTrue() }
-            it("should return some value") { assertThat(result.get(1, SECONDS)).isNotEmpty() }
+            it("should return some value") { assertThat(result.get(5, SECONDS)).isNotEmpty() }
+            it("should output something to console") { assertThat(String(out.toByteArray())).isNotEmpty() }
+
+        }
+
+        describe("HTTP API in distributed mode") {
+            val portRange = 40000..40001
+            val gardeners = portRange.map {
+                Facilitator(
+                        communicatorPort = it,
+                        threadsNumber = 2,
+                        onServerShutdownTimeoutMillis = 100,
+                        podDiscovery = object : PodDiscovery() {}
+                )
+            }
+
+            beforeGroup {
+                gardeners.forEach { it.start() }
+            }
+
+            afterGroup {
+                gardeners.forEach {
+                    it.terminate()
+                    it.close()
+                }
+            }
+
+            val out = ByteArrayOutputStream()
+            val cli = WaveBeansCli(
+                    cli = DefaultParser().parse(options, arrayOf(
+                            name,
+                            "--execute", "440.sine().map { it }.trim(1000).toTable(\"table1\").out()",
+                            "--http", "12345",
+                            "--http-wait", "0",
+                            "--http-communicator-port", "12346",
+                            "--verbose",
+                            "--run-mode", "distributed",
+                            "--partitions", "2",
+                            "--facilitators", portRange.joinToString(",") { "127.0.0.1:$it" }
+                    )),
+                    printer = PrintWriter(out)
+            )
+            out.flush()
+            out.close()
+
+            val pool = Executors.newSingleThreadExecutor()
+            afterGroup { pool.shutdownNow() }
+            val result = pool.submit(Callable<List<String>> {
+                fun result(): List<String> {
+                    return runBlocking {
+                        HttpClient(CIO).use { client ->
+                            val response = client.get<String>(URL("http://localhost:12345/table/table1/last?interval=1.ms"))
+                            response
+                        }
+                    }.split("[\\r\\n]+".toRegex()).filterNot { it.isEmpty() }
+                }
+
+                var ret: List<String>
+                while (true) {
+                    try {
+                        ret = result()
+                        if (ret.isNotEmpty()) { // if nothing returned keep trying
+                            break
+                        }
+                    } catch (e: ClientRequestException) {
+                        // the table is not created yet, keep trying
+                        sleep(1)
+                    } catch (e: java.net.ConnectException) {
+                        // the server is not started yet, keep trying
+                        sleep(1)
+                    }
+                }
+                ret
+            })
+
+            it("should execute") { assertThat(cli.tryScriptExecution()).isTrue() }
+            it("should return some value") { assertThat(result.get(5, SECONDS)).isNotEmpty() }
             it("should output something to console") { assertThat(String(out.toByteArray())).isNotEmpty() }
 
         }

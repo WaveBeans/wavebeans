@@ -150,6 +150,8 @@ To start the server specify the port you want to run it on via `--http` flag. Th
 
 When the script is stop running the HTTP server is also being shutdown, however you may want to leave it running. To achieve that you need to specify `--http-wait` flag and specify the number of seconds to keep the server running after execution is completed, or even do not stop at all by specifying -1.
 
+In distributed mode the HTTP service should also start the Communicator. The port needs to be specified explictly via `--http-communicator-port` flag. More about Communicator you can read in appropriate [HTTP service documentation section](../http/readme.md#distributed-mode).
+
 #### Example with Table API
 
 HTTP Service may provide different APIs, in this example we'll take a look at using it via calling Table API. Tables allows to store values and query it later. More about it you can read in [Table Output reference](../api/outputs/table-output.md) and [Table Service HTTP API](../http/#table-service).

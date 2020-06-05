@@ -1,6 +1,18 @@
 Settting up environment
 =======
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [Preliminary steps](#preliminary-steps)
+- [Install plugins](#install-plugins)
+- [Import project](#import-project)
+- [Setting up build configurations](#setting-up-build-configurations)
+- [While working on Protobuf stuff](#while-working-on-protobuf-stuff)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 The project is developed using Intelliji Idea. Community Edition should work fine. All further steps assume you have it already installed.
 
 Preliminary steps

@@ -15,6 +15,7 @@
     - [Custom serializer](#custom-serializer)
   - [Measuring](#measuring)
 - [Audio Service](#audio-service)
+- [Distributed mode](#distributed-mode)
 - [Helper Types](#helper-types)
   - [Time Measure](#time-measure)
 
@@ -26,6 +27,7 @@ WaveBeans framework allows expose to access some of the data to be expose via HT
 
 Http Service provides access to different underlying service implementations which has different purpose with REST API:
 * [Table Service](#table-service): querying [tables](../api/outputs/table-output.md).
+* [Audio Service](#audio-service): streaming sample data from tables.
 
 If everything is good, the service returns 200 OK HTTP code.
 
@@ -225,6 +227,23 @@ Current limitations and considerations:
 * The table type doesn't contain currently the type of data it is keeping, so you need to define it explicitly. Parameter `sourceType` -- you can stream from `sample` or `sampleArray` table, by default it is `sample`.
 * The wav format requires to specify the length in the header. To make streaming possible the length value is populated with `Int.MAX_VALUE`. Depending on the number of bits and channels it may last for a few days nonstop. Then most players just stop playing sound, however the actual data is being transferred normally. 
 * Most of these limitations can be addressed in next releases.
+
+## Distributed mode
+
+While running in distributed mode, all data is being fetched from Facilitators, so the HTTP service needs to know how where these services are, and where specific resources (i.e. tables) are located. To be able to do that you should enable Communicator on the service, and tell the location (address and port) of itself to the Distributed Overseer. When the topology is planned and distributed (and even replanned) Overseer will tell where to find what and HTTP service will be able to call specific API in order to fetch needed data.
+
+To start the HTTP service with Communicator enabled just specifiy its port among other parameters:
+
+```kotlin
+HttpService(
+    serverPort = 12345, 
+    communicatorPort = 4000
+)
+```
+
+and while launching
+
+The port should be accessible only for Overseer and Facilitators, and shouldn't be shared outside. The public port is still `serverPort` where it is accessible over HTTP protocol.
 
 ## Helper Types
 
