@@ -4,6 +4,7 @@ import io.wavebeans.lib.TimeMeasure
 import io.wavebeans.lib.s
 import mu.KotlinLogging
 import java.util.concurrent.*
+import kotlin.reflect.KClass
 
 internal data class Item<T : Any>(val timeMarker: TimeMeasure, val value: T)
 
@@ -21,6 +22,7 @@ internal data class Item<T : Any>(val timeMarker: TimeMeasure, val value: T)
  */
 class InMemoryTimeseriesTableDriver<T : Any>(
         override val tableName: String,
+        override val tableType: KClass<*>,
         private val retentionPolicy: TableRetentionPolicy
 ) : TimeseriesTableDriver<T> {
 
@@ -100,9 +102,6 @@ class InMemoryTimeseriesTableDriver<T : Any>(
         log.debug { "[$this] Closed" }
     }
 
-    override fun toString(): String {
-        return "InMemoryTimeseriesTableDriver($tableName)"
-    }
 
     override fun firstMarker(): TimeMeasure? = table.peekFirst()?.timeMarker
 
@@ -128,6 +127,10 @@ class InMemoryTimeseriesTableDriver<T : Any>(
             is ContinuousReadTableQuery -> ContinuousReadTableIterator(this, query.offset).asSequence()
             else -> throw IllegalStateException("$query is not supported")
         }
+    }
+
+    override fun toString(): String {
+        return "InMemoryTimeseriesTableDriver(tableName='$tableName', retentionPolicy=$retentionPolicy)"
     }
 }
 

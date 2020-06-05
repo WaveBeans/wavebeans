@@ -5,6 +5,7 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
 import assertk.assertions.support.fail
+import io.wavebeans.communicator.FacilitatorApiClient
 import io.wavebeans.execution.SingleThreadedOverseer
 import io.wavebeans.execution.eachIndexed
 import io.wavebeans.lib.Sample
@@ -29,29 +30,32 @@ import kotlin.math.abs
 object DistributedOverseerSpec : Spek({
 
     val log = KotlinLogging.logger {}
-    val pool = Executors.newCachedThreadPool()
+    val facilitatorsLocations = listOf("127.0.0.1:40001", "127.0.0.1:40002")
 
-    pool.submit { startFacilitator(40001) }
-    pool.submit { startFacilitator(40002) }
+    val pool by memoized(SCOPE) { Executors.newCachedThreadPool() }
 
-    val facilitatorsLocations = listOf("http://127.0.0.1:40001", "http://127.0.0.1:40002")
+    beforeGroup {
+        pool.submit { startFacilitator(40001) }
+        pool.submit { startFacilitator(40002) }
 
-    facilitatorsLocations.forEach {
-        while (true) {
-            try {
-                if (FacilitatorService.create(it).status().execute().isSuccessful)
-                    break
-            } catch (e: IOException) {
-                // continue trying
+        facilitatorsLocations.forEach {
+            FacilitatorApiClient(it).use { facilitatorApiClient ->
+                while (true) {
+                    if (facilitatorApiClient.status())
+                        break
+                    // continue trying
+                    sleep(1)
+                }
             }
-            sleep(1)
         }
     }
 
     afterGroup {
         try {
             facilitatorsLocations.forEach { location ->
-                FacilitatorService.create(location).terminate()
+                FacilitatorApiClient(location).use { facilitatorApiClient ->
+                    facilitatorApiClient.terminate()
+                }
             }
         } finally {
             pool.shutdownNow()
@@ -62,15 +66,20 @@ object DistributedOverseerSpec : Spek({
     describe("Running code accessible by Facilitator without extra loading") {
 
         fun Suite.assertExecution(outputs: () -> List<Pair<StreamOutput<out Any>, File>>) {
-            val outputsDistributed = outputs()
-            val distributed = DistributedOverseer(
-                    outputsDistributed.map { it.first },
-                    facilitatorsLocations,
-                    2
-            )
+            val outputsDistributed by memoized(SCOPE) { outputs() }
+            val distributed by memoized(SCOPE) {
+                DistributedOverseer(
+                        outputsDistributed.map { it.first },
+                        facilitatorsLocations,
+                        emptyList(),
+                        2
+                )
+            }
 
-            val outputsSingle = outputs()
-            val single = SingleThreadedOverseer(outputsSingle.map { it.first })
+            val outputsSingle by memoized(SCOPE) { outputs() }
+            val single by memoized(SCOPE) {
+                SingleThreadedOverseer(outputsSingle.map { it.first })
+            }
 
             it("shouldn't throw any exceptions") {
                 val exceptions = distributed.eval(44100.0f).mapNotNull { it.get().exception }
@@ -148,12 +157,15 @@ object DistributedOverseerSpec : Spek({
     describe("Failing on error") {
 
         fun Suite.assertExecutionExceptions(outputs: () -> List<StreamOutput<out Any>>, assertBlock: Assert<List<Throwable>>.() -> Unit) {
-            val outputsDistributed = outputs()
-            val distributed = DistributedOverseer(
-                    outputsDistributed,
-                    facilitatorsLocations,
-                    2
-            )
+            val outputsDistributed by memoized(SCOPE) { outputs() }
+            val distributed by memoized(SCOPE) {
+                DistributedOverseer(
+                        outputsDistributed,
+                        facilitatorsLocations,
+                        emptyList(),
+                        2
+                )
+            }
 
             it("should throw exceptions") {
                 val exceptions = distributed.eval(44100.0f).mapNotNull { it.get().exception }
@@ -211,7 +223,7 @@ object DistributedOverseerSpec : Spek({
                     )
                     .replace(
                             "/[*]FACILITATOR_LIST[*]/.*/[*]FACILITATOR_LIST[*]/".toRegex(),
-                            "listOf(\"http://127.0.0.1:40001\", \"http://127.0.0.1:40002\")"
+                            "listOf(\"127.0.0.1:40001\", \"127.0.0.1:40002\")"
                     )
                     .also { log.info { "$name:\n$it" } }
         }

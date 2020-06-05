@@ -6,9 +6,7 @@
 
 - [Overview](#overview)
 - [Writing Samples](#writing-samples)
-  - [Low-level API](#low-level-api)
 - [Writing FFT samples](#writing-fft-samples)
-  - [Low-level API](#low-level-api-1)
 - [User defined CSV output](#user-defined-csv-output)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -65,7 +63,7 @@ time ns,value
 ... SKIPPED ...
 ```
 
-### Low-level API
+**Low-level API**
 
 Samples to CSV is just a convenient wrapper around [user defined CSV output](#user-defined-csv-output), in order to use that API you may use function `io.wavebeans.lib.io.SampleCsvFn`, which has `timeUnit` as a parameter.
 
@@ -98,7 +96,7 @@ Both method of writing magnitude or phase into CSV file support following parame
 * `timeUnit` -- the first column of the table is integer value of time markers, that flag allows you to specify which units to use to output this value. The type is `java.util.concurrent.TimeUnit`, supported every time unit enumerated there. Default value is milliseconds. *optional*
 * `encoding` - what encoding to use when interpret string value to bytes. By default, `UTF-8`. Most of the time you won't need to change it. *optional*
 
-### Low-level API
+**Low-level API**
 
 As any other API within WaveBeans framework, CSV output of FFT sample is just a wrapper around a class. You may create the instance of this class by specifying the stream it needs to read from and a set of parameters.
 

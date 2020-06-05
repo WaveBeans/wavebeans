@@ -1,58 +1,49 @@
 package io.wavebeans.execution.distributed
 
-import io.ktor.server.engine.ApplicationEngine
-import io.ktor.server.engine.applicationEngineEnvironment
-import io.ktor.server.engine.connector
-import io.ktor.server.engine.embeddedServer
-import io.ktor.server.netty.Netty
+import io.grpc.ServerBuilder
+import io.wavebeans.communicator.JobStatusResponse
+import io.wavebeans.communicator.JobStatusResponse.JobStatus.FutureStatus.*
 import io.wavebeans.execution.*
 import io.wavebeans.execution.config.ExecutionConfig
 import io.wavebeans.execution.medium.MediumBuilder
 import io.wavebeans.execution.medium.PodCallResultBuilder
 import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.lib.WaveBeansClassLoader
+import io.wavebeans.lib.table.TableRegistry
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.modules.SerializersModule
 import mu.KotlinLogging
-import java.io.Closeable
-import java.io.File
-import java.io.OutputStream
-import java.net.InetAddress
+import java.io.*
 import java.util.concurrent.*
-import java.util.jar.JarFile
 import kotlin.collections.List
 import kotlin.collections.MutableList
 import kotlin.collections.forEach
 import kotlin.collections.joinToString
 import kotlin.collections.map
-import kotlin.collections.set
 import kotlin.collections.toList
-import kotlin.random.Random
-import kotlin.random.nextInt
+
+data class BushEndpoint(
+        val bushKey: BushKey,
+        val location: String,
+        val pods: List<PodKey>
+)
 
 class Facilitator(
-        private val advertisingHostAddress: String,
-        private val listeningPortRange: IntRange,
-        private val startingUpAttemptsCount: Int,
         private val threadsNumber: Int,
-        private val applicationEngine: ApplicationEngine? = null,
+        private val communicatorPort: Int? = null,
         private val gardener: Gardener = Gardener(),
         private val callTimeoutMillis: Long = 5000L,
-        private val onServerShutdownGracePeriodMillis: Long = 5000L,
         private val onServerShutdownTimeoutMillis: Long = 5000L,
         private val podCallResultBuilder: PodCallResultBuilder = SerializablePodCallResultBuilder(),
         private val mediumBuilder: MediumBuilder = SerializableMediumBuilder(),
         private val executionThreadPool: ExecutionThreadPool = MultiThreadedExecutionThreadPool(threadsNumber),
         private val podDiscovery: PodDiscovery = PodDiscovery.default
+        // TODO probably inject table registry also
 ) : Closeable {
 
     companion object {
         private val log = KotlinLogging.logger { }
-        private val jvmFacilitators = ConcurrentHashMap<Int, Facilitator>()
     }
-
-    val tempDir = createTempDir("wavebeans-facilitator")
-
-    private val terminate = CountDownLatch(1)
-    private val startupClasses = startUpClasses()
 
     class JobState(
             val jobKey: JobKey,
@@ -74,86 +65,69 @@ class Facilitator(
         }
     }
 
-    private lateinit var server: ApplicationEngine
-    private var listeningPort: Int = 0
-    private var startedFrom: List<StackTraceElement>? = null
+    private val tempDir = createTempDir("wavebeans-facilitator")
+    private val terminate = CountDownLatch(1)
+    private val startupClasses = startUpClasses()
     private val jobStates = ConcurrentHashMap<JobKey, JobState>()
+    private var startedFrom: List<StackTraceElement>? = null
+    private lateinit var communicator: io.grpc.Server
 
     fun start(): Facilitator {
         if (startedFrom != null)
             throw IllegalStateException("Facilitator $this is already started from: " +
                     startedFrom!!.joinToString("\n") { "\tat $it" })
         startedFrom = Thread.currentThread().stackTrace.toList()
-        log.info {
-            "Advertising on host:\n" +
-                    InetAddress.getAllByName(advertisingHostAddress).joinToString("\n") {
-                        """
-                        \tcanonicalHostName = ${it.canonicalHostName}
-                        \thostAddress = ${it.hostAddress}
-                        \thostName = ${it.hostName}
-                    """.trimIndent()
-                    }
-        }
 
         ExecutionConfig.podCallResultBuilder(podCallResultBuilder)
         ExecutionConfig.mediumBuilder(mediumBuilder)
         ExecutionConfig.executionThreadPool(executionThreadPool)
 
-        listeningPort = Random.nextInt(listeningPortRange)
-        var attempt = startingUpAttemptsCount
-        while (attempt > 0) {
-            try {
-                startApi(listeningPort)
-                attempt = -1
-            } catch (e: java.net.BindException) {
-                attempt--
-                log.debug(e) {
-                    "Can't start server on port $listeningPort. Choosing random port within range " +
-                            "$listeningPortRange. Left $attempt attempts before quit.\n" +
-                            "Another started facilitator on the same JVM:\n" +
-                            jvmFacilitators.entries.joinToString("\n\n") {
-                                "on ${it.key}: ${it.value}" +
-                                        "started from:\n " + it.value.startedFrom?.joinToString("\n") { "\tat $it" }
-                            }
-                }
-                listeningPort = Random.nextInt(listeningPortRange)
-            }
+        communicatorPort?.let {
+            communicator = ServerBuilder.forPort(it)
+                    .addService(TableGrpcService.instance(TableRegistry.default))
+                    .addService(FacilitatorGrpcService.instance(this))
+                    .build()
+                    .start()
+            log.info { "Communicator on port $communicatorPort started." }
         }
-        if (attempt == 0) throw IllegalStateException("Can't start the Facilitator within $startingUpAttemptsCount attempts.")
 
-        log.info { "Facilitator API started on port $listeningPort" }
-        jvmFacilitators[listeningPort] = this
         return this
     }
 
-    fun listeningPort(): Int =
-            if (listeningPort > 0) listeningPort
-            else throw IllegalStateException("Facilitator is not listening yet. Please start first")
-
     fun startupClasses(): List<ClassDesc> = startupClasses
 
-    fun registerCode(jobKey: JobKey, codeFile: File) {
-        log.info {
-            "[JobKey $jobKey] Registering code from jar $codeFile. Code file content:\n" +
-                    JarFile(codeFile).entries().asSequence().joinToString("\n") { "${it.name} size=${it.size}bytes crc=${it.crc}" }
+    fun registerCode(jobKey: JobKey, jarFileStream: InputStream) {
+        val codeFile = createTempFile("code-$jobKey", "jar", tempDir)
+        FileOutputStream(codeFile).use {
+            it.write(jarFileStream.readBytes())
         }
-
         jobStates(jobKey).classLoader += codeFile.toURI().toURL()
     }
 
-    fun plantBush(request: PlantBushRequest) {
-        gardener.plantBush(request.jobKey, request.jobContent.bushKey, request.jobContent.pods, request.sampleRate)
-        jobStates(request.jobKey).futures.addAll(gardener.getAllFutures(request.jobKey))
+    fun plantBush(request: io.wavebeans.communicator.PlantBushRequest) {
+        val jobKey = request.jobKey.toJobKey()
+        gardener.plantBush(
+                jobKey,
+                request.jobContent.bushKey.toBushKey(),
+                jsonCompact(SerializersModule { tableQuery(); beanParams() }).parse(
+                        ListSerializer(PodRef.serializer()),
+                        request.jobContent.podsAsJson
+                ),
+                request.sampleRate
+        )
+        jobStates(jobKey).futures.addAll(gardener.getAllFutures(jobKey))
     }
 
-    fun registerBushEndpoints(registerBushEndpointsRequest: RegisterBushEndpointsRequest) {
-        val remoteBushes = jobStates(registerBushEndpointsRequest.jobKey).remoteBushes
-        registerBushEndpointsRequest.bushEndpoints.forEach { bushEndpoint ->
-            val bushKey = bushEndpoint.bushKey
+    fun registerBushEndpoints(registerBushEndpointsRequest: io.wavebeans.communicator.RegisterBushEndpointsRequest) {
+        val remoteBushes = jobStates(registerBushEndpointsRequest.jobKey.toJobKey()).remoteBushes
+        registerBushEndpointsRequest.bushEndpointsList.forEach { bushEndpoint ->
+            val bushKey = bushEndpoint.bushKey.toBushKey()
             val remoteBush = RemoteBush(bushKey, bushEndpoint.location)
             podDiscovery.registerBush(bushKey, remoteBush)
             remoteBushes.add(remoteBush)
-            bushEndpoint.pods.forEach { podDiscovery.registerPod(bushKey, it) }
+            bushEndpoint.podsList.forEach {
+                podDiscovery.registerPod(bushKey, PodKey(it.id, it.partition))
+            }
         }
     }
 
@@ -165,35 +139,50 @@ class Facilitator(
         return gardener.jobs()
     }
 
-    fun describeJob(jobKey: JobKey): List<JobContent> =
-            gardener.job(jobKey).map { JobContent(it.bushKey, it.podRefs) }
-
-    fun status(jobKey: JobKey): List<JobStatus> {
-        return gardener.getAllFutures(jobKey).map { future ->
-            when {
-                future.isDone -> {
-                    try {
-                        val result = future.get(5000, TimeUnit.MILLISECONDS)
-                        JobStatus(
-                                jobKey,
-                                if (result.exception == null) FutureStatus.DONE else FutureStatus.FAILED,
-                                result.exception?.let { ExceptionObj.create(it) }
-                        )
-                    } catch (e: ExecutionException) {
-                        JobStatus(jobKey, FutureStatus.FAILED, ExceptionObj.create(e.cause ?: e))
-                    }
-                }
-                future.isCancelled -> JobStatus(jobKey, FutureStatus.CANCELLED, null)
-                else -> JobStatus(jobKey, FutureStatus.IN_PROGRESS, null)
-            }
+    fun describeJob(jobKey: JobKey): List<io.wavebeans.communicator.JobContent> {
+        fun stringify(l: List<PodRef>): String =
+                jsonCompact(SerializersModule { tableQuery(); beanParams() })
+                        .stringify(ListSerializer(PodRef.serializer()), l)
+        return gardener.job(jobKey).map {
+            io.wavebeans.communicator.JobContent.newBuilder()
+                    .setBushKey(it.bushKey.toString())
+                    .setPodsAsJson(stringify(it.podRefs))
+                    .build()
         }
     }
 
-    fun call(bushKey: BushKey, podKey: PodKey, request: String): (OutputStream) -> Unit {
+    fun status(jobKey: JobKey): List<JobStatusResponse.JobStatus> {
+        return gardener.getAllFutures(jobKey).map { future ->
+            JobStatusResponse.JobStatus.newBuilder()
+                    .setJobKey(jobKey.toString())
+                    .apply {
+                        when {
+                            future.isDone -> {
+                                try {
+                                    val result = future.get(5000, TimeUnit.MILLISECONDS)
+                                    status = if (result.exception == null) DONE else FAILED
+                                    result.exception?.let {
+                                        hasException = true
+                                        exception = it.toExceptionObj()
+                                    }
+                                } catch (e: ExecutionException) {
+                                    status = FAILED
+                                    hasException = true
+                                    exception = (e.cause ?: e).toExceptionObj()
+                                }
+                            }
+                            future.isCancelled -> status = CANCELLED
+                            else -> status = IN_PROGRESS
+                        }
+                    }.build()
+        }
+    }
+
+    fun call(bushKey: BushKey, podKey: PodKey, request: String): InputStream {
         val bush = podDiscovery.bush(bushKey) ?: throw IllegalStateException("Bush $bushKey not found")
         if (bush !is LocalBush) throw IllegalStateException("Bush $bushKey is ${bush::class} but ${LocalBush::class} expected")
         val podCallResult = bush.call(podKey, request).get(callTimeoutMillis, TimeUnit.MILLISECONDS)
-        return podCallResult::writeTo
+        return podCallResult.stream()
     }
 
     fun stopJob(jobKey: JobKey) {
@@ -226,24 +215,10 @@ class Facilitator(
     }
 
     override fun close() {
-        if (applicationEngine == null)
-            server.stop(onServerShutdownGracePeriodMillis, onServerShutdownTimeoutMillis)
-    }
-
-    private fun startApi(serverPort: Int) {
-        if (applicationEngine == null) {
-            val env = applicationEngineEnvironment {
-                module {
-                    facilitatorApi(this@Facilitator)
-                }
-                connector {
-                    host = "0.0.0.0"
-                    port = serverPort
-                }
+        communicatorPort?.let {
+            if (!communicator.shutdown().awaitTermination(onServerShutdownTimeoutMillis, TimeUnit.MILLISECONDS)) {
+                communicator.shutdownNow()
             }
-            server = embeddedServer(Netty, env).start()
-        } else {
-            applicationEngine.application.facilitatorApi(this)
         }
     }
 

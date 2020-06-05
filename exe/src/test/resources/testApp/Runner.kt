@@ -8,6 +8,7 @@ fun run(outputs: List<StreamOutput<*>>) {
     val distributed = DistributedOverseer(
             outputs,
             /*FACILITATOR_LIST*/listOf()/*FACILITATOR_LIST*/,
+            emptyList(),
             2
     )
     val exceptions = distributed.eval(44100.0f).mapNotNull { it.get().exception }

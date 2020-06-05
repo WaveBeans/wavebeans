@@ -17,11 +17,8 @@ object ScriptRunnerSpec : Spek({
     val portRange = 40000..40001
     val gardeners = portRange.map {
         Facilitator(
-                advertisingHostAddress = "127.0.0.1",
-                listeningPortRange = it..it,
-                startingUpAttemptsCount = 1,
+                communicatorPort = it,
                 threadsNumber = 2,
-                onServerShutdownGracePeriodMillis = 100,
                 onServerShutdownTimeoutMillis = 100,
                 podDiscovery = object : PodDiscovery() {}
         )
@@ -32,7 +29,7 @@ object ScriptRunnerSpec : Spek({
     }
 
     arrayOf(
-            Pair(RunMode.DISTRIBUTED, mapOf("partitions" to 2, "facilitatorLocations" to portRange.map { "http://127.0.0.1:$it" })),
+            Pair(RunMode.DISTRIBUTED, mapOf("partitions" to 2, "facilitatorLocations" to portRange.map { "127.0.0.1:$it" })),
             Pair(RunMode.MULTI_THREADED, mapOf<String, Any>("partitions" to 2, "threads" to 2)),
             Pair(RunMode.LOCAL, emptyMap<String, Any>())
     ).forEach { (runMode, runOptions) ->

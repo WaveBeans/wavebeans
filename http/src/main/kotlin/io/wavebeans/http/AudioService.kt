@@ -32,8 +32,8 @@ enum class AudioStreamOutputFormat(val id: String, val contentType: ContentType)
 }
 
 
-fun Application.audioService() {
-    val audioService = AudioService()
+fun Application.audioService(tableRegistry: TableRegistry) {
+    val audioService = AudioService(tableRegistry)
 
     routing {
         get("/audio/{tableName}/stream/{format}") {
@@ -70,9 +70,7 @@ fun Application.audioService() {
     }
 }
 
-class AudioService(
-        internal val tableRegistry: TableRegistry = TableRegistry.instance()
-) {
+class AudioService(internal val tableRegistry: TableRegistry) {
     companion object {
         private val log = KotlinLogging.logger { }
     }

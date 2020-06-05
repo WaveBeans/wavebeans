@@ -9,6 +9,7 @@ import io.wavebeans.lib.stream.window.window
 import kotlinx.serialization.*
 import kotlinx.serialization.builtins.serializer
 import java.util.concurrent.TimeUnit.NANOSECONDS
+import kotlin.reflect.KClass
 import kotlin.reflect.jvm.jvmName
 
 /**
@@ -20,13 +21,14 @@ import kotlin.reflect.jvm.jvmName
  *
  * @return the [TableOutput] which is a terminal action for the execuion.
  */
-fun <T : Any> BeanStream<T>.toTable(
+inline fun <reified T : Any> BeanStream<T>.toTable(
         tableName: String,
         maximumDataLength: TimeMeasure = 1.d
 ): TableOutput<T> = TableOutput(
         this,
         TableOutputParams(
                 tableName,
+                T::class,
                 maximumDataLength
         )
 )
@@ -42,15 +44,16 @@ fun <T : Any> BeanStream<T>.toTable(
  *
  * @return the [TableOutput] which is a terminal action for the execuion.
  */
+@Suppress("UNCHECKED_CAST")
 fun BeanStream<Sample>.toSampleTable(
         tableName: String,
         maximumDataLength: TimeMeasure = 1.d,
         sampleArrayBuffer: Int = 0
 ): TableOutput<out Any> = TableOutput(
-        if (sampleArrayBuffer > 0) this.window(sampleArrayBuffer).map { sampleArrayOf(it) }
-        else this,
-        TableOutputParams(
+        (if (sampleArrayBuffer > 0) this.window(sampleArrayBuffer).map { sampleArrayOf(it) } else this) as BeanStream<Any>,
+        TableOutputParams<Any>(
                 tableName,
+                if (sampleArrayBuffer > 0) SampleArray::class else Sample::class,
                 maximumDataLength
         )
 )
@@ -59,10 +62,12 @@ fun BeanStream<Sample>.toSampleTable(
 @Serializable(with = TableOutputParamsSerializer::class)
 class TableOutputParams<T : Any>(
         val tableName: String,
+        val tableType: KClass<out T>,
         val maximumDataLength: TimeMeasure,
         val tableDriverFactory: Fn<TableOutputParams<T>, TimeseriesTableDriver<T>> = Fn.wrap {
             InMemoryTimeseriesTableDriver(
                     it.tableName,
+                    it.tableType,
                     TimeTableRetentionPolicy(it.maximumDataLength)
             )
         }
@@ -71,6 +76,7 @@ class TableOutputParams<T : Any>(
 object TableOutputParamsSerializer : KSerializer<TableOutputParams<*>> {
     override val descriptor: SerialDescriptor = SerialDescriptor(TableOutputParams::class.jvmName) {
         element("tableName", String.serializer().descriptor)
+        element("tableType", String.serializer().descriptor)
         element("maximumDataLength", TimeMeasure.serializer().descriptor)
         element("tableDriverFactory", FnSerializer.descriptor)
     }
@@ -78,6 +84,7 @@ object TableOutputParamsSerializer : KSerializer<TableOutputParams<*>> {
     override fun deserialize(decoder: Decoder): TableOutputParams<*> {
         val dec = decoder.beginStructure(descriptor)
         var tableName: String? = null
+        var tableType: KClass<*>? = null
         var maximumDataLength: TimeMeasure? = null
         var tableDriverFactory: Fn<TableOutputParams<Any>, TimeseriesTableDriver<Any>>? = null
         @Suppress("UNCHECKED_CAST")
@@ -85,20 +92,22 @@ object TableOutputParamsSerializer : KSerializer<TableOutputParams<*>> {
             when (val i = dec.decodeElementIndex(descriptor)) {
                 CompositeDecoder.READ_DONE -> break@loop
                 0 -> tableName = dec.decodeStringElement(descriptor, i)
-                1 -> maximumDataLength = dec.decodeSerializableElement(descriptor, i, TimeMeasure.serializer())
-                2 -> tableDriverFactory = dec.decodeSerializableElement(descriptor, i, FnSerializer)
+                1 -> tableType = WaveBeansClassLoader.classForName(dec.decodeStringElement(descriptor, i)).kotlin
+                2 -> maximumDataLength = dec.decodeSerializableElement(descriptor, i, TimeMeasure.serializer())
+                3 -> tableDriverFactory = dec.decodeSerializableElement(descriptor, i, FnSerializer)
                         as Fn<TableOutputParams<Any>, TimeseriesTableDriver<Any>>
                 else -> throw SerializationException("Unknown index $i")
             }
         }
-        return TableOutputParams(tableName!!, maximumDataLength!!, tableDriverFactory!!)
+        return TableOutputParams(tableName!!, tableType!!, maximumDataLength!!, tableDriverFactory!!)
     }
 
     override fun serialize(encoder: Encoder, value: TableOutputParams<*>) {
         val structure = encoder.beginStructure(descriptor)
         structure.encodeStringElement(descriptor, 0, value.tableName)
-        structure.encodeSerializableElement(descriptor, 1, TimeMeasure.serializer(), value.maximumDataLength)
-        structure.encodeSerializableElement(descriptor, 2, FnSerializer, value.tableDriverFactory)
+        structure.encodeStringElement(descriptor, 1, value.tableType.jvmName)
+        structure.encodeSerializableElement(descriptor, 2, TimeMeasure.serializer(), value.maximumDataLength)
+        structure.encodeSerializableElement(descriptor, 3, FnSerializer, value.tableDriverFactory)
         structure.endStructure(descriptor)
     }
 }
@@ -117,7 +126,7 @@ class TableOutput<T : Any>(
     private val tableDriver: TimeseriesTableDriver<T>
 
     init {
-        val tableRegistry = TableRegistry.instance()
+        val tableRegistry = TableRegistry.default
         val tableName = parameters.tableName
 
         if (tableRegistry.exists(tableName)) {

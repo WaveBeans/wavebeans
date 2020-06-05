@@ -109,8 +109,8 @@ To start the overseer you need to instantiate the Distributed Overseer in your a
 val overseer = DistributedOverseer(
         outputs,
         listOf(
-                "http://10.0.0.1:4000",
-                "http://10.0.0.2:4000"
+                "10.0.0.1:4000",
+                "10.0.0.2:4000"
         ),
         10
 )

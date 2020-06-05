@@ -3,6 +3,7 @@ package io.wavebeans.lib.table
 import io.wavebeans.lib.BeanStream
 import io.wavebeans.lib.TimeMeasure
 import java.io.Closeable
+import kotlin.reflect.KClass
 
 /**
  * Time series table keeps data in chronological order.
@@ -13,6 +14,11 @@ interface TimeseriesTableDriver<T : Any> : Closeable {
      * Keeps the table name for this driver.
      */
     val tableName: String
+
+    /**
+     * The type of elements the table keeps
+     */
+    val tableType: KClass<*>
 
     /**
      * Initializes the driver.

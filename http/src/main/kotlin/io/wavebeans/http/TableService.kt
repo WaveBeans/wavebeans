@@ -31,8 +31,8 @@ import kotlin.reflect.full.cast
 import kotlin.reflect.jvm.jvmName
 import kotlin.reflect.typeOf
 
-fun Application.tableService() {
-    val tableService = TableService()
+fun Application.tableService(tableRegistry: TableRegistry) {
+    val tableService = TableService(tableRegistry)
 
     routing {
         get("/table/{tableName}/last") {
@@ -83,9 +83,7 @@ private suspend fun OutputStream.streamOutput(stream: InputStream) {
     }
 }
 
-class TableService(
-        private val tableRegistry: TableRegistry = TableRegistry.instance()
-) {
+class TableService(private val tableRegistry: TableRegistry) {
 
     fun exists(tableName: String): Boolean = tableRegistry.exists(tableName)
 

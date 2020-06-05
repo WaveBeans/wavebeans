@@ -98,12 +98,9 @@ class FacilitatorCli(
         }
 
         facilitator = Facilitator(
-                advertisingHostAddress = config[FacilitatorConfig.advertisingHostAddress],
-                listeningPortRange = config[FacilitatorConfig.listeningPortRange],
-                startingUpAttemptsCount = config[FacilitatorConfig.startingUpAttemptsCount],
+                communicatorPort = config[FacilitatorConfig.communicatorPort],
                 threadsNumber = config[FacilitatorConfig.threadsNumber],
                 callTimeoutMillis = config[FacilitatorConfig.callTimeoutMillis],
-                onServerShutdownGracePeriodMillis = config[FacilitatorConfig.onServerShutdownGracePeriodMillis],
                 onServerShutdownTimeoutMillis = config[FacilitatorConfig.onServerShutdownTimeoutMillis]
         )
 
@@ -111,7 +108,7 @@ class FacilitatorCli(
 
         startLatch.countDown()
 
-        printWriter.println("Listening on port ${facilitator!!.listeningPort()}")
+        printWriter.println("Started server on ${config[FacilitatorConfig.communicatorPort]}")
         printWriter.flush()
 
         facilitator!!.waitAndClose()
