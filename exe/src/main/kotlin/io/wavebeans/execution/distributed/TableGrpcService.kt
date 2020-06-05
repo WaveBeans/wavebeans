@@ -25,8 +25,6 @@ class TableGrpcService(
                 TableApiGrpcService(TableGrpcService(tableRegistry))
     }
 
-    private val querySequences = ConcurrentHashMap<UUID, Pair<KSerializer<kotlin.Any>, Sequence<kotlin.Any>>>()
-
     fun firstMarker(tableName: String): io.wavebeans.lib.TimeMeasure? =
             tableRegistry.byName<kotlin.Any>(tableName).firstMarker()
                     .also { log.trace { "Getting firstMarker for $tableName. Returned $it" } }
@@ -49,24 +47,22 @@ class TableGrpcService(
         tableRegistry.byName<kotlin.Any>(tableName).reset()
     }
 
-    fun initQuery(tableName: String, queryAsJson: String): QueryStreamDescriptor {
-        val tableQuery = TableQuerySerializer.deserialize(queryAsJson)
+    fun tableElementSerializer(tableName: String): String {
         val table = tableRegistry.byName<kotlin.Any>(tableName)
         val kSerializer = ProtoObj.serializerForMaybeWrappedObj(table.tableType)
-        val streamId = UUID.randomUUID()
-        @Suppress("UNCHECKED_CAST")
-        querySequences[streamId] = Pair(kSerializer as KSerializer<kotlin.Any>, table.query(tableQuery))
 
-        return QueryStreamDescriptor(streamId, kSerializer::class.jvmName)
+        return kSerializer::class.jvmName
     }
 
-    fun query(streamId: UUID): Sequence<ByteArray> {
-        val sequenceDesc = (querySequences[streamId]
-                ?: throw IllegalArgumentException("Query $streamId is not initialized"))
+    fun query(tableName: String, queryAsJson: String): Sequence<ByteArray> {
+        val table = tableRegistry.byName<kotlin.Any>(tableName)
+        val tableQuery = TableQuerySerializer.deserialize(queryAsJson)
+        @Suppress("UNCHECKED_CAST")
+        val kSerializer = ProtoObj.serializerForMaybeWrappedObj(table.tableType) as KSerializer<kotlin.Any>
 
-        return sequenceDesc.second.map {
+        return table.query(tableQuery).map {
             val e = ProtoObj.wrapIfNeeded(it)
-            e.asByteArray(sequenceDesc.first)
+            e.asByteArray(kSerializer)
         }
     }
 }
@@ -123,19 +119,18 @@ class TableApiGrpcService(
         }
     }
 
-    override fun initQuery(request: TableInitQueryRequest, responseObserver: StreamObserver<TableInitQueryResponse>) {
-        responseObserver.single("TableApiGrpcService.initQuery", request) {
-            val descriptor = tableGrpcService.initQuery(request.tableName, request.queryAsJson)
-            TableInitQueryResponse.newBuilder()
-                    .setStreamId(descriptor.streamId.toString())
-                    .setSerializerClass(descriptor.serializerClass)
+    override fun tableElementSerializer(request: TableElementSerializerRequest, responseObserver: StreamObserver<TableElementSerializerResponse>) {
+        responseObserver.single("TableApiGrpcService.tableType", request) {
+            val kSerializer = tableGrpcService.tableElementSerializer(request.tableName)
+            TableElementSerializerResponse.newBuilder()
+                    .setSerializerClass(kSerializer)
                     .build()
         }
     }
 
     override fun query(request: TableQueryRequest, responseObserver: StreamObserver<Any>) {
         responseObserver.sequence("TableApiGrpcService.query", request) {
-            tableGrpcService.query(UUID.fromString(request.streamId))
+            tableGrpcService.query(request.tableName, request.queryAsJson)
                     .map {
                         Any.newBuilder()
                                 .setValueSerialized(ByteString.copyFrom(it))

@@ -7,11 +7,6 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.TimeUnit.valueOf
 
-data class QueryStreamDescriptor(
-        val streamId: UUID,
-        val serializerClass: String
-)
-
 class TableApiClient(
         val tableName: String,
         location: String,
@@ -73,21 +68,21 @@ class TableApiClient(
             return null
     }
 
-    fun initQuery(queryAsJson: String, timeoutMs: Long = 5000): QueryStreamDescriptor {
-        val response = client.initQuery(
-                TableInitQueryRequest.newBuilder()
+    fun tableElementSerializer(timeoutMs: Long = 5000): String {
+        val response = client.tableElementSerializer(
+                TableElementSerializerRequest.newBuilder()
                         .setTableName(tableName)
-                        .setQueryAsJson(queryAsJson)
                         .build()
         ).get(timeoutMs, MILLISECONDS)
 
-        return QueryStreamDescriptor(UUID.fromString(response.streamId), response.serializerClass)
+        return response.serializerClass
     }
 
-    fun query(streamId: UUID): Sequence<ByteArray> {
+    fun query(queryAsJson: String): Sequence<ByteArray> {
         return clientBlocking.query(
                 TableQueryRequest.newBuilder()
-                        .setStreamId(streamId.toString())
+                        .setTableName(tableName)
+                        .setQueryAsJson(queryAsJson)
                         .build()
         ).asSequence().map { it.valueSerialized.toByteArray() }
     }

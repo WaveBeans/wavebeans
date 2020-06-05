@@ -10,7 +10,7 @@ service TableApi {
   rpc Put (TablePutRequest) returns (TablePutResponse);
   rpc Reset (TableResetRequest) returns (TableResetResponse);
 
-  rpc InitQuery (TableInitQueryRequest) returns (TableInitQueryResponse);
+  rpc TableElementSerializer (TableElementSerializerRequest) returns (TableElementSerializerResponse);
   rpc Query (TableQueryRequest) returns (stream Any);
 }
 
@@ -42,18 +42,17 @@ message TableResetRequest {
 }
 message TableResetResponse {}
 
-message TableInitQueryRequest {
+message TableElementSerializerRequest {
   string tableName = 1;
-  string queryAsJson = 2;
 }
 
-message TableInitQueryResponse {
-  string streamId = 1;
-  string serializerClass = 2;
+message TableElementSerializerResponse {
+  string serializerClass = 1;
 }
 
 message TableQueryRequest {
-  string streamId = 2;
+  string tableName = 1;
+  string queryAsJson = 2;
 }
 
 message Any {
