@@ -52,8 +52,6 @@ class FacilitatorGrpcServiceSpec : Spek({
         facilitator.close()
     }
 
-    val json = Json(JsonConfiguration.Stable, TopologySerializer.paramsModule)
-
     describe("Planting") {
         val pods1 = listOf(440.sine().trim(1000).toDevNull()).buildTopology().buildPods()
         val pods2 = listOf(880.sine().trim(500).toDevNull()).buildTopology().buildPods()

@@ -22,6 +22,12 @@ import kotlin.collections.joinToString
 import kotlin.collections.map
 import kotlin.collections.toList
 
+data class BushEndpoint(
+        val bushKey: BushKey,
+        val location: String,
+        val pods: List<PodKey>
+)
+
 class Facilitator(
         private val threadsNumber: Int,
         private val communicatorPort: Int? = null,
