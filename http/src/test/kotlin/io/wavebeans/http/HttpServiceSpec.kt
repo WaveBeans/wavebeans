@@ -26,6 +26,7 @@ import io.wavebeans.lib.table.toTable
 import kotlinx.serialization.*
 import kotlinx.serialization.builtins.serializer
 import org.spekframework.spek2.Spek
+import org.spekframework.spek2.lifecycle.CachingMode.*
 import org.spekframework.spek2.style.specification.describe
 import java.util.concurrent.TimeUnit
 
@@ -45,11 +46,13 @@ object HttpServiceSpec : Spek({
                 val elementRegex = elementRegex("-?\\d+\\.\\d+([eE]?-\\d+)?")
 
                 val overseer = SingleThreadedOverseer(listOf(o))
-                overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+                beforeGroup {
+                    overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+                }
                 afterGroup { overseer.close() }
 
                 it("should return last 100ms") {
-                    handleRequest(Get, "/table/table1/last?interval=100ms&sampleRate=44100.0").apply {
+                    handleRequest(Get, "/table/table1/last?interval=100ms").apply {
                         assertThat(response.status()).isNotNull().isEqualTo(HttpStatusCode.OK)
                         assertThat(response.content).isNotNull().all {
                             isNotEmpty()
@@ -95,7 +98,10 @@ object HttpServiceSpec : Spek({
                 val elementRegex = elementRegex("\\{\"v\":-?\\d+}")
 
                 val overseer = SingleThreadedOverseer(listOf(o))
-                overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+                beforeGroup {
+                    overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+                }
+
                 afterGroup { overseer.close() }
 
                 it("should return last 100ms") {
@@ -118,6 +124,7 @@ object HttpServiceSpec : Spek({
 
                 }
             }
+
 
             describe("External serializer") {
 
@@ -145,7 +152,9 @@ object HttpServiceSpec : Spek({
                 val elementRegex = elementRegex("\\{\"v\":\"-?[0-9a-fA-F]+\"}")
 
                 val overseer = SingleThreadedOverseer(listOf(o))
-                overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+                beforeGroup {
+                    overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+                }
                 afterGroup { overseer.close() }
 
                 it("should return last 100ms") {
@@ -174,7 +183,9 @@ object HttpServiceSpec : Spek({
                             "\\}")
 
                     val overseer = SingleThreadedOverseer(listOf(o))
-                    overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+                    beforeGroup {
+                        overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+                    }
                     afterGroup { overseer.close() }
 
                     it("should return last 100ms") {
@@ -197,7 +208,9 @@ object HttpServiceSpec : Spek({
                             "\\}")
 
                     val overseer = SingleThreadedOverseer(listOf(o))
-                    overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+                    beforeGroup {
+                        overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+                    }
                     afterGroup { overseer.close() }
 
                     it("should return last 100ms") {
@@ -215,7 +228,9 @@ object HttpServiceSpec : Spek({
                     val elementRegex = elementRegex("\\[[-eE\\d\\.\\,]+\\]")
 
                     val overseer = SingleThreadedOverseer(listOf(o))
-                    overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+                    beforeGroup {
+                        overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+                    }
                     afterGroup { overseer.close() }
 
                     it("should return last 100ms") {
@@ -233,7 +248,9 @@ object HttpServiceSpec : Spek({
                     val elementRegex = elementRegex("\\[[-\\d\\,]+\\]")
 
                     val overseer = SingleThreadedOverseer(listOf(o))
-                    overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+                    beforeGroup {
+                        overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+                    }
                     afterGroup { overseer.close() }
 
                     it("should return last 100ms") {
@@ -261,7 +278,9 @@ object HttpServiceSpec : Spek({
                             "\\}")
 
                     val overseer = SingleThreadedOverseer(listOf(o))
-                    overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+                    beforeGroup {
+                        overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+                    }
                     afterGroup { overseer.close() }
 
                     it("should return last 100ms") {
@@ -284,11 +303,11 @@ object HttpServiceSpec : Spek({
         engine.application.audioService(TableRegistry.default)
 
         describe("Streaming Wav") {
-            val o = 440.sine().toSampleTable("mySampleTable", 10.s)
-            val o2 = 440.sine().toSampleTable("mySampleArrayTable", 10.s, 441)
+            val o = 440.sine().trim(2000).toSampleTable("mySampleTable", 1.s)
+            val o2 = 440.sine().trim(2000).toSampleTable("mySampleArrayTable", 1.s, 441)
             val overseer = MultiThreadedOverseer(listOf(o, o2), 2, 1)
 
-            beforeGroup { Thread { overseer.eval(44100.0f).all { it.get().finished } }.start() }
+            beforeGroup { overseer.eval(44100.0f).all { it.get().finished } }
 
             afterGroup { overseer.close() }
 
@@ -298,7 +317,7 @@ object HttpServiceSpec : Spek({
                 }
             }
             it("should return stream for existing table in 8 bit format") {
-                engine.handleRequest(Get, "/audio/mySampleTable/stream/wav?limit=100ms&bitDepth=8").apply {
+                engine.handleRequest(Get, "/audio/mySampleTable/stream/wav?limit=100ms&offset=1s&bitDepth=8").apply {
                     assertThat(response.status()).isNotNull().isEqualTo(HttpStatusCode.OK)
                     assertThat(response.headers)
                             .prop("Content-Type") { it["Content-Type"] }
@@ -312,7 +331,7 @@ object HttpServiceSpec : Spek({
                 }
             }
             it("should return stream for existing table in 16 bit format") {
-                engine.handleRequest(Get, "/audio/mySampleTable/stream/wav?limit=100ms&bitDepth=16").apply {
+                engine.handleRequest(Get, "/audio/mySampleTable/stream/wav?limit=100ms&offset=1s&bitDepth=16").apply {
                     assertThat(response.status()).isNotNull().isEqualTo(HttpStatusCode.OK)
                     assertThat(response.headers)
                             .prop("Content-Type") { it["Content-Type"] }
@@ -326,7 +345,7 @@ object HttpServiceSpec : Spek({
                 }
             }
             it("should return stream for existing table in 24 bit format") {
-                engine.handleRequest(Get, "/audio/mySampleTable/stream/wav?limit=100ms&bitDepth=24").apply {
+                engine.handleRequest(Get, "/audio/mySampleTable/stream/wav?limit=100ms&offset=1s&bitDepth=24").apply {
                     assertThat(response.status()).isNotNull().isEqualTo(HttpStatusCode.OK)
                     assertThat(response.headers)
                             .prop("Content-Type") { it["Content-Type"] }
@@ -340,7 +359,7 @@ object HttpServiceSpec : Spek({
                 }
             }
             it("should return stream for existing table in 32 bit format") {
-                engine.handleRequest(Get, "/audio/mySampleTable/stream/wav?limit=100ms&bitDepth=32").apply {
+                engine.handleRequest(Get, "/audio/mySampleTable/stream/wav?limit=100ms&offset=1s&bitDepth=32").apply {
                     assertThat(response.status()).isNotNull().isEqualTo(HttpStatusCode.OK)
                     assertThat(response.headers)
                             .prop("Content-Type") { it["Content-Type"] }
@@ -354,12 +373,12 @@ object HttpServiceSpec : Spek({
                 }
             }
             it("should return 400 for unknown bit depth") {
-                engine.handleRequest(Get, "/audio/nonExistingTable/stream/wav?limit=100ms&bitDepth=42").apply {
+                engine.handleRequest(Get, "/audio/nonExistingTable/stream/wav?limit=100ms&offset=1s&bitDepth=42").apply {
                     assertThat(response.status()).isNotNull().isEqualTo(HttpStatusCode.BadRequest)
                 }
             }
             it("should return stream for existing sample array table") {
-                engine.handleRequest(Get, "/audio/mySampleArrayTable/stream/wav?limit=100ms&sourceType=sampleArray").apply {
+                engine.handleRequest(Get, "/audio/mySampleArrayTable/stream/wav?limit=100ms&offset=1s").apply {
                     assertThat(response.status()).isNotNull().isEqualTo(HttpStatusCode.OK)
                     assertThat(response.headers)
                             .prop("Content-Type") { it["Content-Type"] }
@@ -372,13 +391,8 @@ object HttpServiceSpec : Spek({
                             }
                 }
             }
-            it("should return 400 for unknown source type") {
-                engine.handleRequest(Get, "/audio/mySampleTable/stream/wav?limit=100ms&sourceType=unknown").apply {
-                    assertThat(response.status()).isNotNull().isEqualTo(HttpStatusCode.BadRequest)
-                }
-            }
             it("should return stream limited with 200ms") {
-                engine.handleRequest(Get, "/audio/mySampleTable/stream/wav?limit=200ms").apply {
+                engine.handleRequest(Get, "/audio/mySampleTable/stream/wav?limit=200ms&offset=1s").apply {
                     assertThat(response.status()).isNotNull().isEqualTo(HttpStatusCode.OK)
                     assertThat(response.headers)
                             .prop("Content-Type") { it["Content-Type"] }

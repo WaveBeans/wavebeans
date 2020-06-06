@@ -16,10 +16,10 @@ class HttpCommunicatorService(
                 HttpCommunicatorGrpcService(HttpCommunicatorService(tableRegistry))
     }
 
-    fun registerTable(tableName: String, facilitatorLocation: String) {
+    fun registerTable(tableName: String, facilitatorLocation: String, sampleRate: Float) {
         log.info { "Registering remote table `$tableName` pointed to Facilitator on $facilitatorLocation" }
         val tableDriver = RemoteTimeseriesTableDriver<Any>(tableName, facilitatorLocation, Any::class)
-        tableDriver.init()
+        tableDriver.init(sampleRate)
         tableRegistry.register(tableName, tableDriver)
     }
 
@@ -34,7 +34,7 @@ class HttpCommunicatorGrpcService(val service: HttpCommunicatorService) : HttpCo
 
     override fun registerTable(request: RegisterTableRequest, responseObserver: StreamObserver<RegisterTableResponse>) {
         responseObserver.single("registerTable", request) {
-            service.registerTable(request.tableName, request.facilitatorLocation)
+            service.registerTable(request.tableName, request.facilitatorLocation, request.sampleRate)
             RegisterTableResponse.newBuilder().build()
         }
     }

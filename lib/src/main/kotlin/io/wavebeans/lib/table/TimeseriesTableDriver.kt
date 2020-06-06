@@ -16,6 +16,11 @@ interface TimeseriesTableDriver<T : Any> : Closeable {
     val tableName: String
 
     /**
+     * Gets the sample rate. Provided when the table is initialized with [init] call by executor.
+     */
+    val sampleRate: Float
+
+    /**
      * The type of elements the table keeps
      */
     val tableType: KClass<*>
@@ -23,7 +28,7 @@ interface TimeseriesTableDriver<T : Any> : Closeable {
     /**
      * Initializes the driver.
      */
-    fun init()
+    fun init(sampleRate: Float)
 
     /**
      * Resets the driver state.

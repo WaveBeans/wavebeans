@@ -14,9 +14,10 @@ class HttpCommunicatorClient(
         client = HttpCommunicatorGrpc.newFutureStub(channel)
     }
 
-    fun registerTable(tableName: String, facilitatorLocation: String, timeoutMs: Long = 5000) {
+    fun registerTable(tableName: String, facilitatorLocation: String, sampleRate: Float, timeoutMs: Long = 5000) {
         client.registerTable(
                 RegisterTableRequest.newBuilder()
+                        .setSampleRate(sampleRate)
                         .setTableName(tableName)
                         .setFacilitatorLocation(facilitatorLocation)
                         .build()

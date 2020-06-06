@@ -47,8 +47,15 @@ object RemoteTimeseriesTableDriverSpec : Spek({
 
         val remoteTableDriver by memoized(SCOPE) { RemoteTimeseriesTableDriver<Sample>(tableName, "127.0.0.1:5000", Sample::class) }
 
+        it("should not return sample rate if not initialized") {
+            assertThat(catch { remoteTableDriver.sampleRate })
+                    .isNotNull()
+                    .isInstanceOf(IllegalStateException::class)
+        }
+
         it("should init") {
-            assertThat(catch { remoteTableDriver.init() }).isNull()
+            remoteTableDriver.init(12345.0f)
+            assertThat(remoteTableDriver.sampleRate).isEqualTo(12345.0f)
         }
         it("should return null for first marker") {
             whenever(tableDriver.firstMarker()).thenReturn(null)
@@ -67,12 +74,12 @@ object RemoteTimeseriesTableDriverSpec : Spek({
             assertThat(remoteTableDriver.lastMarker()).isNotNull().isEqualTo(100.s)
         }
         it("should put sample value") {
-            tableDriver.init() // need to initialize memoized value
+            tableDriver.init(12345.0f) // need to initialize memoized value
             remoteTableDriver.put(1.s, sampleOf(1.0))
             verify(tableDriver, times(1)).put(eq(1.s), eq(sampleOf(1.0)))
         }
         it("should reset") {
-            tableDriver.init() // need to initialize memoized value
+            tableDriver.init(12345.0f) // need to initialize memoized value
             remoteTableDriver.reset()
             verify(tableDriver, times(1)).reset()
         }

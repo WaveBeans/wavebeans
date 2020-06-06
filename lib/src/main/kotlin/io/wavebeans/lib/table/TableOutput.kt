@@ -138,7 +138,7 @@ class TableOutput<T : Any>(
     }
 
     override fun writer(sampleRate: Float): Writer {
-        tableDriver.init()
+        tableDriver.init(sampleRate)
 
         val iterator = input.asSequence(sampleRate).iterator()
         var index = tableDriver.lastMarker()?.let { timeToSampleIndexCeil(it, sampleRate) } ?: 0L

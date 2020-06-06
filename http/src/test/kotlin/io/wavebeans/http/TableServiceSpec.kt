@@ -37,16 +37,17 @@ object TableServiceSpec : Spek({
         val tableDriver = mock<TimeseriesTableDriver<Int>>()
         whenever(tableRegistry.exists(eq("table"))).thenReturn(true)
         whenever(tableRegistry.byName<Int>("table")).thenReturn(tableDriver)
+        whenever(tableDriver.sampleRate).thenReturn(100.0f)
         whenever(tableDriver.last(100.ms)).thenReturn(input { (i, sampleRate) -> if (i < sampleRate * 0.1) i.toInt() else null })
 
         val service = TableService(tableRegistry)
 
         it("should return stored values if table exists") {
-            assertThat(service.last("table", 100.ms, 100.0f).bufferedReader().use { it.readLines() })
+            assertThat(service.last("table", 100.ms).bufferedReader().use { it.readLines() })
                     .isEqualTo((0..9).map { "{\"offset\":${it * 1_000_000_000L / 100L},\"value\":$it}" })
         }
         it("should not return any values if table doesn't exist") {
-            assertThat(service.last("non-existing-table", 100.ms, 100.0f).bufferedReader().use { it.readLines() })
+            assertThat(service.last("non-existing-table", 100.ms).bufferedReader().use { it.readLines() })
                     .isEmpty()
         }
     }
@@ -56,16 +57,17 @@ object TableServiceSpec : Spek({
         val tableDriver = mock<TimeseriesTableDriver<Int>>()
         whenever(tableRegistry.exists(eq("table"))).thenReturn(true)
         whenever(tableRegistry.byName<Int>("table")).thenReturn(tableDriver)
+        whenever(tableDriver.sampleRate).thenReturn(100.0f)
         whenever(tableDriver.timeRange(0.ms, 100.ms)).thenReturn(input { (i, sampleRate) -> if (i < sampleRate * 0.1) i.toInt() else null })
 
         val service = TableService(tableRegistry)
 
         it("should return stored values if table exists") {
-            assertThat(service.timeRange("table", 0.ms, 100.ms, 100.0f).bufferedReader().use { it.readLines() })
+            assertThat(service.timeRange("table", 0.ms, 100.ms).bufferedReader().use { it.readLines() })
                     .isEqualTo((0..9).map { "{\"offset\":${it * 1_000_000_000L / 100L},\"value\":$it}" })
         }
         it("should not return any values if table doesn't exist") {
-            assertThat(service.timeRange("non-existing-table", 0.ms, 100.ms, 100.0f).bufferedReader().use { it.readLines() })
+            assertThat(service.timeRange("non-existing-table", 0.ms, 100.ms).bufferedReader().use { it.readLines() })
                     .isEmpty()
         }
     }

@@ -24,7 +24,11 @@ object AudioServiceSpec : Spek({
     describe("Streaming WAV") {
         describe("Sample table") {
             val tableRegistry by memoized(TEST) { mock<TableRegistry>() }
-            val tableDriver by memoized(TEST) { mock<TimeseriesTableDriver<Sample>>() }
+            val tableDriver by memoized(TEST) {
+                val driver = mock<TimeseriesTableDriver<Sample>>()
+                whenever(driver.tableType).thenReturn(Sample::class)
+                driver
+            }
             val service by memoized(TEST) {
                 whenever(tableRegistry.exists(eq("table"))).thenReturn(true)
                 whenever(tableRegistry.byName<Sample>("table")).thenReturn(tableDriver)
@@ -51,7 +55,11 @@ object AudioServiceSpec : Spek({
 
         describe("SampleArray table") {
             val tableRegistry by memoized(TEST) { mock<TableRegistry>() }
-            val tableDriver by memoized(TEST) { mock<TimeseriesTableDriver<SampleArray>>() }
+            val tableDriver by memoized(TEST) {
+                val driver = mock<TimeseriesTableDriver<SampleArray>>()
+                whenever(driver.tableType).thenReturn(SampleArray::class)
+                driver
+            }
             val service by memoized(TEST) {
                 whenever(tableRegistry.exists(eq("table"))).thenReturn(true)
                 whenever(tableRegistry.byName<SampleArray>("table")).thenReturn(tableDriver)
@@ -86,8 +94,8 @@ private fun input16Bit() = input { (i, _) -> sampleOf((i and 0xFFFF).toShort()) 
 
 private fun input8Bit() = input { (i, _) -> sampleOf((i and 0xFF).toByte()) }
 
-private inline fun <reified T : Any> assert8BitWavOutput(service: AudioService) {
-    assertThat(service.stream(AudioStreamOutputFormat.WAV, "table", 44100.0f, BitDepth.BIT_8, T::class, null)).all {
+private fun <T : Any> assert8BitWavOutput(service: AudioService) {
+    assertThat(service.stream<T>(AudioStreamOutputFormat.WAV, "table", BitDepth.BIT_8, null, 0.s)).all {
         take(44).all {
             isNotEmpty() // header is there
             range(0, 4).isEqualTo("RIFF".toByteArray())
@@ -101,8 +109,8 @@ private inline fun <reified T : Any> assert8BitWavOutput(service: AudioService) 
     }
 }
 
-private inline fun <reified T : Any> assert24BitWavOutput(service: AudioService) {
-    assertThat(service.stream(AudioStreamOutputFormat.WAV, "table", 44100.0f, BitDepth.BIT_24, T::class, null)).all {
+private fun <T : Any> assert24BitWavOutput(service: AudioService) {
+    assertThat(service.stream<T>(AudioStreamOutputFormat.WAV, "table", BitDepth.BIT_24, null, 0.s)).all {
         take(44).all {
             isNotEmpty() // header is there
             range(0, 4).isEqualTo("RIFF".toByteArray())
@@ -113,8 +121,8 @@ private inline fun <reified T : Any> assert24BitWavOutput(service: AudioService)
     }
 }
 
-private inline fun <reified T : Any> assert32BitWavOutput(service: AudioService) {
-    assertThat(service.stream(AudioStreamOutputFormat.WAV, "table", 44100.0f, BitDepth.BIT_32, T::class, null)).all {
+private fun <T : Any> assert32BitWavOutput(service: AudioService) {
+    assertThat(service.stream<T>(AudioStreamOutputFormat.WAV, "table", BitDepth.BIT_32, null, 0.s)).all {
         take(44).all {
             isNotEmpty() // header is there
             range(0, 4).isEqualTo("RIFF".toByteArray())
@@ -125,8 +133,8 @@ private inline fun <reified T : Any> assert32BitWavOutput(service: AudioService)
     }
 }
 
-private inline fun <reified T : Any> assert16BitWavOutput(service: AudioService) {
-    assertThat(service.stream(AudioStreamOutputFormat.WAV, "table", 44100.0f, BitDepth.BIT_16, T::class, null)).all {
+private fun <T : Any> assert16BitWavOutput(service: AudioService) {
+    assertThat(service.stream<T>(AudioStreamOutputFormat.WAV, "table", BitDepth.BIT_16, null, 0.s)).all {
         take(44).all {
             isNotEmpty() // header is there
             range(0, 4).isEqualTo("RIFF".toByteArray())

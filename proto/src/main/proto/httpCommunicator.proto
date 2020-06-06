@@ -12,6 +12,7 @@ service HttpCommunicator {
 message RegisterTableRequest {
   string tableName = 1;
   string facilitatorLocation = 2;
+  float sampleRate = 3;
 }
 
 message RegisterTableResponse {}
