@@ -141,23 +141,7 @@ Among everything else, you can find artifact of Cli tool under `cli/build/distri
 
 ### Using IDE for development
 
-Intellij IDEA is recommended way to develop the framework, however you may find any other IDE like Eclipse with Kotlin plugin work smoothly with no issues.
-
-**Intellij IDEA project set up**
-
-1. Open `build.gradle` as a project inside IDE
-2. Choose to use gradle wrapper.
-3. Wait for IDE to fetch the project and index everything... and you're pretty much done.
-
-**Running tests in Intellij IDEA**
-
-Project uses [Spek 2](https://www.spekframework.org/) testing framework. You need to install [appropriate Spek plugin](https://plugins.jetbrains.com/plugin/10915-spek-framework/) first. However, at the time of writing you weren't been able to run all tests within one Run configuration, so any module needed to be configured separately via JUnit runner:
-
-* Create JUnit runner, name it, let's say `exe tests`, `lib tests`, `cli tests`
-* Test Kind: `All in package`
-* Package: `io.wavebeans`
-* User classpath of module choose one of: `wavebeans.exe.test`, `wavebeans.lib.test`, or `wavebeans.cli.test`
-* Everything else may remain with default values. 
+Follow [this instructions](/docs/dev/setting-up-environment.md).
 
 ## Contribution
 

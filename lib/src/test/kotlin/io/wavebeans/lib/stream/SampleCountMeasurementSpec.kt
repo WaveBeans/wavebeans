@@ -4,6 +4,7 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import io.wavebeans.lib.Sample
 import io.wavebeans.lib.math.i
+import io.wavebeans.lib.sampleArrayOf
 import io.wavebeans.lib.sampleOf
 import io.wavebeans.lib.stream.SampleCountMeasurement.samplesInObject
 import io.wavebeans.lib.stream.fft.FftSample
@@ -16,6 +17,10 @@ object SampleCountMeasurementSpec : Spek({
         it("should measure samples") {
             val obj = sampleOf(1)
             assertThat(samplesInObject(obj)).isEqualTo(1)
+        }
+        it("should measure sample array") {
+            val obj = sampleArrayOf(sampleOf(1), sampleOf(1))
+            assertThat(samplesInObject(obj)).isEqualTo(2)
         }
         it("should measure list of samples") {
             val obj = listOf(sampleOf(1), sampleOf(1))

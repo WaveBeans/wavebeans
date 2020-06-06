@@ -1,17 +1,17 @@
-Memory table
-======
+# Memory table
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**
 
 - [Overview](#overview)
+  - [Sample type](#sample-type)
 - [Querying](#querying)
+- [Custom Table implementation](#custom-table-implementation)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-Overview
-------
+## Overview
 
 Memory tables allows you to store the values of the stream to query it later for different purposes. To create a memory table you just define as any other output specifying the name of the table:
 
@@ -31,8 +31,17 @@ The second parameter has type [TimeMeasure](../types/time-measure.md).
 
 The table can work with any type you desire, on any stream, that type just needs to be a non-nullable.
 
-Querying
-------
+### Sample type
+
+For the type [Sample](../readme.md#sample) there is additional API available. The method is similar to the one menthioned above:
+
+```kotlin
+stream.toSampleTable("tableName", 120.m)
+```
+
+There is one additional parameter you may specify. For certain use cases like [audio streaming](../../http/readme.md#audio-service) it would be more efficient if the data is stored with larger granularity to reduce memory footprint and CPU usage. If you specify `sampleArrayBuffer` greater than 0, samples will be stored as [SampleArray](../readme.md#samplearray) with specified length. Though that would mean you can read whole buffer all at once only, for audio streaming that means increased latency. So choose wisely. Even the buffer of 512 samples reduces CPU usage and increases streaming thoughput drastially, and the latency is less than 100ms for sample rate 44100Hz.
+
+## Querying
 
 While the stream is running the data is being stored into a table, where you can query it. The data is accessible regardless if the stream is over and closed or it is still being processed. However if you're trying to access data during execution it's not guaranteed to be presented as data availability depends on the overall stream performance and oyu need to write your code safely.
 
@@ -80,3 +89,24 @@ A few examples, assuming table is defined as above and has type `Sample`:
     // and get that piece
     table.timeRange(0.s, 3.s)
     ```
+  
+## Custom Table implementation
+
+By default, the simple in memory table is used implemented by driver `io.wavebeans.lib.table.InMemoryTimeseriesTableDriver`. It is basically a wrapper arround double ended queue. It allows to stream data efficiently, however querying data is not very efficient. If you have a better idea for the table for your use case, you can always develop your own. To use that table driver implementation, you need to implement the `io.wavebeans.lib.table.TimeseriesTableDriver` and specify it while creating the TableOutput. For implementation details follow documentation for every method in the code.
+
+```kotlin
+// create implementation
+class MyTimeseriesTableDriver: TimeseriesTableDriver<Int> {
+    // implementation here
+}
+
+// create parameters object
+val parameters = TableOutputParams<Int>(
+    tableName = "myTable", 
+    maximumDataLength = 120.s,
+    tableDriverFactory = Fn.wrap { MyTimeseriesTableDriver() } 
+)
+
+// create output itself
+val output = TableOutput<Int>(myStream, parameters)
+```

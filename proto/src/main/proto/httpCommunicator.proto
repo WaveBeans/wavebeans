@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package io.wavebeans.communicator;
+
+option java_multiple_files = true;
+
+service HttpCommunicator {
+  rpc RegisterTable (RegisterTableRequest) returns (RegisterTableResponse);
+  rpc UnregisterTable (UnregisterTableRequest) returns (UnregisterTableResponse);
+}
+
+message RegisterTableRequest {
+  string tableName = 1;
+  string facilitatorLocation = 2;
+  float sampleRate = 3;
+}
+
+message RegisterTableResponse {}
+
+message UnregisterTableRequest {
+  string tableName = 1;
+}
+
+message UnregisterTableResponse {}

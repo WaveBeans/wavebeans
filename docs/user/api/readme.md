@@ -10,6 +10,7 @@
 - [Operations](#operations)
 - [Types](#types)
   - [Sample](#sample)
+  - [SampleArray](#samplearray)
   - [Window of any type T](#window-of-any-type-t)
   - [FftSample](#fftsample)
   - [User defined type](#user-defined-type)
@@ -156,6 +157,27 @@ d != a               // = true
 d == 0.2             // = true
 ZeroSample == 0.0    // = true
 a - b < 0            // = true
+```
+
+### SampleArray
+
+SampleArray is the collection of Samples. It might be used for certain use cases, i.e. optimization purposes of [Table API](outputs/table-output.md#sample-type). A sample array can be created out of the list of samples, or specifying a list of samples one by one, or based on window:
+
+```kotlin
+val sample1 = sampleOf(1)
+val sample2 = sampleOf(2)
+val sample3 = sampleOf(3)
+val sample4 = sampleOf(4)
+
+// based on list
+sampleArrayOf(listOf(sample1, sample2, sample3, sample4))
+
+// specify samples one by one
+sampleArrayOf(sample1, sample2, sample3, sample4)
+
+// based on window
+val window = myStream.window(4)
+sampleArrayOf(window)
 ```
 
 ### Window of any type T

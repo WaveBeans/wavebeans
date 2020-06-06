@@ -305,7 +305,7 @@ object OverseerIntegrationSpec : Spek({
         val file = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
 
         val run1 = seqStream().trim(1000).toTable("t1")
-        val run2 = TableRegistry.instance().byName<Sample>("t1")
+        val run2 = TableRegistry.default.byName<Sample>("t1")
                 .last(2000.ms)
                 .map { it * 2 }
                 .toCsv("file://${file.absolutePath}")
@@ -318,7 +318,7 @@ object OverseerIntegrationSpec : Spek({
 
         it("should have non-empty output") { assertThat(fileContent).size().isGreaterThan(1) }
 
-        TableRegistry.instance().reset("t1")
+        TableRegistry.default.reset("t1")
 
         runLocally(listOf(run1))
         runLocally(listOf(run2))
@@ -350,7 +350,7 @@ object OverseerIntegrationSpec : Spek({
                 .trim(10)
                 .toTable("t2", 10.s)
 
-        val run2 = TableRegistry.instance().byName<FftSample>("t2")
+        val run2 = TableRegistry.default.byName<FftSample>("t2")
                 .last(2000.ms)
                 .map { it.magnitude().toList() }
                 .toCsv(
@@ -372,13 +372,13 @@ object OverseerIntegrationSpec : Spek({
 
         it("should have non-empty output") { assertThat(fileContent).size().isGreaterThan(1) }
 
-//        TableRegistry.instance().reset("t2")
-//
-//        runLocally(listOf(run1))
-//        runLocally(listOf(run2))
-//
-//        val fileContentLocal = file.readLines()
-//        it("should have the same output as local") { assertThat(fileContent).isEqualTo(fileContentLocal) }
+        TableRegistry.default.reset("t2")
+
+        runLocally(listOf(run1))
+        runLocally(listOf(run2))
+
+        val fileContentLocal = file.readLines()
+        it("should have the same output as local") { assertThat(fileContent).isEqualTo(fileContentLocal) }
 
     }
 })

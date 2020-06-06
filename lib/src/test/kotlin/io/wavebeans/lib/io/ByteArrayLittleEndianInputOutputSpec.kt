@@ -28,10 +28,17 @@ private class ByteArrayFileOutputMock(
         get() = throw UnsupportedOperationException()
 
     override fun writer(sampleRate: Float): Writer {
-        return object : ByteArrayLEFileOutputWriter(file.toURI(), stream, bitDepth, sampleRate) {
+        return object : AbstractWriter<Sample>(stream, sampleRate, FileWriterDelegate(uri = file.toURI())) {
+
             override fun header(): ByteArray? = null
 
             override fun footer(): ByteArray? = null
+
+            override fun serialize(element: Sample): ByteArray {
+                val buf = ByteArray(bitDepth.bytesPerSample)
+                writeSampleAsLEBytes(buf, 0, element, bitDepth)
+                return buf
+            }
 
         }
     }

@@ -59,6 +59,8 @@ object TimeMeasureSpec : Spek({
                     .isNotNull().message().isNotNull().startsWith("Format invalid, should be:")
             assertThat(catch { TimeMeasure.parse("-1f") })
                     .isNotNull().message().isNotNull().startsWith("Format invalid, should be:")
+            assertThat(catch { TimeMeasure.parse("1megasecond") })
+                    .isNotNull().message().isNotNull().startsWith("Format invalid, should be:")
         }
     }
 })

@@ -3,13 +3,27 @@ package io.wavebeans.lib.table
 import io.wavebeans.lib.TimeMeasure
 import io.wavebeans.lib.s
 import mu.KotlinLogging
-import java.util.concurrent.ConcurrentLinkedDeque
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledFuture
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.*
+import java.util.concurrent.atomic.AtomicReference
+import kotlin.reflect.KClass
 
+internal data class Item<T : Any>(val timeMarker: TimeMeasure, val value: T)
+
+/**
+ * Basic implementation for in-memory [TimeseriesTableDriver], internally represented as a [java.util.Deque].
+ *
+ * Intended to use for small amounts of data as has no optimization and is doing thing not very effectively.
+ * Basically all queries perform a full scan of the collection every time.
+ *
+ * Also, each element has quite an overhead of an object container and time marker, so keeping small
+ * object like [io.wavebeans.lib.Sample]s leads to reasonable memory consumption.
+ *
+ * All these constraints should be kept in mind while using this implementation. It's not bad overall.
+ * As pretty much everything out there, it should be used correctly.
+ */
 class InMemoryTimeseriesTableDriver<T : Any>(
         override val tableName: String,
+        override val tableType: KClass<*>,
         private val retentionPolicy: TableRetentionPolicy
 ) : TimeseriesTableDriver<T> {
 
@@ -29,15 +43,20 @@ class InMemoryTimeseriesTableDriver<T : Any>(
         }
     }
 
-    private data class Item<T : Any>(val timeMarker: TimeMeasure, val value: T)
+    override val sampleRate: Float
+        get() = sampleRateValue[0]
+                .let { if (it < 0) throw IllegalStateException("Sample rate value is not initialized yet") else it }
 
-    private val table = ConcurrentLinkedDeque<Item<T>>()
+    internal val table = ConcurrentLinkedDeque<Item<T>>()
 
     private var cleanUpTask: ScheduledFuture<*>? = null
+    private val sampleRateValue: FloatArray = FloatArray(1) { Float.NEGATIVE_INFINITY }
 
-    override fun init() {
+    override fun init(sampleRate: Float) {
+        sampleRateValue[0] = sampleRate
         log.debug { "[$this] Initializing driver" }
-        if (cleanUpTask != null) {
+        if (cleanUpTask == null) {
+            log.debug { "[$this] Setting cleanup task" }
             cleanUpTask = scheduledExecutor.scheduleAtFixedRate({ performCleanup() }, 0, 5000, TimeUnit.MILLISECONDS)
         }
     }
@@ -47,24 +66,31 @@ class InMemoryTimeseriesTableDriver<T : Any>(
         table.clear()
     }
 
-    fun performCleanup() {
-        log.debug { "[$this] Performing cleanup according to policy $retentionPolicy" }
+    /**
+     * Performs the clean up. Return number of elements removed.
+     */
+    fun performCleanup(): Int {
+        log.debug {
+            "[$this] Performing cleanup according to policy $retentionPolicy. " +
+                    "Table: first=${table.peekFirst()}, last=${table.peekLast()}, size=${table.size}"
+        }
+        var removedCount = 0
         try {
-            val maximumTimeMarker = table.peekLast()?.timeMarker ?: return
-            var removedCount = 0
+            val maximumTimeMarker = table.peekLast()?.timeMarker ?: return removedCount
             while (true) {
-                val first = table.peekFirst() ?: return
+                val first = table.peekFirst() ?: return removedCount
 
                 if (!retentionPolicy.isRetained(first.timeMarker, maximumTimeMarker)) {
                     table.removeFirst()
                     removedCount++
                 } else {
                     log.debug { "[$this] Performed clean up. Removed $removedCount items" }
-                    return
+                    return removedCount
                 }
             }
         } catch (e: Exception) {
             log.error(e) { "[$this] Can't perform table clean up" }
+            return removedCount
         }
     }
 
@@ -82,9 +108,6 @@ class InMemoryTimeseriesTableDriver<T : Any>(
         log.debug { "[$this] Closed" }
     }
 
-    override fun toString(): String {
-        return "InMemoryTimeseriesTableDriver($tableName)"
-    }
 
     override fun firstMarker(): TimeMeasure? = table.peekFirst()?.timeMarker
 
@@ -107,7 +130,13 @@ class InMemoryTimeseriesTableDriver<T : Any>(
                         .takeWhile { it.timeMarker < to }
                         .map { it.value }
             }
+            is ContinuousReadTableQuery -> ContinuousReadTableIterator(this, query.offset).asSequence()
             else -> throw IllegalStateException("$query is not supported")
         }
     }
+
+    override fun toString(): String {
+        return "InMemoryTimeseriesTableDriver(tableName='$tableName', retentionPolicy=$retentionPolicy)"
+    }
 }
+

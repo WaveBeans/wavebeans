@@ -31,17 +31,16 @@ import kotlin.reflect.full.cast
 import kotlin.reflect.jvm.jvmName
 import kotlin.reflect.typeOf
 
-fun Application.tableService() {
-    val tableService = TableService()
+fun Application.tableService(tableRegistry: TableRegistry) {
+    val tableService = TableService(tableRegistry)
 
     routing {
         get("/table/{tableName}/last") {
             val tableName: String = call.parameters.required("tableName") { it }
             val interval: TimeMeasure = call.request.queryParameters.required("interval") { TimeMeasure.parseOrNull(it) }
-            val sampleRate: Float? = call.request.queryParameters.optional("sampleRate") { it.toFloatOrNull() }
 
             if (tableService.exists(tableName)) {
-                val stream = tableService.last(tableName, interval, sampleRate ?: 44100.0f)
+                val stream = tableService.last(tableName, interval)
                 call.respondOutputStream {
                     streamOutput(stream)
                 }
@@ -53,10 +52,9 @@ fun Application.tableService() {
             val tableName: String = call.parameters.required("tableName") { it }
             val from: TimeMeasure = call.request.queryParameters.required("from") { TimeMeasure.parseOrNull(it) }
             val to: TimeMeasure = call.request.queryParameters.required("to") { TimeMeasure.parseOrNull(it) }
-            val sampleRate: Float? = call.request.queryParameters.optional("sampleRate") { it.toFloatOrNull() }
 
             if (tableService.exists(tableName)) {
-                val stream = tableService.timeRange(tableName, from, to, sampleRate ?: 44100.0f)
+                val stream = tableService.timeRange(tableName, from, to)
                 call.respondOutputStream {
                     streamOutput(stream)
                 }
@@ -83,29 +81,29 @@ private suspend fun OutputStream.streamOutput(stream: InputStream) {
     }
 }
 
-class TableService(
-        private val tableRegistry: TableRegistry = TableRegistry.instance()
-) {
+class TableService(private val tableRegistry: TableRegistry) {
 
     fun exists(tableName: String): Boolean = tableRegistry.exists(tableName)
 
-    fun last(tableName: String, interval: TimeMeasure, sampleRate: Float): InputStream =
+    fun last(tableName: String, interval: TimeMeasure): InputStream =
             if (tableRegistry.exists(tableName)) {
+                val table = tableRegistry.byName<Any>(tableName)
                 JsonBeanStreamReader(
-                        stream = tableRegistry.byName<Any>(tableName).last(interval),
-                        sampleRate = sampleRate,
-                        offset = tableRegistry.byName<Any>(tableName).lastMarker() ?: 0.s
+                        stream = table.last(interval),
+                        sampleRate = table.sampleRate,
+                        offset = table.lastMarker() ?: 0.s
                 )
             } else {
                 ByteArrayInputStream(ByteArray(0))
             }
 
 
-    fun timeRange(tableName: String, from: TimeMeasure, to: TimeMeasure, sampleRate: Float): InputStream =
+    fun timeRange(tableName: String, from: TimeMeasure, to: TimeMeasure): InputStream =
             if (tableRegistry.exists(tableName)) {
+                val table = tableRegistry.byName<Any>(tableName)
                 JsonBeanStreamReader(
-                        stream = tableRegistry.byName<Any>(tableName).timeRange(from, to),
-                        sampleRate = sampleRate,
+                        stream = table.timeRange(from, to),
+                        sampleRate = table.sampleRate,
                         offset = from
                 )
             } else {
