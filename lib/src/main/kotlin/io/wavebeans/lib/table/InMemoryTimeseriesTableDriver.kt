@@ -50,7 +50,7 @@ class InMemoryTimeseriesTableDriver<T : Any>(
     internal val table = ConcurrentLinkedDeque<Item<T>>()
 
     private var cleanUpTask: ScheduledFuture<*>? = null
-    private val sampleRateValue: FloatArray = FloatArray(1) { Float.MIN_VALUE }
+    private val sampleRateValue: FloatArray = FloatArray(1) { Float.NEGATIVE_INFINITY }
 
     override fun init(sampleRate: Float) {
         sampleRateValue[0] = sampleRate
