@@ -135,13 +135,13 @@ class DistributedOverseer(
         val bushEndpoints = plantBushes(jobKey, sampleRate)
         bushEndpoints.forEach { FacilitatorCheckJob(it.location).start() }
         registerBushEndpoint(bushEndpoints)
-        registerTables()
+        registerTables(sampleRate)
         startJob(jobKey)
 
         return locationFutures.values.toList()
     }
 
-    private fun registerTables() {
+    private fun registerTables(sampleRate: Float) {
         val facilitatorToTableNames = distribution.entries.map {
             val tableNames = it.value.asSequence()
                     .map { podRef -> podRef.internalBeans }
@@ -156,7 +156,7 @@ class DistributedOverseer(
             facilitatorToTableNames
                     .flatMap { it.second.map { v -> it.first to v } }
                     .forEach { (facilitatorLocation, tableName) ->
-                        client.registerTable(tableName, facilitatorLocation)
+                        client.registerTable(tableName, facilitatorLocation, sampleRate)
                     }
         }
     }

@@ -67,11 +67,9 @@ Following methods available, mostly this methods are exposed from [table query f
 * Getting last Interval: `/table/{tableName}/last?interval={interval}[&sampleRate={sampleRate}]`:
     * `tableName` -- the name of the table to query, if the table can't be found the API call with return `404 Not Found` HTTP code.
     * `interval` -- the interval you're requesting, the type of [TimeMeasure](#time-measure). If malformed you'll see `400 Bad Request` HTTP code.
-    * `sampleRate` -- is optional parameter which defines which sample rate to use to form the stream. By default 44100. In this case only affects the offset time values.
 * Getting specific time range: `/table/{tableName}/timeRange?from={from}&to={to}[&sampleRate={sampleRate}]`:
     * `tableName` -- the name of the table to query, if the table can't be found the API call with return `404 Not Found` HTTP code.
     * `from`, `to` -- the from and to values of the interval you're requesting, the type of [TimeMeasure](#time-measure). If malformed you'll see `400 Bad Request` HTTP code.
-    * `sampleRate` -- is optional parameter which defines which sample rate to use to form the stream. By default 44100. In this case only affects the offset time values.
 
 Both endpoints return stream as new-line separated JSON objects like this:
 
@@ -222,11 +220,8 @@ Additional useful parameters:SampleCountMeasurementSpec
 * `bitDepth` -- either 8, 16, 24, 32 or 64. The number oif bits per sample to stream. FYI, wav-format support up to 32 bits per sample. By default it is 16 bit.
 * `limit` -- interval to limit by, follow [Time Measure](#time-measure) rules. By default, it is unlimited as not specified. 
 
-Current limitations and considerations:
-* You need to specify `sampleRate` explicitly if it is different from 44100Hz. It should be the same the data is being stored into the table, otherwise it won't be converted automatically and you'll get data reproduced on higher or lower rate as format needs to define that value.
-* The table type doesn't contain currently the type of data it is keeping, so you need to define it explicitly. Parameter `sourceType` -- you can stream from `sample` or `sampleArray` table, by default it is `sample`.
+Current considerations:
 * The wav format requires to specify the length in the header. To make streaming possible the length value is populated with `Int.MAX_VALUE`. Depending on the number of bits and channels it may last for a few days nonstop. Then most players just stop playing sound, however the actual data is being transferred normally. 
-* Most of these limitations can be addressed in next releases.
 
 ## Distributed mode
 

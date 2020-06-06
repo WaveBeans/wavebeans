@@ -17,7 +17,7 @@ object HttpCommunicatorSpec : Spek({
 
         it("should register remote table driver") {
             val tableName = "myTable"
-            service.registerTable(tableName, "127.0.0.1:4000")
+            service.registerTable(tableName, "127.0.0.1:4000", 44100.0f)
             assertThat(tableRegistry).all {
                 prop("exists($tableName)") { it.exists(tableName) }.isTrue()
                 prop("byName<Any>($tableName)") { it.byName<Any>(tableName) }

@@ -4,6 +4,7 @@ import io.wavebeans.lib.TimeMeasure
 import io.wavebeans.lib.s
 import mu.KotlinLogging
 import java.util.concurrent.*
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.reflect.KClass
 
 internal data class Item<T : Any>(val timeMarker: TimeMeasure, val value: T)
@@ -42,12 +43,17 @@ class InMemoryTimeseriesTableDriver<T : Any>(
         }
     }
 
+    override val sampleRate: Float
+        get() = sampleRateValue[0]
+                .let { if (it < 0) throw IllegalStateException("Sample rate value is not initialized yet") else it }
 
     internal val table = ConcurrentLinkedDeque<Item<T>>()
 
     private var cleanUpTask: ScheduledFuture<*>? = null
+    private val sampleRateValue: FloatArray = FloatArray(1) { Float.NEGATIVE_INFINITY }
 
-    override fun init() {
+    override fun init(sampleRate: Float) {
+        sampleRateValue[0] = sampleRate
         log.debug { "[$this] Initializing driver" }
         if (cleanUpTask == null) {
             log.debug { "[$this] Setting cleanup task" }

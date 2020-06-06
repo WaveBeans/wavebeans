@@ -18,9 +18,16 @@ class RemoteTimeseriesTableDriver<T : Any>(
         override val tableType: KClass<T>
 ) : TimeseriesTableDriver<T> {
 
+    override val sampleRate: Float
+        get() = sampleRateValue[0]
+                .let { if (it < 0) throw IllegalStateException("Sample rate value is not initialized yet") else it }
+
     lateinit var client: TableApiClient
 
-    override fun init() {
+    private val sampleRateValue: FloatArray = FloatArray(1) { Float.NEGATIVE_INFINITY }
+
+    override fun init(sampleRate: Float) {
+        sampleRateValue[0] = sampleRate
         client = TableApiClient(tableName, facilitatorLocation)
     }
 
