@@ -14,6 +14,8 @@
   - [Custom types](#custom-types)
     - [Custom serializer](#custom-serializer)
   - [Measuring](#measuring)
+- [Audio Service](#audio-service)
+- [Distributed mode](#distributed-mode)
 - [Helper Types](#helper-types)
   - [Time Measure](#time-measure)
 
@@ -25,6 +27,7 @@ WaveBeans framework allows expose to access some of the data to be expose via HT
 
 Http Service provides access to different underlying service implementations which has different purpose with REST API:
 * [Table Service](#table-service): querying [tables](../api/outputs/table-output.md).
+* [Audio Service](#audio-service): streaming sample data from tables.
 
 If everything is good, the service returns 200 OK HTTP code.
 
@@ -64,11 +67,9 @@ Following methods available, mostly this methods are exposed from [table query f
 * Getting last Interval: `/table/{tableName}/last?interval={interval}[&sampleRate={sampleRate}]`:
     * `tableName` -- the name of the table to query, if the table can't be found the API call with return `404 Not Found` HTTP code.
     * `interval` -- the interval you're requesting, the type of [TimeMeasure](#time-measure). If malformed you'll see `400 Bad Request` HTTP code.
-    * `sampleRate` -- is optional parameter which defines which sample rate to use to form the stream. By default 44100. In this case only affects the offset time values.
 * Getting specific time range: `/table/{tableName}/timeRange?from={from}&to={to}[&sampleRate={sampleRate}]`:
     * `tableName` -- the name of the table to query, if the table can't be found the API call with return `404 Not Found` HTTP code.
     * `from`, `to` -- the from and to values of the interval you're requesting, the type of [TimeMeasure](#time-measure). If malformed you'll see `400 Bad Request` HTTP code.
-    * `sampleRate` -- is optional parameter which defines which sample rate to use to form the stream. By default 44100. In this case only affects the offset time values.
 
 Both endpoints return stream as new-line separated JSON objects like this:
 
@@ -202,6 +203,42 @@ JsonBeanStreamReader.register(B::class, BSerializer())
 ### Measuring
 
 The table service has time as an argument, but the data in stream is in samples interpreted according to defined sample rate. Moreover, some of the streams group samples together working with grouped sample as one complex sample. Also you may define the type which is not known to the system and it is impossible to measure it automatically. HTTP Table service uses similar to [projection operation](../api/operations/projection-operation.md) way of measurement, please follow [appropriate section](../api/operations/projection-operation.md#working-with-different-types) for more details.
+
+## Audio Service
+
+Audio service allows you to get access to table of [Samples](../api/readme.md#sample) (or [SampleArrays](../api/readme.md#samplearray)) and convert it to a well known format like WAV on the fly. Currently only streaming use case is available.
+
+To call the specific table to do an audio streaming, call the API over HTTP by path `/audio/{tableName}/stream/{format}`, where `tableName` is the name of the table you want to stream from, and `format` is the desired streaming format, at the moment `wav` is supported only.
+
+The full signature is:
+
+```text
+/audio/{tableName}/stream/{format}?bitDepth={bitDepth}&sourceType={sourceType}&limit={limit}&sampleRate={sampleRate}
+```
+
+Additional useful parameters:SampleCountMeasurementSpec
+* `bitDepth` -- either 8, 16, 24, 32 or 64. The number oif bits per sample to stream. FYI, wav-format support up to 32 bits per sample. By default it is 16 bit.
+* `limit` -- interval to limit by, follow [Time Measure](#time-measure) rules. By default, it is unlimited as not specified. 
+
+Current considerations:
+* The wav format requires to specify the length in the header. To make streaming possible the length value is populated with `Int.MAX_VALUE`. Depending on the number of bits and channels it may last for a few days nonstop. Then most players just stop playing sound, however the actual data is being transferred normally. 
+
+## Distributed mode
+
+While running in distributed mode, all data is being fetched from Facilitators, so the HTTP service needs to know how where these services are, and where specific resources (i.e. tables) are located. To be able to do that you should enable Communicator on the service, and tell the location (address and port) of itself to the Distributed Overseer. When the topology is planned and distributed (and even replanned) Overseer will tell where to find what and HTTP service will be able to call specific API in order to fetch needed data.
+
+To start the HTTP service with Communicator enabled just specifiy its port among other parameters:
+
+```kotlin
+HttpService(
+    serverPort = 12345, 
+    communicatorPort = 4000
+)
+```
+
+and while launching
+
+The port should be accessible only for Overseer and Facilitators, and shouldn't be shared outside. The public port is still `serverPort` where it is accessible over HTTP protocol.
 
 ## Helper Types
 

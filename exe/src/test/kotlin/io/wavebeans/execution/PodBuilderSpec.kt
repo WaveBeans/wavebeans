@@ -4,7 +4,6 @@ import assertk.Assert
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
-import io.wavebeans.execution.TopologySerializer.jsonPretty
 import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.lib.AnyBean
 import io.wavebeans.lib.io.sine

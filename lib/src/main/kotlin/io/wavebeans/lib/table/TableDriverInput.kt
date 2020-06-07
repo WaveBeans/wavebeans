@@ -17,6 +17,6 @@ class TableDriverInput<T : Any>(
 ) : BeanStream<T>, SourceBean<T>, SinglePartitionBean {
 
     override fun asSequence(sampleRate: Float): Sequence<T> {
-        return TableRegistry.instance().query<T>(parameters.tableName, parameters.query)
+        return TableRegistry.default.query<T>(parameters.tableName, parameters.query)
     }
 }

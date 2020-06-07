@@ -305,7 +305,7 @@ object TopologySerializerSpec : Spek({
 
     describe("Table sink") {
         val o = seqStream().toTable("table1")
-        val q = TableRegistry.instance().byName<Sample>("table1").last(2000.ms).toCsv("file:///path/to.csv")
+        val q = TableRegistry.default.byName<Sample>("table1").last(2000.ms).toCsv("file:///path/to.csv")
 
         val topology = listOf(o, q).buildTopology()
         val deserializedTopology = with(TopologySerializer) {

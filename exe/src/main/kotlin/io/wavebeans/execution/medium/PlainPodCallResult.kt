@@ -20,7 +20,7 @@ class PlainPodCallResult(
         override val obj: Any?
 ) : PodCallResult {
 
-    override fun writeTo(outputStream: OutputStream) = throw UnsupportedOperationException("It doesn't support writing to stream")
+    override fun stream(): InputStream = throw UnsupportedOperationException("It doesn't support writing to stream")
 
     override fun toString(): String {
         return "PlainPodCallResult(call=$call, exception=$exception, obj=$obj)"

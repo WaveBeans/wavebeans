@@ -24,13 +24,8 @@ object SerializablePodCallResultSpec : Spek({
     fun result(value: Any?, e: Throwable?): SerializablePodCallResult {
         val call = Call.parseRequest("method?param=value")
         val r = e?.let { builder.error(call, it) } ?: builder.ok(call, value)
-        val buf = ByteArrayOutputStream().use {
-            r.writeTo(it)
-            it.flush()
-            it.toByteArray()
-        }
 
-        return builder.fromInputStream(ByteArrayInputStream(buf)) as SerializablePodCallResult
+        return builder.fromInputStream(r.stream()) as SerializablePodCallResult
     }
 
     fun result(value: Any?): SerializablePodCallResult = result(value, null)

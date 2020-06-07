@@ -12,9 +12,8 @@ application {
 
 dependencies {
 
-    val ktorVersion: String by System.getProperties()
-
     implementation(project(":lib"))
+    implementation(project(":proto"))
 
     val kotlinxSerializationRuntimeVersion: String by System.getProperties()
 
@@ -26,15 +25,6 @@ dependencies {
     implementation("commons-cli:commons-cli:1.4")
     implementation("ch.qos.logback:logback-classic:1.2.3")
 
-    implementation("com.uchuhimo:konf:0.22.1")
-
-    implementation("io.ktor:ktor-server-core:$ktorVersion")
-    implementation("io.ktor:ktor-server-netty:$ktorVersion")
-    implementation("io.ktor:ktor-serialization:$ktorVersion")
-
-    implementation("com.squareup.retrofit2:retrofit:2.8.1")
-    implementation("com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:0.5.0")
-
-    testImplementation("io.ktor:ktor-server-test-host:$ktorVersion")
-
+    implementation("com.uchuhimo:konf-core:0.22.1")
+    implementation("com.uchuhimo:konf-hocon:0.22.1")
 }

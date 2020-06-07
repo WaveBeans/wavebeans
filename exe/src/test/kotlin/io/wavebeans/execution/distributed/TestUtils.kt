@@ -6,8 +6,7 @@ fun startFacilitator(port: Int) {
     val confFile = File.createTempFile("facilitator-config", ".conf").also { it.deleteOnExit() }
     confFile.writeText("""
         facilitatorConfig {
-            advertisingHostAddress: 127.0.0.1
-            listeningPortRange: {start: $port, end: $port}
+            communicatorPort: $port
             threadsNumber: 1
         }
     """.trimIndent())

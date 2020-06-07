@@ -33,7 +33,7 @@ interface PodCallResult {
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> value(clazz: KClass<T>): T? = if (exception != null) throw exception!! else obj as T?
 
-    fun writeTo(outputStream: OutputStream)
+    fun stream(): InputStream
 }
 
 inline fun <reified T : Any> PodCallResult.valueOrNull(): T? = this.value(T::class)

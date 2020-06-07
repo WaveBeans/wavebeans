@@ -1,7 +1,9 @@
 package io.wavebeans.execution.distributed
 
 import mu.KotlinLogging
+import java.io.ByteArrayOutputStream
 import java.util.concurrent.Callable
+import java.util.concurrent.TimeUnit
 import kotlin.random.Random
 
 class CommandRunner(vararg commands: String) {
@@ -23,23 +25,33 @@ class CommandRunner(vararg commands: String) {
         if (inheritIO) {
             processBuilder.inheritIO()
         } else {
-            processBuilder.redirectError()
-            processBuilder.redirectOutput()
+            processBuilder.redirectError(ProcessBuilder.Redirect.PIPE)
+            processBuilder.redirectOutput(ProcessBuilder.Redirect.PIPE)
         }
         val process = processBuilder.start()
 
+        val output = ByteArrayOutputStream()
+        val error = ByteArrayOutputStream()
         return try {
-            val exitCode = process.waitFor()
+            while (!process.waitFor(1000, TimeUnit.MILLISECONDS)) {
+                output.write(process.inputStream.readBytes())
+                error.write(process.errorStream.readBytes())
+            }
+            output.write(process.inputStream.readBytes())
+            error.write(process.errorStream.readBytes())
+            val exitCode = process.exitValue()
             CommandResult(
                     exitCode,
-                    process.inputStream.readBytes() + process.errorStream.readBytes()
+                    output.toByteArray() + error.toByteArray()
             )
         } catch (e: InterruptedException) {
+            output.write(process.inputStream.readBytes())
+            error.write(process.errorStream.readBytes())
             log.debug { "[$id] Process $process destroying" }
             process.destroy()
             CommandResult(
                     -1,
-                    process.inputStream.readBytes() + process.errorStream.readBytes()
+                    output.toByteArray() + error.toByteArray()
             )
         }.also { log.debug { "[$id] Exit=${it.exitCode}, Output:\n${String(it.output)}" } }
     }

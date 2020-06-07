@@ -103,7 +103,7 @@ For `multi-threaded` mode you need to pass additional parameters:
 
 For `distributed` mode, firstly, you need to make sure facilitators are started and available. Follow [execution docs](../exe/readme.md#facilitators) for more details. The following parameters are required to start processing:
 * the same as for multi-threaded, how many partitioned your processing topology will be tried to split up to: `-p` or `--partitions`. 
-* the list of facilitators: `-l` or `--facilitators`. The comma-separated Facilitator endpoints to run on, i.e. `http://10.0.0.1:4000,http://10.0.0.2:4000`. The execution will be spread over all facilitators automatically.
+* the list of facilitators: `-l` or `--facilitators`. The comma-separated Facilitator endpoints to run on, i.e. `10.0.0.1:4000,10.0.0.2:4000`. The execution will be spread over all facilitators automatically.
 
 **More information about execution**
 
@@ -149,6 +149,8 @@ WaveBeans has built HTTP API to run variety of queries while the stream is being
 To start the server specify the port you want to run it on via `--http` flag. The range of ports from 1 to 65536, though on Unix-like system to run on ports less than 1024 administrator privileges are required, and overall is not recommended to avoid interfering with standard services.
 
 When the script is stop running the HTTP server is also being shutdown, however you may want to leave it running. To achieve that you need to specify `--http-wait` flag and specify the number of seconds to keep the server running after execution is completed, or even do not stop at all by specifying -1.
+
+In distributed mode the HTTP service should also start the Communicator. The port needs to be specified explictly via `--http-communicator-port` flag. More about Communicator you can read in appropriate [HTTP service documentation section](../http/readme.md#distributed-mode).
 
 #### Example with Table API
 

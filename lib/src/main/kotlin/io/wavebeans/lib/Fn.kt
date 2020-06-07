@@ -21,6 +21,9 @@ private const val fnClazz = "fnClazz"
  * Mainly that requirement coming from launching the WaveBeans in distributed mode as the single [Bean] should be described
  * and then restored on specific environment which differs from local one. Though, if [Bean]s run in single thread local
  * mode only, limitations are not that strict and using data out of closures may work.
+ *
+ * If you don't need to specify any parameters for the function execution, you may use [Fn.wrap] method to make the instance.
+ * of function out of lamda function.
  */
 @Serializable(with = FnSerializer::class)
 abstract class Fn<T, R>(val initParams: FnInitParameters = FnInitParameters()) {

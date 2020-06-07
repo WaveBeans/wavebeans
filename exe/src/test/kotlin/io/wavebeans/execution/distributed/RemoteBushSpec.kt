@@ -17,6 +17,7 @@ import io.wavebeans.execution.newBushKey
 import io.wavebeans.execution.pod.PodKey
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
+import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.io.OutputStream
 import java.util.concurrent.CompletableFuture
@@ -29,8 +30,8 @@ class RemoteBushSpec : Spek({
 
         // mock pod call result serialization
         val podCallResult = mock<PodCallResult>()
-        whenever(podCallResult.writeTo(any()))
-                .then { (it.arguments[0] as OutputStream).write("42".toByteArray()) }
+        whenever(podCallResult.stream())
+                .then { ByteArrayInputStream("42".toByteArray()) }
         val podCallResultBuilder = mock<PodCallResultBuilder>()
         whenever(podCallResultBuilder.fromInputStream(any()))
                 .then {
@@ -41,12 +42,9 @@ class RemoteBushSpec : Spek({
                 }
 
         val facilitator = Facilitator(
-                advertisingHostAddress = "127.0.0.1",
-                listeningPortRange = 40000..40000,
-                startingUpAttemptsCount = 1,
+                communicatorPort = 40000,
                 threadsNumber = 1,
                 gardener = gardener,
-                onServerShutdownGracePeriodMillis = 100,
                 onServerShutdownTimeoutMillis = 100,
                 podCallResultBuilder = podCallResultBuilder,
                 podDiscovery = podDiscovery
@@ -71,7 +69,7 @@ class RemoteBushSpec : Spek({
                         .then { CompletableFuture<PodCallResult>().also { it.complete(podCallResult) } }
                 podDiscovery.registerBush(bushKey, bush)
 
-                RemoteBush(bushKey, "http://127.0.0.1:40000")
+                RemoteBush(bushKey, "127.0.0.1:40000")
             }
 
             it("should start") {
@@ -88,7 +86,7 @@ class RemoteBushSpec : Spek({
         describe("Pointing to non-existing bush") {
             // no bush
             val bushKey by memoized { newBushKey() }
-            val remoteBush by memoized { RemoteBush(bushKey, "http://127.0.0.1:40000") }
+            val remoteBush by memoized { RemoteBush(bushKey, "127.0.0.1:40000") }
 
             it("should start") {
                 assertThat(remoteBush.start()).isEqualTo(Unit)
@@ -99,7 +97,7 @@ class RemoteBushSpec : Spek({
                         .isNotNull().isInstanceOf(ExecutionException::class)
                         .cause()
                         .isNotNull().isInstanceOf(IllegalStateException::class)
-                        .message().isNotNull().contains("Non 200 code response during request")
+                        .message().isNotNull().contains("Unexpected error during request")
 
             }
         }

@@ -34,7 +34,7 @@ data class PodRef(
          */
         val podProxies: List<PodProxyRef>,
         /**
-         * If more that one then assuming that the pod should split data among several partitions. If null then not applicable
+         * If more than one then assuming that the pod should split data among several partitions. If null then not applicable
          */
         val splitToPartitions: Int? = null
 ) {

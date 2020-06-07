@@ -10,21 +10,23 @@ import io.ktor.server.testing.TestApplicationEngine
 import io.ktor.server.testing.createTestEnvironment
 import io.ktor.server.testing.handleRequest
 import io.ktor.util.KtorExperimentalAPI
+import io.wavebeans.execution.MultiThreadedOverseer
 import io.wavebeans.execution.SingleThreadedOverseer
-import io.wavebeans.lib.asDouble
-import io.wavebeans.lib.asInt
-import io.wavebeans.lib.asLong
+import io.wavebeans.lib.*
+import io.wavebeans.lib.io.WavHeader
 import io.wavebeans.lib.io.sine
-import io.wavebeans.lib.s
 import io.wavebeans.lib.stream.SampleCountMeasurement
 import io.wavebeans.lib.stream.fft.fft
 import io.wavebeans.lib.stream.map
 import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.stream.window.window
+import io.wavebeans.lib.table.TableRegistry
+import io.wavebeans.lib.table.toSampleTable
 import io.wavebeans.lib.table.toTable
 import kotlinx.serialization.*
 import kotlinx.serialization.builtins.serializer
 import org.spekframework.spek2.Spek
+import org.spekframework.spek2.lifecycle.CachingMode.*
 import org.spekframework.spek2.style.specification.describe
 import java.util.concurrent.TimeUnit
 
@@ -37,18 +39,20 @@ object HttpServiceSpec : Spek({
 
         val engine = TestApplicationEngine(createTestEnvironment())
         engine.start(wait = false)
-        engine.application.tableService()
+        engine.application.tableService(TableRegistry.default)
         with(engine) {
             describe("Samples") {
                 val o = 440.sine().trim(100).toTable("table1", 1.s)
                 val elementRegex = elementRegex("-?\\d+\\.\\d+([eE]?-\\d+)?")
 
                 val overseer = SingleThreadedOverseer(listOf(o))
-                overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
-                after { overseer.close() }
+                beforeGroup {
+                    overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+                }
+                afterGroup { overseer.close() }
 
                 it("should return last 100ms") {
-                    handleRequest(Get, "/table/table1/last?interval=100ms&sampleRate=44100.0").apply {
+                    handleRequest(Get, "/table/table1/last?interval=100ms").apply {
                         assertThat(response.status()).isNotNull().isEqualTo(HttpStatusCode.OK)
                         assertThat(response.content).isNotNull().all {
                             isNotEmpty()
@@ -94,7 +98,10 @@ object HttpServiceSpec : Spek({
                 val elementRegex = elementRegex("\\{\"v\":-?\\d+}")
 
                 val overseer = SingleThreadedOverseer(listOf(o))
-                overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+                beforeGroup {
+                    overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+                }
+
                 afterGroup { overseer.close() }
 
                 it("should return last 100ms") {
@@ -117,6 +124,7 @@ object HttpServiceSpec : Spek({
 
                 }
             }
+
 
             describe("External serializer") {
 
@@ -144,7 +152,9 @@ object HttpServiceSpec : Spek({
                 val elementRegex = elementRegex("\\{\"v\":\"-?[0-9a-fA-F]+\"}")
 
                 val overseer = SingleThreadedOverseer(listOf(o))
-                overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+                beforeGroup {
+                    overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+                }
                 afterGroup { overseer.close() }
 
                 it("should return last 100ms") {
@@ -173,7 +183,9 @@ object HttpServiceSpec : Spek({
                             "\\}")
 
                     val overseer = SingleThreadedOverseer(listOf(o))
-                    overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+                    beforeGroup {
+                        overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+                    }
                     afterGroup { overseer.close() }
 
                     it("should return last 100ms") {
@@ -196,7 +208,9 @@ object HttpServiceSpec : Spek({
                             "\\}")
 
                     val overseer = SingleThreadedOverseer(listOf(o))
-                    overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+                    beforeGroup {
+                        overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+                    }
                     afterGroup { overseer.close() }
 
                     it("should return last 100ms") {
@@ -214,7 +228,9 @@ object HttpServiceSpec : Spek({
                     val elementRegex = elementRegex("\\[[-eE\\d\\.\\,]+\\]")
 
                     val overseer = SingleThreadedOverseer(listOf(o))
-                    overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+                    beforeGroup {
+                        overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+                    }
                     afterGroup { overseer.close() }
 
                     it("should return last 100ms") {
@@ -232,7 +248,9 @@ object HttpServiceSpec : Spek({
                     val elementRegex = elementRegex("\\[[-\\d\\,]+\\]")
 
                     val overseer = SingleThreadedOverseer(listOf(o))
-                    overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+                    beforeGroup {
+                        overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+                    }
                     afterGroup { overseer.close() }
 
                     it("should return last 100ms") {
@@ -260,7 +278,9 @@ object HttpServiceSpec : Spek({
                             "\\}")
 
                     val overseer = SingleThreadedOverseer(listOf(o))
-                    overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+                    beforeGroup {
+                        overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+                    }
                     afterGroup { overseer.close() }
 
                     it("should return last 100ms") {
@@ -272,6 +292,122 @@ object HttpServiceSpec : Spek({
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+
+    describe("AudioService") {
+        val engine = TestApplicationEngine(createTestEnvironment())
+        engine.start(wait = false)
+        engine.application.audioService(TableRegistry.default)
+
+        describe("Streaming Wav") {
+            val o = 440.sine().trim(2000).toSampleTable("mySampleTable", 1.s)
+            val o2 = 440.sine().trim(2000).toSampleTable("mySampleArrayTable", 1.s, 441)
+            val overseer = MultiThreadedOverseer(listOf(o, o2), 2, 1)
+
+            beforeGroup { overseer.eval(44100.0f).all { it.get().finished } }
+
+            afterGroup { overseer.close() }
+
+            it("should return 404 for non-existing table") {
+                engine.handleRequest(Get, "/audio/nonExistingTable/stream/wav").apply {
+                    assertThat(response.status()).isNotNull().isEqualTo(HttpStatusCode.NotFound)
+                }
+            }
+            it("should return stream for existing table in 8 bit format") {
+                engine.handleRequest(Get, "/audio/mySampleTable/stream/wav?limit=100ms&offset=1s&bitDepth=8").apply {
+                    assertThat(response.status()).isNotNull().isEqualTo(HttpStatusCode.OK)
+                    assertThat(response.headers)
+                            .prop("Content-Type") { it["Content-Type"] }
+                            .isEqualTo(AudioStreamOutputFormat.WAV.contentType.toString())
+                    assertThat(response.byteContent)
+                            .isNotNull().all {
+                                size().isEqualTo(44 + 1 * 4410)
+                                prop("First 44 bytes") { it.copyOfRange(0, 44) }
+                                        .isEqualTo(WavHeader(BitDepth.BIT_8, 44100.0f, 1, Int.MAX_VALUE).header())
+                            }
+                }
+            }
+            it("should return stream for existing table in 16 bit format") {
+                engine.handleRequest(Get, "/audio/mySampleTable/stream/wav?limit=100ms&offset=1s&bitDepth=16").apply {
+                    assertThat(response.status()).isNotNull().isEqualTo(HttpStatusCode.OK)
+                    assertThat(response.headers)
+                            .prop("Content-Type") { it["Content-Type"] }
+                            .isEqualTo(AudioStreamOutputFormat.WAV.contentType.toString())
+                    assertThat(response.byteContent)
+                            .isNotNull().all {
+                                size().isEqualTo(44 + 2 * 4410)
+                                prop("First 44 bytes") { it.copyOfRange(0, 44) }
+                                        .isEqualTo(WavHeader(BitDepth.BIT_16, 44100.0f, 1, Int.MAX_VALUE).header())
+                            }
+                }
+            }
+            it("should return stream for existing table in 24 bit format") {
+                engine.handleRequest(Get, "/audio/mySampleTable/stream/wav?limit=100ms&offset=1s&bitDepth=24").apply {
+                    assertThat(response.status()).isNotNull().isEqualTo(HttpStatusCode.OK)
+                    assertThat(response.headers)
+                            .prop("Content-Type") { it["Content-Type"] }
+                            .isEqualTo(AudioStreamOutputFormat.WAV.contentType.toString())
+                    assertThat(response.byteContent)
+                            .isNotNull().all {
+                                size().isEqualTo(44 + 3 * 4410)
+                                prop("First 44 bytes") { it.copyOfRange(0, 44) }
+                                        .isEqualTo(WavHeader(BitDepth.BIT_24, 44100.0f, 1, Int.MAX_VALUE).header())
+                            }
+                }
+            }
+            it("should return stream for existing table in 32 bit format") {
+                engine.handleRequest(Get, "/audio/mySampleTable/stream/wav?limit=100ms&offset=1s&bitDepth=32").apply {
+                    assertThat(response.status()).isNotNull().isEqualTo(HttpStatusCode.OK)
+                    assertThat(response.headers)
+                            .prop("Content-Type") { it["Content-Type"] }
+                            .isEqualTo(AudioStreamOutputFormat.WAV.contentType.toString())
+                    assertThat(response.byteContent)
+                            .isNotNull().all {
+                                size().isEqualTo(44 + 4 * 4410)
+                                prop("First 44 bytes") { it.copyOfRange(0, 44) }
+                                        .isEqualTo(WavHeader(BitDepth.BIT_32, 44100.0f, 1, Int.MAX_VALUE).header())
+                            }
+                }
+            }
+            it("should return 400 for unknown bit depth") {
+                engine.handleRequest(Get, "/audio/nonExistingTable/stream/wav?limit=100ms&offset=1s&bitDepth=42").apply {
+                    assertThat(response.status()).isNotNull().isEqualTo(HttpStatusCode.BadRequest)
+                }
+            }
+            it("should return stream for existing sample array table") {
+                engine.handleRequest(Get, "/audio/mySampleArrayTable/stream/wav?limit=100ms&offset=1s").apply {
+                    assertThat(response.status()).isNotNull().isEqualTo(HttpStatusCode.OK)
+                    assertThat(response.headers)
+                            .prop("Content-Type") { it["Content-Type"] }
+                            .isEqualTo(AudioStreamOutputFormat.WAV.contentType.toString())
+                    assertThat(response.byteContent)
+                            .isNotNull().all {
+                                size().isEqualTo(44 + 2 * 4410)
+                                prop("First 44 bytes") { it.copyOfRange(0, 44) }
+                                        .isEqualTo(WavHeader(BitDepth.BIT_16, 44100.0f, 1, Int.MAX_VALUE).header())
+                            }
+                }
+            }
+            it("should return stream limited with 200ms") {
+                engine.handleRequest(Get, "/audio/mySampleTable/stream/wav?limit=200ms&offset=1s").apply {
+                    assertThat(response.status()).isNotNull().isEqualTo(HttpStatusCode.OK)
+                    assertThat(response.headers)
+                            .prop("Content-Type") { it["Content-Type"] }
+                            .isEqualTo(AudioStreamOutputFormat.WAV.contentType.toString())
+                    assertThat(response.byteContent)
+                            .isNotNull().all {
+                                size().isEqualTo(44 + 2 * 8820)
+                                prop("First 44 bytes") { it.copyOfRange(0, 44) }
+                                        .isEqualTo(WavHeader(BitDepth.BIT_16, 44100.0f, 1, Int.MAX_VALUE).header())
+                            }
+                }
+            }
+            it("should return 400 for unrecognized limit") {
+                engine.handleRequest(Get, "/audio/mySampleTable/stream/wav?limit=100megaseconds").apply {
+                    assertThat(response.status()).isNotNull().isEqualTo(HttpStatusCode.BadRequest)
                 }
             }
         }

@@ -15,3 +15,8 @@ data class TimeRangeTableQuery(
 data class LastIntervalTableQuery(
         val interval: TimeMeasure
 ) : TableQuery
+
+@Serializable
+data class ContinuousReadTableQuery(
+        val offset: TimeMeasure
+) : TableQuery
