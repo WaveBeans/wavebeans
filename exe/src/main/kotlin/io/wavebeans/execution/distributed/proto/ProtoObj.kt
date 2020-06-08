@@ -8,7 +8,7 @@ object ProtoObj {
 
     fun serializerForMaybeWrappedObj(clazz: KClass<*>): KSerializer<*> = when (clazz) {
         Long::class -> LongProtoValue.serializer()
-        Double::class-> DoubleProtoValue.serializer()
+        Double::class -> DoubleProtoValue.serializer()
         Float::class -> FloatProtoValue.serializer()
         Int::class -> IntProtoValue.serializer()
         Boolean::class -> BooleanProtoValue.serializer()
@@ -31,8 +31,8 @@ object ProtoObj {
         is FloatArray? -> obj.toProtoValue()
         is IntArray? -> obj.toProtoValue()
         is LongArray? -> obj.toProtoValue()
-        null -> throw IllegalArgumentException("input object is null and ussupported, have to be wrapped to " +
-                "io.wavebeans.execution.distributed.proto.ProtoValue manually")
+        null -> throw IllegalArgumentException("input object is null and unsupported, have to be wrapped to " +
+                "${ProtoValue::class} manually")
         else -> obj
     }
 

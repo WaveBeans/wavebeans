@@ -4,7 +4,7 @@ import io.wavebeans.lib.TimeMeasure
 import io.wavebeans.lib.s
 import mu.KotlinLogging
 import java.util.concurrent.*
-import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.reflect.KClass
 
 internal data class Item<T : Any>(val timeMarker: TimeMeasure, val value: T)
@@ -51,6 +51,7 @@ class InMemoryTimeseriesTableDriver<T : Any>(
 
     private var cleanUpTask: ScheduledFuture<*>? = null
     private val sampleRateValue: FloatArray = FloatArray(1) { Float.NEGATIVE_INFINITY }
+    private val isFinished = AtomicBoolean(false)
 
     override fun init(sampleRate: Float) {
         sampleRateValue[0] = sampleRate
@@ -60,6 +61,12 @@ class InMemoryTimeseriesTableDriver<T : Any>(
             cleanUpTask = scheduledExecutor.scheduleAtFixedRate({ performCleanup() }, 0, 5000, TimeUnit.MILLISECONDS)
         }
     }
+
+    override fun finishStream() {
+        isFinished.set(true)
+    }
+
+    override fun isStreamFinished(): Boolean = isFinished.get()
 
     override fun reset() {
         log.debug { "[$this] Resetting driver" }
@@ -95,6 +102,7 @@ class InMemoryTimeseriesTableDriver<T : Any>(
     }
 
     override fun put(time: TimeMeasure, value: T) {
+        if (isStreamFinished()) throw IllegalStateException("The stream is already finsihed, you can't put any data in")
         val peekLast = table.peekLast()
         if (peekLast != null && time < peekLast.timeMarker)
             throw IllegalStateException("Can't put item with time=$time, as older one exists: $peekLast")
@@ -126,8 +134,8 @@ class InMemoryTimeseriesTableDriver<T : Any>(
                 val to = table.peekLast()?.timeMarker ?: 0.s
                 val from = to - query.interval
                 table.asSequence()
-                        .filter { it.timeMarker >= from }
-                        .takeWhile { it.timeMarker < to }
+                        .filter { it.timeMarker > from }
+                        .takeWhile { it.timeMarker <= to }
                         .map { it.value }
             }
             is ContinuousReadTableQuery -> ContinuousReadTableIterator(this, query.offset).asSequence()

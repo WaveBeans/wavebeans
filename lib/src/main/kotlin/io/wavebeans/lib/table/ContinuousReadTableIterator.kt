@@ -5,7 +5,7 @@ import io.wavebeans.lib.ns
 import io.wavebeans.lib.s
 import mu.KotlinLogging
 import java.lang.Thread.*
-import java.util.*
+import kotlin.NoSuchElementException
 
 /**
  * Implementation of iterator that continously reads the provided deque, assuming that someone from outside appends elements.
@@ -16,9 +16,12 @@ import java.util.*
  * appear and continue reading from it. Though it is achieved by restarting iterator, which is not very efficient
  * as every time it starts to read from the very beginning of the collection skipping unneeded elements.
  * That approach going to be inefficient for long table-buffers.
+ *
+ * Supports finishing stream by the table, so when [TimeseriesTableDriver.isStreamFinished] returns true it'll finishes
+ * gracefully as well returning everything to the end of the table respecting the offset.
  */
 internal class ContinuousReadTableIterator<T : Any>(
-        tableDriver: InMemoryTimeseriesTableDriver<T>,
+        val tableDriver: InMemoryTimeseriesTableDriver<T>,
         offset: TimeMeasure
 ) : Iterator<T> {
 
@@ -34,6 +37,8 @@ internal class ContinuousReadTableIterator<T : Any>(
     internal var previousE: Item<T>? = null
     internal var iterator = table.iterator()
     internal var perElementLog = false
+    internal var streamIsOver = false
+    internal var nextElement: T? = null
 
     init {
         log.debug {
@@ -42,24 +47,33 @@ internal class ContinuousReadTableIterator<T : Any>(
         }
     }
 
-    override fun hasNext(): Boolean = true
+    override fun hasNext(): Boolean = !streamIsOver || nextElement != null || advance(waitForNextElement = false) != null
 
     override fun next(): T {
+        if (nextElement == null && advance(waitForNextElement = !streamIsOver) == null) throw NoSuchElementException("No more elements to read")
+        val element = nextElement!!
+        nextElement = null
+        return element
+    }
 
+    private fun advance(waitForNextElement: Boolean): T? {
         var e: Item<T>?
 
         do {
+            if (tableDriver.isStreamFinished()) streamIsOver = true
             e = if (iterator.hasNext()) iterator.next() else null
+
+            if (e == null && streamIsOver) break
 
             if (e == null) {
                 log.trace { "[$this:$iterator] Read $returned element, iterator got empty, waiting for a little bit and restarting it." }
                 var i = 0
                 do {
                     // TODO may check if table has changed its state to avoid creating iterator over and over again when there is no new elements
-                    sleep(0)
+                    sleep(0) // sleep is essential here to be able to get interrupted
                     iterator = table.iterator()
                     i++
-                } while (!iterator.hasNext())
+                } while (!streamIsOver && waitForNextElement && !iterator.hasNext())
                 log.trace {
                     "[$this:$iterator] Created non-empty iterator in $i attempts." +
                             "Table: first=${table.peekFirst()}, last=${table.peekLast()}, size=${table.size}"
@@ -81,11 +95,14 @@ internal class ContinuousReadTableIterator<T : Any>(
                     e = null
                 }
             }
-        } while (e == null)
-        previousE = e
+        } while (waitForNextElement && e == null)
 
-        if (perElementLog) log.trace { "[$this:$iterator] Element returning $e" }
-        returned++
-        return e.value
+        nextElement = e?.let {
+            previousE = it
+            if (perElementLog) log.trace { "[$this:$iterator] Element returning $it" }
+            returned++
+            it.value
+        }
+        return nextElement
     }
 }

@@ -9,8 +9,10 @@ import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
 import io.wavebeans.lib.*
+import io.wavebeans.lib.io.WavHeader
 import io.wavebeans.lib.io.input
 import io.wavebeans.lib.stream.map
+import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.stream.window.window
 import io.wavebeans.lib.table.TableRegistry
 import io.wavebeans.lib.table.TimeseriesTableDriver
@@ -18,6 +20,9 @@ import org.spekframework.spek2.Spek
 import org.spekframework.spek2.lifecycle.CachingMode.*
 import org.spekframework.spek2.style.specification.describe
 import java.io.InputStream
+import java.lang.UnsupportedOperationException
+
+private val sampleRate = 44100.0f
 
 object AudioServiceSpec : Spek({
 
@@ -27,6 +32,7 @@ object AudioServiceSpec : Spek({
             val tableDriver by memoized(TEST) {
                 val driver = mock<TimeseriesTableDriver<Sample>>()
                 whenever(driver.tableType).thenReturn(Sample::class)
+                whenever(driver.sampleRate).thenReturn(sampleRate)
                 driver
             }
             val service by memoized(TEST) {
@@ -51,6 +57,10 @@ object AudioServiceSpec : Spek({
                 whenever(tableDriver.stream(any())).thenReturn(input32Bit())
                 assert32BitWavOutput<Sample>(service)
             }
+            it("should start stream limited table") {
+                whenever(tableDriver.stream(any())).thenReturn(input8Bit().trim(1000))
+                assert8BitLimitedWavOutput<Sample>(service, 1000)
+            }
         }
 
         describe("SampleArray table") {
@@ -58,6 +68,7 @@ object AudioServiceSpec : Spek({
             val tableDriver by memoized(TEST) {
                 val driver = mock<TimeseriesTableDriver<SampleArray>>()
                 whenever(driver.tableType).thenReturn(SampleArray::class)
+                whenever(driver.sampleRate).thenReturn(sampleRate)
                 driver
             }
             val service by memoized(TEST) {
@@ -81,6 +92,10 @@ object AudioServiceSpec : Spek({
             it("should start streaming 32 bit wav file") {
                 whenever(tableDriver.stream(any())).thenReturn(input32Bit().window(16).map { sampleArrayOf(it) })
                 assert32BitWavOutput<SampleArray>(service)
+            }
+            it("should start stream limited table") {
+                whenever(tableDriver.stream(any())).thenReturn(input8Bit().trim(1000).window(16).map { sampleArrayOf(it) })
+                assert8BitLimitedWavOutput<Sample>(service, 1000)
             }
         }
     }
@@ -133,6 +148,22 @@ private fun <T : Any> assert32BitWavOutput(service: AudioService) {
     }
 }
 
+private fun <T : Any> assert8BitLimitedWavOutput(service: AudioService, expectedLengthMs: Long) {
+    assertThat(service.stream<T>(AudioStreamOutputFormat.WAV, "table", BitDepth.BIT_8, null, 0.s)).all {
+        val dataSize = (BitDepth.BIT_8.bytesPerSample * sampleRate / 1000.0 * expectedLengthMs).toInt()
+        take(44).all {
+            isNotEmpty() // header is there
+            // size in wav header remains unlimited
+            isEqualTo(WavHeader(BitDepth.BIT_8, sampleRate, 1, Int.MAX_VALUE).header())
+        }
+        // though the data is all there
+        take(dataSize).prop("unsignedByte[]") { it.map(Byte::asUnsignedByte).toTypedArray() }
+                .isEqualTo(Array(dataSize) { it and 0xFF })
+        // and no more left
+        tryTake(128).prop("count") { it.first }.isEqualTo(-1)
+    }
+}
+
 private fun <T : Any> assert16BitWavOutput(service: AudioService) {
     assertThat(service.stream<T>(AudioStreamOutputFormat.WAV, "table", BitDepth.BIT_16, null, 0.s)).all {
         take(44).all {
@@ -145,12 +176,18 @@ private fun <T : Any> assert16BitWavOutput(service: AudioService) {
     }
 }
 
-private fun Assert<InputStream>.take(count: Int): Assert<ByteArray> = this.prop("bytes[$count]") { it.take(count) }
+private fun Assert<InputStream>.take(count: Int): Assert<ByteArray> = this.prop("take($count)") { it.take(count) }
+private fun Assert<InputStream>.tryTake(count: Int): Assert<Pair<Int, ByteArray>> = this.prop("tryTake($count)") { it.tryTake(count) }
 private fun Assert<ByteArray>.range(start: Int, end: Int): Assert<ByteArray> = this.prop("range[$start:$end]") { it.copyOfRange(start, end) }
 
 private fun InputStream.take(count: Int): ByteArray {
-    val ba = ByteArray(count)
-    val read = this.read(ba)
+    val (read, ba) = this.tryTake(count)
     if (read < count) throw IllegalStateException("Expected to read $count bytes but read $read")
     return ba
+}
+
+private fun InputStream.tryTake(count: Int): Pair<Int, ByteArray> {
+    val ba = ByteArray(count)
+    val read = this.read(ba)
+    return Pair(read, ba)
 }

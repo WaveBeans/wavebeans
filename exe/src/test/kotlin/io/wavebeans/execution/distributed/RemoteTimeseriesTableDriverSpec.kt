@@ -1,6 +1,5 @@
 package io.wavebeans.execution.distributed
 
-import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
 import assertk.catch
@@ -82,6 +81,17 @@ object RemoteTimeseriesTableDriverSpec : Spek({
             tableDriver.init(12345.0f) // need to initialize memoized value
             remoteTableDriver.reset()
             verify(tableDriver, times(1)).reset()
+        }
+
+        it("should finish stream") {
+            tableDriver.init(12345.0f) // need to initialize memoized value
+            remoteTableDriver.finishStream()
+            verify(tableDriver, times(1)).finishStream()
+        }
+
+        it("should check if stream is finished") {
+            whenever(tableDriver.isStreamFinished()).thenReturn(true)
+            assertThat(remoteTableDriver.isStreamFinished()).isTrue()
         }
 
         describe("Different queries") {

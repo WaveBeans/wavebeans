@@ -9,9 +9,10 @@ service TableApi {
   rpc LastMarker (TableMarkerRequest) returns (TableMarkerResponse);
   rpc Put (TablePutRequest) returns (TablePutResponse);
   rpc Reset (TableResetRequest) returns (TableResetResponse);
-
   rpc TableElementSerializer (TableElementSerializerRequest) returns (TableElementSerializerResponse);
   rpc Query (TableQueryRequest) returns (stream Any);
+  rpc FinishStream (FinishStreamRequest) returns (FinishStreamResponse);
+  rpc IsStreamFinished (IsStreamFinishedRequest) returns (IsStreamFinishedResponse);
 }
 
 message TimeMeasure {
@@ -57,4 +58,17 @@ message TableQueryRequest {
 
 message Any {
   bytes valueSerialized = 1;
+}
+
+message FinishStreamRequest{
+  string tableName = 1;
+}
+
+message FinishStreamResponse {}
+
+message IsStreamFinishedRequest {
+  string tableName = 1;
+}
+message IsStreamFinishedResponse {
+  bool isStreamFinished = 1;
 }

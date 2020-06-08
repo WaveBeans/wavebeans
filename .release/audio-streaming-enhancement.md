@@ -1,0 +1,1 @@
+* If the table is based on finite stream the audio streaming to support the end of the stream as well.

@@ -58,6 +58,10 @@ class RemoteTimeseriesTableDriver<T : Any>(
                 .map { ProtoObj.unwrapIfNeeded(it.asObj(kSerializer)) as T }
     }
 
+    override fun finishStream() = client.finishStream()
+
+    override fun isStreamFinished(): Boolean = client.isStreamFinished()
+
     override fun close() {
         client.close()
     }

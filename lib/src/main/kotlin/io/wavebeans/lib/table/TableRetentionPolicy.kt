@@ -11,7 +11,7 @@ class TimeTableRetentionPolicy(
 ) : TableRetentionPolicy {
 
     override fun isRetained(valueTimeMarker: TimeMeasure, maximumTimeMarker: TimeMeasure): Boolean =
-            valueTimeMarker >= maximumTimeMarker - maximumDataLength
+            valueTimeMarker > maximumTimeMarker - maximumDataLength
 
     override fun toString(): String {
         return "TimeTableRetentionPolicy(maximumDataLength=$maximumDataLength)"

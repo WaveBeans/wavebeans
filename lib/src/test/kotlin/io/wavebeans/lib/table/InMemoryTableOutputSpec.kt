@@ -44,7 +44,7 @@ object InMemoryTableOutputSpec : Spek({
                     .asSequence(1.0f)
                     .toList()
             assertThat(samples).eachIndexed(100) { s, i ->
-                s.isCloseTo(899 * 1e-10 + i * 1e-10, 1e-14)
+                s.isCloseTo(900 * 1e-10 + i * 1e-10, 1e-14)
             }
         }
 
@@ -83,24 +83,24 @@ object InMemoryTableOutputSpec : Spek({
             writer.close()
         }
 
-        it("should return samples range [399,499]") {
+        it("should return samples range [400,499]") {
             val samples = table
                     .last(100.ms)
                     .asSequence(1.0f)
                     .toList()
             assertThat(samples).eachIndexed(100) { s, i ->
-                s.isCloseTo(399 * 1e-10 + i * 1e-10, 1e-14)
+                s.isCloseTo(400 * 1e-10 + i * 1e-10, 1e-14)
             }
         }
 
 
-        it("should return sample range [899,999]") {
+        it("should return sample range [900,999]") {
             val samples = table
                     .last(100.ms)
                     .asSequence(1.0f)
                     .toList()
             assertThat(samples).eachIndexed(100) { s, i ->
-                s.isCloseTo(899 * 1e-10 + i * 1e-10, 1e-14)
+                s.isCloseTo(900 * 1e-10 + i * 1e-10, 1e-14)
             }
         }
     }
@@ -128,7 +128,7 @@ object InMemoryTableOutputSpec : Spek({
             }
 
             it("should return only 250ms of first 500 ms written which is in range [24,49]") {
-                assertThat(table.firstMarker()).isEqualTo(24.ms)
+                assertThat(table.firstMarker()).isEqualTo(25.ms)
                 assertThat(table.lastMarker()).isEqualTo(49.ms)
 
                 val samples = table
@@ -136,12 +136,12 @@ object InMemoryTableOutputSpec : Spek({
                         .asSequence(1.0f)
                         .toList()
                 assertThat(samples).eachIndexed(25) { s, i ->
-                    s.isCloseTo(24 * 1e-10 + i * 1e-10, 1e-14)
+                    s.isCloseTo(25 * 1e-10 + i * 1e-10, 1e-14)
                 }
             }
 
             it("should return only 250ms of last 500 ms written which is in range [74,99]") {
-                assertThat(table.firstMarker()).isEqualTo(74.ms)
+                assertThat(table.firstMarker()).isEqualTo(75.ms)
                 assertThat(table.lastMarker()).isEqualTo(99.ms)
 
                 val samples = table
@@ -149,7 +149,7 @@ object InMemoryTableOutputSpec : Spek({
                         .asSequence(1.0f)
                         .toList()
                 assertThat(samples).eachIndexed(25) { s, i ->
-                    s.isCloseTo(74 * 1e-10 + i * 1e-10, 1e-14)
+                    s.isCloseTo(75 * 1e-10 + i * 1e-10, 1e-14)
                 }
             }
         }
@@ -185,7 +185,7 @@ object InMemoryTableOutputSpec : Spek({
                             .last(10000.ms) // more than should be available
                             .asSequence(1.0f)
                             .toList()
-                    assertThat(samples).eachIndexed(2) { w, i ->
+                    assertThat(samples).eachIndexed(3) { w, i ->
                         w.prop("elements") { it.elements }.eachIndexed(10) { s, j ->
                             s.isCloseTo((20 + i * 10) * 1e-10 + j * 1e-10, 1e-14)
                         }
@@ -202,7 +202,7 @@ object InMemoryTableOutputSpec : Spek({
                             .last(10000.ms) // more than should be available
                             .asSequence(1.0f)
                             .toList()
-                    assertThat(samples).eachIndexed(2) { w, i ->
+                    assertThat(samples).eachIndexed(3) { w, i ->
                         w.prop("elements") { it.elements }.eachIndexed(10) { s, j ->
                             s.isCloseTo((70 + i * 10) * 1e-10 + j * 1e-10, 1e-14)
                         }
@@ -219,7 +219,7 @@ object InMemoryTableOutputSpec : Spek({
                         .trim(100)
                         .toTable(tableName, 25.ms)
 
-                val writer = output.writer(1000.0f)
+                val writer by memoized(SCOPE) { output.writer(1000.0f) }
 
                 beforeEachTest {
                     // read a new chunk before each test
@@ -242,7 +242,7 @@ object InMemoryTableOutputSpec : Spek({
                             .asSequence(1.0f)
                             .toList()
                     assertThat(samples).all {
-                        size().isEqualTo(2)
+                        size().isEqualTo(3)
                         each { it.prop("fft") { it.fft }.size().isEqualTo(32) }
                     }
                 }
@@ -258,7 +258,7 @@ object InMemoryTableOutputSpec : Spek({
                             .asSequence(1.0f)
                             .toList()
                     assertThat(samples).all {
-                        size().isEqualTo(2)
+                        size().isEqualTo(3)
                         each { it.prop("fft") { it.fft }.size().isEqualTo(32) }
                     }
                 }
@@ -266,7 +266,7 @@ object InMemoryTableOutputSpec : Spek({
         }
     }
 
-    describe("Streaming data from table") {
+    describe("Streaming data from endless table") {
 
         describe("No initial offset") {
             val tableName = "tableStream1"
@@ -319,7 +319,7 @@ object InMemoryTableOutputSpec : Spek({
                 }
             }
 
-            it("should perform clean up and remove 24 elements") { assertThat(table.performCleanup()).isEqualTo(24) }
+            it("should perform clean up and remove 25 elements") { assertThat(table.performCleanup()).isEqualTo(25) }
             it("should read third 25 elements") {
                 writer.writeSome(25)
                 assertThat(iterator).all {
@@ -383,6 +383,49 @@ object InMemoryTableOutputSpec : Spek({
                     }
                     returned().isEqualTo(31L)
                 }
+            }
+        }
+    }
+
+    describe("Table with finished stream") {
+        val tableName = "table_with_finished_stream"
+        val output = seqStream()
+                .trim(100)
+                .toTable(tableName)
+
+        val writer by memoized(SCOPE) {
+            output.writer(1000.0f)
+        }
+
+        beforeGroup {
+            // write the whole stream
+            while (writer.write()) {
+            }
+        }
+
+        afterGroup { writer.close() }
+
+        val table by memoized(SCOPE) { TableRegistry.default.byName<Sample>(tableName) }
+
+        it("should be finished") { assertThat(table.isStreamFinished()).isTrue() }
+        it("should have first marker pointed to 0ms") { assertThat(table.firstMarker()).isEqualTo(0.ms) }
+        it("should have last marker pointed to 100ms") { assertThat(table.lastMarker()).isEqualTo(99.ms) }
+        it("should return only 100 ms for last query") {
+            val samples = table
+                    .last(10000.ms) // more than should be available
+                    .asSequence(1.0f)
+                    .toList()
+            assertThat(samples).eachIndexed(100) { s, i ->
+                s.isCloseTo(0 * 1e-10 + i * 1e-10, 1e-14)
+            }
+        }
+        it("should stream only 100 ms") {
+            val samples = table
+                    .stream(10000.ms) // start from the very beginning
+                    .asSequence(1.0f)
+                    .toList()
+            assertThat(samples).eachIndexed(100) { s, i ->
+                s.isCloseTo(0 * 1e-10 + i * 1e-10, 1e-14)
             }
         }
     }

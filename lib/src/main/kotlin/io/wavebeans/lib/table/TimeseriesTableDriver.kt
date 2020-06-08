@@ -100,4 +100,14 @@ interface TimeseriesTableDriver<T : Any> : Closeable {
      * @return the result of the query as sequence, can be empty sequence if there is nothing to return.
      */
     fun query(query: TableQuery): Sequence<T>
+
+    /**
+     * Marks the stream for table finished, if stream is finished you won't be able to [put] more data in it.
+     */
+    fun finishStream()
+
+    /**
+     * Checks if stream is finished, if stream is finished you won't be able to [put] more data in it.
+     */
+    fun isStreamFinished(): Boolean
 }
