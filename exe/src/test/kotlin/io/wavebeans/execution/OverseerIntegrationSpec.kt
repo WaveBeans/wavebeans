@@ -302,7 +302,7 @@ object OverseerIntegrationSpec : Spek({
     }
 
     describe("Table output") {
-        val file = File.createTempFile("test", ".csv")//.also { it.deleteOnExit() }
+        val file = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
 
         val run1 = seqStream().trim(1000).toTable("t1")
         val run2 = TableRegistry.default.byName<Sample>("t1")
