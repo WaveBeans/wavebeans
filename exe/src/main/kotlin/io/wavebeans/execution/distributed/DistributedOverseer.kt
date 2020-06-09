@@ -152,12 +152,13 @@ class DistributedOverseer(
             it.key to tableNames
         }
         httpLocations.forEach { httpLocation ->
-            val client = HttpCommunicatorClient(httpLocation)
-            facilitatorToTableNames
-                    .flatMap { it.second.map { v -> it.first to v } }
-                    .forEach { (facilitatorLocation, tableName) ->
-                        client.registerTable(tableName, facilitatorLocation, sampleRate)
-                    }
+            HttpCommunicatorClient(httpLocation).use { client ->
+                facilitatorToTableNames
+                        .flatMap { it.second.map { v -> it.first to v } }
+                        .forEach { (facilitatorLocation, tableName) ->
+                            client.registerTable(tableName, facilitatorLocation, sampleRate)
+                        }
+            }
         }
     }
 
@@ -172,9 +173,10 @@ class DistributedOverseer(
         }.flatten()
 
         httpLocations.forEach { httpLocation ->
-            val client = HttpCommunicatorClient(httpLocation)
-            tableNames.forEach { tableName ->
-                client.unregisterTable(tableName)
+            HttpCommunicatorClient(httpLocation).use { client ->
+                tableNames.forEach { tableName ->
+                    client.unregisterTable(tableName)
+                }
             }
         }
     }
