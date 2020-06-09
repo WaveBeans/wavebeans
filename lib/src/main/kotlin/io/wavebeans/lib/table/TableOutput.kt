@@ -145,15 +145,19 @@ class TableOutput<T : Any>(
 
         return object : Writer {
             override fun write(): Boolean {
-                if (!iterator.hasNext()) {
-                    tableDriver.finishStream()
-                    return false
+                return when {
+                    tableDriver.isStreamFinished() -> false
+                    !iterator.hasNext() -> {
+                        tableDriver.finishStream()
+                        false
+                    }
+                    else -> {
+                        val element = iterator.next()
+                        val time = SampleCountMeasurement.samplesInObject(element).toLong() * samplesCountToLength(index++, sampleRate, NANOSECONDS)
+                        tableDriver.put(time.ns, element)
+                        true
+                    }
                 }
-
-                val element = iterator.next()
-                val time = SampleCountMeasurement.samplesInObject(element).toLong() * samplesCountToLength(index++, sampleRate, NANOSECONDS)
-                tableDriver.put(time.ns, element)
-                return true
             }
 
             override fun close() {

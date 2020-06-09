@@ -8,6 +8,7 @@ import org.jetbrains.kotlin.scripting.compiler.plugin.impl.KJvmCompiledModuleInM
 import java.io.Closeable
 import java.io.File
 import java.util.concurrent.*
+import kotlin.math.absoluteValue
 import kotlin.math.log10
 import kotlin.reflect.jvm.jvmName
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
@@ -31,7 +32,7 @@ class ScriptRunner(
         private var scriptGeneration = 0
     }
 
-    private val executor = Executors.newSingleThreadExecutor()
+    private val executor = Executors.newSingleThreadExecutor { Thread(it, "script-runner-${it.hashCode().absoluteValue.toString(16)}") }
     private var task: Future<Throwable?>? = null
 
     private val imports: List<String> = listOf( // TODO replace with compile time generation, reflection will slow everything down here, not reasonable

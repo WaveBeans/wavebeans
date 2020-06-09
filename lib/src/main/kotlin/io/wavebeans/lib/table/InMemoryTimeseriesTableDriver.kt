@@ -71,6 +71,7 @@ class InMemoryTimeseriesTableDriver<T : Any>(
     override fun reset() {
         log.debug { "[$this] Resetting driver" }
         table.clear()
+        isFinished.set(false)
     }
 
     /**
