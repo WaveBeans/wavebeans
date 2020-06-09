@@ -5,6 +5,7 @@ import assertk.assertions.*
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.features.ClientRequestException
+import io.ktor.client.features.ServerResponseException
 import io.ktor.client.request.get
 import io.wavebeans.cli.WaveBeansCli.Companion.name
 import io.wavebeans.cli.WaveBeansCli.Companion.options
@@ -12,16 +13,21 @@ import io.wavebeans.execution.PodDiscovery
 import io.wavebeans.execution.distributed.Facilitator
 import io.wavebeans.lib.WaveBeansClassLoader
 import kotlinx.coroutines.runBlocking
+import mu.KotlinLogging
 import org.apache.commons.cli.DefaultParser
 import org.spekframework.spek2.Spek
+import org.spekframework.spek2.style.specification.Suite
 import org.spekframework.spek2.style.specification.describe
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.PrintWriter
 import java.lang.Thread.sleep
+import java.net.ConnectException
 import java.net.URL
 import java.util.concurrent.Callable
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.TimeUnit.SECONDS
 
 object WaveBeansCliSpec : Spek({
@@ -42,8 +48,6 @@ object WaveBeansCliSpec : Spek({
                     )),
                     printer = PrintWriter(out)
             )
-            out.flush()
-            out.close()
 
             it("should execute") { assertThat(cli.tryScriptExecution()).isTrue() }
             it("should generate non empty file") { assertThat(file.readText()).isNotEmpty() }
@@ -63,8 +67,6 @@ object WaveBeansCliSpec : Spek({
                     )),
                     printer = PrintWriter(out)
             )
-            out.flush()
-            out.close()
 
             it("should execute") { assertThat(cli.tryScriptExecution()).isTrue() }
             it("should generate non empty file") { assertThat(file.readText()).isNotEmpty() }
@@ -89,8 +91,6 @@ object WaveBeansCliSpec : Spek({
                     )),
                     printer = PrintWriter(out)
             )
-            out.flush()
-            out.close()
 
             it("should execute") { assertThat(cli.tryScriptExecution()).isTrue() }
             it("should generate non empty file") { assertThat(file.readLines()).size().isGreaterThan(1) }
@@ -137,8 +137,6 @@ object WaveBeansCliSpec : Spek({
                     )),
                     printer = PrintWriter(out)
             )
-            out.flush()
-            out.close()
 
             it("should execute") { assertThat(cli.tryScriptExecution()).isTrue() }
             it("should generate non empty file") { assertThat(file.readLines()).size().isGreaterThan(1) }
@@ -154,48 +152,13 @@ object WaveBeansCliSpec : Spek({
                             name,
                             "--execute", "440.sine().trim(1000).toTable(\"table1\").out()",
                             "--http", "12345",
-                            "--http-wait", "0",
+                            "--http-wait", "1",
                             "--verbose"
                     )),
                     printer = PrintWriter(out)
             )
-            out.flush()
-            out.close()
 
-            val pool = Executors.newSingleThreadExecutor()
-            afterGroup { pool.shutdownNow() }
-            val result = pool.submit(Callable<List<String>> {
-                fun result(): List<String> {
-                    return runBlocking {
-                        HttpClient(CIO).use { client ->
-                            val response = client.get<String>(URL("http://localhost:12345/table/table1/last?interval=1.ms"))
-                            response
-                        }
-                    }.split("[\\r\\n]+".toRegex()).filterNot { it.isEmpty() }
-                }
-
-                var ret: List<String>
-                while (true) {
-                    try {
-                        ret = result()
-                        if (ret.isNotEmpty()) { // if nothing returned keep trying
-                            break
-                        }
-                    } catch (e: ClientRequestException) {
-                        // the table is not created yet, keep trying
-                        sleep(1)
-                    } catch (e: java.net.ConnectException) {
-                        // the server is not started yet, keep trying
-                        sleep(1)
-                    }
-                }
-                ret
-            })
-
-            it("should execute") { assertThat(cli.tryScriptExecution()).isTrue() }
-            it("should return some value") { assertThat(result.get(5, SECONDS)).isNotEmpty() }
-            it("should output something to console") { assertThat(String(out.toByteArray())).isNotEmpty() }
-
+            assertHttpHandling(cli, out)
         }
 
         describe("HTTP API in distributed mode") {
@@ -226,7 +189,7 @@ object WaveBeansCliSpec : Spek({
                             name,
                             "--execute", "440.sine().map { it }.trim(1000).toTable(\"table1\").out()",
                             "--http", "12345",
-                            "--http-wait", "0",
+                            "--http-wait", "1",
                             "--http-communicator-port", "12346",
                             "--verbose",
                             "--run-mode", "distributed",
@@ -235,43 +198,56 @@ object WaveBeansCliSpec : Spek({
                     )),
                     printer = PrintWriter(out)
             )
-            out.flush()
-            out.close()
 
-            val pool = Executors.newSingleThreadExecutor()
-            afterGroup { pool.shutdownNow() }
-            val result = pool.submit(Callable<List<String>> {
-                fun result(): List<String> {
-                    return runBlocking {
-                        HttpClient(CIO).use { client ->
-                            val response = client.get<String>(URL("http://localhost:12345/table/table1/last?interval=1.ms"))
-                            response
-                        }
-                    }.split("[\\r\\n]+".toRegex()).filterNot { it.isEmpty() }
-                }
-
-                var ret: List<String>
-                while (true) {
-                    try {
-                        ret = result()
-                        if (ret.isNotEmpty()) { // if nothing returned keep trying
-                            break
-                        }
-                    } catch (e: ClientRequestException) {
-                        // the table is not created yet, keep trying
-                        sleep(1)
-                    } catch (e: java.net.ConnectException) {
-                        // the server is not started yet, keep trying
-                        sleep(1)
-                    }
-                }
-                ret
-            })
-
-            it("should execute") { assertThat(cli.tryScriptExecution()).isTrue() }
-            it("should return some value") { assertThat(result.get(5, SECONDS)).isNotEmpty() }
-            it("should output something to console") { assertThat(String(out.toByteArray())).isNotEmpty() }
-
+            assertHttpHandling(cli, out)
         }
     }
 })
+
+private fun Suite.assertHttpHandling(cli: WaveBeansCli, out: ByteArrayOutputStream) {
+    val log = KotlinLogging.logger {  }
+    val pool = Executors.newSingleThreadExecutor()
+
+    afterGroup { pool.shutdownNow() }
+
+    val taskStarted = CountDownLatch(1)
+    val result = pool.submit(Callable<List<String>> {
+        fun result(): List<String> {
+            return runBlocking {
+                HttpClient(CIO).use { client ->
+                    val response = client.get<String>(URL("http://localhost:12345/table/table1/last?interval=1.ms"))
+                    response
+                }
+            }.split("[\\r\\n]+".toRegex()).filterNot { it.isEmpty() }
+        }
+
+        taskStarted.countDown()
+        var ret: List<String>
+        while (true) {
+            try {
+                ret = result()
+                if (ret.isNotEmpty()) { // if nothing returned keep trying
+                    break
+                }
+            } catch (e: ServerResponseException) {
+                // the table is not created yet, keep trying
+                sleep(1)
+            } catch (e: ClientRequestException) {
+                // the table is not created yet, keep trying
+                sleep(1)
+            } catch (e: ConnectException) {
+                // the server is not started yet, keep trying
+                sleep(1)
+            }
+        }
+        ret
+    })
+
+    it("should execute") {
+        taskStarted.await(5000, MILLISECONDS) // wait for task to actually start
+        assertThat(cli.tryScriptExecution()).isTrue()
+        log.info { "Script executed with output: ${String(out.toByteArray())}" }
+    }
+    it("should return some value") { assertThat(result.get(5, SECONDS)).isNotEmpty() }
+    it("should output something to console") { assertThat(String(out.toByteArray())).isNotEmpty() }
+}

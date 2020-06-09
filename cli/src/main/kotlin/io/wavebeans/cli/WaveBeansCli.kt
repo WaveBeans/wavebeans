@@ -147,6 +147,8 @@ class WaveBeansCli(
                                 sleep(1)
                             }
                         } catch (e: InterruptedException) {
+                            // just interrupt waiting
+                        } finally {
                             if (verbosePrint) printer.printLine("Closing HTTP API")
                             httpService.close()
                         }
