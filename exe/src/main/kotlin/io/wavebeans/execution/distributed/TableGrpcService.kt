@@ -10,8 +10,6 @@ import io.wavebeans.lib.WaveBeansClassLoader
 import io.wavebeans.lib.table.TableRegistry
 import kotlinx.serialization.KSerializer
 import mu.KotlinLogging
-import java.util.*
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.jvm.jvmName
 
@@ -57,6 +55,7 @@ class TableGrpcService(
     fun query(tableName: String, queryAsJson: String): Sequence<ByteArray> {
         val table = tableRegistry.byName<kotlin.Any>(tableName)
         val tableQuery = TableQuerySerializer.deserialize(queryAsJson)
+
         @Suppress("UNCHECKED_CAST")
         val kSerializer = ProtoObj.serializerForMaybeWrappedObj(table.tableType) as KSerializer<kotlin.Any>
 
@@ -64,6 +63,16 @@ class TableGrpcService(
             val e = ProtoObj.wrapIfNeeded(it)
             e.asByteArray(kSerializer)
         }
+    }
+
+    fun finishStream(tableName: String) {
+        val table = tableRegistry.byName<kotlin.Any>(tableName)
+        table.finishStream()
+    }
+
+    fun isStreamFinished(tableName: String): Boolean {
+        val table = tableRegistry.byName<kotlin.Any>(tableName)
+        return table.isStreamFinished()
     }
 }
 
@@ -136,6 +145,21 @@ class TableApiGrpcService(
                                 .setValueSerialized(ByteString.copyFrom(it))
                                 .build()
                     }
+        }
+    }
+
+    override fun finishStream(request: FinishStreamRequest, responseObserver: StreamObserver<FinishStreamResponse>) {
+        responseObserver.single("TableApiGrpcService.finishStream", request) {
+            tableGrpcService.finishStream(request.tableName)
+            FinishStreamResponse.getDefaultInstance()
+        }
+    }
+
+    override fun isStreamFinished(request: IsStreamFinishedRequest, responseObserver: StreamObserver<IsStreamFinishedResponse>) {
+        responseObserver.single("TableApiGrpcService.finishStream", request) {
+            IsStreamFinishedResponse.newBuilder()
+                    .setIsStreamFinished(tableGrpcService.isStreamFinished(request.tableName))
+                    .build()
         }
     }
 }

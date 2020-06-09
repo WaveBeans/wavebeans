@@ -87,4 +87,19 @@ class TableApiClient(
         ).asSequence().map { it.valueSerialized.toByteArray() }
     }
 
+    fun finishStream(timeoutMs: Long = 5000) {
+        client.finishStream(
+                FinishStreamRequest.newBuilder()
+                        .setTableName(tableName)
+                        .build()
+        ).get(timeoutMs, MILLISECONDS)
+    }
+
+    fun isStreamFinished(timeoutMs: Long = 5000): Boolean {
+        return client.isStreamFinished(
+                IsStreamFinishedRequest.newBuilder()
+                        .setTableName(tableName)
+                        .build()
+        ).get(timeoutMs, MILLISECONDS).isStreamFinished
+    }
 }
