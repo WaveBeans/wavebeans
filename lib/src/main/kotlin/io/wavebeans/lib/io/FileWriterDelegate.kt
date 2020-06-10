@@ -1,5 +1,6 @@
 package io.wavebeans.lib.io
 
+import io.wavebeans.lib.io.filesystem.WbFileFactory
 import mu.KotlinLogging
 import java.io.*
 import java.net.URI
@@ -12,9 +13,10 @@ class FileWriterDelegate(
         private val log = KotlinLogging.logger { }
     }
 
-    private val tmpFile = File.createTempFile("file-stream-output", ".tmp")
+    private val localFileFactory = WbFileFactory.instance("file")
+    private val tmpFile = localFileFactory.createTemporaryWbFile("file-stream-output", ".tmp")
 
-    private val file = FileOutputStream(tmpFile)
+    private val file = tmpFile.createWbFileOutputStream()
     private val bufferSize = 512 * 1024
     private val buffer = BufferedOutputStream(file, bufferSize)
 
@@ -46,11 +48,12 @@ class FileWriterDelegate(
         }
 
         if (tmpFile.exists()) {
-            FileOutputStream(File(uri)).use { f ->
+            val resultFileStream = WbFileFactory.createFile(uri).createWbFileOutputStream()
+            resultFileStream.use { f ->
                 val header = headerFn()
                 if (header != null) f.write(header)
 
-                FileInputStream(tmpFile).use { tmpF ->
+                tmpFile.createWbFileInputStream().use { tmpF ->
                     val buf = ByteArray(bufferSize)
                     do {
                         val r = tmpF.read(buf)
