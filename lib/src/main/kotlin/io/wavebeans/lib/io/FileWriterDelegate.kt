@@ -1,6 +1,6 @@
 package io.wavebeans.lib.io
 
-import io.wavebeans.lib.io.filesystem.WbFileFactory
+import io.wavebeans.fs.core.WbFileDriver
 import mu.KotlinLogging
 import java.io.*
 import java.net.URI
@@ -13,7 +13,7 @@ class FileWriterDelegate(
         private val log = KotlinLogging.logger { }
     }
 
-    private val localFileFactory = WbFileFactory.instance("file")
+    private val localFileFactory = WbFileDriver.instance("file")
     private val tmpFile = localFileFactory.createTemporaryWbFile("file-stream-output", ".tmp")
 
     private val file = tmpFile.createWbFileOutputStream()
@@ -48,7 +48,7 @@ class FileWriterDelegate(
         }
 
         if (tmpFile.exists()) {
-            val resultFileStream = WbFileFactory.createFile(uri).createWbFileOutputStream()
+            val resultFileStream = WbFileDriver.createFile(uri).createWbFileOutputStream()
             resultFileStream.use { f ->
                 val header = headerFn()
                 if (header != null) f.write(header)

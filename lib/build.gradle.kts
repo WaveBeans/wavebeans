@@ -5,7 +5,9 @@ plugins {
 }
 
 dependencies {
+
     val kotlinxSerializationRuntimeVersion: String by System.getProperties()
 
+    implementation(project(":filesystems:core"))
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime:$kotlinxSerializationRuntimeVersion")
 }
