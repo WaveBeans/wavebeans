@@ -16,6 +16,14 @@ class DropboxWbFileDriver(
 
     companion object {
         private val log = KotlinLogging.logger { }
+
+        fun configure(
+                clientIdentifier: String,
+                accessToken: String,
+                defaultTemporaryDirectory: String = "/tmp"
+        ) {
+            WbFileDriver.registerDriver("dropbox", DropboxWbFileDriver(clientIdentifier, accessToken, defaultTemporaryDirectory))
+        }
     }
 
     private val dropboxClient: DbxClientV2 by lazy {

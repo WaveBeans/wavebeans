@@ -1,5 +1,7 @@
-package io.wavebeans.fs.core
+package io.wavebeans.fs.local
 
+import io.wavebeans.fs.core.WbFile
+import io.wavebeans.fs.core.WbFileDriver
 import java.io.File
 import java.net.URI
 

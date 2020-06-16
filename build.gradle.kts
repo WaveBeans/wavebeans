@@ -92,6 +92,11 @@ publishing {
             groupId = "io.wavebeans"
             artifactId = "http"
         }
+        create<MavenPublication>("filesystems.dropbox") {
+            from(subprojects.first { it.name == "dropbox" }.components["java"])
+            groupId = "io.wavebeans.filesystems"
+            artifactId = "dropbox"
+        }
     }
 }
 

@@ -9,7 +9,7 @@ import java.net.URI
 
 data class DropboxWbFile(
         private val client: DbxClientV2,
-        val uri: URI
+        override val uri: URI
 ) : WbFile {
     companion object {
         private val log = KotlinLogging.logger { }
@@ -44,5 +44,8 @@ data class DropboxWbFile(
     override fun createWbFileInputStream(): WbFileInputStream = DropboxWbFileInputStream(client, this)
             .also { log.trace { "Initialize input stream from $uri" } }
 
+    override fun toString(): String {
+        return "DropboxWbFile(uri=$uri)"
+    }
 }
 

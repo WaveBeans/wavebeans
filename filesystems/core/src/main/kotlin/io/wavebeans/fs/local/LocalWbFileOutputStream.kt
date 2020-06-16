@@ -1,5 +1,6 @@
-package io.wavebeans.fs.core
+package io.wavebeans.fs.local
 
+import io.wavebeans.fs.core.WbFileOutputStream
 import java.io.FileOutputStream
 
 class LocalWbFileOutputStream(wbFile: LocalWbFile) : WbFileOutputStream() {

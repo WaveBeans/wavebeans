@@ -3,7 +3,7 @@ package io.wavebeans.lib
 import io.wavebeans.lib.stream.window.Window
 import kotlin.math.round
 
-const val INT_24BIT_MAX_VALUE = 8388608
+const val INT_24BIT_MAX_VALUE = 0x7FFFFF
 
 /** Internal representation of sample. */
 typealias Sample = Double

@@ -17,12 +17,9 @@ object DropboxWbFileSpec : Spek({
     describe("Using generated access token") {
 
         beforeGroup {
-            WbFileDriver.registerDriver(
-                    "dropbox",
-                    DropboxWbFileDriver(
-                            System.getenv("DBX_TEST_CLIENT_ID"),
-                            System.getenv("DBX_TEST_ACCESS_TOKEN")
-                    )
+            DropboxWbFileDriver.configure(
+                    System.getenv("DBX_TEST_CLIENT_ID"),
+                    System.getenv("DBX_TEST_ACCESS_TOKEN")
             )
         }
 
