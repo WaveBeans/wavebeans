@@ -1,9 +1,12 @@
 package io.wavebeans.lib.io
 
+import io.wavebeans.fs.core.WbFileDriver
 import io.wavebeans.lib.*
 import io.wavebeans.lib.stream.FiniteToStream
 import io.wavebeans.lib.stream.stream
-import java.io.*
+import java.io.ByteArrayInputStream
+import java.io.DataInputStream
+import java.io.InputStream
 import java.net.URI
 import java.util.concurrent.TimeUnit
 
@@ -53,7 +56,8 @@ class WavFiniteInput(
 
     private val cnt: Content by lazy {
         if (content == null) {
-            val (descriptor, buf) = WavFileReader(FileInputStream(File(params.uri))).read()
+            val source = WbFileDriver.createFile(params.uri).createWbFileInputStream()
+            val (descriptor, buf) = WavFileReader(source).read()
             Content(buf.size, descriptor.bitDepth, buf, descriptor.sampleRate)
         } else {
             content
