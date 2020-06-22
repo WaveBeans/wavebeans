@@ -20,9 +20,10 @@ class DropboxWbFileDriver(
         fun configure(
                 clientIdentifier: String,
                 accessToken: String,
+                scheme: String = "dropbox",
                 defaultTemporaryDirectory: String = "/tmp"
         ) {
-            WbFileDriver.registerDriver("dropbox", DropboxWbFileDriver(clientIdentifier, accessToken, defaultTemporaryDirectory))
+            WbFileDriver.registerDriver(scheme, DropboxWbFileDriver(clientIdentifier, accessToken, defaultTemporaryDirectory))
         }
     }
 
