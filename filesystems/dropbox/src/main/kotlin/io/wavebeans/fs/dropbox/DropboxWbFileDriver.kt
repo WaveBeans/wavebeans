@@ -8,11 +8,11 @@ import mu.KotlinLogging
 import java.net.URI
 import kotlin.random.Random
 
-const val DEFAULT_BUFFER_SIZE = 65536
+internal const val DROPBOX_DEFAULT_BUFFER_SIZE = 65536
 
 data class DropboxDriverConfig(
         val temporaryDirectory: String = "/tmp",
-        val bufferSize: Int = DEFAULT_BUFFER_SIZE
+        val bufferSize: Int = DROPBOX_DEFAULT_BUFFER_SIZE
 )
 
 class DropboxWbFileDriver(
@@ -29,7 +29,7 @@ class DropboxWbFileDriver(
                 accessToken: String,
                 scheme: String = "dropbox",
                 temporaryDirectory: String = "/tmp",
-                bufferSize: Int = DEFAULT_BUFFER_SIZE
+                bufferSize: Int = DROPBOX_DEFAULT_BUFFER_SIZE
         ) {
             WbFileDriver.registerDriver(scheme, DropboxWbFileDriver(
                     clientIdentifier = clientIdentifier,
