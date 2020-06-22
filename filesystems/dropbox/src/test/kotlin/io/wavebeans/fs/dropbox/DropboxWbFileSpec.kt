@@ -18,23 +18,25 @@ object DropboxWbFileSpec : Spek({
 
         beforeGroup {
             DropboxWbFileDriver.configure(
-                    System.getenv("DBX_TEST_CLIENT_ID"),
-                    System.getenv("DBX_TEST_ACCESS_TOKEN")
+                    clientIdentifier = System.getenv("DBX_TEST_CLIENT_ID"),
+                    accessToken = System.getenv("DBX_TEST_ACCESS_TOKEN"),
+                    bufferSize = 2
             )
         }
 
+        val fileContent = "abcdefghigjklmnopqrstuvwxyz"
         it("should create temporary file, then write, read and delete it in default temp directory") {
             val file = WbFileDriver.instance("dropbox").createTemporaryWbFile("test", "txt")
 
             file.createWbFileOutputStream().use {
-                it.write("abcdefg".toByteArray())
+                it.write(fileContent.toByteArray())
             }
 
             val s = file.createWbFileInputStream().bufferedReader().use {
                 it.readLine()
             }
 
-            assertThat(s).isEqualTo("abcdefg")
+            assertThat(s).isEqualTo(fileContent)
 
             file.delete()
 
@@ -46,14 +48,14 @@ object DropboxWbFileSpec : Spek({
             val file = WbFileDriver.instance("dropbox").createTemporaryWbFile("test", "txt", tmpDirectory)
 
             file.createWbFileOutputStream().use {
-                it.write("abcdefg".toByteArray())
+                it.write(fileContent.toByteArray())
             }
 
             val s = file.createWbFileInputStream().bufferedReader().use {
                 it.readLine()
             }
 
-            assertThat(s).isEqualTo("abcdefg")
+            assertThat(s).isEqualTo(fileContent)
 
             file.delete()
 

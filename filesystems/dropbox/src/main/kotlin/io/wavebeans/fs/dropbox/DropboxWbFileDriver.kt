@@ -8,10 +8,17 @@ import mu.KotlinLogging
 import java.net.URI
 import kotlin.random.Random
 
+const val DEFAULT_BUFFER_SIZE = 65536
+
+data class DropboxDriverConfig(
+        val temporaryDirectory: String = "/tmp",
+        val bufferSize: Int = DEFAULT_BUFFER_SIZE
+)
+
 class DropboxWbFileDriver(
         clientIdentifier: String,
         accessToken: String,
-        private val defaultTemporaryDirectory: String = "/tmp"
+        private val dropboxDriverConfig: DropboxDriverConfig
 ) : WbFileDriver {
 
     companion object {
@@ -21,9 +28,17 @@ class DropboxWbFileDriver(
                 clientIdentifier: String,
                 accessToken: String,
                 scheme: String = "dropbox",
-                defaultTemporaryDirectory: String = "/tmp"
+                temporaryDirectory: String = "/tmp",
+                bufferSize: Int = DEFAULT_BUFFER_SIZE
         ) {
-            WbFileDriver.registerDriver(scheme, DropboxWbFileDriver(clientIdentifier, accessToken, defaultTemporaryDirectory))
+            WbFileDriver.registerDriver(scheme, DropboxWbFileDriver(
+                    clientIdentifier = clientIdentifier,
+                    accessToken = accessToken,
+                    dropboxDriverConfig = DropboxDriverConfig(
+                            temporaryDirectory = temporaryDirectory,
+                            bufferSize = bufferSize
+                    )
+            ))
         }
     }
 
@@ -43,12 +58,12 @@ class DropboxWbFileDriver(
         require(parent == null || parent is DropboxWbFile) { "$parent can only be instance of ${DropboxWbFile::class}" }
         log.trace { "Creating temporary file prefix=$prefix, suffix=$suffix, parent=$parent" }
         val alphabet = "0123456789abcdefghijklmnopqrstuvwxyz".toCharArray()
-        val directory = parent?.let { (it as DropboxWbFile).uri.path } ?: defaultTemporaryDirectory
+        val directory = parent?.let { (it as DropboxWbFile).uri.path } ?: dropboxDriverConfig.temporaryDirectory
         var file: DropboxWbFile?
         var attempts = 5
         do {
             val rnd = (0..5).map { alphabet[Random.nextInt(alphabet.size)] }.joinToString("")
-            file = DropboxWbFile(dropboxClient, URI("dropbox://$directory/$prefix.$rnd.$suffix"))
+            file = DropboxWbFile(dropboxClient, URI("dropbox://$directory/$prefix.$rnd.$suffix"), dropboxDriverConfig)
             if (!file.exists()) break else file = null
         } while (file == null && --attempts > 0)
         log.trace { "Temporary file is $file" }
@@ -56,6 +71,6 @@ class DropboxWbFileDriver(
     }
 
 
-    override fun createWbFile(uri: URI): WbFile = DropboxWbFile(dropboxClient, uri)
+    override fun createWbFile(uri: URI): WbFile = DropboxWbFile(dropboxClient, uri, dropboxDriverConfig)
 
 }

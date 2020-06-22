@@ -9,7 +9,8 @@ import java.net.URI
 
 data class DropboxWbFile(
         private val client: DbxClientV2,
-        override val uri: URI
+        override val uri: URI,
+        private val dropboxDriverConfig: DropboxDriverConfig
 ) : WbFile {
     companion object {
         private val log = KotlinLogging.logger { }
@@ -38,10 +39,10 @@ data class DropboxWbFile(
         }
     }
 
-    override fun createWbFileOutputStream(): WbFileOutputStream = DropboxWbFileOutputStream(client, this)
+    override fun createWbFileOutputStream(): WbFileOutputStream = DropboxWbFileOutputStream(client, this, dropboxDriverConfig)
             .also { log.trace { "Initialize output stream to $uri" } }
 
-    override fun createWbFileInputStream(): WbFileInputStream = DropboxWbFileInputStream(client, this)
+    override fun createWbFileInputStream(): WbFileInputStream = DropboxWbFileInputStream(client, this, dropboxDriverConfig)
             .also { log.trace { "Initialize input stream from $uri" } }
 
     override fun toString(): String {

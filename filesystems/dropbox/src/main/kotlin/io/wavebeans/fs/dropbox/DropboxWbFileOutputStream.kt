@@ -9,19 +9,22 @@ import io.wavebeans.fs.core.WbFileOutputStream
 import java.io.ByteArrayInputStream
 import java.util.*
 
-class DropboxWbFileOutputStream(val client: DbxClientV2, val file: DropboxWbFile) : WbFileOutputStream() {
+class DropboxWbFileOutputStream(
+        val client: DbxClientV2,
+        val file: DropboxWbFile,
+        private val dropboxDriverConfig: DropboxDriverConfig
+) : WbFileOutputStream() {
 
     private val session = client.files().uploadSessionStart(false).finish()
-    private val buffer = ByteArray(65536)
+    private val buffer = ByteArray(dropboxDriverConfig.bufferSize)
     private var count = 0
     private var offset = 0L
 
     override fun write(b: Int) {
         buffer[count] = b.toByte()
-        if (count + 1 == buffer.size) {
+        if (++count == buffer.size) {
             flush()
         }
-        count++
     }
 
     override fun flush() {
