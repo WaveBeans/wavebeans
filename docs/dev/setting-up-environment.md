@@ -72,3 +72,19 @@ IDE doesn't currently build automatically proto-files, but all source folders ar
 ```bash
 ./gradlew clean generateProto
 ```
+
+Dropbox integration testing
+----
+
+When running all tests or testing DropBox related stuff, you may need to specify dropbox integration parameters. They are specified via environment variables `DBX_TEST_CLIENT_ID` and `DBX_TEST_ACCESS_TOKEN`. On GitHub they are stored in project secrets and are being provided during build time, though on your local environment you may create your own. 
+
+First of all follow [the docs](/docs/user/api/file-systems.md#dropbox-file-system) to fetch required values. And then:
+
+* To run via gradle, use `export` if you're on zsh-like shell or store commands directly into you `.zshrc`:
+    ```bash
+    export DBX_TEST_CLIENT_ID=test-client-id
+    export DBX_TEST_ACCESS_TOKEN=access-token
+    ```
+* To conveniently run in Intelliji IDEA and a default parameter into and Spek runners:
+    * `Run/Debug configurations > Templates > Spek 2 - JVM`
+    * Add both values under environment variables.
