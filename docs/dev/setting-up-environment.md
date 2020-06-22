@@ -10,6 +10,7 @@ Settting up environment
 - [Import project](#import-project)
 - [Setting up build configurations](#setting-up-build-configurations)
 - [While working on Protobuf stuff](#while-working-on-protobuf-stuff)
+- [Dropbox integration testing](#dropbox-integration-testing)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
