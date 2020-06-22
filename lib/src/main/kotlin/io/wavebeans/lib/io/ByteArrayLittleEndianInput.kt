@@ -14,27 +14,42 @@ class ByteArrayLittleEndianDecoder(val sampleRate: Float, val bitDepth: BitDepth
             override fun hasNext(): Boolean = bufferPos + bitDepth.bytesPerSample <= buffer.size
 
             override fun next(): Sample {
-                val bytes = buffer.copyOfRange(bufferPos, bufferPos + bitDepth.bytesPerSample)
-                bufferPos += bitDepth.bytesPerSample
                 return when (bitDepth) {
-                    BitDepth.BIT_8 -> sampleOf(bytes[0])
+                    BitDepth.BIT_8 -> sampleOf(buffer[bufferPos].asUnsignedByte().toByte())
                     BitDepth.BIT_16 -> sampleOf(
-                            bytes.foldIndexed(0) { index, acc, v ->
-                                acc or (v.toInt() and 0xFF shl index * 8)
-                            }.toShort()
+                            ((buffer[bufferPos].toInt() and 0xFF) or
+                                    (buffer[bufferPos + 1].toInt() and 0xFF shl 8)
+                                    ).toShort()
                     )
-                    BitDepth.BIT_24, BitDepth.BIT_32 -> sampleOf(
-                            bytes.foldIndexed(0) { index, acc, v ->
-                                acc or (v.toInt() and 0xFF shl index * 8)
-                            },
-                            as24bit = bitDepth == BitDepth.BIT_24
+                    BitDepth.BIT_24 -> sampleOf(
+                            ((buffer[bufferPos].toInt() and 0xFF) or
+                                    (buffer[bufferPos + 1].toInt() and 0xFF shl 8) or
+                                    (buffer[bufferPos + 2].toInt() and 0xFF shl 16)
+                                    ).let {
+                                        if (it and 0x800000 != 0) -(it.inv() and 0x7FFFFF)
+                                        else it and 0x7FFFFF
+                                    },
+                            as24bit = true
+                    )
+                    BitDepth.BIT_32 -> sampleOf(
+                            ((buffer[bufferPos].toInt() and 0xFF) or
+                                    (buffer[bufferPos + 1].toInt() and 0xFF shl 8) or
+                                    (buffer[bufferPos + 2].toInt() and 0xFF shl 16) or
+                                    (buffer[bufferPos + 3].toInt() and 0xFF shl 24)
+                                    )
                     )
                     BitDepth.BIT_64 -> sampleOf(
-                            bytes.foldIndexed(0L) { index, acc, v ->
-                                acc or (v.toLong() and 0xFF shl index * 8)
-                            }
+                            ((buffer[bufferPos].toLong() and 0xFF) or
+                                    (buffer[bufferPos + 1].toLong() and 0xFF shl 8) or
+                                    (buffer[bufferPos + 2].toLong() and 0xFF shl 16) or
+                                    (buffer[bufferPos + 3].toLong() and 0xFF shl 24) or
+                                    (buffer[bufferPos + 4].toLong() and 0xFF shl 32) or
+                                    (buffer[bufferPos + 5].toLong() and 0xFF shl 40) or
+                                    (buffer[bufferPos + 6].toLong() and 0xFF shl 48) or
+                                    (buffer[bufferPos + 7].toLong() and 0xFF shl 46)
+                                    )
                     )
-                }
+                }.also { bufferPos += bitDepth.bytesPerSample }
             }
 
         }.asSequence()

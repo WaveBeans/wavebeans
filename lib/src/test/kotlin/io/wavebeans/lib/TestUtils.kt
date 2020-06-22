@@ -28,13 +28,13 @@ import java.util.concurrent.TimeUnit
 fun BeanStream<Sample>.listOfBytesAsInts(sampleRate: Float, samplesToRead: Int = Int.MAX_VALUE): List<Int> =
         this.asSequence(sampleRate)
                 .take(samplesToRead)
-                .map { it.asByte().toInt() and 0xFF }
+                .map { it.asByte().asUnsignedByte() }
                 .toList()
 
 fun BeanStream<Sample>.listOfShortsAsInts(sampleRate: Float, samplesToRead: Int = Int.MAX_VALUE): List<Int> =
         this.asSequence(sampleRate)
                 .take(samplesToRead)
-                .map { it.asShort().toInt() and 0xFFFF }
+                .map { it.asShort().toInt() }
                 .toList()
 
 

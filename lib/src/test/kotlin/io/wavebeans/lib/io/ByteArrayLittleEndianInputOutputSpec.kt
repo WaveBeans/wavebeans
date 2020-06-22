@@ -60,7 +60,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
         val input = buffer.asInput(sampleRate)
 
         describe("samples are with values 0..100") {
-            val samples = (0 until 100).map { sampleOf(it.toByte()) }
+            val samples = (0 until 100).map { sampleOf(it.toByte().asUnsignedByte().toByte()) }
             it("should be the same") {
                 assertThat(input.asSequence(sampleRate).toList()).isEqualTo(samples)
             }
@@ -73,7 +73,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
             )
 
             it("should return byte array as input stream the same as initial buffer") {
-                assertThat(output.readBytes(sampleRate).map { it.asUnsignedByte() }).isEqualTo(buffer.map { it.toInt() and 0xFF })
+                assertThat(output.readBytes(sampleRate).map { it.toInt() }).isEqualTo(buffer.map { it.toInt() and 0xFF })
             }
         }
 
@@ -170,7 +170,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
             itShouldHave("number of samples 25") { assertThat(projection.samplesCount(sampleRate)).isEqualTo(50L) }
             itShouldHave("length 1000ms for sample rate 50Hz") { assertThat(projection.length(sampleRate, MILLISECONDS)).isEqualTo(1000L) }
             itShouldHave("samples with samples made of byte range [100,200)") {
-                assertThat(projection.listOfShortsAsInts(sampleRate)).isEqualTo(
+                assertThat(projection.listOfShortsAsInts(sampleRate).map { it and 0xFFFF }).isEqualTo(
                         (100 until 200)
                                 .windowed(2, 2)
                                 .map { it[0] or (it[1] shl 8) }
