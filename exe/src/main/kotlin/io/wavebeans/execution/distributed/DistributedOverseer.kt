@@ -107,7 +107,14 @@ class DistributedOverseer(
             return when {
                 result.all { it.status == DONE || it.status == CANCELLED || it.status == FAILED }
                         && result.any { it.status == FAILED } -> {
-                    log.error { "Errors during job $jobKey execution:\n" + result.mapNotNull { it.exception }.joinToString("\n") }
+                    log.error {
+                        "Errors during job $jobKey execution:\n" + result
+                                // compiler failure on 1.4-M2
+                                //.mapNotNull { it.exception }
+                                .map { it.exception }
+                                .filter { it != null }
+                                .joinToString("\n")
+                    }
                     ExecutionResult.error(
                             result.first { it.status == FAILED }
                                     .exception

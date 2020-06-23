@@ -102,9 +102,10 @@ object FunctionMergedStreamSpec : Spek({
     describe("Int and float stream") {
         val stream = input { (idx, _) -> idx.toInt() }
                 .merge(input { (idx, _) -> idx.toFloat() }) { (a, b) ->
-                    requireNotNull(a)
-                    requireNotNull(b)
-                    a.toLong() + b.toLong()
+                    // compiler failures on 1.4-M2
+//                    requireNotNull(a)
+//                    requireNotNull(b)
+                    a!!.toLong() + b!!.toLong()
                 }
 
         it("should return list of sum of long values") {
@@ -117,9 +118,10 @@ object FunctionMergedStreamSpec : Spek({
         val stream = input { (idx, _) -> idx.toInt() }
                 .window(2) { 0 }
                 .merge(input { (idx, _) -> idx.toInt() }) { (window, a) ->
-                    requireNotNull(window)
-                    requireNotNull(a)
-                    window.elements.first().toLong() + a.toLong()
+                // compiler failures on 1.4-M2
+//                    requireNotNull(window)
+//                    requireNotNull(a)
+                    window!!.elements.first().toLong() + a!!.toLong()
                 }
 
         it("should return list of sum of long values") {
