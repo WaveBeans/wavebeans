@@ -11,11 +11,6 @@ plugins {
 }
 
 allprojects {
-
-    group = "io.wavebeans"
-
-    val spekVersion: String by System.getProperties()
-
     apply {
         plugin("kotlin")
     }
@@ -41,6 +36,13 @@ allprojects {
         kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlin.ExperimentalStdlibApi"
         kotlinOptions.freeCompilerArgs += "-Xopt-in=io.ktor.util.KtorExperimentalAPI"
     }
+}
+
+subprojects {
+
+    group = "io.wavebeans"
+
+    val spekVersion: String by System.getProperties()
 
     dependencies {
         implementation(kotlin("stdlib-jdk8"))
@@ -94,10 +96,9 @@ publishing {
             groupId = "io.wavebeans"
             artifactId = "http"
         }
-        // temporary workaround
         create<MavenPublication>("filesystems.core") {
             from(subprojects.first { it.name == "core" }.components["java"])
-            groupId = "io.wavebeans"
+            groupId = "io.wavebeans.filesystems"
             artifactId = "core"
         }
         create<MavenPublication>("filesystems.dropbox") {
