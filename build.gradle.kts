@@ -10,12 +10,7 @@ plugins {
     `maven-publish`
 }
 
-subprojects {
-
-    group = "io.wavebeans"
-
-    val spekVersion: String by System.getProperties()
-
+allprojects {
     apply {
         plugin("kotlin")
     }
@@ -39,6 +34,13 @@ subprojects {
         kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlin.ExperimentalStdlibApi"
         kotlinOptions.freeCompilerArgs += "-Xopt-in=io.ktor.util.KtorExperimentalAPI"
     }
+}
+
+subprojects {
+
+    group = "io.wavebeans"
+
+    val spekVersion: String by System.getProperties()
 
     dependencies {
         implementation(kotlin("stdlib-jdk8"))
