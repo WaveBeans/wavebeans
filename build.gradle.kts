@@ -10,7 +10,7 @@ plugins {
     `maven-publish`
 }
 
-allprojects {
+subprojects {
 
     group = "io.wavebeans"
 
@@ -91,6 +91,11 @@ publishing {
             from(subprojects.first { it.name == "http" }.components["java"])
             groupId = "io.wavebeans"
             artifactId = "http"
+        }
+        create<MavenPublication>("filesystems.core") {
+            from(subprojects.first { it.name == "core" }.components["java"])
+            groupId = "io.wavebeans.filesystems"
+            artifactId = "core"
         }
         create<MavenPublication>("filesystems.dropbox") {
             from(subprojects.first { it.name == "dropbox" }.components["java"])
