@@ -91,6 +91,11 @@ publishing {
             groupId = "io.wavebeans"
             artifactId = "exe"
         }
+        create<MavenPublication>("proto") {
+            from(subprojects.first { it.name == "proto" }.components["java"])
+            groupId = "io.wavebeans"
+            artifactId = "proto"
+        }
         create<MavenPublication>("http") {
             from(subprojects.first { it.name == "http" }.components["java"])
             groupId = "io.wavebeans"

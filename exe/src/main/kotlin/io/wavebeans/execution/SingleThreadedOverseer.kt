@@ -42,7 +42,7 @@ class SingleThreadedOverseer(
                         } catch (e: InterruptedException) {
                             log.info { "[$out] Finished evaluating early. Done $i iterations" }
                             ExecutionResult.success()
-                        } catch (e: Exception) {
+                        } catch (e: Throwable) {
                             log.error(e) { "[$out] Error running. Done $i iterations" }
                             ExecutionResult.error(e)
                         }
