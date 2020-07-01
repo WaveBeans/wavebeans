@@ -8,6 +8,7 @@ import io.ktor.http.ContentType
 import io.ktor.response.respondOutputStream
 import io.ktor.routing.get
 import io.ktor.routing.routing
+import io.wavebeans.execution.metrics.MetricObject
 import io.wavebeans.lib.*
 import io.wavebeans.lib.io.*
 import io.wavebeans.lib.stream.trim
@@ -67,6 +68,8 @@ fun Application.audioService(tableRegistry: TableRegistry) {
 class AudioService(internal val tableRegistry: TableRegistry) {
     companion object {
         private val log = KotlinLogging.logger { }
+        val audioStreamRequest = MetricObject("io.wavebeans.http.audioService", "request.stream")
+        val audioStreamBytesSent = MetricObject("io.wavebeans.http.audioService", "bytesSent")
     }
 
     fun <T : Any> stream(
@@ -76,9 +79,20 @@ class AudioService(internal val tableRegistry: TableRegistry) {
             limit: TimeMeasure?,
             offset: TimeMeasure?
     ): InputStream {
+        val _audioStreamRequest = audioStreamRequest.addTags(
+                "table" to tableName,
+                "bitDepth" to bitDepth.bits.toString(),
+                "format" to format.contentType.toString(),
+                "limit" to (limit?.toString() ?: "n/a"),
+                "offset" to (offset?.toString() ?: "n/a")
+        )
+        _audioStreamRequest.increment()
+        val _startTime = System.currentTimeMillis()
         val table = tableRegistry.byName<T>(tableName)
         return when (format) {
             AudioStreamOutputFormat.WAV -> streamAsWav(table, bitDepth, limit, offset)
+        }.also {
+            _audioStreamRequest.time(System.currentTimeMillis() - _startTime)
         }
     }
 
@@ -88,7 +102,13 @@ class AudioService(internal val tableRegistry: TableRegistry) {
             limit: TimeMeasure?,
             offset: TimeMeasure?
     ): InputStream {
-
+        val _audioStreamBytesSent = audioStreamBytesSent.addTags(
+                "table" to table.tableName,
+                "bitDepth" to bitDepth.bits.toString(),
+                "format" to "wav",
+                "limit" to (limit?.toString() ?: "n/a"),
+                "offset" to (offset?.toString() ?: "n/a")
+        )
         val nextBytes: Queue<Byte> = LinkedTransferQueue<Byte>()
         val writerDelegate = object : WriterDelegate() {
             override fun write(b: Int) {
@@ -126,6 +146,7 @@ class AudioService(internal val tableRegistry: TableRegistry) {
         return object : InputStream() {
             override fun read(): Int {
                 try {
+                    _audioStreamBytesSent.increment()
                     if (headerIdx < header.size) {
                         return header[headerIdx++].toInt() and 0xFF
                     }
