@@ -30,6 +30,13 @@ interface WbFileDriver {
                     ?.let { throw IllegalStateException("Scheme $scheme is already registered: $it") }
         }
 
+        /**
+         * Unregisters the driver. Does nothing if the driver is not registered.
+         *
+         * @param scheme the driver scheme to unregister
+         *
+         * @return instance of removed driver if any
+         */
         fun unregisterDriver(scheme: String): WbFileDriver? = registry.remove(scheme)
 
         /**
