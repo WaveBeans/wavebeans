@@ -8,6 +8,7 @@ import io.ktor.http.ContentType
 import io.ktor.response.respondOutputStream
 import io.ktor.routing.get
 import io.ktor.routing.routing
+import io.wavebeans.execution.metrics.MetricObject
 import io.wavebeans.lib.*
 import io.wavebeans.lib.io.*
 import io.wavebeans.lib.stream.trim
@@ -67,6 +68,14 @@ fun Application.audioService(tableRegistry: TableRegistry) {
 class AudioService(internal val tableRegistry: TableRegistry) {
     companion object {
         private val log = KotlinLogging.logger { }
+
+        val audioStreamRequest = MetricObject("io.wavebeans.http.audioService", "request.stream")
+        val audioStreamBytesSent = MetricObject("io.wavebeans.http.audioService", "bytesSent")
+        val tableTag = "table"
+        val bitDepthTag = "bitDepth"
+        val formatTag = "format"
+        val limitTag = "limit"
+        val offsetTag = "offset"
     }
 
     fun <T : Any> stream(
@@ -76,9 +85,20 @@ class AudioService(internal val tableRegistry: TableRegistry) {
             limit: TimeMeasure?,
             offset: TimeMeasure?
     ): InputStream {
+        val _audioStreamRequest = audioStreamRequest.addTags(
+                tableTag to tableName,
+                bitDepthTag to bitDepth.bits.toString(),
+                formatTag to format.contentType.toString(),
+                limitTag to (limit?.toString() ?: "n/a"),
+                offsetTag to (offset?.toString() ?: "n/a")
+        )
+        _audioStreamRequest.increment()
+        val _startTime = System.currentTimeMillis()
         val table = tableRegistry.byName<T>(tableName)
         return when (format) {
             AudioStreamOutputFormat.WAV -> streamAsWav(table, bitDepth, limit, offset)
+        }.also {
+            _audioStreamRequest.time(System.currentTimeMillis() - _startTime)
         }
     }
 
@@ -88,7 +108,13 @@ class AudioService(internal val tableRegistry: TableRegistry) {
             limit: TimeMeasure?,
             offset: TimeMeasure?
     ): InputStream {
-
+        val _audioStreamBytesSent = audioStreamBytesSent.addTags(
+                tableTag to table.tableName,
+                bitDepthTag to bitDepth.bits.toString(),
+                formatTag to "wav",
+                limitTag to (limit?.toString() ?: "n/a"),
+                offsetTag to (offset?.toString() ?: "n/a")
+        )
         val nextBytes: Queue<Byte> = LinkedTransferQueue<Byte>()
         val writerDelegate = object : WriterDelegate() {
             override fun write(b: Int) {
@@ -125,16 +151,19 @@ class AudioService(internal val tableRegistry: TableRegistry) {
 
         return object : InputStream() {
             override fun read(): Int {
-                try {
+                return try {
                     if (headerIdx < header.size) {
-                        return header[headerIdx++].toInt() and 0xFF
+                        header[headerIdx++].toInt() and 0xFF
+                    } else {
+                        if (nextBytes.isEmpty()) writer.write()
+
+                        if (nextBytes.isNotEmpty()) (nextBytes.poll().toInt() and 0xFF)
+                        else -1
                     }
-                    if (nextBytes.isEmpty()) writer.write()
-                    return if (nextBytes.isNotEmpty()) (nextBytes.poll().toInt() and 0xFF) else -1
                 } catch (e: ClassCastException) {
                     log.error(e) { "Table $table has wrong type" }
-                    return -1
-                }
+                    -1
+                }.also { if (it != -1) _audioStreamBytesSent.increment() }
             }
         }
     }
