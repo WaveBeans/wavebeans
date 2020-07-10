@@ -153,8 +153,9 @@ class TableOutput<T : Any>(
                     }
                     else -> {
                         val element = iterator.next()
-                        val time = SampleCountMeasurement.samplesInObject(element).toLong() * samplesCountToLength(index++, sampleRate, NANOSECONDS)
-                        tableDriver.put(time.ns, element)
+                        val timeMarker = samplesCountToLength(index, sampleRate, NANOSECONDS)
+                        index += SampleCountMeasurement.samplesInObject(element).toLong()
+                        tableDriver.put(timeMarker.ns, element)
                         true
                     }
                 }
