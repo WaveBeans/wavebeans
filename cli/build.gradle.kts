@@ -14,6 +14,8 @@ dependencies {
     implementation(project(":lib"))
     implementation(project(":exe"))
     implementation(project(":http"))
+    implementation(project(":filesystems:core"))
+    implementation(project(":filesystems:dropbox"))
 
     implementation("commons-cli:commons-cli:1.4")
     implementation("ch.qos.logback:logback-classic:1.2.3")

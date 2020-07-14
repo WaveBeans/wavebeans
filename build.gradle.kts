@@ -11,11 +11,6 @@ plugins {
 }
 
 allprojects {
-
-    group = "io.wavebeans"
-
-    val spekVersion: String by System.getProperties()
-
     apply {
         plugin("kotlin")
     }
@@ -39,6 +34,13 @@ allprojects {
         kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlin.ExperimentalStdlibApi"
         kotlinOptions.freeCompilerArgs += "-Xopt-in=io.ktor.util.KtorExperimentalAPI"
     }
+}
+
+subprojects {
+
+    group = "io.wavebeans"
+
+    val spekVersion: String by System.getProperties()
 
     dependencies {
         implementation(kotlin("stdlib-jdk8"))
@@ -87,10 +89,20 @@ publishing {
             groupId = "io.wavebeans"
             artifactId = "exe"
         }
+        create<MavenPublication>("proto") {
+            from(subprojects.first { it.name == "proto" }.components["java"])
+            groupId = "io.wavebeans"
+            artifactId = "proto"
+        }
         create<MavenPublication>("http") {
             from(subprojects.first { it.name == "http" }.components["java"])
             groupId = "io.wavebeans"
             artifactId = "http"
+        }
+        create<MavenPublication>("filesystems.core") {
+            from(subprojects.first { it.name == "core" }.components["java"])
+            groupId = "io.wavebeans.filesystems"
+            artifactId = "core"
         }
         create<MavenPublication>("filesystems.dropbox") {
             from(subprojects.first { it.name == "dropbox" }.components["java"])
