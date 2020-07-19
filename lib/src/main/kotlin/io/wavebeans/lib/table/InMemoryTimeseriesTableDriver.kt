@@ -63,6 +63,7 @@ class InMemoryTimeseriesTableDriver<T : Any>(
     }
 
     override fun finishStream() {
+        log.debug { "[$this] Finishing stream" }
         isFinished.set(true)
     }
 
@@ -103,10 +104,10 @@ class InMemoryTimeseriesTableDriver<T : Any>(
     }
 
     override fun put(time: TimeMeasure, value: T) {
-        if (isStreamFinished()) throw IllegalStateException("The stream is already finsihed, you can't put any data in")
+        if (isStreamFinished()) throw IllegalStateException("[$this] The stream is already finished, you can't put any more data in it")
         val peekLast = table.peekLast()
         if (peekLast != null && time < peekLast.timeMarker)
-            throw IllegalStateException("Can't put item with time=$time, as older one exists: $peekLast")
+            throw IllegalStateException("[$this] Can't put item with time=$time, as older one exists: $peekLast")
         table += Item(time, value)
     }
 
@@ -145,7 +146,8 @@ class InMemoryTimeseriesTableDriver<T : Any>(
     }
 
     override fun toString(): String {
-        return "InMemoryTimeseriesTableDriver(tableName='$tableName', retentionPolicy=$retentionPolicy)"
+        return "InMemoryTimeseriesTableDriver(tableName='$tableName', tableType=$tableType, retentionPolicy=$retentionPolicy, isFinished=$isFinished)"
     }
+
 }
 

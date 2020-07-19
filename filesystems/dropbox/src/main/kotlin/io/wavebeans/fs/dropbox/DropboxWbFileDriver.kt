@@ -29,8 +29,10 @@ class DropboxWbFileDriver(
                 accessToken: String,
                 scheme: String = "dropbox",
                 temporaryDirectory: String = "/tmp",
-                bufferSize: Int = DROPBOX_DEFAULT_BUFFER_SIZE
+                bufferSize: Int = DROPBOX_DEFAULT_BUFFER_SIZE,
+                force: Boolean = false
         ) {
+            if (force) WbFileDriver.unregisterDriver(scheme)
             WbFileDriver.registerDriver(scheme, DropboxWbFileDriver(
                     clientIdentifier = clientIdentifier,
                     accessToken = accessToken,
