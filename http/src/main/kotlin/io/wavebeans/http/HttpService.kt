@@ -2,6 +2,9 @@ package io.wavebeans.http
 
 import io.grpc.Server
 import io.grpc.ServerBuilder
+import io.ktor.application.feature
+import io.ktor.application.install
+import io.ktor.features.CORS
 import io.ktor.server.engine.ApplicationEngine
 import io.ktor.server.engine.applicationEngineEnvironment
 import io.ktor.server.engine.connector
@@ -33,6 +36,10 @@ class HttpService(
             module {
                 tableService(tableRegistry)
                 audioService(tableRegistry)
+                install(CORS) {
+                    allowNonSimpleContentTypes = true
+                    anyHost()
+                }
             }
             connector {
                 host = "0.0.0.0"

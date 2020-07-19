@@ -1,0 +1,1 @@
+* [Bugfix] The table output is not correctly measuring time markers for complex objects 
