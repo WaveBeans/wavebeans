@@ -143,7 +143,7 @@ object MetricCollectorSpec : Spek({
 
                 val afterEventMoment = System.currentTimeMillis() + 1
 
-                sleep(100) // wait for upstream metric collector to do a few syncs
+                sleep(500) // wait for upstream metric collector to do a few syncs
 
                 assertThat(upstreamMetricCollector.collectValues(afterEventMoment))
                         .prop("MetricObject[1,2].values") { it.first { it.first.isLike(MetricObject("1", "2")) }.second }
