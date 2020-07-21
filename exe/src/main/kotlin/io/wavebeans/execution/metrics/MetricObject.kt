@@ -15,7 +15,14 @@ data class MetricObject(
         val tags: Map<String, String> = emptyMap()
 ) {
 
-    fun addTags(vararg newTags: Pair<String, String>) = MetricObject(component, name, tags + newTags)
+    fun withTags(vararg newTags: Pair<String, String>): MetricObject = MetricObject(component, name, tags + newTags)
+
+    fun withoutTags(): MetricObject = if (tags.isEmpty()) this else MetricObject(component, name)
+
+    /**
+     * Compares another [MetricObject] ignoring tags
+     */
+    fun isLike(another: MetricObject): Boolean = component == another.component && name == another.name
 
     /**
      * Calls [MetricConnector.increment] on [MetricService].

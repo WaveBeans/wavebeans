@@ -3,10 +3,13 @@ package io.wavebeans.execution.distributed
 import io.grpc.ServerBuilder
 import io.wavebeans.communicator.JobStatusResponse
 import io.wavebeans.communicator.JobStatusResponse.JobStatus.FutureStatus.*
+import io.wavebeans.communicator.MetricApiGrpc
 import io.wavebeans.execution.*
 import io.wavebeans.execution.config.ExecutionConfig
 import io.wavebeans.execution.medium.MediumBuilder
 import io.wavebeans.execution.medium.PodCallResultBuilder
+import io.wavebeans.execution.metrics.MetricCollector
+import io.wavebeans.execution.metrics.MetricGrpcService
 import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.lib.WaveBeansClassLoader
 import io.wavebeans.lib.table.TableRegistry
@@ -86,6 +89,7 @@ class Facilitator(
             communicator = ServerBuilder.forPort(it)
                     .addService(TableGrpcService.instance(TableRegistry.default))
                     .addService(FacilitatorGrpcService.instance(this))
+                    .addService(MetricGrpcService.instance(MetricCollector()))
                     .build()
                     .start()
             log.info { "Communicator on port $communicatorPort started." }

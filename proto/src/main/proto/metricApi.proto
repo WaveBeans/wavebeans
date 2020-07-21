@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package io.wavebeans.communicator;
+
+service MetricApi {
+  rpc CollectValues (CollectValuesRequest) returns (stream Values);
+}
+
+message CollectValuesRequest {
+  int64 lastCollectionTimestamp = 1;
+}
+
+message Values {
+  MetricObject metricObject = 1;
+  repeated LongToDoublePair values = 2;
+}
+
+message MetricObject {
+  string component = 1;
+  string name = 2;
+  map<string, string> tags = 3;
+}
+
+message LongToDoublePair {
+  int64 first = 1;
+  double second = 2;
+}

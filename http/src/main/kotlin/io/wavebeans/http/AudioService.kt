@@ -85,7 +85,7 @@ class AudioService(internal val tableRegistry: TableRegistry) {
             limit: TimeMeasure?,
             offset: TimeMeasure?
     ): InputStream {
-        val _audioStreamRequest = audioStreamRequest.addTags(
+        val _audioStreamRequest = audioStreamRequest.withTags(
                 tableTag to tableName,
                 bitDepthTag to bitDepth.bits.toString(),
                 formatTag to format.contentType.toString(),
@@ -108,7 +108,7 @@ class AudioService(internal val tableRegistry: TableRegistry) {
             limit: TimeMeasure?,
             offset: TimeMeasure?
     ): InputStream {
-        val _audioStreamBytesSent = audioStreamBytesSent.addTags(
+        val _audioStreamBytesSent = audioStreamBytesSent.withTags(
                 tableTag to table.tableName,
                 bitDepthTag to bitDepth.bits.toString(),
                 formatTag to "wav",
