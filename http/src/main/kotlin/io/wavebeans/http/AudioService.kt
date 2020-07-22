@@ -8,12 +8,12 @@ import io.ktor.http.ContentType
 import io.ktor.response.respondOutputStream
 import io.ktor.routing.get
 import io.ktor.routing.routing
-import io.wavebeans.execution.metrics.MetricObject
 import io.wavebeans.lib.*
 import io.wavebeans.lib.io.*
 import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.table.TableRegistry
 import io.wavebeans.lib.table.TimeseriesTableDriver
+import io.wavebeans.metrics.*
 import mu.KotlinLogging
 import java.io.BufferedOutputStream
 import java.io.InputStream
@@ -69,13 +69,6 @@ class AudioService(internal val tableRegistry: TableRegistry) {
     companion object {
         private val log = KotlinLogging.logger { }
 
-        val audioStreamRequest = MetricObject("io.wavebeans.http.audioService", "request.stream")
-        val audioStreamBytesSent = MetricObject("io.wavebeans.http.audioService", "bytesSent")
-        val tableTag = "table"
-        val bitDepthTag = "bitDepth"
-        val formatTag = "format"
-        val limitTag = "limit"
-        val offsetTag = "offset"
     }
 
     fun <T : Any> stream(
@@ -85,20 +78,20 @@ class AudioService(internal val tableRegistry: TableRegistry) {
             limit: TimeMeasure?,
             offset: TimeMeasure?
     ): InputStream {
-        val _audioStreamRequest = audioStreamRequest.withTags(
+        val metricTags = arrayOf(
                 tableTag to tableName,
                 bitDepthTag to bitDepth.bits.toString(),
                 formatTag to format.contentType.toString(),
                 limitTag to (limit?.toString() ?: "n/a"),
                 offsetTag to (offset?.toString() ?: "n/a")
         )
-        _audioStreamRequest.increment()
+        audioStreamRequestMetric.withTags(*metricTags).increment()
         val _startTime = System.currentTimeMillis()
         val table = tableRegistry.byName<T>(tableName)
         return when (format) {
             AudioStreamOutputFormat.WAV -> streamAsWav(table, bitDepth, limit, offset)
         }.also {
-            _audioStreamRequest.time(System.currentTimeMillis() - _startTime)
+            audioStreamRequestTimeMetric.withTags(*metricTags).time(System.currentTimeMillis() - _startTime)
         }
     }
 
@@ -108,7 +101,7 @@ class AudioService(internal val tableRegistry: TableRegistry) {
             limit: TimeMeasure?,
             offset: TimeMeasure?
     ): InputStream {
-        val _audioStreamBytesSent = audioStreamBytesSent.withTags(
+        val audioStreamBytesSentMetricObj = audioStreamBytesSentMetric.withTags(
                 tableTag to table.tableName,
                 bitDepthTag to bitDepth.bits.toString(),
                 formatTag to "wav",
@@ -163,7 +156,7 @@ class AudioService(internal val tableRegistry: TableRegistry) {
                 } catch (e: ClassCastException) {
                     log.error(e) { "Table $table has wrong type" }
                     -1
-                }.also { if (it != -1) _audioStreamBytesSent.increment() }
+                }.also { if (it != -1) audioStreamBytesSentMetricObj.increment() }
             }
         }
     }

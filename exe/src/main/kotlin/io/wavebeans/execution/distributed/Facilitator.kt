@@ -8,8 +8,8 @@ import io.wavebeans.execution.*
 import io.wavebeans.execution.config.ExecutionConfig
 import io.wavebeans.execution.medium.MediumBuilder
 import io.wavebeans.execution.medium.PodCallResultBuilder
-import io.wavebeans.execution.metrics.MetricCollector
-import io.wavebeans.execution.metrics.MetricGrpcService
+import io.wavebeans.metrics.MetricCollector
+import io.wavebeans.metrics.MetricGrpcService
 import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.lib.WaveBeansClassLoader
 import io.wavebeans.lib.table.TableRegistry

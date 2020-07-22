@@ -1,4 +1,4 @@
-package io.wavebeans.execution.metrics
+package io.wavebeans.metrics
 
 import mu.KotlinLogging
 
@@ -20,7 +20,7 @@ object MetricService : MetricConnector {
         return this
     }
 
-    override fun increment(metricObject: MetricObject, delta: Long) {
+    override fun increment(metricObject: CounterMetricObject, delta: Double) {
         metricConnectors.forEach {
             try {
                 it.increment(metricObject, delta)
@@ -30,7 +30,7 @@ object MetricService : MetricConnector {
         }
     }
 
-    override fun decrement(metricObject: MetricObject, delta: Long) {
+    override fun decrement(metricObject: CounterMetricObject, delta: Double) {
         metricConnectors.forEach {
             try {
                 it.decrement(metricObject, delta)
@@ -40,7 +40,8 @@ object MetricService : MetricConnector {
         }
     }
 
-    override fun gauge(metricObject: MetricObject, value: Long) {
+
+    override fun gauge(metricObject: GaugeMetricObject, value: Double) {
         metricConnectors.forEach {
             try {
                 it.gauge(metricObject, value)
@@ -50,28 +51,8 @@ object MetricService : MetricConnector {
         }
     }
 
-    override fun gauge(metricObject: MetricObject, value: Double) {
-        metricConnectors.forEach {
-            try {
-                it.gauge(metricObject, value)
-            } catch (e: Throwable) {
-                log.warn(e) { "Can't gauge value $value for $metricObject on connector $it" }
-            }
-        }
-    }
 
-    override fun gaugeDelta(metricObject: MetricObject, delta: Long) {
-        metricConnectors.forEach {
-            try {
-                it.gaugeDelta(metricObject, delta)
-            } catch (e: Throwable) {
-                log.warn(e) { "Can't gauge dekta $delta for $metricObject on connector $it" }
-            }
-
-        }
-    }
-
-    override fun gaugeDelta(metricObject: MetricObject, delta: Double) {
+    override fun gaugeDelta(metricObject: GaugeMetricObject, delta: Double) {
         metricConnectors.forEach {
             try {
                 it.gaugeDelta(metricObject, delta)
@@ -81,7 +62,7 @@ object MetricService : MetricConnector {
         }
     }
 
-    override fun time(metricObject: MetricObject, valueInMs: Long) {
+    override fun time(metricObject: TimeMetricObject, valueInMs: Long) {
         metricConnectors.forEach {
             try {
                 it.time(metricObject, valueInMs)

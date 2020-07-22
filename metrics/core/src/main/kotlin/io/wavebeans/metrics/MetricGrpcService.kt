@@ -1,4 +1,4 @@
-package io.wavebeans.execution.metrics
+package io.wavebeans.metrics
 
 import io.grpc.stub.StreamObserver
 import io.wavebeans.communicator.MetricApiGrpc

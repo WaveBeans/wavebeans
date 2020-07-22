@@ -27,10 +27,11 @@ class HttpService(
         private val log = KotlinLogging.logger { }
     }
 
-    private lateinit var server: ApplicationEngine
+    private var server: ApplicationEngine? = null
     private var communicatorServer: Server? = null
 
     fun start(wait: Boolean = false): HttpService {
+        if (server != null) throw IllegalStateException("Can't start the server, it is already started")
         log.info { "Starting HTTP Service on port $serverPort" }
         val env = applicationEngineEnvironment {
             module {
@@ -61,10 +62,11 @@ class HttpService(
     }
 
     override fun close() {
-        server.stop(gracePeriodMillis, timeoutMillis)
+        server?.stop(gracePeriodMillis, timeoutMillis)
         if (communicatorServer?.shutdown()?.awaitTermination(gracePeriodMillis, MILLISECONDS) == false) {
             communicatorServer?.shutdownNow()
         }
+        server = null
     }
 }
 

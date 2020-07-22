@@ -1,6 +1,4 @@
-package io.wavebeans.execution.metrics
-
-import io.wavebeans.lib.TimeMeasure
+package io.wavebeans.metrics
 
 class TimeseriesList<T : Any>(
         private val granularValueInMs: Long = 60000,
@@ -44,8 +42,8 @@ class TimeseriesList<T : Any>(
     }
 
     @Synchronized
-    fun leaveOnlyLast(interval: TimeMeasure, now: Long = System.currentTimeMillis()) {
-        val lastMarker = now - interval.asNanoseconds() / 1_000_000
+    fun leaveOnlyLast(intervalMs: Long, now: Long = System.currentTimeMillis()) {
+        val lastMarker = now - intervalMs
         timeseries.removeIf { it.first < lastMarker }
         if (lastValueTimestamp < lastMarker) {
             lastValueTimestamp = -1
@@ -75,8 +73,8 @@ class TimeseriesList<T : Any>(
     }
 
     @Synchronized
-    fun inLast(interval: TimeMeasure, now: Long = System.currentTimeMillis()): T? {
-        val lastMarker = now - interval.asNanoseconds() / 1_000_000
+    fun inLast(intervalMs: Long, now: Long = System.currentTimeMillis()): T? {
+        val lastMarker = now - intervalMs
         val v = timeseries.asSequence()
                 .dropWhile { it.first < lastMarker }
                 .map { it.second }

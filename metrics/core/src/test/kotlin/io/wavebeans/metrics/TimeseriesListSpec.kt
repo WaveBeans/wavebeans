@@ -1,4 +1,4 @@
-package io.wavebeans.execution.metrics
+package io.wavebeans.metrics
 
 import assertk.assertThat
 import assertk.assertions.isEmpty
@@ -6,8 +6,6 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isNull
 import assertk.assertions.isTrue
 import assertk.fail
-import io.wavebeans.execution.eachIndexed
-import io.wavebeans.lib.m
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 
@@ -28,27 +26,27 @@ object TimeseriesListSpec : Spek({
             assertThat(list.append(1, 1.min)).isTrue()
             assertThat(list.append(2, 2.min)).isTrue()
             assertThat(list.append(3, 3.min)).isTrue()
-            assertThat(list.inLast(5.m, 4.min)).isEqualTo(6)
+            assertThat(list.inLast(5.min, 4.min)).isEqualTo(6)
         }
         it("should return sum of added values inside the range. Not all values") {
             assertThat(list.append(1, 1.min)).isTrue()
             assertThat(list.append(2, 2.min)).isTrue()
             assertThat(list.append(3, 3.min)).isTrue()
-            assertThat(list.inLast(2.m, 4.min)).isEqualTo(5)
+            assertThat(list.inLast(2.min, 4.min)).isEqualTo(5)
         }
         it("should clean up some values") {
             assertThat(list.append(1, 1.min)).isTrue()
             assertThat(list.append(2, 2.min)).isTrue()
             assertThat(list.append(3, 3.min)).isTrue()
-            list.leaveOnlyLast(2.m, 3.5.min)
-            assertThat(list.inLast(5.m, 4.min)).isEqualTo(5)
+            list.leaveOnlyLast(2.min, 3.5.min)
+            assertThat(list.inLast(5.min, 4.min)).isEqualTo(5)
         }
         it("should clean up values in non-committed granular") {
             assertThat(list.append(1, 1.sec)).isTrue()
             assertThat(list.append(2, 2.sec)).isTrue()
             assertThat(list.append(3, 3.sec)).isTrue()
-            list.leaveOnlyLast(1.m, 1.5.min)
-            assertThat(list.inLast(5.m, 2.min)).isNull()
+            list.leaveOnlyLast(1.min, 1.5.min)
+            assertThat(list.inLast(5.min, 2.min)).isNull()
         }
         it("should merge with provided non-empty one") {
             assertThat(list.append(1, 1.min)).isTrue()
@@ -82,27 +80,27 @@ object TimeseriesListSpec : Spek({
             assertThat(list.append(1, 1.min)).isTrue()
             assertThat(list.append(2, 2.min)).isTrue()
             assertThat(list.append(3, 3.min)).isTrue()
-            assertThat(list.inLast(5.m, 4.min)).isEqualTo(6)
+            assertThat(list.inLast(5.min, 4.min)).isEqualTo(6)
         }
         it("should return sum of added values inside the range. Not all values") {
             assertThat(list.append(1, 1.min)).isTrue()
             assertThat(list.append(2, 2.min)).isTrue()
             assertThat(list.append(3, 3.min)).isTrue()
-            assertThat(list.inLast(2.m, 4.min)).isEqualTo(5)
+            assertThat(list.inLast(2.min, 4.min)).isEqualTo(5)
         }
         it("should clean up some values") {
             assertThat(list.append(1, 1.min)).isTrue()
             assertThat(list.append(2, 2.min)).isTrue()
             assertThat(list.append(3, 3.min)).isTrue()
-            list.leaveOnlyLast(2.m, 3.5.min)
-            assertThat(list.inLast(5.m, 4.min)).isEqualTo(5)
+            list.leaveOnlyLast(2.min, 3.5.min)
+            assertThat(list.inLast(5.min, 4.min)).isEqualTo(5)
         }
         it("should clean up values in non-committed granular") {
             assertThat(list.append(1, 1.sec)).isTrue()
             assertThat(list.append(2, 2.sec)).isTrue()
             assertThat(list.append(3, 3.sec)).isTrue()
-            list.leaveOnlyLast(1.m, 1.5.min)
-            assertThat(list.inLast(5.m, 2.min)).isNull()
+            list.leaveOnlyLast(1.min, 1.5.min)
+            assertThat(list.inLast(5.min, 2.min)).isNull()
         }
         it("should merge with provided non-empty one") {
             assertThat(list.append(1, 1.sec)).isTrue()
