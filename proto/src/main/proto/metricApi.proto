@@ -3,16 +3,12 @@ syntax = "proto3";
 package io.wavebeans.communicator;
 
 service MetricApi {
-  rpc CollectValues (CollectValuesRequest) returns (stream Values);
+  rpc CollectValues (CollectValuesRequest) returns (stream TimedValue);
 }
 
 message CollectValuesRequest {
   int64 lastCollectionTimestamp = 1;
-}
-
-message Values {
-  MetricObject metricObject = 1;
-  repeated LongToDoublePair values = 2;
+  MetricObject metricObject = 2;
 }
 
 message MetricObject {
@@ -21,7 +17,7 @@ message MetricObject {
   map<string, string> tags = 3;
 }
 
-message LongToDoublePair {
-  int64 first = 1;
-  double second = 2;
+message TimedValue {
+  int64 timestamp = 1;
+  string serializedValue = 2;
 }

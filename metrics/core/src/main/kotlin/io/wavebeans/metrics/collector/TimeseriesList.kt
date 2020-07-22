@@ -1,4 +1,4 @@
-package io.wavebeans.metrics
+package io.wavebeans.metrics.collector
 
 class TimeseriesList<T : Any>(
         private val granularValueInMs: Long = 60000,
@@ -6,7 +6,7 @@ class TimeseriesList<T : Any>(
 ) {
 
     @Volatile
-    private var timeseries = ArrayList<Pair<Long, T>>()
+    private var timeseries = ArrayList<TimedValue<T>>()
 
     private var lastValueTimestamp: Long = -1
 
@@ -28,7 +28,7 @@ class TimeseriesList<T : Any>(
                 val lastBucket = lastValueTimestamp / granularValueInMs
                 val currentBucket = now / granularValueInMs
                 if (currentBucket > lastBucket) {
-                    timeseries.add(Pair(lastBucket * granularValueInMs, it))
+                    timeseries.add(TimedValue(lastBucket * granularValueInMs, it))
                     v
                 } else {
                     accumulator(it, v)
@@ -36,7 +36,7 @@ class TimeseriesList<T : Any>(
             } ?: v
             lastValueTimestamp = now
         } else {
-            timeseries.add(Pair(now, v))
+            timeseries.add(TimedValue(now, v))
         }
         return true
     }
@@ -44,7 +44,7 @@ class TimeseriesList<T : Any>(
     @Synchronized
     fun leaveOnlyLast(intervalMs: Long, now: Long = System.currentTimeMillis()) {
         val lastMarker = now - intervalMs
-        timeseries.removeIf { it.first < lastMarker }
+        timeseries.removeIf { it.timestamp < lastMarker }
         if (lastValueTimestamp < lastMarker) {
             lastValueTimestamp = -1
             lastValue = null
@@ -52,12 +52,12 @@ class TimeseriesList<T : Any>(
     }
 
     @Synchronized
-    fun removeAllBefore(before: Long): List<Pair<Long, T>> {
+    fun removeAllBefore(before: Long): List<TimedValue<T>> {
         val i = timeseries.iterator()
-        val removedValues = ArrayList<Pair<Long, T>>()
+        val removedValues = ArrayList<TimedValue<T>>()
         while (i.hasNext()) {
             val e = i.next()
-            if (e.first < before) {
+            if (e.timestamp < before) {
                 i.remove()
                 removedValues += e
             } else {
@@ -65,7 +65,7 @@ class TimeseriesList<T : Any>(
             }
         }
         if (lastValueTimestamp < before && lastValue != null) {
-            removedValues += Pair(lastValueTimestamp, lastValue!!)
+            removedValues += TimedValue(lastValueTimestamp, lastValue!!)
             lastValueTimestamp = -1
             lastValue = null
         }
@@ -76,8 +76,8 @@ class TimeseriesList<T : Any>(
     fun inLast(intervalMs: Long, now: Long = System.currentTimeMillis()): T? {
         val lastMarker = now - intervalMs
         val v = timeseries.asSequence()
-                .dropWhile { it.first < lastMarker }
-                .map { it.second }
+                .dropWhile { it.timestamp < lastMarker }
+                .map { it.value }
                 .reduceOrNull { acc, v -> accumulator(acc, v) }
         return when {
             lastValue != null && lastMarker < lastValueTimestamp && v != null -> accumulator(v, lastValue!!)
@@ -87,33 +87,33 @@ class TimeseriesList<T : Any>(
     }
 
     @Synchronized
-    fun merge(values: List<Pair<Long, T>>) {
+    fun merge(values: Sequence<TimedValue<T>>) {
         val i = (timeseries + (
-                lastValue?.let { listOf(Pair(lastValueTimestamp, it)) }
+                lastValue?.let { listOf(TimedValue(lastValueTimestamp, it)) }
                         ?: emptyList()
                 ))
                 .iterator()
         val j = values.iterator()
 
         reset()
-        var e1: Pair<Long, T>? = null
-        var e2: Pair<Long, T>? = null
+        var e1: TimedValue<T>? = null
+        var e2: TimedValue<T>? = null
         while (true) {
             e1 = if (e1 == null && i.hasNext()) i.next() else e1
             e2 = if (e2 == null && j.hasNext()) j.next() else e2
             if (e1 == null && e2 == null) {
                 break
             } else if (e1 != null && e2 == null) {
-                append(e1.second, e1.first)
+                append(e1.value, e1.timestamp)
                 e1 = null
             } else if (e1 == null && e2 != null) {
-                append(e2.second, e2.first)
+                append(e2.value, e2.timestamp)
                 e2 = null
-            } else if (e1!!.first < e2!!.first) {
-                append(e1.second, e1.first)
+            } else if (e1!!.timestamp < e2!!.timestamp) {
+                append(e1.value, e1.timestamp)
                 e1 = null
             } else { // (e1!!.first >= e2!!.first)
-                append(e2.second, e2.first)
+                append(e2.value, e2.timestamp)
                 e2 = null
             }
         }

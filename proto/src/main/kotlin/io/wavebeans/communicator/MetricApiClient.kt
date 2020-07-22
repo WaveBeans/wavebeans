@@ -11,15 +11,22 @@ class MetricApiClient(
         blockingClient = MetricApiGrpc.newBlockingStub(channel)
     }
 
-    fun <T> collectValues(lastCollectionTimestamp: Long, metricObjectConverter: (MetricApiOuterClass.MetricObject) -> T): Sequence<Pair<T, List<Pair<Long, Double>>>> {
+    fun <M, T> collectValues(
+            lastCollectionTimestamp: Long,
+            name: String,
+            component: String,
+            tags: Map<String, String>
+    ): Sequence<MetricApiOuterClass.TimedValue> {
         return blockingClient.collectValues(MetricApiOuterClass.CollectValuesRequest.newBuilder()
                 .setLastCollectionTimestamp(lastCollectionTimestamp)
-                .build())
-                .asSequence()
-                .map {
-                    val k = metricObjectConverter(it.metricObject)
-                    val values = it.valuesList.map { it.first to it.second }
-                    k to values
-                }
+                .setMetricObject(
+                        MetricApiOuterClass.MetricObject.newBuilder()
+                                .setName(name)
+                                .setComponent(component)
+                                .putAllTags(tags)
+                                .build()
+                )
+                .build()
+        ).asSequence()
     }
 }

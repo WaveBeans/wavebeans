@@ -3,27 +3,21 @@ package io.wavebeans.execution.distributed
 import io.grpc.ServerBuilder
 import io.wavebeans.communicator.JobStatusResponse
 import io.wavebeans.communicator.JobStatusResponse.JobStatus.FutureStatus.*
-import io.wavebeans.communicator.MetricApiGrpc
 import io.wavebeans.execution.*
 import io.wavebeans.execution.config.ExecutionConfig
 import io.wavebeans.execution.medium.MediumBuilder
 import io.wavebeans.execution.medium.PodCallResultBuilder
-import io.wavebeans.metrics.MetricCollector
-import io.wavebeans.metrics.MetricGrpcService
 import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.lib.WaveBeansClassLoader
 import io.wavebeans.lib.table.TableRegistry
+import io.wavebeans.metrics.collector.MetricGrpcService
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.modules.SerializersModule
 import mu.KotlinLogging
-import java.io.*
+import java.io.Closeable
+import java.io.FileOutputStream
+import java.io.InputStream
 import java.util.concurrent.*
-import kotlin.collections.List
-import kotlin.collections.MutableList
-import kotlin.collections.forEach
-import kotlin.collections.joinToString
-import kotlin.collections.map
-import kotlin.collections.toList
 
 data class BushEndpoint(
         val bushKey: BushKey,
@@ -89,7 +83,7 @@ class Facilitator(
             communicator = ServerBuilder.forPort(it)
                     .addService(TableGrpcService.instance(TableRegistry.default))
                     .addService(FacilitatorGrpcService.instance(this))
-                    .addService(MetricGrpcService.instance(MetricCollector()))
+                    .addService(MetricGrpcService.instance())
                     .build()
                     .start()
             log.info { "Communicator on port $communicatorPort started." }
