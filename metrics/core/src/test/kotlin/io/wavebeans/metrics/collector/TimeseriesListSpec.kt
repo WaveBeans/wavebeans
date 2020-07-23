@@ -66,6 +66,7 @@ object TimeseriesListSpec : Spek({
             }
         }
     }
+
     describe("Int timeseries list without rolling up") {
         val list = TimeseriesList<Int>(granularValueInMs = 0) { a, b -> a + b }
 
@@ -160,6 +161,67 @@ object TimeseriesListSpec : Spek({
                     else -> fail("Index $index is not expected")
                 }
             }
+        }
+    }
+
+    describe("GaugeAccumulator without rolling up") {
+        val list = TimeseriesList<GaugeAccumulator>(0) { a, b -> a + b }
+
+        beforeEachTest { list.reset() }
+
+        it("should accumulate all values") {
+            assertThat(list.append(GaugeAccumulator(false, 1.0), 1.min)).isTrue()
+            assertThat(list.append(GaugeAccumulator(false, 2.0), 2.min)).isTrue()
+            assertThat(list.append(GaugeAccumulator(false, 3.0), 3.min)).isTrue()
+            assertThat(list.inLast(5.min, 4.min)).isEqualTo(GaugeAccumulator(false, 6.0))
+        }
+        it("should accumulate values only after set and mark result as set") {
+            assertThat(list.append(GaugeAccumulator(false, 1.0), 1.min)).isTrue()
+            assertThat(list.append(GaugeAccumulator(true, 2.0), 2.min)).isTrue()
+            assertThat(list.append(GaugeAccumulator(false, 3.0), 3.min)).isTrue()
+            assertThat(list.inLast(5.min, 4.min)).isEqualTo(GaugeAccumulator(true, 5.0))
+        }
+        it("should accumulate values only after set and not mark result as set as set itself is out of range") {
+            assertThat(list.append(GaugeAccumulator(true, 1.0), 1.min)).isTrue()
+            assertThat(list.append(GaugeAccumulator(false, 2.0), 2.min)).isTrue()
+            assertThat(list.append(GaugeAccumulator(false, 3.0), 3.min)).isTrue()
+            assertThat(list.inLast(2.min, 4.min)).isEqualTo(GaugeAccumulator(false, 5.0))
+        }
+        it("should accumulate only set value") {
+            assertThat(list.append(GaugeAccumulator(false, 1.0), 1.min)).isTrue()
+            assertThat(list.append(GaugeAccumulator(false, 2.0), 2.min)).isTrue()
+            assertThat(list.append(GaugeAccumulator(true, 3.0), 3.min)).isTrue()
+            assertThat(list.inLast(5.min, 4.min)).isEqualTo(GaugeAccumulator(true, 3.0))
+        }
+    }
+
+    describe("GaugeAccumulator with 60 sec granularity") {
+        val list = TimeseriesList<GaugeAccumulator>(60000) { a, b -> a + b }
+
+        beforeEachTest { list.reset() }
+
+        it("should accumulate values") {
+            assertThat(list.append(GaugeAccumulator(false, 1.0), 1.min)).isTrue()
+            assertThat(list.append(GaugeAccumulator(false, 2.0), 1.5.min)).isTrue()
+            assertThat(list.append(GaugeAccumulator(false, 3.0), 2.min)).isTrue()
+            assertThat(list.append(GaugeAccumulator(false, 4.0), 2.5.min)).isTrue()
+            assertThat(list.inLast(5.min, 4.min)).isEqualTo(GaugeAccumulator(false, 10.0))
+        }
+        it("should accumulate values only after set") {
+            assertThat(list.append(GaugeAccumulator(false, 0.5), 0.5.min)).isTrue()
+            assertThat(list.append(GaugeAccumulator(false, 1.0), 1.min)).isTrue()
+            assertThat(list.append(GaugeAccumulator(true, 2.0), 1.5.min)).isTrue()
+            assertThat(list.append(GaugeAccumulator(false, 3.0), 1.7.min)).isTrue()
+            assertThat(list.append(GaugeAccumulator(false, 4.0), 2.min)).isTrue()
+            assertThat(list.append(GaugeAccumulator(false, 5.0), 2.5.min)).isTrue()
+            assertThat(list.inLast(5.min, 4.min)).isEqualTo(GaugeAccumulator(true, 14.0))
+        }
+        it("should accumulate only set value") {
+            assertThat(list.append(GaugeAccumulator(false, 1.0), 1.min)).isTrue()
+            assertThat(list.append(GaugeAccumulator(false, 2.0), 1.5.min)).isTrue()
+            assertThat(list.append(GaugeAccumulator(false, 3.0), 2.min)).isTrue()
+            assertThat(list.append(GaugeAccumulator(true, 4.0), 2.5.min)).isTrue()
+            assertThat(list.inLast(5.min, 4.min)).isEqualTo(GaugeAccumulator(true, 4.0))
         }
     }
 })

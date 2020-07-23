@@ -7,38 +7,6 @@ import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 
-fun CounterMetricObject.collector(
-        downstreamCollectors: List<String> = emptyList(),
-        refreshIntervalMs: Long = 5000,
-        granularValueInMs: Long = 60000
-): MetricCollector<CounterMetricObject, Double> {
-    return MetricCollector(
-            this,
-            downstreamCollectors,
-            refreshIntervalMs,
-            granularValueInMs,
-            accumulator = { a, b -> a + b },
-            serialize = { it.toString() },
-            deserialize = { it.toDouble() }
-    )
-}
-
-fun TimeMetricObject.collector(
-        downstreamCollectors: List<String> = emptyList(),
-        refreshIntervalMs: Long = 5000,
-        granularValueInMs: Long = 60000
-): MetricCollector<TimeMetricObject, TimeAccumulator> {
-    return MetricCollector(
-            this,
-            downstreamCollectors,
-            refreshIntervalMs,
-            granularValueInMs,
-            accumulator = { a, b -> a + b },
-            serialize = { "${it.count}:${it.time}" },
-            deserialize = { it.split(":", limit = 2).let { TimeAccumulator(it[0].toInt(), it[1].toLong()) } }
-    )
-}
-
 @Suppress("UNCHECKED_CAST")
 class MetricCollector<M : MetricObject<*>, T : Any>(
         val metricObject: M,
@@ -80,11 +48,11 @@ class MetricCollector<M : MetricObject<*>, T : Any>(
     }
 
     override fun gauge(metricObject: GaugeMetricObject, value: Double) {
-        TODO("Not yet implemented")
+        timeseries.append(GaugeAccumulator(true, value) as T)
     }
 
     override fun gaugeDelta(metricObject: GaugeMetricObject, delta: Double) {
-        TODO("Not yet implemented")
+        timeseries.append(GaugeAccumulator(false, delta) as T)
     }
 
     override fun time(metricObject: TimeMetricObject, valueInMs: Long) {
