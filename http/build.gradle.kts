@@ -9,6 +9,7 @@ dependencies {
     implementation(project(":lib"))
     implementation(project(":exe"))
     implementation(project(":proto"))
+    implementation(project(":metrics:core"))
 
     val kotlinxSerializationRuntimeVersion: String by System.getProperties()
     val ktorVersion: String by System.getProperties()
