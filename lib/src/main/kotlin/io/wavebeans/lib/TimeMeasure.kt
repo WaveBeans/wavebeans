@@ -134,13 +134,43 @@ data class TimeMeasure(
     }
 
     override operator fun compareTo(other: TimeMeasure): Int {
-        return asNanoseconds().compareTo(other.asNanoseconds())
+        return ns().compareTo(other.ns())
     }
 
     /**
      * Returns the number of nanoseconds in current [TimeMeasure] interval
      */
-    fun asNanoseconds(): Long = NANOSECONDS.convert(time, timeUnit)
+    fun ns(): Long = NANOSECONDS.convert(time, timeUnit)
+
+    /**
+     * Returns the number of integer microseconds in current [TimeMeasure] interval
+     */
+    fun us(): Long = MICROSECONDS.convert(time, timeUnit)
+
+    /**
+     * Returns the number of integer milliseconds in current [TimeMeasure] interval
+     */
+    fun ms(): Long = MILLISECONDS.convert(time, timeUnit)
+
+    /**
+     * Returns the number of integer milliseconds in current [TimeMeasure] interval
+     */
+    fun s(): Long = SECONDS.convert(time, timeUnit)
+
+    /**
+     * Returns the number of integer milliseconds in current [TimeMeasure] interval
+     */
+    fun m(): Long = MINUTES.convert(time, timeUnit)
+
+    /**
+     * Returns the number of integer milliseconds in current [TimeMeasure] interval
+     */
+    fun h(): Long = HOURS.convert(time, timeUnit)
+
+    /**
+     * Returns the number of integer milliseconds in current [TimeMeasure] interval
+     */
+    fun d(): Long = DAYS.convert(time, timeUnit)
 
     /**
      * Adds another [TimeMeasure] to current one. Disregarding of units of both operands, the resulted is in nanoseconds.
@@ -150,7 +180,7 @@ data class TimeMeasure(
      * @return a new instance of [TimeMeasure] in nanoseconds.
      */
     operator fun plus(other: TimeMeasure): TimeMeasure =
-            TimeMeasure(asNanoseconds() + other.asNanoseconds(), NANOSECONDS)
+            TimeMeasure(ns() + other.ns(), NANOSECONDS)
 
     /**
      * Subtracts another [TimeMeasure] from current one. Disregarding of units of both operands, the resulted is in nanoseconds.
@@ -160,7 +190,7 @@ data class TimeMeasure(
      * @return a new instance of [TimeMeasure] in nanoseconds.
      */
     operator fun minus(other: TimeMeasure): TimeMeasure =
-            TimeMeasure(asNanoseconds() - other.asNanoseconds(), NANOSECONDS)
+            TimeMeasure(ns() - other.ns(), NANOSECONDS)
 
     /**
      * Parseable string representation of [TimeMeasure]
