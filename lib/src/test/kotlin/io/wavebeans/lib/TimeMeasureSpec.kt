@@ -63,4 +63,74 @@ object TimeMeasureSpec : Spek({
                     .isNotNull().message().isNotNull().startsWith("Format invalid, should be:")
         }
     }
+
+    describe("As nanoseconds") {
+        it("should be 2.5.d=2.d") { assertThat(2.5.d.ns()).isEqualTo(2 * 24 * 60 * 60 * 1000L * 1000L * 1000L) }
+        it("should be 3.h") { assertThat(3.h.ns()).isEqualTo(3 * 60 * 60 * 1000L * 1000L * 1000L) }
+        it("should be 123.m") { assertThat(123.m.ns()).isEqualTo(123 * 60 * 1000L * 1000L * 1000L) }
+        it("should be 42.s") { assertThat(42.s.ns()).isEqualTo(42 * 1000L * 1000L * 1000L) }
+        it("should be 42.ms") { assertThat(42.ms.ns()).isEqualTo(42L * 1000L * 1000L) }
+        it("should be 2.us") { assertThat(2.us.ns()).isEqualTo(2L * 1000L) }
+        it("should be 1.ns") { assertThat(1.ns.ns()).isEqualTo(1L) }
+    }
+
+    describe("As microseconds") {
+        it("should be 2.5.d=2.d") { assertThat(2.5.d.us()).isEqualTo(2 * 24 * 60 * 60 * 1000L * 1000L) }
+        it("should be 3.h") { assertThat(3.h.us()).isEqualTo(3 * 60 * 60 * 1000L * 1000L) }
+        it("should be 123.m") { assertThat(123.m.us()).isEqualTo(123 * 60 * 1000L * 1000L) }
+        it("should be 42.s") { assertThat(42.s.us()).isEqualTo(42 * 1000L * 1000L) }
+        it("should be 42.ms") { assertThat(42.ms.us()).isEqualTo(42L * 1000L) }
+        it("should be 2.us") { assertThat(2.us.us()).isEqualTo(2L) }
+        it("should be 1.ns=0.us") { assertThat(1.ns.us()).isEqualTo(0L) }
+    }
+
+    describe("As milliseconds") {
+        it("should be 2.5.d=2.d") { assertThat(2.5.d.ms()).isEqualTo(2 * 24 * 60 * 60 * 1000L) }
+        it("should be 3.h") { assertThat(3.h.ms()).isEqualTo(3 * 60 * 60 * 1000L) }
+        it("should be 123.m") { assertThat(123.m.ms()).isEqualTo(123 * 60 * 1000L) }
+        it("should be 42.s") { assertThat(42.s.ms()).isEqualTo(42 * 1000L) }
+        it("should be 42.ms") { assertThat(42.ms.ms()).isEqualTo(42L) }
+        it("should be 2.us=0.ms") { assertThat(2.us.ms()).isEqualTo(0L) }
+        it("should be 1.ns=0.ms") { assertThat(1.ns.ms()).isEqualTo(0L) }
+    }
+
+    describe("As seconds") {
+        it("should be 2.5.d=2.d") { assertThat(2.5.d.s()).isEqualTo(2 * 24 * 60 * 60L) }
+        it("should be 3.h") { assertThat(3.h.s()).isEqualTo(3 * 60 * 60L) }
+        it("should be 123.m") { assertThat(123.m.s()).isEqualTo(123 * 60L) }
+        it("should be 42.s") { assertThat(42.s.s()).isEqualTo(42L) }
+        it("should be 42.ms=0.s") { assertThat(42.ms.s()).isEqualTo(0L) }
+        it("should be 2.us=0.s") { assertThat(2.us.s()).isEqualTo(0L) }
+        it("should be 1.ns=0.s") { assertThat(1.ns.s()).isEqualTo(0L) }
+    }
+
+    describe("As minutes") {
+        it("should be 2.5.d=2.d") { assertThat(2.5.d.m()).isEqualTo(2 * 24 * 60L) }
+        it("should be 3.h") { assertThat(3.h.m()).isEqualTo(3 * 60L) }
+        it("should be 123.m") { assertThat(123.m.m()).isEqualTo(123L) }
+        it("should be 42.s=0.m") { assertThat(42.s.m()).isEqualTo(0L) }
+        it("should be 42.ms=0.m") { assertThat(42.ms.m()).isEqualTo(0L) }
+        it("should be 2.us=0.m") { assertThat(2.us.m()).isEqualTo(0L) }
+        it("should be 1.ns=0.m") { assertThat(1.ns.m()).isEqualTo(0L) }
+    }
+
+    describe("As hours") {
+        it("should be 2.5.d=2.d") { assertThat(2.5.d.h()).isEqualTo(2 * 24L) }
+        it("should be 3.h") { assertThat(3.h.h()).isEqualTo(3L) }
+        it("should be 123.m=2.h") { assertThat(123.m.h()).isEqualTo(2L) }
+        it("should be 42.s=0.h") { assertThat(42.s.h()).isEqualTo(0L) }
+        it("should be 42.ms=0.h") { assertThat(42.ms.h()).isEqualTo(0L) }
+        it("should be 2.us=0.h") { assertThat(2.us.h()).isEqualTo(0L) }
+        it("should be 1.ns=0.h") { assertThat(1.ns.h()).isEqualTo(0L) }
+    }
+
+    describe("As days") {
+        it("should be 2.5.d=2.d") { assertThat(2.5.d.d()).isEqualTo(2L) }
+        it("should be 3.h=0.d") { assertThat(3.h.d()).isEqualTo(0L) }
+        it("should be 123.m=0.d") { assertThat(123.m.d()).isEqualTo(0L) }
+        it("should be 42.s=0.d") { assertThat(42.s.d()).isEqualTo(0L) }
+        it("should be 42.ms=0.d") { assertThat(42.ms.d()).isEqualTo(0L) }
+        it("should be 2.us=0.d") { assertThat(2.us.d()).isEqualTo(0L) }
+        it("should be 1.ns=0.d") { assertThat(1.ns.d()).isEqualTo(0L) }
+    }
 })
