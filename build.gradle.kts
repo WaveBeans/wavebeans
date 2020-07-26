@@ -100,14 +100,24 @@ publishing {
             artifactId = "http"
         }
         create<MavenPublication>("filesystems.core") {
-            from(subprojects.first { it.name == "core" }.components["java"])
+            from(subprojects.first { it.name == "core" && it.parent?.name == "filesystems" }.components["java"])
             groupId = "io.wavebeans.filesystems"
             artifactId = "core"
         }
         create<MavenPublication>("filesystems.dropbox") {
-            from(subprojects.first { it.name == "dropbox" }.components["java"])
+            from(subprojects.first { it.name == "dropbox" && it.parent?.name == "filesystems" }.components["java"])
             groupId = "io.wavebeans.filesystems"
             artifactId = "dropbox"
+        }
+        create<MavenPublication>("metrics.core") {
+            from(subprojects.first { it.name == "core" && it.parent?.name == "metrics" }.components["java"])
+            groupId = "io.wavebeans.metrics"
+            artifactId = "core"
+        }
+        create<MavenPublication>("metrics.prometheus") {
+            from(subprojects.first { it.name == "prometheus" && it.parent?.name == "metrics" }.components["java"])
+            groupId = "io.wavebeans.metrics"
+            artifactId = "prometheus"
         }
     }
 }
