@@ -103,7 +103,7 @@ class AudioService(internal val tableRegistry: TableRegistry) {
                 when (tableType) {
                     Sample::class -> WavWriter(
                             (table as TimeseriesTableDriver<Sample>).stream(offset ?: 0.s)
-                                    .let { if (limit != null) it.trim(limit.asNanoseconds(), TimeUnit.NANOSECONDS) else it },
+                                    .let { if (limit != null) it.trim(limit.ns(), TimeUnit.NANOSECONDS) else it },
                             bitDepth,
                             sampleRate,
                             1,
@@ -111,7 +111,7 @@ class AudioService(internal val tableRegistry: TableRegistry) {
                     )
                     SampleArray::class -> WavWriterFromSampleArray(
                             (table as TimeseriesTableDriver<SampleArray>).stream(offset ?: 0.s)
-                                    .let { if (limit != null) it.trim(limit.asNanoseconds(), TimeUnit.NANOSECONDS) else it },
+                                    .let { if (limit != null) it.trim(limit.ns(), TimeUnit.NANOSECONDS) else it },
                             bitDepth,
                             sampleRate,
                             1,
