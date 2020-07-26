@@ -27,7 +27,7 @@ abstract class BeanStreamReader(
 
     private val timePerSample = 1e9 / sampleRate
 
-    private var currentOffset = offset.asNanoseconds()
+    private var currentOffset = offset.ns()
 
     override fun read(): Int {
         if (buffer.size > 0) return buffer.remove().toInt()
