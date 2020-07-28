@@ -127,7 +127,7 @@ publishing {
 bintray {
     user = findProperty("bintray.user")?.toString() ?: ""
     key = findProperty("bintray.key")?.toString() ?: ""
-    setPublications("lib", "exe", "http")
+    setPublications("lib", "exe", "http", "proto", "filesystems.core", "filesystems.dropbox", "metrics.core", "metrics.prometheus")
     pkg(delegateClosureOf<com.jfrog.bintray.gradle.BintrayExtension.PackageConfig> {
         repo = "wavebeans"
         name = "wavebeans"
