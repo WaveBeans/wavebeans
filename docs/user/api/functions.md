@@ -7,6 +7,7 @@
 - [Function input and output type](#function-input-and-output-type)
 - [Lambda function](#lambda-function)
 - [Function as class](#function-as-class)
+  - [Extracting parameters](#extracting-parameters)
   - [FnInitParameters](#fninitparameters)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -86,7 +87,7 @@ class ChangeAmplitudeFn(parameters: FnInitParameters)  // there should be at lea
 stream.map(ChangeAmplitudeFn(2.0))
 ```
 
-#### Extracting parameters
+### Extracting parameters
 
 As [FnInitParameters](#fninitparameters) are being used to transfer the function arguments, it is not convenient to use that class every time you need something, so it's better to extract them as a variable or class properties. You always can extract them inside `apply()` method body, though from perfomance perspective it might be expensive in some cases. In this case class properties are preferrable way to do it.
 
