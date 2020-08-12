@@ -13,7 +13,7 @@ This is what is happening schematically, the stream are being read one after ano
 [1, 2, 3, 4] .. [10, 12, 13] -> [1, 2, 3, 4, 10, 12, 13] 
 ```
 
-The inline operator `..` concatenate two streams, you may use them one-by-one as many as you like to concatenate more stream altogether:
+The inline operator `..` concatenate two streams, you may use them one-by-one as many as you like to concatenate more streams altogether:
 
 ```
 // finite streams
