@@ -21,10 +21,12 @@ object PodRegistry {
     private val splittingPodRegistry = mutableMapOf<KType, KFunction<Pod>>()
 
     init {
+        registerPodProxy(typeOf<FiniteStream<*>>(), AnyFiniteStreamPodProxy::class.constructors.first())
         registerPodProxy(typeOf<BeanStream<*>>(), AnyStreamPodProxy::class.constructors.first())
 
         registerMergingPodProxy(typeOf<BeanStream<*>>(), AnyStreamMergingPodProxy::class.constructors.first())
 
+        registerPod(typeOf<FiniteStream<*>>(), AnyFiniteStreamingPod::class.constructors.single { it.parameters.size == 2 })
         registerPod(typeOf<BeanStream<*>>(), AnyStreamingPod::class.constructors.single { it.parameters.size == 2 })
         registerPod(typeOf<StreamOutput<*>>(), AnyStreamOutputPod::class.constructors.first())
 
