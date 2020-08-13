@@ -381,4 +381,49 @@ object OverseerIntegrationSpec : Spek({
         it("should have the same output as local") { assertThat(fileContent).isEqualTo(fileContentLocal) }
 
     }
+
+    describe("Concatenation") {
+        describe("finite..finite") {
+            val file = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
+
+            val stream1 = seqStream().trim(1000)
+            val stream2 = seqStream().trim(1000)
+            val concatenation = (stream1..stream2).toCsv("file://${file.absolutePath}")
+
+            runInParallel(listOf(concatenation), partitions = 2)
+
+            val fileContent = file.readLines()
+
+            it("should have non-empty output") { assertThat(fileContent).size().isGreaterThan(1) }
+
+            runLocally(listOf(concatenation))
+
+            val fileContentLocal = file.readLines()
+            log.info {
+                it("should have the same output as local") { assertThat(fileContent).isEqualTo(fileContentLocal) }
+            }
+        }
+        describe("finite..infinite") {
+            val file = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
+
+            val stream1 = seqStream().trim(1000)
+            val stream2 = seqStream()
+            val concatenation = (stream1..stream2)
+                    .trim(5000)
+                    .toCsv("file://${file.absolutePath}")
+
+            runInParallel(listOf(concatenation), partitions = 2)
+
+            val fileContent = file.readLines()
+
+            it("should have non-empty output") { assertThat(fileContent).size().isGreaterThan(1) }
+
+            runLocally(listOf(concatenation))
+
+            val fileContentLocal = file.readLines()
+            log.info {
+                it("should have the same output as local") { assertThat(fileContent).isEqualTo(fileContentLocal) }
+            }
+        }
+    }
 })

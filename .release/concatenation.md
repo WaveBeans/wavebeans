@@ -1,0 +1,1 @@
+* [ [#82](https://github.com/WaveBeans/wavebeans/issues/82) ] [Concatenation](/docs/user/api/operations/concatenation-operation.md) operation
