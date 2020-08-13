@@ -1,1 +1,0 @@
-* HTTP Service is CORS-enabled
