@@ -33,9 +33,8 @@ This document describe the process of making releases. Some of this position may
 2. Bintray:
     1. Upload new version:
     ```bash
-     ./gradlew bintrayUpload -Pversion=$VERSION -Pbintray.user=$USER -Pbintray.key=$KEY
+     ./gradlew bintrayUpload -Pbintray.user=$USER -Pbintray.key=$KEY
     ```
-    2. Goto bintray.com, choose the wavebeans organization and publish artifacts.
     3. Upload new version of the tool:
         * build locally via `./gradlew :distr:distTar :distr:distZip`
         * on Bintray, select version, then `Actions > Upload Files`. Upload `distr/build/distributions/*.*`
