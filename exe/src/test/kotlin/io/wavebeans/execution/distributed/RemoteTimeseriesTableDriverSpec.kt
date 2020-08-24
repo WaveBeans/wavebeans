@@ -28,7 +28,7 @@ object RemoteTimeseriesTableDriverSpec : Spek({
 
         val facilitator by memoized(SCOPE) {
             Facilitator(
-                    communicatorPort = 5000,
+                    communicatorPort = 50001,
                     threadsNumber = 1,
                     onServerShutdownTimeoutMillis = 100
             )
@@ -44,7 +44,7 @@ object RemoteTimeseriesTableDriverSpec : Spek({
         }
 
 
-        val remoteTableDriver by memoized(SCOPE) { RemoteTimeseriesTableDriver<Sample>(tableName, "127.0.0.1:5000", Sample::class) }
+        val remoteTableDriver by memoized(SCOPE) { RemoteTimeseriesTableDriver<Sample>(tableName, "127.0.0.1:50001", Sample::class) }
 
         it("should not return sample rate if not initialized") {
             assertThat(catch { remoteTableDriver.sampleRate })

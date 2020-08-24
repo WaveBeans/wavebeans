@@ -4,12 +4,14 @@ import io.wavebeans.lib.BeanParams
 import io.wavebeans.lib.BeanStream
 import io.wavebeans.lib.SourceBean
 import io.wavebeans.lib.WaveBeansClassLoader
+import io.wavebeans.lib.stream.FiniteStream
 import kotlinx.serialization.*
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
+import java.util.concurrent.TimeUnit
 import kotlin.reflect.jvm.jvmName
 
-fun <T : Any> List<T>.input(): BeanStream<T> {
+fun <T : Any> List<T>.input(): FiniteStream<T> {
     require(this.isNotEmpty()) { "Input list should not be empty" }
     return ListAsInput(ListAsInputParams(this))
 }
@@ -72,8 +74,10 @@ object ListAsInputParamsSerializer : KSerializer<ListAsInputParams> {
 
 class ListAsInput<T : Any>(
         override val parameters: ListAsInputParams
-) : BeanStream<T>, SourceBean<T> {
+) : FiniteStream<T>, SourceBean<T> {
 
     @Suppress("UNCHECKED_CAST")
     override fun asSequence(sampleRate: Float): Sequence<T> = parameters.list.asSequence().map { it as T }
+
+    override fun length(timeUnit: TimeUnit): Long = 0
 }
