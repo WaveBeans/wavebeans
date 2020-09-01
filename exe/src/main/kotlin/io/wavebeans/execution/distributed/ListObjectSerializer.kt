@@ -1,16 +1,22 @@
 package io.wavebeans.execution.distributed
 
 import io.wavebeans.lib.WaveBeansClassLoader
-import kotlinx.serialization.*
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.encoding.CompositeDecoder
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlin.reflect.jvm.jvmName
 
 object ListObjectSerializer : KSerializer<List<Any>> {
 
     private const val emptyListType = "empty"
 
-    override val descriptor: SerialDescriptor = SerialDescriptor(ListObjectSerializer::class.jvmName) {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(ListObjectSerializer::class.jvmName) {
         element("elementType", String.serializer().descriptor)
         element("elements", ListSerializer(AnySerializer()).descriptor)
     }
@@ -22,7 +28,7 @@ object ListObjectSerializer : KSerializer<List<Any>> {
         @Suppress("UNCHECKED_CAST")
         loop@ while (true) {
             when (val i = dec.decodeElementIndex(descriptor)) {
-                CompositeDecoder.READ_DONE -> break@loop
+                CompositeDecoder.DECODE_DONE -> break@loop
                 0 -> typeRef = dec.decodeStringElement(descriptor, i)
                 1 -> list = if (typeRef != emptyListType) {
                     val type = WaveBeansClassLoader.classForName(typeRef!!).kotlin

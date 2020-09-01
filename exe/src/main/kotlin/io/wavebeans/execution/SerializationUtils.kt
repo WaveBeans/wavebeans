@@ -10,39 +10,42 @@ import io.wavebeans.lib.stream.window.WindowStreamParamsSerializer
 import io.wavebeans.lib.table.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
-import kotlinx.serialization.modules.EmptyModule
-import kotlinx.serialization.modules.SerialModule
-import kotlinx.serialization.modules.SerializersModuleBuilder
+import kotlinx.serialization.modules.*
 
-fun jsonCompact(paramsModule: SerialModule? = null) = Json(context = paramsModule ?: EmptyModule)
-fun jsonPretty(paramsModule: SerialModule? = null) = Json(context = paramsModule
-        ?: EmptyModule, configuration = JsonConfiguration.Stable.copy(prettyPrint = true))
+fun jsonCompact(paramsModule: SerializersModule? = null) = Json {
+    serializersModule = paramsModule ?: EmptySerializersModule
+}
+
+fun jsonPretty(paramsModule: SerializersModule? = null) = Json {
+    serializersModule = paramsModule ?: EmptySerializersModule
+    prettyPrint = true
+}
 
 fun SerializersModuleBuilder.tableQuery() {
     polymorphic(TableQuery::class) {
-        TimeRangeTableQuery::class with TimeRangeTableQuery.serializer()
-        LastIntervalTableQuery::class with LastIntervalTableQuery.serializer()
-        ContinuousReadTableQuery::class with ContinuousReadTableQuery.serializer()
+        subclass(TimeRangeTableQuery::class, TimeRangeTableQuery.serializer())
+        subclass(LastIntervalTableQuery::class, LastIntervalTableQuery.serializer())
+        subclass(ContinuousReadTableQuery::class, ContinuousReadTableQuery.serializer())
     }
 }
 
 fun SerializersModuleBuilder.beanParams() {
     polymorphic(BeanParams::class) {
-        ChangeAmplitudeSampleStreamParams::class with ChangeAmplitudeSampleStreamParams.serializer()
-        SineGeneratedInputParams::class with SineGeneratedInputParams.serializer()
-        NoParams::class with NoParams.serializer()
-        TrimmedFiniteSampleStreamParams::class with TrimmedFiniteSampleStreamParams.serializer()
-        CsvStreamOutputParams::class with CsvWindowStreamOutputParamsSerializer
-        BeanGroupParams::class with BeanGroupParams.serializer()
-        CsvFftStreamOutputParams::class with CsvFftStreamOutputParams.serializer()
-        FftStreamParams::class with FftStreamParams.serializer()
-        WindowStreamParams::class with WindowStreamParamsSerializer
-        ProjectionBeanStreamParams::class with ProjectionBeanStreamParams.serializer()
-        MapStreamParams::class with MapStreamParamsSerializer
-        InputParams::class with InputParamsSerializer
-        FunctionMergedStreamParams::class with FunctionMergedStreamParamsSerializer
-        ListAsInputParams::class with ListAsInputParamsSerializer
-        TableOutputParams::class with TableOutputParamsSerializer
-        TableDriverStreamParams::class with TableDriverStreamParams.serializer()
+        subclass(ChangeAmplitudeSampleStreamParams::class, ChangeAmplitudeSampleStreamParams.serializer())
+        subclass(SineGeneratedInputParams::class, SineGeneratedInputParams.serializer())
+        subclass(NoParams::class, NoParams.serializer())
+        subclass(TrimmedFiniteSampleStreamParams::class, TrimmedFiniteSampleStreamParams.serializer())
+        subclass(CsvStreamOutputParams::class, CsvWindowStreamOutputParamsSerializer)
+        subclass(BeanGroupParams::class, BeanGroupParams.serializer())
+        subclass(CsvFftStreamOutputParams::class, CsvFftStreamOutputParams.serializer())
+        subclass(FftStreamParams::class, FftStreamParams.serializer())
+        subclass(WindowStreamParams::class, WindowStreamParamsSerializer)
+        subclass(ProjectionBeanStreamParams::class, ProjectionBeanStreamParams.serializer())
+        subclass(MapStreamParams::class, MapStreamParamsSerializer)
+        subclass(InputParams::class, InputParamsSerializer)
+        subclass(FunctionMergedStreamParams::class, FunctionMergedStreamParamsSerializer)
+        subclass(ListAsInputParams::class, ListAsInputParamsSerializer)
+        subclass(TableOutputParams::class, TableOutputParamsSerializer)
+        subclass(TableDriverStreamParams::class, TableDriverStreamParams.serializer())
     }
 }

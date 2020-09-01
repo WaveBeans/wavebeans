@@ -2,6 +2,11 @@ package io.wavebeans.lib.io
 
 import io.wavebeans.lib.*
 import kotlinx.serialization.*
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.encoding.CompositeDecoder
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlin.reflect.jvm.jvmName
 
 fun <T : Any> input(generator: (Pair<Long, Float>) -> T?): BeanStream<T> = Input(InputParams(Fn.wrap(generator)))
@@ -9,7 +14,7 @@ fun <T : Any> input(generator: Fn<Pair<Long, Float>, T?>): BeanStream<T> = Input
 
 object InputParamsSerializer : KSerializer<InputParams<*>> {
 
-    override val descriptor: SerialDescriptor = SerialDescriptor(InputParams::class.jvmName) {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(InputParams::class.jvmName) {
         element("generateFn", FnSerializer.descriptor)
     }
 
@@ -19,7 +24,7 @@ object InputParamsSerializer : KSerializer<InputParams<*>> {
         @Suppress("UNCHECKED_CAST")
         loop@ while (true) {
             when (val i = dec.decodeElementIndex(descriptor)) {
-                CompositeDecoder.READ_DONE -> break@loop
+                CompositeDecoder.DECODE_DONE -> break@loop
                 0 -> func = dec.decodeSerializableElement(descriptor, i, FnSerializer) as Fn<Pair<Long, Float>, Any?>
                 else -> throw SerializationException("Unknown index $i")
             }

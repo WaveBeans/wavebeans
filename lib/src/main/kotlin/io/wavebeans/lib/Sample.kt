@@ -46,10 +46,10 @@ inline fun Sample.as24BitInt(): Int {
 }
 
 @Suppress("NOTHING_TO_INLINE")
-inline fun Sample.asShort(): Short = round(this * Short.MAX_VALUE).toShort()
+inline fun Sample.asShort(): Short = round(this * Short.MAX_VALUE).toInt().toShort()
 
 @Suppress("NOTHING_TO_INLINE")
-inline fun Sample.asByte(): Byte = round(this * Byte.MAX_VALUE).toByte()
+inline fun Sample.asByte(): Byte = round(this * Byte.MAX_VALUE).toInt().toByte()
 
 @Suppress("NOTHING_TO_INLINE")
 inline fun Sample.asDouble(): Double = this

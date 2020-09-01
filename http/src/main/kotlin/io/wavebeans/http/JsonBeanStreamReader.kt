@@ -1,13 +1,20 @@
 package io.wavebeans.http
 
-import io.wavebeans.lib.*
+import io.wavebeans.execution.jsonCompact
+import io.wavebeans.lib.BeanStream
+import io.wavebeans.lib.TimeMeasure
+import io.wavebeans.lib.s
 import io.wavebeans.lib.stream.fft.FftSample
 import io.wavebeans.lib.stream.window.Window
-import kotlinx.serialization.*
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializer
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.modules.SerializersModule
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSuperclassOf
@@ -56,7 +63,7 @@ class JsonBeanStreamReader(
 
     @Serializer(forClass = BeanStreamElement::class)
     private object BeanStreamElementSerializer : KSerializer<BeanStreamElement> {
-        override val descriptor: SerialDescriptor = SerialDescriptor(BeanStreamElement::class.jvmName) {
+        override val descriptor: SerialDescriptor = buildClassSerialDescriptor(BeanStreamElement::class.jvmName) {
             element("offset", Long.serializer().descriptor)
             element("value", PlainObjectSerializer.descriptor)
         }
@@ -78,8 +85,7 @@ class JsonBeanStreamReader(
         this.contextual(BeanStreamElement::class, BeanStreamElementSerializer)
     }
 
-    private val json = Json(JsonConfiguration.Stable, paramsModule)
+    private val json = jsonCompact(paramsModule)
 
-    @ImplicitReflectionSerializer
-    override fun stringifyObj(obj: BeanStreamElement): String = json.stringify(obj)
+    override fun stringifyObj(obj: BeanStreamElement): String = json.encodeToString(obj)
 }

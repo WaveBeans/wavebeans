@@ -2,17 +2,18 @@ package io.wavebeans.http
 
 import io.wavebeans.lib.stream.fft.FftSample
 import io.wavebeans.lib.stream.window.Window
-import kotlinx.serialization.Decoder
-import kotlinx.serialization.Encoder
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.SerialDescriptor
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlin.reflect.jvm.jvmName
 
 object WindowSerializer : KSerializer<Window<Any>> {
 
-    override val descriptor: SerialDescriptor = SerialDescriptor(FftSample::class.jvmName) {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(FftSample::class.jvmName) {
         element("size", Int.serializer().descriptor)
         element("step", Int.serializer().descriptor)
         element("elements", PlainObjectSerializer.descriptor)

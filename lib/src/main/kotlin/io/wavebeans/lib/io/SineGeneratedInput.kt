@@ -20,10 +20,9 @@ data class SineGeneratedInputParams(
         /** Amplitude of the sinusoid. 0.0 < a <= 1.0 */
         val amplitude: Double,
         /** Time offset in seconds. */
-        val timeOffset: Double = 0.0/*,
-        */
-        /** Length of the sinusoid, when you read after that moment stream will just return zeros, in seconds *//*
-        val time: Double? = null*/
+        val timeOffset: Double = 0.0,
+        /** Length of the sinusoid, when you read after that moment stream will just return zeros, in seconds */
+        val time: Double? = null
 ) : BeanParams()
 
 class SineGeneratedInput constructor(
@@ -40,16 +39,13 @@ class SineGeneratedInput constructor(
             override fun hasNext(): Boolean = true
 
             override fun next(): Sample {
-//                return if (params.time != null && x >= params.time + params.timeOffset) {
-//                    ZeroSample
-//                } else {
-//                    val r = sampleOf(sineOf(x))
-//                    x += delta
-//                    r
-//                }
-                val r = sampleOf(sineOf(x))
-                x += delta
-                return r
+                return if (params.time != null && x >= params.time + params.timeOffset) {
+                    ZeroSample
+                } else {
+                    val r = sampleOf(sineOf(x))
+                    x += delta
+                    r
+                }
             }
         }.asSequence()
     }

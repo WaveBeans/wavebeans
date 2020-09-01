@@ -1,13 +1,19 @@
 package io.wavebeans.lib.io
 
 import io.wavebeans.lib.BeanParams
-import io.wavebeans.lib.BeanStream
 import io.wavebeans.lib.SourceBean
 import io.wavebeans.lib.WaveBeansClassLoader
 import io.wavebeans.lib.stream.FiniteStream
-import kotlinx.serialization.*
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.encoding.CompositeDecoder
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.serializer
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.jvm.jvmName
 
@@ -28,21 +34,21 @@ object ListAsInputParamsSerializer : KSerializer<ListAsInputParams> {
 
     private class PlainObjectSerializer(val type: String) : KSerializer<Any> {
         override val descriptor: SerialDescriptor
-            get() = SerialDescriptor("Any") {}
+            get() = buildClassSerialDescriptor("Any") {}
 
         override fun deserialize(decoder: Decoder): Any {
-            val s = serializerByTypeToken(WaveBeansClassLoader.classForName(type))
-            return decoder.decode(s)
+            val s = serializer(WaveBeansClassLoader.classForName(type))
+            return decoder.decodeSerializableValue(s)
         }
 
         override fun serialize(encoder: Encoder, value: Any) {
-            val s = serializerByTypeToken(WaveBeansClassLoader.classForName(type))
-            encoder.encode(s, value)
+            val s = serializer(WaveBeansClassLoader.classForName(type))
+            encoder.encodeSerializableValue(s, value)
         }
     }
 
     override val descriptor: SerialDescriptor
-        get() = SerialDescriptor(ListAsInputParams::class.jvmName) {
+        get() = buildClassSerialDescriptor(ListAsInputParams::class.jvmName) {
             element("elementType", String.serializer().descriptor)
             element("elements", ListSerializer(PlainObjectSerializer("shouldn't matter")).descriptor)
         }
@@ -54,7 +60,7 @@ object ListAsInputParamsSerializer : KSerializer<ListAsInputParams> {
         @Suppress("UNCHECKED_CAST")
         loop@ while (true) {
             when (val i = dec.decodeElementIndex(descriptor)) {
-                CompositeDecoder.READ_DONE -> break@loop
+                CompositeDecoder.DECODE_DONE -> break@loop
                 0 -> type = dec.decodeStringElement(descriptor, i)
                 1 -> list = dec.decodeSerializableElement(descriptor, i, ListSerializer(PlainObjectSerializer(type!!)))
                 else -> throw SerializationException("Unknown index $i")

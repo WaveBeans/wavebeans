@@ -1,6 +1,5 @@
 package io.wavebeans.execution.distributed
 
-import assertk.Assert
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
@@ -17,8 +16,6 @@ import io.wavebeans.lib.io.sine
 import io.wavebeans.lib.io.toDevNull
 import io.wavebeans.lib.stream.trim
 import kotlinx.serialization.builtins.ListSerializer
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.modules.SerializersModule
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.lifecycle.CachingMode.SCOPE
@@ -65,7 +62,7 @@ class FacilitatorGrpcServiceSpec : Spek({
                     jobKey,
                     bushKey,
                     44100.0f,
-                    jsonCompact(SerializersModule { beanParams(); tableQuery() }).stringify(ListSerializer(PodRef.serializer()), pods)
+                    jsonCompact(SerializersModule { beanParams(); tableQuery() }).encodeToString(ListSerializer(PodRef.serializer()), pods)
             )
         }
 
@@ -94,7 +91,7 @@ class FacilitatorGrpcServiceSpec : Spek({
 
             fun parsePods(s: String): List<PodRef> =
                     jsonCompact(SerializersModule { beanParams();tableQuery() })
-                            .parse(ListSerializer(PodRef.serializer()), s)
+                            .decodeFromString(ListSerializer(PodRef.serializer()), s)
 
             assertThat(facilitatorApiClient.describeJob(jobKey))
                     .isNotNull()

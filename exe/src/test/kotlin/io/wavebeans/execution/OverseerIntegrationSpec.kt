@@ -40,10 +40,7 @@ object OverseerIntegrationSpec : Spek({
                                 .map { it.get() }
                                 .also {
                                     it
-                                            // compiler failure on 1.4-M2
-                                            //.mapNotNull { it.exception }
-                                            .map { it.exception }
-                                            .filter { it != null }
+                                            .mapNotNull { it.exception }
                                             .map { log.error(it) { "Error during evaluation" }; it }
                                             .firstOrNull()
                                             ?.let { throw it }
@@ -67,10 +64,7 @@ object OverseerIntegrationSpec : Spek({
                                 .map { it.get() }
                                 .also {
                                     it
-                                            // compiler failure on 1.4-M2
-                                            //.mapNotNull { it.exception }
-                                            .map { it.exception }
-                                            .filter { it != null }
+                                            .mapNotNull { it.exception }
                                             .map { log.error(it) { "Error during evaluation" }; it }
                                             .firstOrNull()
                                             ?.let { throw it }

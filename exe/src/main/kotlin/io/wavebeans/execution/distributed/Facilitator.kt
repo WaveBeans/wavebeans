@@ -13,14 +13,10 @@ import io.wavebeans.lib.table.TableRegistry
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.modules.SerializersModule
 import mu.KotlinLogging
-import java.io.*
+import java.io.Closeable
+import java.io.FileOutputStream
+import java.io.InputStream
 import java.util.concurrent.*
-import kotlin.collections.List
-import kotlin.collections.MutableList
-import kotlin.collections.forEach
-import kotlin.collections.joinToString
-import kotlin.collections.map
-import kotlin.collections.toList
 
 data class BushEndpoint(
         val bushKey: BushKey,
@@ -109,7 +105,7 @@ class Facilitator(
         gardener.plantBush(
                 jobKey,
                 request.jobContent.bushKey.toBushKey(),
-                jsonCompact(SerializersModule { tableQuery(); beanParams() }).parse(
+                jsonCompact(SerializersModule { tableQuery(); beanParams() }).decodeFromString(
                         ListSerializer(PodRef.serializer()),
                         request.jobContent.podsAsJson
                 ),
@@ -142,7 +138,7 @@ class Facilitator(
     fun describeJob(jobKey: JobKey): List<io.wavebeans.communicator.JobContent> {
         fun stringify(l: List<PodRef>): String =
                 jsonCompact(SerializersModule { tableQuery(); beanParams() })
-                        .stringify(ListSerializer(PodRef.serializer()), l)
+                        .encodeToString(ListSerializer(PodRef.serializer()), l)
         return gardener.job(jobKey).map {
             io.wavebeans.communicator.JobContent.newBuilder()
                     .setBushKey(it.bushKey.toString())
