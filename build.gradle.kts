@@ -117,12 +117,13 @@ publishing {
 bintray {
     user = findProperty("bintray.user")?.toString() ?: ""
     key = findProperty("bintray.key")?.toString() ?: ""
-    setPublications("lib", "exe", "http")
+    setPublications("lib", "exe", "proto", "http", "filesystems.core", "filesystems.dropbox")
     pkg(delegateClosureOf<com.jfrog.bintray.gradle.BintrayExtension.PackageConfig> {
         repo = "wavebeans"
         name = "wavebeans"
         userOrg = "wavebeans"
         vcsUrl = "https://github.com/WaveBeans/wavebeans"
+        publish = true
         setLicenses("Apache-2.0")
         version(delegateClosureOf<com.jfrog.bintray.gradle.BintrayExtension.VersionConfig> {
             name = project.version.toString()
