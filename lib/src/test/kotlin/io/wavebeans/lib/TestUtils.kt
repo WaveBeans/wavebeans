@@ -17,7 +17,7 @@ import io.wavebeans.lib.math.ComplexNumber
 import io.wavebeans.lib.math.minus
 import io.wavebeans.lib.math.plus
 import io.wavebeans.lib.stream.FiniteInputStream
-import io.wavebeans.lib.stream.ZeroFilling
+import io.wavebeans.lib.stream.AfterFilling
 import io.wavebeans.lib.stream.stream
 import io.wavebeans.lib.stream.window.Window
 import org.spekframework.spek2.dsl.Skip
@@ -79,7 +79,7 @@ fun Iterable<Int>.stream(sampleRate: Float, bitDepth: BitDepth = BitDepth.BIT_8)
                 }
             }.flatten().toList().toByteArray().asInput(sampleRate, bitDepth),
             NoParams()
-    ).stream(ZeroFilling())
+    ).stream(AfterFilling(ZeroSample))
 }
 
 fun ByteArray.asInput(sampleRate: Float, bitDepth: BitDepth = BitDepth.BIT_8): FiniteInput<Sample> =

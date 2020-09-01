@@ -67,7 +67,7 @@ class Facilitator(
     private val startupClasses = startUpClasses()
     private val jobStates = ConcurrentHashMap<JobKey, JobState>()
     private var startedFrom: List<StackTraceElement>? = null
-    private lateinit var communicator: io.grpc.Server
+    private var communicator: io.grpc.Server? = null
 
     fun start(): Facilitator {
         if (startedFrom != null)
@@ -86,7 +86,7 @@ class Facilitator(
                     .addService(MetricGrpcService.instance())
                     .build()
                     .start()
-            log.info { "Communicator on port $communicatorPort started." }
+            log.info { "Communicator on port $it started." }
         }
 
         return this
@@ -213,10 +213,12 @@ class Facilitator(
     }
 
     override fun close() {
-        communicatorPort?.let {
-            if (!communicator.shutdown().awaitTermination(onServerShutdownTimeoutMillis, TimeUnit.MILLISECONDS)) {
-                communicator.shutdownNow()
-            }
+        if (
+                communicator
+                        ?.shutdown()
+                        ?.awaitTermination(onServerShutdownTimeoutMillis, TimeUnit.MILLISECONDS) == false
+        ) {
+            communicator?.shutdownNow()
         }
     }
 
