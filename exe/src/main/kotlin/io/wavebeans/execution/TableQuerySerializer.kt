@@ -12,7 +12,7 @@ object TableQuerySerializer {
 
     private val json = jsonCompact(paramsModule)
 
-    fun deserialize(query: String): TableQuery = json.parse(PolymorphicSerializer(TableQuery::class), query)
+    fun deserialize(query: String): TableQuery = json.decodeFromString(PolymorphicSerializer(TableQuery::class), query)
 
-    fun serialize(query: TableQuery, json: Json = this.json): String = json.stringify(PolymorphicSerializer(TableQuery::class), query)
+    fun serialize(query: TableQuery, json: Json = this.json): String = json.encodeToString(PolymorphicSerializer(TableQuery::class), query)
 }

@@ -2,6 +2,7 @@ package io.wavebeans.execution.distributed
 
 import io.wavebeans.lib.stream.window.Window
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.serializer
 import kotlinx.serialization.serializerByTypeToken
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSuperclassOf
@@ -22,7 +23,7 @@ object SerializableRegistry {
             .map { it.value }
             .firstOrNull()
             ?.let { it as KSerializer<Any> }
-            ?: serializerByTypeToken(type.java)
+            ?: serializer(type.java)
 
     init {
         register(List::class, ListObjectSerializer)

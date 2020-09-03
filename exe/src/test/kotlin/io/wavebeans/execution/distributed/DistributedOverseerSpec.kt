@@ -82,12 +82,15 @@ object DistributedOverseerSpec : Spek({
             }
 
             it("shouldn't throw any exceptions") {
-                val exceptions = distributed.eval(44100.0f).mapNotNull { it.get().exception }
+                val exceptions = distributed.eval(44100.0f)
+                        .mapNotNull { it.get().exception }
+
                 distributed.close()
                 assertThat(exceptions).isEmpty()
             }
             it("shouldn't throw any exceptions") {
-                val exceptions = single.eval(44100.0f).mapNotNull { it.get().exception }
+                val exceptions = single.eval(44100.0f)
+                        .mapNotNull { it.get().exception }
                 single.close()
                 assertThat(exceptions).isEmpty()
             }
@@ -168,7 +171,8 @@ object DistributedOverseerSpec : Spek({
             }
 
             it("should throw exceptions") {
-                val exceptions = distributed.eval(44100.0f).mapNotNull { it.get().exception }
+                val exceptions = distributed.eval(44100.0f)
+                        .mapNotNull { it.get().exception }
                 distributed.close()
                 assertBlock(assertThat(exceptions))
             }

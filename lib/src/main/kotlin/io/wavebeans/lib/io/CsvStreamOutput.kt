@@ -4,6 +4,11 @@ import io.wavebeans.lib.*
 import kotlinx.serialization.*
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.encoding.CompositeDecoder
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import java.net.URI
 import java.nio.charset.Charset
 import kotlin.reflect.jvm.jvmName
@@ -33,7 +38,7 @@ fun <T : Any> BeanStream<T>.toCsv(
 
 object CsvWindowStreamOutputParamsSerializer : KSerializer<CsvStreamOutputParams<*>> {
 
-    override val descriptor: SerialDescriptor = SerialDescriptor(CsvStreamOutputParams::class.jvmName) {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(CsvStreamOutputParams::class.jvmName) {
         element("uri", String.serializer().descriptor)
         element("header", String.serializer().descriptor)
         element("elementSerializer", String.serializer().descriptor)
@@ -48,7 +53,7 @@ object CsvWindowStreamOutputParamsSerializer : KSerializer<CsvStreamOutputParams
         var encoding: String? = null
         loop@ while (true) {
             when (val i = dec.decodeElementIndex(descriptor)) {
-                CompositeDecoder.READ_DONE -> break@loop
+                CompositeDecoder.DECODE_DONE -> break@loop
                 0 -> uri = dec.decodeStringElement(descriptor, i)
                 1 -> header = dec.decodeSerializableElement(descriptor, i, ListSerializer(String.serializer()))
                 2 -> fn = dec.decodeSerializableElement(descriptor, i, FnSerializer)

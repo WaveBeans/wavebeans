@@ -60,7 +60,7 @@ object JsonBeanStreamReaderSpec : Spek({
             assertThat(e)
                     .isNotNull()
                     .all {
-                        message().isNotNull().startsWith("Can't locate argument-less serializer for class")
+                        message().isNotNull().startsWith("Serializer for class 'N' is not found. Mark the class as @Serializable or provide the serializer explicitly.")
                         hasClass(SerializationException::class)
                     }
         }

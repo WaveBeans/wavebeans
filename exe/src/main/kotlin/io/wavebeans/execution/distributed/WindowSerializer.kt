@@ -3,13 +3,18 @@ package io.wavebeans.execution.distributed
 import io.wavebeans.lib.WaveBeansClassLoader
 import io.wavebeans.lib.stream.fft.FftSample
 import io.wavebeans.lib.stream.window.Window
-import kotlinx.serialization.*
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.encoding.CompositeDecoder
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlin.reflect.jvm.jvmName
 
 object WindowOfAnySerializer : KSerializer<Window<Any>> {
 
-    override val descriptor: SerialDescriptor = SerialDescriptor(FftSample::class.jvmName) {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(FftSample::class.jvmName) {
         element("size", Int.serializer().descriptor)
         element("step", Int.serializer().descriptor)
         element("elements", ListObjectSerializer.descriptor)
@@ -25,7 +30,7 @@ object WindowOfAnySerializer : KSerializer<Window<Any>> {
         @Suppress("UNCHECKED_CAST")
         loop@ while (true) {
             when (val i = dec.decodeElementIndex(descriptor)) {
-                CompositeDecoder.READ_DONE -> break@loop
+                CompositeDecoder.DECODE_DONE -> break@loop
                 0 -> size = dec.decodeIntElement(descriptor, i)
                 1 -> step = dec.decodeIntElement(descriptor, i)
                 2 -> elements = dec.decodeSerializableElement(descriptor, i, ListObjectSerializer)

@@ -107,7 +107,7 @@ class Facilitator(
         gardener.plantBush(
                 jobKey,
                 request.jobContent.bushKey.toBushKey(),
-                jsonCompact(SerializersModule { tableQuery(); beanParams() }).parse(
+                jsonCompact(SerializersModule { tableQuery(); beanParams() }).decodeFromString(
                         ListSerializer(PodRef.serializer()),
                         request.jobContent.podsAsJson
                 ),
@@ -140,7 +140,7 @@ class Facilitator(
     fun describeJob(jobKey: JobKey): List<io.wavebeans.communicator.JobContent> {
         fun stringify(l: List<PodRef>): String =
                 jsonCompact(SerializersModule { tableQuery(); beanParams() })
-                        .stringify(ListSerializer(PodRef.serializer()), l)
+                        .encodeToString(ListSerializer(PodRef.serializer()), l)
         return gardener.job(jobKey).map {
             io.wavebeans.communicator.JobContent.newBuilder()
                     .setBushKey(it.bushKey.toString())

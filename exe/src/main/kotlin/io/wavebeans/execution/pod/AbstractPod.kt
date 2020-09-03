@@ -167,7 +167,8 @@ abstract class AbstractPod<T : Any, B : BeanStream<T>>(
                 }
             }
 
-            val elements = (0 until min(buckets, buf.size)).mapNotNull { buf.poll() }
+            val elements = (0 until min(buckets, buf.size))
+                .mapNotNull { buf.poll() }
             log.trace {
                 "Returning [POD=$podKey] iteratorNext?iteratorKey=$iteratorKey&buckets=$buckets " +
                         "[elements.size=${elements.size}]"// + "\n${elements.map { it as SampleArray }.flatMap { it.asList() }}"

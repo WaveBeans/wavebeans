@@ -4,6 +4,10 @@ import io.wavebeans.lib.stream.fft.FftSample
 import kotlinx.serialization.*
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlin.reflect.jvm.jvmName
 
 object FftSampleSerializer : KSerializer<FftSample> {
@@ -12,7 +16,7 @@ object FftSampleSerializer : KSerializer<FftSample> {
     private val phaseSerializer = ListSerializer(Double.serializer())
     private val frequencyDescriptor = ListSerializer(Double.serializer()).descriptor
 
-    override val descriptor: SerialDescriptor = SerialDescriptor(FftSample::class.jvmName) {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(FftSample::class.jvmName) {
         element("index", Long.serializer().descriptor)
         element("binCount", Int.serializer().descriptor)
         element("samplesCount", Int.serializer().descriptor)

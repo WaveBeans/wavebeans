@@ -39,7 +39,8 @@ object OverseerIntegrationSpec : Spek({
                         overseer.eval(sampleRate)
                                 .map { it.get() }
                                 .also {
-                                    it.mapNotNull { it.exception }
+                                    it
+                                            .mapNotNull { it.exception }
                                             .map { log.error(it) { "Error during evaluation" }; it }
                                             .firstOrNull()
                                             ?.let { throw it }
@@ -62,7 +63,8 @@ object OverseerIntegrationSpec : Spek({
                         overseer.eval(sampleRate)
                                 .map { it.get() }
                                 .also {
-                                    it.mapNotNull { it.exception }
+                                    it
+                                            .mapNotNull { it.exception }
                                             .map { log.error(it) { "Error during evaluation" }; it }
                                             .firstOrNull()
                                             ?.let { throw it }

@@ -10,9 +10,8 @@ import io.wavebeans.lib.io.StreamOutput
 import io.wavebeans.lib.table.TableOutput
 import io.wavebeans.lib.table.TableOutputParams
 import kotlinx.serialization.builtins.ListSerializer
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.stringify
 import mu.KotlinLogging
 import java.io.File
 import java.io.FileOutputStream
@@ -48,10 +47,10 @@ class DistributedOverseer(
     private val distribution by lazy {
         distributionPlanner.distribute(topology.buildPods(), facilitatorLocations).also {
             log.info {
-                val json = Json(JsonConfiguration.Stable.copy(prettyPrint = true), TopologySerializer.paramsModule)
+                val json = jsonPretty(TopologySerializer.paramsModule)
                 "Planned the even distribution:\n" +
                         it.entries.joinToString("\n") {
-                            "${it.key} -> ${json.stringify(ListSerializer(PodRef.serializer()), it.value)}"
+                            "${it.key} -> ${json.encodeToString(ListSerializer(PodRef.serializer()), it.value)}"
                         }
             }
         }
@@ -107,7 +106,14 @@ class DistributedOverseer(
             return when {
                 result.all { it.status == DONE || it.status == CANCELLED || it.status == FAILED }
                         && result.any { it.status == FAILED } -> {
-                    log.error { "Errors during job $jobKey execution:\n" + result.mapNotNull { it.exception }.joinToString("\n") }
+                    log.error {
+                        "Errors during job $jobKey execution:\n" + result
+                                // compiler failure on 1.4-M2
+                                //.mapNotNull { it.exception }
+                                .map { it.exception }
+                                .filter { it != null }
+                                .joinToString("\n")
+                    }
                     ExecutionResult.error(
                             result.first { it.status == FAILED }
                                     .exception
@@ -263,7 +269,8 @@ class DistributedOverseer(
                                 jobKey,
                                 bushKey,
                                 sampleRate,
-                                jsonCompact(SerializersModule { beanParams(); tableQuery() }).stringify(ListSerializer(PodRef.serializer()), pods)
+                                jsonCompact(SerializersModule { beanParams(); tableQuery() })
+                                        .encodeToString(ListSerializer(PodRef.serializer()), pods)
                         )
 
                         bushEndpoints += BushEndpoint(bushKey, location, pods.map { it.key })
