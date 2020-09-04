@@ -4,6 +4,8 @@ import io.wavebeans.communicator.MetricApiClient
 import io.wavebeans.metrics.*
 import mu.KotlinLogging
 import java.io.Closeable
+import java.lang.Thread.sleep
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
@@ -26,26 +28,17 @@ abstract class MetricCollector<M : MetricObject<*>, T : Any>(
 
     private val threadGroup = ThreadGroup(this::class.simpleName + "@${refreshIntervalMs}ms")
     private var executor: ScheduledExecutorService? = null
+    private val metricCollectorIds = ConcurrentHashMap<String, Long>()
+
+    @Volatile
     private var isAttached: Boolean = false
+    private val timeseries = TimeseriesList(granularValueInMs, accumulator)
 
     init {
-        if (downstreamCollectors.isNotEmpty()) {
+        if (downstreamCollectors.isNotEmpty() && refreshIntervalMs > 0) {
             executor = Executors.newSingleThreadScheduledExecutor { Thread(threadGroup, it) }
             executor?.scheduleAtFixedRate(
-                    {
-                        val start = System.currentTimeMillis()
-                        if (isAttached) {
-                            try {
-                                mergeWithDownstreamCollectors(System.currentTimeMillis())
-                                log.debug { "Merged $metricObject with downstream on $downstreamCollectors. Took ${System.currentTimeMillis() - start}ms" }
-                            } catch (e: Exception) {
-                                log.warn(e) { "Error merging $metricObject with downstream on $downstreamCollectors. Took ${System.currentTimeMillis() - start}ms" }
-                            }
-                        } else {
-                            log.info { "Attempting attach $metricObject on $downstreamCollectors..." }
-                            if (attachCollector()) isAttached = true
-                        }
-                    },
+                    ::collectFromDownstream,
                     0,
                     refreshIntervalMs,
                     TimeUnit.MILLISECONDS
@@ -53,12 +46,37 @@ abstract class MetricCollector<M : MetricObject<*>, T : Any>(
         }
     }
 
-    private val timeseries = TimeseriesList(granularValueInMs, accumulator)
+    internal fun collectFromDownstream(collectUpToTimestamp: Long = System.currentTimeMillis()) {
+        val start = System.currentTimeMillis()
+        if (isAttached) {
+            try {
+                mergeWithDownstreamCollectors(collectUpToTimestamp)
+                log.debug { "Merged $metricObject with downstream on $downstreamCollectors. Took ${System.currentTimeMillis() - start}ms" }
+            } catch (e: Exception) {
+                log.warn(e) { "Error merging $metricObject with downstream on $downstreamCollectors. Took ${System.currentTimeMillis() - start}ms" }
+            }
+        } else {
+            log.info { "Attempting attach $metricObject on $downstreamCollectors..." }
+            if (attachCollector()) isAttached = true
+        }
+    }
+
+    fun awaitAttached(timeout: Long = 1000): Boolean {
+        val start = System.currentTimeMillis()
+        while (!this.isAttached) {
+            if (System.currentTimeMillis() - start < timeout)
+                sleep(0)
+            else
+                return false
+        }
+        return true
+    }
+
+    fun isAttached(): Boolean = isAttached
 
     override fun increment(metricObject: CounterMetricObject, delta: Double) {
         if (metricObject.isLike(this.metricObject)) {
-            val r = timeseries.append(delta as T)
-            log.debug { "$metricObject increment delta=$delta: $r, ${timeseries.valuesCopy()}" }
+            timeseries.append(delta as T)
         }
     }
 
@@ -100,36 +118,38 @@ abstract class MetricCollector<M : MetricObject<*>, T : Any>(
                 merge(
                         metricApiClient.collectValues<M, T>(
                                 collectUpToTimestamp,
-                                metricObject.type,
-                                metricObject.name,
-                                metricObject.component,
-                                metricObject.tags
+                                metricCollectorIds.getValue(location)
                         ).map { deserialize(it.serializedValue) at it.timestamp }
                 )
             }
         }
     }
 
-    private fun attachCollector(): Boolean {
+    fun attachCollector(): Boolean {
         return downstreamCollectors.all { location ->
-            MetricApiClient(location).use { metricApiClient ->
-                try {
-                    metricApiClient.attachCollector(
-                            this::class.jvmName,
-                            emptyList(),
-                            metricObject.type,
-                            metricObject.name,
-                            metricObject.component,
-                            metricObject.tags,
-                            refreshIntervalMs,
-                            granularValueInMs
-                    )
-                    log.info { "Attached to collector of $metricObject on $location" }
-                    true
-                } catch (e: Exception) {
-                    log.info(e) { "Can't attach collector of $metricObject on $location" }
-                    false
+            if (!metricCollectorIds.containsKey(location)) {
+                MetricApiClient(location).use { metricApiClient ->
+                    try {
+                        val collectorId = metricApiClient.attachCollector(
+                                this::class.jvmName,
+                                emptyList(),
+                                metricObject.type,
+                                metricObject.name,
+                                metricObject.component,
+                                metricObject.tags,
+                                refreshIntervalMs,
+                                granularValueInMs
+                        )
+                        metricCollectorIds[location] = collectorId
+                        log.info { "Attached to collector of $metricObject on $location under id $collectorId" }
+                        true
+                    } catch (e: Exception) {
+                        log.info(e) { "Can't attach collector of $metricObject on $location" }
+                        false
+                    }
                 }
+            } else {
+                true
             }
         }
     }

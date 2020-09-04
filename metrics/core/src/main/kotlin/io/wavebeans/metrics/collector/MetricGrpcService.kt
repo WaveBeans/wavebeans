@@ -8,9 +8,10 @@ import io.wavebeans.communicator.single
 import io.wavebeans.metrics.MetricObject
 import io.wavebeans.metrics.MetricService
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.random.Random
 
 class MetricGrpcService(
-        internal val collectors: MutableMap<Pair<String, String>, MetricCollector<*, Any>>
+        internal val collectors: MutableMap<Long, MetricCollector<*, Any>>
 ) : MetricApiGrpc.MetricApiImplBase() {
 
     companion object {
@@ -23,7 +24,7 @@ class MetricGrpcService(
     ) {
         responseObserver.sequence("MetricGrpcService.collectValues", request) {
 
-            collectors[request.metricObject.component to request.metricObject.name]
+            collectors[request.collectorId]
                     ?.let { collector ->
                         collector.collectValues(request.collectUpToTimestamp)
                                 .asSequence()
@@ -59,19 +60,24 @@ class MetricGrpcService(
                     granularValueInMs
             )
 
-            attachCollector(collector)
+            val collectorId = attachCollector(collector)
             MetricService.registerConnector(collector)
 
-            MetricApiOuterClass.AttachCollectorResponse.getDefaultInstance()
+            MetricApiOuterClass.AttachCollectorResponse.newBuilder()
+                    .setCollectorId(collectorId)
+                    .build()
         }
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun attachCollector(collector: MetricCollector<*, *>): MetricGrpcService {
-        collectors.putIfAbsent(
-                collector.metricObject.component to collector.metricObject.name,
-                collector as MetricCollector<*, Any>
-        )
-        return this
+    private fun attachCollector(collector: MetricCollector<*, *>): Long {
+        var id = 0L
+        val maxAttempts = 100
+        for (attempt in 1..maxAttempts) {
+            id = Random.nextLong()
+            if (collectors.putIfAbsent(id, collector as MetricCollector<*, Any>) == null) break
+            if (attempt == maxAttempts) throw IllegalStateException("Can't register collector within $maxAttempts attempts")
+        }
+        return id
     }
 }

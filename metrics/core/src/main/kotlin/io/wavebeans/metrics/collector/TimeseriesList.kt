@@ -53,7 +53,6 @@ class TimeseriesList<T : Any>(
         }
     }
 
-    val log = KotlinLogging.logger { }
     @Synchronized
     fun removeAllBefore(before: Long): List<TimedValue<T>> {
         val i = timeseries.iterator()
@@ -63,7 +62,6 @@ class TimeseriesList<T : Any>(
             if (e.timestamp < before) {
                 i.remove()
                 removedValues += e
-                log.info { "Removing closed interval: $e" }
             } else {
                 break // the timestamp is growing only, may cancel the loop
             }
@@ -71,11 +69,9 @@ class TimeseriesList<T : Any>(
         if (lastValueTimestamp < before && lastValue != null) {
             val e = TimedValue(lastValueTimestamp, lastValue!!)
             removedValues += e
-            log.info { "Removing opened interval: $e" }
             lastValueTimestamp = -1
             lastValue = null
         }
-        log.info { "Removal ended: lastValueTimestamp < before=${lastValueTimestamp < before}, lastValue=$lastValue" }
         return removedValues
     }
 

@@ -13,21 +13,11 @@ class MetricApiClient(
 
     fun <M, T> collectValues(
             collectUpToTimestamp: Long,
-            type: String,
-            name: String,
-            component: String,
-            tags: Map<String, String>
+            collectorId: Long
     ): Sequence<MetricApiOuterClass.TimedValue> {
         return blockingClient.collectValues(MetricApiOuterClass.CollectValuesRequest.newBuilder()
                 .setCollectUpToTimestamp(collectUpToTimestamp)
-                .setMetricObject(
-                        MetricApiOuterClass.MetricObject.newBuilder()
-                                .setType(type)
-                                .setName(name)
-                                .setComponent(component)
-                                .putAllTags(tags)
-                                .build()
-                )
+                .setCollectorId(collectorId)
                 .build()
         ).asSequence()
     }
@@ -41,8 +31,8 @@ class MetricApiClient(
             tags: Map<String, String>,
             refreshIntervalMs: Long,
             granularValueInMs: Long
-    ) {
-        blockingClient.attachCollector(MetricApiOuterClass.AttachCollectorRequest.newBuilder()
+    ): Long {
+        return blockingClient.attachCollector(MetricApiOuterClass.AttachCollectorRequest.newBuilder()
                 .setCollectorClass(collectorClass)
                 .setMetricObject(
                         MetricApiOuterClass.MetricObject.newBuilder()
@@ -56,5 +46,6 @@ class MetricApiClient(
                 .setRefreshIntervalMs(refreshIntervalMs)
                 .setGranularValueInMs(granularValueInMs)
                 .build())
+                .collectorId
     }
 }

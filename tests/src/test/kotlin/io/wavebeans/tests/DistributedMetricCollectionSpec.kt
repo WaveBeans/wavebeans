@@ -19,7 +19,6 @@ object DistributedMetricCollectionSpec : Spek({
 
     val facilitatorPorts = listOf(40001, 40002)
 
-    val log = KotlinLogging.logger {}
     val facilitatorsLocations = facilitatorPorts.map { "127.0.0.1:$it" }
 
     val pool by memoized(CachingMode.SCOPE) { Executors.newCachedThreadPool() }
@@ -86,6 +85,39 @@ object DistributedMetricCollectionSpec : Spek({
 
             assertThat(collector.collectValues(Long.MAX_VALUE).sumBy { it.value.toInt() }).isEqualTo(44100)
             collector.close()
+        }
+
+        it("should collect processed samples count for two collectors") {
+            val collector1 = samplesProcessedOnOutputMetric.collector(
+                    facilitatorsLocations,
+                    refreshIntervalMs = 10,
+                    granularValueInMs = 100
+            )
+            val collector2 = samplesProcessedOnOutputMetric.collector(
+                    facilitatorsLocations,
+                    refreshIntervalMs = 10,
+                    granularValueInMs = 1000
+            )
+
+            val outputs = listOf(440.sine().trim(1000).toDevNull())
+
+            val overseer = DistributedOverseer(
+                    outputs,
+                    facilitatorsLocations,
+                    emptyList(),
+                    1
+            )
+
+            val exceptions = overseer.eval(44100.0f)
+                    .mapNotNull { it.get().exception }
+
+            overseer.close()
+            assertThat(exceptions).isEmpty()
+
+            assertThat(collector1.collectValues(Long.MAX_VALUE).sumBy { it.value.toInt() }).isEqualTo(44100)
+            assertThat(collector2.collectValues(Long.MAX_VALUE).sumBy { it.value.toInt() }).isEqualTo(44100)
+            collector1.close()
+            collector2.close()
         }
     }
 })

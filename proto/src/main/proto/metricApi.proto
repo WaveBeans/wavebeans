@@ -9,7 +9,7 @@ service MetricApi {
 
 message CollectValuesRequest {
   int64 collectUpToTimestamp = 1;
-  MetricObject metricObject = 2;
+  int64 collectorId = 2;
 }
 
 message MetricObject {
@@ -25,12 +25,13 @@ message TimedValue {
 }
 
 message AttachCollectorRequest {
-  MetricObject metricObject = 1;
-  string collectorClass = 2;
-  repeated string downstreamCollectors = 3;
-  int64 refreshIntervalMs = 4;
-  int64 granularValueInMs = 5;
+  MetricObject metricObject = 2;
+  string collectorClass = 3;
+  repeated string downstreamCollectors = 4;
+  int64 refreshIntervalMs = 5;
+  int64 granularValueInMs = 6;
 }
 
 message AttachCollectorResponse {
+  int64 collectorId = 1;
 }
