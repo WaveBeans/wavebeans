@@ -1,12 +1,17 @@
 package io.wavebeans.lib.io
 
 import io.wavebeans.lib.BeanStream
+import io.wavebeans.metrics.outputClass
+import io.wavebeans.metrics.samplesProcessedOnOutputMetric
 import mu.KotlinLogging
+import kotlin.reflect.KClass
+import kotlin.reflect.jvm.jvmName
 
 abstract class AbstractWriter<T : Any>(
         val stream: BeanStream<T>,
         val sampleRate: Float,
-        val writerDelegate: WriterDelegate
+        val writerDelegate: WriterDelegate,
+        outputClazz: KClass<*>
 ) : Writer {
 
     companion object {
@@ -17,6 +22,8 @@ abstract class AbstractWriter<T : Any>(
         writerDelegate.headerFn = ::header
         writerDelegate.footerFn = ::footer
     }
+
+    private val samplesCounter = samplesProcessedOnOutputMetric.withTags(outputClass to outputClazz.jvmName)
 
     protected abstract fun header(): ByteArray?
 

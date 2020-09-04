@@ -1,11 +1,14 @@
 package io.wavebeans.metrics
 
+import kotlin.reflect.jvm.jvmName
+
 data class TimeMetricObject(
         override val component: String,
         override val name: String,
         override val description: String,
         override val possibleTags: List<String>,
-        override val tags: Map<String, String> = emptyMap()
+        override val tags: Map<String, String> = emptyMap(),
+        override val type: String = TimeMetricObject::class.jvmName
 ) : MetricObject<TimeMetricObject> {
 
     override fun withTags(vararg newTags: Pair<String, String>): TimeMetricObject = TimeMetricObject(component, name, description, possibleTags, tags + newTags)

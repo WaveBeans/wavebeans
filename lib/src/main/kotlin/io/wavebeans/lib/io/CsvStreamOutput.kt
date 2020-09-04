@@ -1,6 +1,8 @@
 package io.wavebeans.lib.io
 
 import io.wavebeans.lib.*
+import io.wavebeans.metrics.outputClass
+import io.wavebeans.metrics.samplesProcessedOnOutputMetric
 import kotlinx.serialization.*
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
@@ -93,7 +95,7 @@ class CsvStreamOutput<T : Any>(
         var offset = 0L
         val charset = Charset.forName(parameters.encoding)
         val writer = FileWriterDelegate(URI(parameters.uri))
-        return object : AbstractWriter<T>(input, sampleRate, writer) {
+        return object : AbstractWriter<T>(input, sampleRate, writer, this::class) {
 
             override fun header(): ByteArray? = (parameters.header.joinToString(",") + "\n").toByteArray(charset)
 

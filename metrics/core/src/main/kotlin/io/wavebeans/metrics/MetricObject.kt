@@ -1,14 +1,29 @@
 package io.wavebeans.metrics
 
-interface MetricObject<M: Any> {
+import io.wavebeans.communicator.MetricApiOuterClass
+import kotlin.reflect.jvm.jvmName
+
+interface MetricObject<M : Any> {
 
     companion object {
+        fun of(protoMetricObject: MetricApiOuterClass.MetricObject): MetricObject<*> {
+            // TODO replace with smarter way via reflection
+            return when (protoMetricObject.type) {
+                CounterMetricObject::class.jvmName -> counter(protoMetricObject.component, protoMetricObject.name, "not needed here")
+                GaugeMetricObject::class.jvmName -> gauge(protoMetricObject.component, protoMetricObject.name, "not needed here")
+                TimeMetricObject::class.jvmName -> time(protoMetricObject.component, protoMetricObject.name, "not needed here")
+                else -> throw UnsupportedOperationException("${protoMetricObject.type} is not supported")
+            }
+        }
+
         fun counter(component: String, name: String, description: String, vararg possibleTags: String): CounterMetricObject {
             return CounterMetricObject(component, name, description, possibleTags.toList())
         }
+
         fun gauge(component: String, name: String, description: String, vararg possibleTags: String): GaugeMetricObject {
             return GaugeMetricObject(component, name, description, possibleTags.toList())
         }
+
         fun time(component: String, name: String, description: String, vararg possibleTags: String): TimeMetricObject {
             return TimeMetricObject(component, name, description, possibleTags.toList())
         }
@@ -38,6 +53,11 @@ interface MetricObject<M: Any> {
      * The tags of the metrics
      */
     val tags: Map<String, String>
+
+    /**
+     * Type of the metric object, to differentiate them from each other.
+     */
+    val type: String
 
     /**
      * Creates a copy of [MetricObject] with additional tags.

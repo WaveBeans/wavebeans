@@ -12,15 +12,17 @@ class MetricApiClient(
     }
 
     fun <M, T> collectValues(
-            lastCollectionTimestamp: Long,
+            collectUpToTimestamp: Long,
+            type: String,
             name: String,
             component: String,
             tags: Map<String, String>
     ): Sequence<MetricApiOuterClass.TimedValue> {
         return blockingClient.collectValues(MetricApiOuterClass.CollectValuesRequest.newBuilder()
-                .setLastCollectionTimestamp(lastCollectionTimestamp)
+                .setCollectUpToTimestamp(collectUpToTimestamp)
                 .setMetricObject(
                         MetricApiOuterClass.MetricObject.newBuilder()
+                                .setType(type)
                                 .setName(name)
                                 .setComponent(component)
                                 .putAllTags(tags)
@@ -28,5 +30,31 @@ class MetricApiClient(
                 )
                 .build()
         ).asSequence()
+    }
+
+    fun attachCollector(
+            collectorClass: String,
+            downstreamCollectors: List<String>,
+            type: String,
+            name: String,
+            component: String,
+            tags: Map<String, String>,
+            refreshIntervalMs: Long,
+            granularValueInMs: Long
+    ) {
+        blockingClient.attachCollector(MetricApiOuterClass.AttachCollectorRequest.newBuilder()
+                .setCollectorClass(collectorClass)
+                .setMetricObject(
+                        MetricApiOuterClass.MetricObject.newBuilder()
+                                .setType(type)
+                                .setName(name)
+                                .setComponent(component)
+                                .putAllTags(tags)
+                                .build()
+                )
+                .addAllDownstreamCollectors(downstreamCollectors)
+                .setRefreshIntervalMs(refreshIntervalMs)
+                .setGranularValueInMs(granularValueInMs)
+                .build())
     }
 }

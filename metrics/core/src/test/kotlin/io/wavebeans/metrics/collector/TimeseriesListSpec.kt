@@ -43,6 +43,47 @@ object TimeseriesListSpec : Spek({
             list.leaveOnlyLast(1.min, 1.5.min)
             assertThat(list.inLast(5.min, 2.min)).isNull()
         }
+        it("should remove all before and return it") {
+            assertThat(list.append(1, 10.sec)).isTrue()
+            assertThat(list.append(2, 20.sec)).isTrue()
+            assertThat(list.append(3, 70.sec)).isTrue()
+
+            assertThat(list.removeAllBefore(50.sec)).eachIndexed(1) { pair, index ->
+                when (index) {
+                    0 -> pair.isEqualTo(3 at 0.sec)
+                    else -> fail("Index $index is not expected")
+                }
+            }
+            assertThat(list.inLast(5.min, 2.min)).isEqualTo(3)
+        }
+        it("should remove all before and return it -- before is strict") {
+            assertThat(list.append(1, 10.sec)).isTrue()
+            assertThat(list.append(2, 20.sec)).isTrue()
+            assertThat(list.append(4, 61.sec)).isTrue()
+            assertThat(list.append(5, 70.sec)).isTrue()
+
+            assertThat(list.removeAllBefore(61.sec)).eachIndexed(1) { pair, index ->
+                when (index) {
+                    0 -> pair.isEqualTo(3 at 0.sec)
+                    else -> fail("Index $index is not expected")
+                }
+            }
+            assertThat(list.inLast(5.min, 2.min)).isEqualTo(9)
+        }
+        it("should remove all before and return it -- non-committed only") {
+            assertThat(list.append(1, 10.sec)).isTrue()
+            assertThat(list.append(2, 20.sec)).isTrue()
+            assertThat(list.append(3, 30.sec)).isTrue()
+            assertThat(list.append(4, 40.sec)).isTrue()
+
+            assertThat(list.removeAllBefore(61.sec)).eachIndexed(1) { pair, index ->
+                when (index) {
+                    0 -> pair.isEqualTo(10 at 40.sec)
+                    else -> fail("Index $index is not expected")
+                }
+            }
+            assertThat(list.inLast(5.min, 2.min)).isNull()
+        }
         it("should merge with provided non-empty one") {
             assertThat(list.append(1, 1.min)).isTrue()
             assertThat(list.append(2, 1.5.min)).isTrue()
@@ -97,6 +138,33 @@ object TimeseriesListSpec : Spek({
             assertThat(list.append(3, 3.sec)).isTrue()
             list.leaveOnlyLast(1.min, 1.5.min)
             assertThat(list.inLast(5.min, 2.min)).isNull()
+        }
+        it("should remove all before and return it") {
+            assertThat(list.append(1, 1.sec)).isTrue()
+            assertThat(list.append(2, 2.sec)).isTrue()
+            assertThat(list.append(3, 3.sec)).isTrue()
+
+            assertThat(list.removeAllBefore(2.1.sec)).eachIndexed(2) { pair, index ->
+                when (index) {
+                    0 -> pair.isEqualTo(1 at 1.sec)
+                    1 -> pair.isEqualTo(2 at 2.sec)
+                    else -> fail("Index $index is not expected")
+                }
+            }
+            assertThat(list.inLast(5.min, 2.min)).isEqualTo(3)
+        }
+        it("should remove all before and return it -- before is strict") {
+            assertThat(list.append(1, 1.sec)).isTrue()
+            assertThat(list.append(2, 2.sec)).isTrue()
+            assertThat(list.append(3, 3.sec)).isTrue()
+
+            assertThat(list.removeAllBefore(2.sec)).eachIndexed(1) { pair, index ->
+                when (index) {
+                    0 -> pair.isEqualTo(1 at 1.sec)
+                    else -> fail("Index $index is not expected")
+                }
+            }
+            assertThat(list.inLast(5.min, 2.min)).isEqualTo(5)
         }
         it("should merge with provided non-empty one") {
             assertThat(list.append(1, 1.sec)).isTrue()

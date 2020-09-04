@@ -15,6 +15,7 @@ import io.wavebeans.lib.WaveBeansClassLoader
 import io.wavebeans.lib.io.sine
 import io.wavebeans.lib.io.toDevNull
 import io.wavebeans.lib.stream.trim
+import io.wavebeans.tests.compileCode
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.modules.SerializersModule
 import org.spekframework.spek2.Spek

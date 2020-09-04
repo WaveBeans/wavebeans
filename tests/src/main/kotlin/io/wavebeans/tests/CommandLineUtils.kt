@@ -1,40 +1,6 @@
-package io.wavebeans.execution.distributed
+package io.wavebeans.tests
 
 import java.io.File
-
-fun startFacilitator(port: Int) {
-    val confFile = File.createTempFile("facilitator-config", ".conf").also { it.deleteOnExit() }
-    confFile.writeText("""
-        facilitatorConfig {
-            communicatorPort: $port
-            threadsNumber: 1
-        }
-    """.trimIndent())
-
-    val runner = CommandRunner(
-            javaCmd(),
-            "-cp", System.getProperty("java.class.path"),
-            "io.wavebeans.execution.distributed.FacilitatorCliKt", confFile.absolutePath
-    )
-    val runCall = runner.run()
-
-    if (runCall.exitCode != 0) {
-        throw IllegalStateException("Can't compile the script. \n${String(runCall.output)}")
-    }
-}
-
-fun javaCmd(): String {
-    val java = "java"
-    val javaHome = System.getenv("JAVA_HOME")
-            ?.takeIf { File("$it/$java").exists() }
-            ?: System.getenv("PATH")
-                    .split(":")
-                    .firstOrNull { File("$it/$java").exists() }
-            ?: throw IllegalStateException("$java is not located, make sure it is available via either" +
-                    " PATH or JAVA_HOME environment variable")
-
-    return "$javaHome/$java"
-}
 
 fun compileCode(codeFiles: Map<String, String>): File {
     val jarFile = File(createTempDir("wavebeans-code").also { it.deleteOnExit() }, "code.jar")
@@ -63,4 +29,17 @@ fun compileCode(codeFiles: Map<String, String>): File {
     }
 
     return jarFile
+}
+
+fun javaCmd(): String {
+    val java = "java"
+    val javaHome = System.getenv("JAVA_HOME")
+            ?.takeIf { File("$it/$java").exists() }
+            ?: System.getenv("PATH")
+                    .split(":")
+                    .firstOrNull { File("$it/$java").exists() }
+            ?: throw IllegalStateException("$java is not located, make sure it is available via either" +
+                    " PATH or JAVA_HOME environment variable")
+
+    return "$javaHome/$java"
 }

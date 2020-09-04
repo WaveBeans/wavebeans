@@ -126,7 +126,8 @@ class AudioService(internal val tableRegistry: TableRegistry) {
                             bitDepth,
                             sampleRate,
                             1,
-                            writerDelegate
+                            writerDelegate,
+                            this::class
                     )
                     SampleArray::class -> WavWriterFromSampleArray(
                             (table as TimeseriesTableDriver<SampleArray>).stream(offset ?: 0.s)
@@ -134,7 +135,8 @@ class AudioService(internal val tableRegistry: TableRegistry) {
                             bitDepth,
                             sampleRate,
                             1,
-                            writerDelegate
+                            writerDelegate,
+                            this::class
                     )
                     else -> throw UnsupportedOperationException("Table type $tableType is not supported for audio streaming")
                 }

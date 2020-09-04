@@ -15,6 +15,7 @@ import io.wavebeans.lib.stream.*
 import io.wavebeans.lib.stream.fft.fft
 import io.wavebeans.lib.stream.window.hamming
 import io.wavebeans.lib.stream.window.window
+import io.wavebeans.tests.*
 import kotlinx.serialization.Serializable
 import mu.KotlinLogging
 import org.spekframework.spek2.Spek
@@ -22,7 +23,6 @@ import org.spekframework.spek2.lifecycle.CachingMode.SCOPE
 import org.spekframework.spek2.style.specification.Suite
 import org.spekframework.spek2.style.specification.describe
 import java.io.File
-import java.io.IOException
 import java.lang.Thread.sleep
 import java.util.concurrent.Executors
 import kotlin.math.abs
@@ -38,25 +38,12 @@ object DistributedOverseerSpec : Spek({
         pool.submit { startFacilitator(40001) }
         pool.submit { startFacilitator(40002) }
 
-        facilitatorsLocations.forEach {
-            FacilitatorApiClient(it).use { facilitatorApiClient ->
-                while (true) {
-                    if (facilitatorApiClient.status())
-                        break
-                    // continue trying
-                    sleep(1)
-                }
-            }
-        }
+        facilitatorsLocations.forEach(::waitForFacilitatorToStart)
     }
 
     afterGroup {
         try {
-            facilitatorsLocations.forEach { location ->
-                FacilitatorApiClient(location).use { facilitatorApiClient ->
-                    facilitatorApiClient.terminate()
-                }
-            }
+            facilitatorsLocations.forEach(::terminateFacilitator)
         } finally {
             pool.shutdownNow()
         }

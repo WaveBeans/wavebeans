@@ -42,7 +42,8 @@ class CsvFftStreamOutput(
         return object : AbstractWriter<FftSample>(
                 stream,
                 sampleRate,
-                writer
+                writer,
+                this::class
         ) {
 
             override fun header(): ByteArray? = null

@@ -1,11 +1,14 @@
 package io.wavebeans.metrics
 
+import kotlin.reflect.jvm.jvmName
+
 data class CounterMetricObject(
         override val component: String,
         override val name: String,
         override val description: String,
         override val possibleTags: List<String>,
-        override val tags: Map<String, String> = emptyMap()
+        override val tags: Map<String, String> = emptyMap(),
+        override val type: String = CounterMetricObject::class.jvmName
 ) : MetricObject<CounterMetricObject> {
 
     override fun withTags(vararg newTags: Pair<String, String>): CounterMetricObject = CounterMetricObject(component, name, description, possibleTags, tags + newTags)

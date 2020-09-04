@@ -1,11 +1,14 @@
 package io.wavebeans.metrics
 
+import kotlin.reflect.jvm.jvmName
+
 data class GaugeMetricObject(
         override val component: String,
         override val name: String,
         override val description: String,
         override val possibleTags: List<String>,
-        override val tags: Map<String, String> = emptyMap()
+        override val tags: Map<String, String> = emptyMap(),
+        override val type: String = GaugeMetricObject::class.jvmName
 ) : MetricObject<GaugeMetricObject> {
 
     override fun withTags(vararg newTags: Pair<String, String>): GaugeMetricObject = GaugeMetricObject(component, name, description, possibleTags, tags + newTags)

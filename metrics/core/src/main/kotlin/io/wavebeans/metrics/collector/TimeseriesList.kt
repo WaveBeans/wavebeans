@@ -1,5 +1,7 @@
 package io.wavebeans.metrics.collector
 
+import mu.KotlinLogging
+
 class TimeseriesList<T : Any>(
         private val granularValueInMs: Long = 60000,
         private val accumulator: (T, T) -> T
@@ -51,6 +53,7 @@ class TimeseriesList<T : Any>(
         }
     }
 
+    val log = KotlinLogging.logger { }
     @Synchronized
     fun removeAllBefore(before: Long): List<TimedValue<T>> {
         val i = timeseries.iterator()
@@ -60,15 +63,19 @@ class TimeseriesList<T : Any>(
             if (e.timestamp < before) {
                 i.remove()
                 removedValues += e
+                log.info { "Removing closed interval: $e" }
             } else {
                 break // the timestamp is growing only, may cancel the loop
             }
         }
         if (lastValueTimestamp < before && lastValue != null) {
-            removedValues += TimedValue(lastValueTimestamp, lastValue!!)
+            val e = TimedValue(lastValueTimestamp, lastValue!!)
+            removedValues += e
+            log.info { "Removing opened interval: $e" }
             lastValueTimestamp = -1
             lastValue = null
         }
+        log.info { "Removal ended: lastValueTimestamp < before=${lastValueTimestamp < before}, lastValue=$lastValue" }
         return removedValues
     }
 
@@ -117,5 +124,11 @@ class TimeseriesList<T : Any>(
                 e2 = null
             }
         }
+    }
+
+    @Synchronized
+    fun valuesCopy(): List<TimedValue<T>> {
+        return ArrayList(timeseries) +
+                (lastValue?.let { listOf(TimedValue(lastValueTimestamp, it)) } ?: emptyList())
     }
 }
