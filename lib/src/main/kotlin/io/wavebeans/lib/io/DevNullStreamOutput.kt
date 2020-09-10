@@ -1,7 +1,7 @@
 package io.wavebeans.lib.io
 
 import io.wavebeans.lib.*
-import io.wavebeans.metrics.outputClass
+import io.wavebeans.metrics.clazzTag
 import io.wavebeans.metrics.samplesProcessedOnOutputMetric
 import mu.KotlinLogging
 import kotlin.reflect.jvm.jvmName
@@ -18,7 +18,7 @@ class DevNullStreamOutput<T : Any>(
     }
 
     override fun writer(sampleRate: Float): Writer {
-        val samplesCounter = samplesProcessedOnOutputMetric.withTags(outputClass to this::class.jvmName)
+        val samplesCounter = samplesProcessedOnOutputMetric.withTags(clazzTag to this::class.jvmName)
         val sampleIterator = input.asSequence(sampleRate).iterator()
         var sampleCounter = 0L
         return object : Writer {

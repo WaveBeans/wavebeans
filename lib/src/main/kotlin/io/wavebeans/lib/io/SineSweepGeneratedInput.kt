@@ -4,8 +4,11 @@ import io.wavebeans.lib.BeanParams
 import io.wavebeans.lib.Sample
 import io.wavebeans.lib.SinglePartitionBean
 import io.wavebeans.lib.sampleOf
+import io.wavebeans.metrics.clazzTag
+import io.wavebeans.metrics.samplesProcessedOnInputMetric
 import kotlin.math.abs
 import kotlin.math.cos
+import kotlin.reflect.jvm.jvmName
 
 /**
  * Creates [SineSweepGeneratedInputParams].
@@ -47,6 +50,8 @@ class SineSweepGeneratedInput(
         val params: SineSweepGeneratedInputParams
 ) : StreamInput, SinglePartitionBean {
 
+    private val samplesProcessed = samplesProcessedOnInputMetric.withTags(clazzTag to this::class.jvmName)
+
     override val parameters: BeanParams = params
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> {
@@ -71,7 +76,7 @@ class SineSweepGeneratedInput(
                         transitionCounter += step
                     }
                 }
-
+                samplesProcessed.increment()
                 return r
             }
         }.asSequence()

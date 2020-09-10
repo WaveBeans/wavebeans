@@ -1,7 +1,7 @@
 package io.wavebeans.lib.io
 
 import io.wavebeans.lib.BeanStream
-import io.wavebeans.metrics.outputClass
+import io.wavebeans.metrics.clazzTag
 import io.wavebeans.metrics.samplesProcessedOnOutputMetric
 import mu.KotlinLogging
 import kotlin.reflect.KClass
@@ -23,7 +23,7 @@ abstract class AbstractWriter<T : Any>(
         writerDelegate.footerFn = ::footer
     }
 
-    private val samplesCounter = samplesProcessedOnOutputMetric.withTags(outputClass to outputClazz.jvmName)
+    private val samplesCounter = samplesProcessedOnOutputMetric.withTags(clazzTag to outputClazz.jvmName)
 
     protected abstract fun header(): ByteArray?
 
@@ -35,6 +35,7 @@ abstract class AbstractWriter<T : Any>(
         return if (sampleIterator.hasNext()) {
             val bytes = serialize(sampleIterator.next())
             writerDelegate.write(bytes, 0, bytes.size)
+            samplesCounter.increment()
             true
         } else {
             log.debug { "[$this] The stream is over" }

@@ -1,8 +1,11 @@
 package io.wavebeans.lib.io
 
 import io.wavebeans.lib.*
+import io.wavebeans.metrics.clazzTag
+import io.wavebeans.metrics.samplesProcessedOnInputMetric
 import kotlinx.serialization.Serializable
 import kotlin.math.cos
+import kotlin.reflect.jvm.jvmName
 
 fun Number.sine(
         /** Amplitude of the resulted sine, by default 1.0 */
@@ -28,6 +31,9 @@ data class SineGeneratedInputParams(
 class SineGeneratedInput constructor(
         val params: SineGeneratedInputParams
 ) : StreamInput, SinglePartitionBean {
+
+    private val samplesProcessed = samplesProcessedOnInputMetric.withTags(clazzTag to this::class.jvmName)
+
     override val parameters: BeanParams = params
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> {
@@ -45,7 +51,7 @@ class SineGeneratedInput constructor(
                     val r = sampleOf(sineOf(x))
                     x += delta
                     r
-                }
+                }.also { samplesProcessed.increment() }
             }
         }.asSequence()
     }

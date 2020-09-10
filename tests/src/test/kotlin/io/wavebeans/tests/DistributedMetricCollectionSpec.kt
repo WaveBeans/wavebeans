@@ -4,16 +4,17 @@ import assertk.assertThat
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import io.wavebeans.execution.distributed.DistributedOverseer
-import io.wavebeans.lib.io.sine
-import io.wavebeans.lib.io.toDevNull
+import io.wavebeans.lib.io.*
 import io.wavebeans.lib.stream.trim
 import io.wavebeans.metrics.collector.collector
+import io.wavebeans.metrics.clazzTag
 import io.wavebeans.metrics.samplesProcessedOnOutputMetric
-import mu.KotlinLogging
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.lifecycle.CachingMode
 import org.spekframework.spek2.style.specification.describe
+import java.io.File
 import java.util.concurrent.Executors
+import kotlin.reflect.jvm.jvmName
 
 object DistributedMetricCollectionSpec : Spek({
 
@@ -87,7 +88,7 @@ object DistributedMetricCollectionSpec : Spek({
             collector.close()
         }
 
-        it("should collect processed samples count for two collectors") {
+        it("should collect processed samples count for both collectors") {
             val collector1 = samplesProcessedOnOutputMetric.collector(
                     facilitatorsLocations,
                     refreshIntervalMs = 10,
@@ -116,6 +117,46 @@ object DistributedMetricCollectionSpec : Spek({
 
             assertThat(collector1.collectValues(Long.MAX_VALUE).sumBy { it.value.toInt() }).isEqualTo(44100)
             assertThat(collector2.collectValues(Long.MAX_VALUE).sumBy { it.value.toInt() }).isEqualTo(44100)
+            collector1.close()
+            collector2.close()
+        }
+
+        it("should respect tags") {
+            val collector1 = samplesProcessedOnOutputMetric
+                    .withTags(clazzTag to DevNullStreamOutput::class.jvmName)
+                    .collector(
+                            facilitatorsLocations,
+                            refreshIntervalMs = 10,
+                            granularValueInMs = 100
+                    )
+            val collector2 = samplesProcessedOnOutputMetric
+                    .withTags(clazzTag to CsvStreamOutput::class.jvmName)
+                    .collector(
+                            facilitatorsLocations,
+                            refreshIntervalMs = 10,
+                            granularValueInMs = 100
+                    )
+
+            val outputs = listOf(
+                    440.sine().trim(1000).toDevNull(),
+                    42.sine().trim(500).toCsv("file://${File.createTempFile("test", ".csv").absolutePath}")
+            )
+
+            val overseer = DistributedOverseer(
+                    outputs,
+                    facilitatorsLocations,
+                    emptyList(),
+                    1
+            )
+
+            val exceptions = overseer.eval(44100.0f)
+                    .mapNotNull { it.get().exception }
+
+            overseer.close()
+            assertThat(exceptions).isEmpty()
+
+            assertThat(collector1.collectValues(Long.MAX_VALUE).sumBy { it.value.toInt() }).isEqualTo(44100)
+            assertThat(collector2.collectValues(Long.MAX_VALUE).sumBy { it.value.toInt() }).isEqualTo(22050)
             collector1.close()
             collector2.close()
         }

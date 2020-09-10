@@ -12,7 +12,7 @@ fun startFacilitator(port: Int, threadsNumber: Int = 1, customLoggingConfig: Str
         }
     """.trimIndent())
 
-    val logginFile = customLoggingConfig?.let {
+    val loggingFile = customLoggingConfig?.let {
         val logFile = File.createTempFile("log-config", ".xml").also { it.deleteOnExit() }
         logFile.writeText(customLoggingConfig)
         logFile.absolutePath
@@ -21,7 +21,7 @@ fun startFacilitator(port: Int, threadsNumber: Int = 1, customLoggingConfig: Str
     val runner = CommandRunner(
             javaCmd(),
             *((
-                    logginFile?.let { listOf("-Dlogback.configurationFile=$it") } ?: emptyList()) + listOf(
+                    loggingFile?.let { listOf("-Dlogback.configurationFile=$it") } ?: emptyList()) + listOf(
                     "-cp", System.getProperty("java.class.path"),
                     "io.wavebeans.execution.distributed.FacilitatorCliKt", confFile.absolutePath
             )).toTypedArray()

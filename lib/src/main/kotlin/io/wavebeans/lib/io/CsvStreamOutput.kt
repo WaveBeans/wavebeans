@@ -1,8 +1,6 @@
 package io.wavebeans.lib.io
 
 import io.wavebeans.lib.*
-import io.wavebeans.metrics.outputClass
-import io.wavebeans.metrics.samplesProcessedOnOutputMetric
 import kotlinx.serialization.*
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer

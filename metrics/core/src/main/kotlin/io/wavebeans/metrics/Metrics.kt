@@ -5,7 +5,8 @@ const val bitDepthTag = "bitDepth"
 const val formatTag = "format"
 const val limitTag = "limit"
 const val offsetTag = "offset"
-const val outputClass = "outputClass"
+const val clazzTag = "class"
+const val typeTag = "type"
 
 val audioStreamRequestMetric = MetricObject.counter(
         "io.wavebeans.http.audioService.stream",
@@ -30,5 +31,11 @@ val samplesProcessedOnOutputMetric = MetricObject.counter(
         "io.wavebeans.lib.output",
         "samplesProcessed",
         "Counts the number of samples processed by the output",
-        outputClass
+        clazzTag
+)
+val samplesProcessedOnInputMetric = MetricObject.counter(
+        "io.wavebeans.lib.input",
+        "samplesProcessed",
+        "Counts the number of samples processed by the input",
+        clazzTag, typeTag
 )
