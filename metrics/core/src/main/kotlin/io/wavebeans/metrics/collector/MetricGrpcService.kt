@@ -11,11 +11,12 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.random.Random
 
 class MetricGrpcService(
-        internal val collectors: MutableMap<Long, MetricCollector<*, Any>>
+        private val collectors: MutableMap<Long, MetricCollector<Any>>
 ) : MetricApiGrpc.MetricApiImplBase() {
 
     companion object {
         fun instance(): MetricGrpcService = MetricGrpcService(ConcurrentHashMap())
+        private const val maxAttachAttempts = 100
     }
 
     override fun collectValues(
@@ -60,24 +61,17 @@ class MetricGrpcService(
                     granularValueInMs
             )
 
-            val collectorId = attachCollector(collector)
+            var collectorId = 0L
+            for (attempt in 1..maxAttachAttempts) {
+                collectorId = Random.nextLong()
+                if (collectors.putIfAbsent(collectorId, collector) == null) break
+                if (attempt == maxAttachAttempts) throw IllegalStateException("Can't register collector within $maxAttachAttempts attempts")
+            }
             MetricService.registerConnector(collector)
 
             MetricApiOuterClass.AttachCollectorResponse.newBuilder()
                     .setCollectorId(collectorId)
                     .build()
         }
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    private fun attachCollector(collector: MetricCollector<*, *>): Long {
-        var id = 0L
-        val maxAttempts = 100
-        for (attempt in 1..maxAttempts) {
-            id = Random.nextLong()
-            if (collectors.putIfAbsent(id, collector as MetricCollector<*, Any>) == null) break
-            if (attempt == maxAttempts) throw IllegalStateException("Can't register collector within $maxAttempts attempts")
-        }
-        return id
     }
 }

@@ -11,7 +11,7 @@ class MetricApiClient(
         blockingClient = MetricApiGrpc.newBlockingStub(channel)
     }
 
-    fun <M, T> collectValues(
+    fun collectValues(
             collectUpToTimestamp: Long,
             collectorId: Long
     ): Sequence<MetricApiOuterClass.TimedValue> {

@@ -66,7 +66,7 @@ data class ByteArrayLittleEndianInputParams(val sampleRate: Float, val bitDepth:
 
 class ByteArrayLittleEndianInput(val params: ByteArrayLittleEndianInputParams) : FiniteInput<Sample>, SinglePartitionBean {
 
-    private val samplesProcessed = samplesProcessedOnInputMetric.withTags(clazzTag to this::class.jvmName)
+    private val samplesProcessed = samplesProcessedOnInputMetric.withTags(clazzTag to ByteArrayLittleEndianInput::class.jvmName)
 
     override val parameters: BeanParams = params
 

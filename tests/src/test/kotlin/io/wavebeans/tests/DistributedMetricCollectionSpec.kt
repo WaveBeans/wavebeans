@@ -126,20 +126,20 @@ object DistributedMetricCollectionSpec : Spek({
                     .withTags(clazzTag to DevNullStreamOutput::class.jvmName)
                     .collector(
                             facilitatorsLocations,
-                            refreshIntervalMs = 10,
+                            refreshIntervalMs = 100,
                             granularValueInMs = 100
                     )
             val collector2 = samplesProcessedOnOutputMetric
                     .withTags(clazzTag to CsvStreamOutput::class.jvmName)
                     .collector(
                             facilitatorsLocations,
-                            refreshIntervalMs = 10,
-                            granularValueInMs = 100
+                            refreshIntervalMs = 100,
+                            granularValueInMs = 1000
                     )
 
             val outputs = listOf(
                     440.sine().trim(1000).toDevNull(),
-                    42.sine().trim(500).toCsv("file://${File.createTempFile("test", ".csv").absolutePath}")
+                    42.sine().trim(500).toCsv("file://${File.createTempFile("test", ".csv").also { it.deleteOnExit() }.absolutePath}")
             )
 
             val overseer = DistributedOverseer(

@@ -50,7 +50,7 @@ class SineSweepGeneratedInput(
         val params: SineSweepGeneratedInputParams
 ) : StreamInput, SinglePartitionBean {
 
-    private val samplesProcessed = samplesProcessedOnInputMetric.withTags(clazzTag to this::class.jvmName)
+    private val samplesProcessed = samplesProcessedOnInputMetric.withTags(clazzTag to SineSweepGeneratedInput::class.jvmName)
 
     override val parameters: BeanParams = params
 

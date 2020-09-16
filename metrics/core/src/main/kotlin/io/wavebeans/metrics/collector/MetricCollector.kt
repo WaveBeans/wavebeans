@@ -12,8 +12,8 @@ import java.util.concurrent.TimeUnit
 import kotlin.reflect.jvm.jvmName
 
 @Suppress("UNCHECKED_CAST")
-abstract class MetricCollector<M : MetricObject<*>, T : Any>(
-        val metricObject: M,
+abstract class MetricCollector<T : Any>(
+        val metricObject: MetricObject<out Any>,
         private val downstreamCollectors: List<String>,
         private val refreshIntervalMs: Long,
         private val granularValueInMs: Long,
@@ -26,7 +26,7 @@ abstract class MetricCollector<M : MetricObject<*>, T : Any>(
         private val log = KotlinLogging.logger { }
     }
 
-    private val threadGroup = ThreadGroup(this::class.simpleName + "@${refreshIntervalMs}ms")
+    private val threadGroup = ThreadGroup(MetricCollector::class.simpleName + "@${refreshIntervalMs}ms")
     private var executor: ScheduledExecutorService? = null
     private val metricCollectorIds = ConcurrentHashMap<String, Long>()
 
@@ -51,13 +51,18 @@ abstract class MetricCollector<M : MetricObject<*>, T : Any>(
         if (isAttached) {
             try {
                 mergeWithDownstreamCollectors(collectUpToTimestamp)
-                log.debug { "Merged $metricObject with downstream on $downstreamCollectors. Took ${System.currentTimeMillis() - start}ms" }
+                log.trace { "Merged $metricObject with downstream on $downstreamCollectors. Took ${System.currentTimeMillis() - start}ms" }
             } catch (e: Exception) {
                 log.warn(e) { "Error merging $metricObject with downstream on $downstreamCollectors. Took ${System.currentTimeMillis() - start}ms" }
             }
         } else {
-            log.info { "Attempting attach $metricObject on $downstreamCollectors..." }
-            if (attachCollector()) isAttached = true
+            log.info { "Attempting attach $metricObject to $downstreamCollectors..." }
+            if (attachCollector()) {
+                isAttached = true
+                log.info { "Attached $metricObject to $downstreamCollectors" }
+            } else {
+                log.info { "Couldn't attach $metricObject to $downstreamCollectors" }
+            }
         }
     }
 
@@ -75,31 +80,31 @@ abstract class MetricCollector<M : MetricObject<*>, T : Any>(
     fun isAttached(): Boolean = isAttached
 
     override fun increment(metricObject: CounterMetricObject, delta: Double) {
-        if (metricObject.isLike(this.metricObject)) {
+        if (this.metricObject.isSuperOf(metricObject)) {
             timeseries.append(delta as T)
         }
     }
 
     override fun decrement(metricObject: CounterMetricObject, delta: Double) {
-        if (metricObject.isLike(this.metricObject)) {
+        if (this.metricObject.isSuperOf(metricObject)) {
             timeseries.append(-delta as T)
         }
     }
 
     override fun gauge(metricObject: GaugeMetricObject, value: Double) {
-        if (metricObject.isLike(this.metricObject)) {
+        if (this.metricObject.isSuperOf(metricObject)) {
             timeseries.append(GaugeAccumulator(true, value) as T)
         }
     }
 
     override fun gaugeDelta(metricObject: GaugeMetricObject, delta: Double) {
-        if (metricObject.isLike(this.metricObject)) {
+        if (this.metricObject.isSuperOf(metricObject)) {
             timeseries.append(GaugeAccumulator(false, delta) as T)
         }
     }
 
     override fun time(metricObject: TimeMetricObject, valueInMs: Long) {
-        if (metricObject.isLike(this.metricObject)) {
+        if (this.metricObject.isSuperOf(metricObject)) {
             timeseries.append(TimeAccumulator(1, valueInMs) as T)
         }
     }
@@ -116,7 +121,7 @@ abstract class MetricCollector<M : MetricObject<*>, T : Any>(
         downstreamCollectors.forEach { location ->
             MetricApiClient(location).use { metricApiClient ->
                 merge(
-                        metricApiClient.collectValues<M, T>(
+                        metricApiClient.collectValues(
                                 collectUpToTimestamp,
                                 metricCollectorIds.getValue(location)
                         ).map { deserialize(it.serializedValue) at it.timestamp }
@@ -162,6 +167,12 @@ abstract class MetricCollector<M : MetricObject<*>, T : Any>(
             }
         }
     }
+
+    override fun toString(): String {
+        return "MetricCollector(metricObject=$metricObject, downstreamCollectors=$downstreamCollectors, refreshIntervalMs=$refreshIntervalMs, granularValueInMs=$granularValueInMs)"
+    }
+
+
 }
 
 

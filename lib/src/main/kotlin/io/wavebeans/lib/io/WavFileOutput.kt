@@ -42,7 +42,7 @@ class WavFileOutput(
     override val parameters: BeanParams = params
 
     override fun writer(sampleRate: Float): Writer =
-            WavWriter(stream, params.bitDepth, sampleRate, params.numberOfChannels, FileWriterDelegate(URI(params.uri)), this::class)
+            WavWriter(stream, params.bitDepth, sampleRate, params.numberOfChannels, FileWriterDelegate(URI(params.uri)), WavFileOutput::class)
 
 }
 

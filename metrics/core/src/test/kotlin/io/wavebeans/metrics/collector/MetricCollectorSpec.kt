@@ -1,5 +1,6 @@
 package io.wavebeans.metrics.collector
 
+import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
 import assertk.fail
@@ -21,27 +22,102 @@ object MetricCollectorSpec : Spek({
             val counter by memoized(TEST) { MetricObject.counter("component", "count", "") }
 
             val counterMetricCollector by memoized(TEST) { counter.collector(granularValueInMs = 0) }
+            val counterMetricCollectorWithTag by memoized(TEST) { counter.withTags("tag" to "value").collector(granularValueInMs = 0) }
 
             beforeEachTest {
                 MetricService.reset()
                 MetricService.registerConnector(counterMetricCollector)
+                MetricService.registerConnector(counterMetricCollectorWithTag)
             }
 
             it("should return 2 incremented values on collect") {
                 counter.increment()
+                counter.withTags("some-tag" to "some-value").increment()
+
+                val counterValues = counterMetricCollector.collectValues(System.currentTimeMillis() + 100)
+                assertThat(counterValues).all {
+                    size().isEqualTo(2)
+                    each { it.prop("value") { it.value }.isCloseTo(1.0, 1e-14) }
+                }
+                val counterValuesWithTag = counterMetricCollectorWithTag.collectValues(System.currentTimeMillis() + 100)
+                assertThat(counterValuesWithTag).isEmpty()
+            }
+
+            it("should return 2 incremented values on collect for counter with tag") {
+                counter.withTags("tag" to "value").increment()
+                counter.withTags("tag" to "value", "some-tag" to "some-value").increment()
+
+                val counterValuesWithTag = counterMetricCollectorWithTag.collectValues(System.currentTimeMillis() + 100)
+                assertThat(counterValuesWithTag).all {
+                    size().isEqualTo(2)
+                    each { it.prop("value") { it.value }.isCloseTo(1.0, 1e-14) }
+                }
+                val counterValues = counterMetricCollector.collectValues(System.currentTimeMillis() + 100)
+                assertThat(counterValues).all {
+                    size().isEqualTo(2)
+                    each { it.prop("value") { it.value }.isCloseTo(1.0, 1e-14) }
+                }
+            }
+
+            it("should return incremented values on collect for each counter") {
+                counter.increment()
                 counter.withTags("tag" to "value").increment()
 
                 val counterValues = counterMetricCollector.collectValues(System.currentTimeMillis() + 100)
-                assertThat(counterValues).each { it.prop("value") { it.value }.isCloseTo(1.0, 1e-14) }
+                assertThat(counterValues).all {
+                    size().isEqualTo(2)
+                    each { it.prop("value") { it.value }.isCloseTo(1.0, 1e-14) }
+                }
+                val counterValuesWithTag = counterMetricCollectorWithTag.collectValues(System.currentTimeMillis() + 100)
+                assertThat(counterValuesWithTag).all {
+                    size().isEqualTo(1)
+                    each { it.prop("value") { it.value }.isCloseTo(1.0, 1e-14) }
+                }
             }
 
             it("should return 2 decremented values on collect") {
                 counter.decrement()
+                counter.withTags("some-tag" to "some-value").decrement()
+
+                val counterValues = counterMetricCollector.collectValues(System.currentTimeMillis() + 100)
+                assertThat(counterValues).all {
+                    size().isEqualTo(2)
+                    each { it.prop("value") { it.value }.isCloseTo(-1.0, 1e-14) }
+                }
+                val counterValuesWithTag = counterMetricCollectorWithTag.collectValues(System.currentTimeMillis() + 100)
+                assertThat(counterValuesWithTag).isEmpty()
+            }
+
+            it("should return 2 decremented values on collect for counter with tag") {
+                counter.withTags("tag" to "value").decrement()
+                counter.withTags("tag" to "value", "some-tag" to "some-value").decrement()
+
+                val counterValuesWithTag = counterMetricCollectorWithTag.collectValues(System.currentTimeMillis() + 100)
+                assertThat(counterValuesWithTag).all {
+                    size().isEqualTo(2)
+                    each { it.prop("value") { it.value }.isCloseTo(-1.0, 1e-14) }
+                }
+                val counterValues = counterMetricCollector.collectValues(System.currentTimeMillis() + 100)
+                assertThat(counterValues).all {
+                    size().isEqualTo(2)
+                    each { it.prop("value") { it.value }.isCloseTo(-1.0, 1e-14) }
+                }
+            }
+
+            it("should return decremented values on collect for each counter") {
+                counter.decrement()
                 counter.withTags("tag" to "value").decrement()
 
-                val values = counterMetricCollector.collectValues(System.currentTimeMillis() + 100)
-
-                assertThat(values).each { it.prop("value") { it.value }.isCloseTo(-1.0, 1e-14) }
+                val counterValues = counterMetricCollector.collectValues(System.currentTimeMillis() + 100)
+                assertThat(counterValues).all {
+                    size().isEqualTo(2)
+                    each { it.prop("value") { it.value }.isCloseTo(-1.0, 1e-14) }
+                }
+                val counterValuesWithTag = counterMetricCollectorWithTag.collectValues(System.currentTimeMillis() + 100)
+                assertThat(counterValuesWithTag).all {
+                    size().isEqualTo(1)
+                    each { it.prop("value") { it.value }.isCloseTo(-1.0, 1e-14) }
+                }
             }
 
             it("should merge with another") {
@@ -71,19 +147,63 @@ object MetricCollectorSpec : Spek({
             val time by memoized(TEST) { MetricObject.time("component", "time", "") }
 
             val timeMetricCollector by memoized(TEST) { time.collector(granularValueInMs = 0) }
+            val timeMetricCollectorWithTag by memoized(TEST) { time.withTags("tag" to "value").collector(granularValueInMs = 0) }
 
             beforeEachTest {
                 MetricService.reset()
                 MetricService.registerConnector(timeMetricCollector)
+                MetricService.registerConnector(timeMetricCollectorWithTag)
             }
 
             it("should measure time twice") {
+                time.time(100)
+                time.withTags("some-tag" to "some-value").time(100)
+
+                val values = timeMetricCollector.collectValues(System.currentTimeMillis() + 100)
+
+                assertThat(values).all {
+                    size().isEqualTo(2)
+                    each { it.prop("value") { it.value }.isEqualTo(TimeAccumulator(1, 100)) }
+                }
+
+                val valuesWithTag = timeMetricCollectorWithTag.collectValues(System.currentTimeMillis() + 100)
+                assertThat(valuesWithTag).isEmpty()
+            }
+
+            it("should measure time twice for counter with tags") {
+                time.withTags("tag" to "value").time(100)
+                time.withTags("tag" to "value", "some-tag" to "some-value").time(100)
+
+                val valuesWithTag = timeMetricCollectorWithTag.collectValues(System.currentTimeMillis() + 100)
+
+                assertThat(valuesWithTag).all {
+                    size().isEqualTo(2)
+                    each { it.prop("value") { it.value }.isEqualTo(TimeAccumulator(1, 100)) }
+                }
+
+                val values = timeMetricCollector.collectValues(System.currentTimeMillis() + 100)
+                assertThat(values).all {
+                    size().isEqualTo(2)
+                    each { it.prop("value") { it.value }.isEqualTo(TimeAccumulator(1, 100)) }
+                }
+            }
+
+            it("should measure time once for counter with tag and twice for tagless") {
                 time.time(100)
                 time.withTags("tag" to "value").time(100)
 
                 val values = timeMetricCollector.collectValues(System.currentTimeMillis() + 100)
 
-                assertThat(values).each { it.prop("value") { it.value }.isEqualTo(TimeAccumulator(1, 100)) }
+                assertThat(values).all {
+                    size().isEqualTo(2)
+                    each { it.prop("value") { it.value }.isEqualTo(TimeAccumulator(1, 100)) }
+                }
+
+                val valuesWithTag = timeMetricCollectorWithTag.collectValues(System.currentTimeMillis() + 100)
+                assertThat(valuesWithTag).all {
+                    size().isEqualTo(1)
+                    each { it.prop("value") { it.value }.isEqualTo(TimeAccumulator(1, 100)) }
+                }
             }
 
             it("should merge with another") {
@@ -113,18 +233,45 @@ object MetricCollectorSpec : Spek({
             val gauge by memoized(TEST) { MetricObject.gauge("component", "gauge", "") }
 
             val gaugeMetricCollector by memoized(TEST) { gauge.collector(granularValueInMs = 0) }
+            val gaugeMetricCollectorWithTag by memoized(TEST) { gauge.withTags("tag" to "value").collector(granularValueInMs = 0) }
 
             beforeEachTest {
                 MetricService.reset()
                 MetricService.registerConnector(gaugeMetricCollector)
+                MetricService.registerConnector(gaugeMetricCollectorWithTag)
             }
 
             it("should set and add delta") {
                 gauge.set(1.0)
-                gauge.withTags("tag" to "value").increment(1.0)
+                gauge.withTags("some-tag" to "some-value").increment(1.0)
 
                 val values = gaugeMetricCollector.collectValues(System.currentTimeMillis() + 100)
+                val valuesWithTag = gaugeMetricCollectorWithTag.collectValues(System.currentTimeMillis() + 100)
 
+                assertThat(values).eachIndexed(2) { timedValue, idx ->
+                    when (idx) {
+                        0 -> timedValue.prop("value") { it.value }.isEqualTo(GaugeAccumulator(true, 1.0))
+                        1 -> timedValue.prop("value") { it.value }.isEqualTo(GaugeAccumulator(false, 1.0))
+                        else -> fail("$idx is not recognized")
+                    }
+                }
+                assertThat(valuesWithTag).isEmpty()
+            }
+
+            it("should set and add delta for counter with tag") {
+                gauge.withTags("tag" to "value").set(1.0)
+                gauge.withTags("tag" to "value", "some-tag" to "some-value").increment(1.0)
+
+                val values = gaugeMetricCollector.collectValues(System.currentTimeMillis() + 100)
+                val valuesWithTag = gaugeMetricCollectorWithTag.collectValues(System.currentTimeMillis() + 100)
+
+                assertThat(valuesWithTag).eachIndexed(2) { timedValue, idx ->
+                    when (idx) {
+                        0 -> timedValue.prop("value") { it.value }.isEqualTo(GaugeAccumulator(true, 1.0))
+                        1 -> timedValue.prop("value") { it.value }.isEqualTo(GaugeAccumulator(false, 1.0))
+                        else -> fail("$idx is not recognized")
+                    }
+                }
                 assertThat(values).eachIndexed(2) { timedValue, idx ->
                     when (idx) {
                         0 -> timedValue.prop("value") { it.value }.isEqualTo(GaugeAccumulator(true, 1.0))
@@ -137,15 +284,25 @@ object MetricCollectorSpec : Spek({
             it("should set over the collected value") {
                 gauge.set(1.0)
                 gauge.withTags("tag" to "value").increment(1.0)
-                gauge.set(2.1)
+                gauge.withTags("tag" to "value").set(3.0)
+                gauge.increment(2.1)
 
                 val values = gaugeMetricCollector.collectValues(System.currentTimeMillis() + 100)
+                val valuesWithTag = gaugeMetricCollectorWithTag.collectValues(System.currentTimeMillis() + 100)
 
-                assertThat(values).eachIndexed(3) { timedValue, idx ->
+                assertThat(values).eachIndexed(4) { timedValue, idx ->
                     when (idx) {
                         0 -> timedValue.prop("value") { it.value }.isEqualTo(GaugeAccumulator(true, 1.0))
                         1 -> timedValue.prop("value") { it.value }.isEqualTo(GaugeAccumulator(false, 1.0))
-                        2 -> timedValue.prop("value") { it.value }.isEqualTo(GaugeAccumulator(true, 2.1))
+                        2 -> timedValue.prop("value") { it.value }.isEqualTo(GaugeAccumulator(true, 3.0))
+                        3 -> timedValue.prop("value") { it.value }.isEqualTo(GaugeAccumulator(false, 2.1))
+                        else -> fail("$idx is not recognized")
+                    }
+                }
+                assertThat(valuesWithTag).eachIndexed(2) { timedValue, idx ->
+                    when (idx) {
+                        0 -> timedValue.prop("value") { it.value }.isEqualTo(GaugeAccumulator(false, 1.0))
+                        1 -> timedValue.prop("value") { it.value }.isEqualTo(GaugeAccumulator(true, 3.0))
                         else -> fail("$idx is not recognized")
                     }
                 }
@@ -188,7 +345,15 @@ object MetricCollectorSpec : Spek({
                 counter.collector(
                         downstreamCollectors = listOf("localhost:$port"),
                         granularValueInMs = 0,
-                        refreshIntervalMs = Long.MAX_VALUE
+                        refreshIntervalMs = 0
+                )
+            }
+
+            val counterUpstreamWithTag by memoized(SCOPE) {
+                counter.withTags("tag" to "value").collector(
+                        downstreamCollectors = listOf("localhost:$port"),
+                        granularValueInMs = 0,
+                        refreshIntervalMs = 0
                 )
             }
 
@@ -196,7 +361,15 @@ object MetricCollectorSpec : Spek({
                 time.collector(
                         downstreamCollectors = listOf("localhost:$port"),
                         granularValueInMs = 0,
-                        refreshIntervalMs = Long.MAX_VALUE
+                        refreshIntervalMs = 0
+                )
+            }
+
+            val timeUpstreamWithTag by memoized(SCOPE) {
+                time.withTags("tag" to "value").collector(
+                        downstreamCollectors = listOf("localhost:$port"),
+                        granularValueInMs = 0,
+                        refreshIntervalMs = 0
                 )
             }
 
@@ -208,25 +381,38 @@ object MetricCollectorSpec : Spek({
                 )
             }
 
+            val gaugeUpstreamWithTag by memoized(SCOPE) {
+                gauge.withTags("tag" to "value").collector(
+                        downstreamCollectors = listOf("localhost:$port"),
+                        granularValueInMs = 0,
+                        refreshIntervalMs = 0
+                )
+            }
+
             val server by memoized(SCOPE) {
                 ServerBuilder.forPort(port)
                         .addService(MetricGrpcService.instance())
                         .build()
-
             }
 
             beforeGroup {
                 server.start()
                 assertThat(counterUpstream.attachCollector()).isTrue()
+                assertThat(counterUpstreamWithTag.attachCollector()).isTrue()
                 assertThat(timeUpstream.attachCollector()).isTrue()
+                assertThat(timeUpstreamWithTag.attachCollector()).isTrue()
                 assertThat(gaugeUpstream.attachCollector()).isTrue()
+                assertThat(gaugeUpstreamWithTag.attachCollector()).isTrue()
             }
 
             afterGroup {
                 server.shutdownNow()
                 counterUpstream.close()
+                counterUpstreamWithTag.close()
                 timeUpstream.close()
+                timeUpstreamWithTag.close()
                 gaugeUpstream.close()
+                gaugeUpstreamWithTag.close()
             }
 
             it("should attach on first iteration") {
@@ -240,10 +426,10 @@ object MetricCollectorSpec : Spek({
 
             it("should get counter values from downstream collector") {
                 counter.increment(1.0)
-                counter.withTags("tag" to "value").increment(2.0)
-                counterUpstream.increment(counter.withTags("anotherTag" to "anotherValue"), 3.0)
+                counter.increment(2.0)
+                counterUpstream.increment(counter, 3.0)
 
-                val afterEventMoment = System.currentTimeMillis() + 1
+                val afterEventMoment = System.currentTimeMillis() + 100
 
                 counterUpstream.mergeWithDownstreamCollectors(afterEventMoment)
 
@@ -252,12 +438,26 @@ object MetricCollectorSpec : Spek({
                         .isEqualTo(setOf(1.0, 2.0, 3.0))
             }
 
+            it("should get counter values from downstream collector respecting tags") {
+                counter.increment(1.0)
+                counter.withTags("tag" to "value").increment(2.0)
+                counterUpstreamWithTag.increment(counter.withTags("anotherTag" to "anotherValue"), 3.0)
+
+                val afterEventMoment = System.currentTimeMillis() + 100
+
+                counterUpstreamWithTag.mergeWithDownstreamCollectors(afterEventMoment)
+
+                assertThat(counterUpstreamWithTag.collectValues(afterEventMoment))
+                        .prop("values.toSet") { it.map { it.value }.toSet() }
+                        .isEqualTo(setOf(2.0))
+            }
+
             it("should get time values from downstream collector") {
                 time.time(100)
-                time.withTags("tag" to "value").time(200)
-                timeUpstream.time(time.withTags("anotherTag" to "anotherValue"), 300)
+                time.time(200)
+                timeUpstream.time(time, 300)
 
-                val afterEventMoment = System.currentTimeMillis() + 1
+                val afterEventMoment = System.currentTimeMillis() + 100
 
                 timeUpstream.mergeWithDownstreamCollectors(afterEventMoment)
 
@@ -266,18 +466,46 @@ object MetricCollectorSpec : Spek({
                         .isEqualTo(setOf(TimeAccumulator(1, 100), TimeAccumulator(1, 200), TimeAccumulator(1, 300)))
             }
 
+            it("should get time values from downstream collector respecting tags") {
+                time.time(100)
+                time.withTags("tag" to "value").time(200)
+                timeUpstreamWithTag.time(time.withTags("anotherTag" to "anotherValue"), 300)
+
+                val afterEventMoment = System.currentTimeMillis() + 100
+
+                timeUpstreamWithTag.mergeWithDownstreamCollectors(afterEventMoment)
+
+                assertThat(timeUpstreamWithTag.collectValues(afterEventMoment))
+                        .prop("valuesAsSet") { it.map { it.value }.toSet() }
+                        .isEqualTo(setOf(TimeAccumulator(1, 200)))
+            }
+
             it("should populate gauge values from downstream collector") {
                 gauge.set(100.0)
-                gauge.withTags("tag" to "value").increment(200.0)
-                gaugeUpstream.gauge(gauge.withTags("anotherTag" to "anotherValue"), 300.0)
+                gauge.increment(200.0)
+                gaugeUpstream.gauge(gauge, 300.0)
 
-                val afterEventMoment = System.currentTimeMillis() + 1
+                val afterEventMoment = System.currentTimeMillis() + 100
 
                 gaugeUpstream.mergeWithDownstreamCollectors(afterEventMoment)
 
                 assertThat(gaugeUpstream.collectValues(afterEventMoment))
                         .prop("valuesAsSet") { it.map { it.value }.toSet() }
                         .isEqualTo(setOf(GaugeAccumulator(true, 100.0), GaugeAccumulator(false, 200.0), GaugeAccumulator(true, 300.0)))
+            }
+
+            it("should populate gauge values from downstream collector respecting tags") {
+                gauge.set(100.0)
+                gauge.withTags("tag" to "value").increment(200.0)
+                gaugeUpstreamWithTag.gauge(gauge.withTags("anotherTag" to "anotherValue"), 300.0)
+
+                val afterEventMoment = System.currentTimeMillis() + 100
+
+                gaugeUpstreamWithTag.mergeWithDownstreamCollectors(afterEventMoment)
+
+                assertThat(gaugeUpstreamWithTag.collectValues(afterEventMoment))
+                        .prop("valuesAsSet") { it.map { it.value }.toSet() }
+                        .isEqualTo(setOf(GaugeAccumulator(false, 200.0)))
             }
         }
 
@@ -315,10 +543,10 @@ object MetricCollectorSpec : Spek({
 
             it("should get values from downstream collector") {
                 counter.increment(1.0)
-                counter.withTags("tag" to "value").increment(2.0)
-                remoteMetricCollector.increment(counter.withTags("anotherTag" to "anotherValue"), 3.0)
+                counter.increment(2.0)
+                remoteMetricCollector.increment(counter, 3.0)
 
-                val afterEventMoment = System.currentTimeMillis() + 1
+                val afterEventMoment = System.currentTimeMillis() + 100
 
                 sleep(500) // wait for upstream metric collector to do a few syncs
 
@@ -374,11 +602,11 @@ object MetricCollectorSpec : Spek({
             it("should get values from downstream collector") {
                 counter.increment(1.0)
                 counter.increment(2.0)
-                counter.withTags("tag" to "value").increment(3.0)
-                counter.withTags("tag" to "value").increment(4.0)
-                remoteMetricCollector.increment(counter.withTags("anotherTag" to "anotherValue"), 5.0)
+                counter.increment(3.0)
+                counter.increment(4.0)
+                remoteMetricCollector.increment(counter, 5.0)
 
-                val afterEventMoment = System.currentTimeMillis() + 1
+                val afterEventMoment = System.currentTimeMillis() + 100
 
                 remoteMetricCollector.mergeWithDownstreamCollectors(afterEventMoment)
 

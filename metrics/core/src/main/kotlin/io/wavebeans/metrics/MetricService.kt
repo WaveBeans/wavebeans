@@ -15,8 +15,12 @@ object MetricService : MetricConnector {
     }
 
     fun registerConnector(connector: MetricConnector): MetricService {
-        log.debug { "Registering new connector from:\n${Thread.currentThread().stackTrace.joinToString("\n", postfix = "\n----end of stackTrace----") { "\t at $it" }}" }
         metricConnectors += connector
+        log.info {
+            "Registered new connector $connector" +
+                    if (log.isDebugEnabled) " from:\n${Thread.currentThread().stackTrace.joinToString("\n", postfix = "\n----end of stackTrace----") { "\t at $it" }}"
+                    else ""
+        }
         return this
     }
 

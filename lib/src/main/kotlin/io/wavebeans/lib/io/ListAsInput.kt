@@ -84,7 +84,7 @@ class ListAsInput<T : Any>(
         override val parameters: ListAsInputParams
 ) : FiniteStream<T>, SourceBean<T> {
 
-    private val samplesProcessed = samplesProcessedOnInputMetric.withTags(clazzTag to this::class.jvmName)
+    private val samplesProcessed = samplesProcessedOnInputMetric.withTags(clazzTag to ListAsInput::class.jvmName)
 
     @Suppress("UNCHECKED_CAST")
     override fun asSequence(sampleRate: Float): Sequence<T> = parameters.list.asSequence().map { samplesProcessed.increment(); it as T }

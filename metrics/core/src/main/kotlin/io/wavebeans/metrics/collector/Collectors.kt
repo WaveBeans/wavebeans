@@ -13,7 +13,7 @@ fun createCollector(
         downstreamCollectors: List<String>,
         refreshIntervalMs: Long,
         granularValueInMs: Long
-): MetricCollector<*, *> {
+): MetricCollector<Any> {
     val constructorParameters = arrayOf(MetricObject::class, List::class, Long::class, Long::class)
     val collectorConstructor = try {
         Class.forName(collectorClass)
@@ -23,7 +23,7 @@ fun createCollector(
             .constructors
             .firstOrNull {
                 it.parameterTypes
-                        .zip((0..constructorParameters.size))
+                        .zip(constructorParameters.indices)
                         .all { (clazz, idx) ->
                             clazz.kotlin.isSubclassOf(constructorParameters[idx])
                         }
@@ -32,12 +32,20 @@ fun createCollector(
                     "because required constructor is not found, expected constructor with following parameters: " +
                     constructorParameters.joinToString(",") { it.jvmName })
 
-    return collectorConstructor.newInstance(
-            metricObject,
-            downstreamCollectors,
-            refreshIntervalMs,
-            granularValueInMs
-    ) as MetricCollector<*, *>
+    try {
+        @Suppress("UNCHECKED_CAST")
+        return collectorConstructor.newInstance(
+                metricObject,
+                downstreamCollectors,
+                refreshIntervalMs,
+                granularValueInMs
+        ) as MetricCollector<Any>
+    } catch (e: Exception) {
+        throw IllegalStateException("Can't create the collector with " +
+                "collectorClass=$collectorClass(constructor=$collectorConstructor)," +
+                " metricObject=$metricObject, downstreamCollectors=$downstreamCollectors, " +
+                "refreshIntervalMs=$refreshIntervalMs, granularValueInMs=$granularValueInMs", e)
+    }
 }
 
 class TimeMetricCollector(
@@ -45,7 +53,7 @@ class TimeMetricCollector(
         downstreamCollectors: List<String> = emptyList(),
         refreshIntervalMs: Long = 5000,
         granularValueInMs: Long = 60000
-) : MetricCollector<TimeMetricObject, TimeAccumulator>(
+) : MetricCollector<TimeAccumulator>(
         metricObject,
         downstreamCollectors,
         refreshIntervalMs,
@@ -60,7 +68,7 @@ fun TimeMetricObject.collector(
         downstreamCollectors: List<String> = emptyList(),
         refreshIntervalMs: Long = 5000,
         granularValueInMs: Long = 60000
-): MetricCollector<TimeMetricObject, TimeAccumulator> {
+): MetricCollector<TimeAccumulator> {
     return TimeMetricCollector(
             this,
             downstreamCollectors,
@@ -74,7 +82,7 @@ class CounterMetricCollector(
         downstreamCollectors: List<String> = emptyList(),
         refreshIntervalMs: Long = 5000,
         granularValueInMs: Long = 60000
-) : MetricCollector<CounterMetricObject, Double>(
+) : MetricCollector<Double>(
         metricObject,
         downstreamCollectors,
         refreshIntervalMs,
@@ -89,7 +97,7 @@ fun CounterMetricObject.collector(
         downstreamCollectors: List<String> = emptyList(),
         refreshIntervalMs: Long = 5000,
         granularValueInMs: Long = 60000
-): MetricCollector<CounterMetricObject, Double> {
+): MetricCollector<Double> {
     return CounterMetricCollector(
             this,
             downstreamCollectors,
@@ -103,7 +111,7 @@ class GaugeMetricCollector(
         downstreamCollectors: List<String> = emptyList(),
         refreshIntervalMs: Long = 5000,
         granularValueInMs: Long = 60000
-) : MetricCollector<GaugeMetricObject, GaugeAccumulator>(
+) : MetricCollector<GaugeAccumulator>(
         metricObject,
         downstreamCollectors,
         refreshIntervalMs,
@@ -119,7 +127,7 @@ fun GaugeMetricObject.collector(
         downstreamCollectors: List<String> = emptyList(),
         refreshIntervalMs: Long = 5000,
         granularValueInMs: Long = 60000
-): MetricCollector<GaugeMetricObject, GaugeAccumulator> {
+): MetricCollector<GaugeAccumulator> {
     return GaugeMetricCollector(
             this,
             downstreamCollectors,

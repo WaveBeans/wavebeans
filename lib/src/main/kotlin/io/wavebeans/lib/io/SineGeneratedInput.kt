@@ -32,7 +32,7 @@ class SineGeneratedInput constructor(
         val params: SineGeneratedInputParams
 ) : StreamInput, SinglePartitionBean {
 
-    private val samplesProcessed = samplesProcessedOnInputMetric.withTags(clazzTag to this::class.jvmName)
+    private val samplesProcessed = samplesProcessedOnInputMetric.withTags(clazzTag to SineGeneratedInput::class.jvmName)
 
     override val parameters: BeanParams = params
 

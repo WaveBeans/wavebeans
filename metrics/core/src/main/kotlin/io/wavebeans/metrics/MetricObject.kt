@@ -7,14 +7,16 @@ interface MetricObject<M : Any> {
 
     companion object {
         fun of(protoMetricObject: MetricApiOuterClass.MetricObject): MetricObject<*> {
+            val tags = protoMetricObject.tagsMap.entries.map { it.key to it.value }.toTypedArray()
             // TODO replace with smarter way via reflection
             return when (protoMetricObject.type) {
-                CounterMetricObject::class.jvmName -> counter(protoMetricObject.component, protoMetricObject.name, "not needed here")
-                GaugeMetricObject::class.jvmName -> gauge(protoMetricObject.component, protoMetricObject.name, "not needed here")
-                TimeMetricObject::class.jvmName -> time(protoMetricObject.component, protoMetricObject.name, "not needed here")
+                CounterMetricObject::class.jvmName -> counter(protoMetricObject.component, protoMetricObject.name, "not needed here").withTags(*tags)
+                GaugeMetricObject::class.jvmName -> gauge(protoMetricObject.component, protoMetricObject.name, "not needed here").withTags(*tags)
+                TimeMetricObject::class.jvmName -> time(protoMetricObject.component, protoMetricObject.name, "not needed here").withTags(*tags)
                 else -> throw UnsupportedOperationException("${protoMetricObject.type} is not supported")
             }
         }
+
 
         fun counter(component: String, name: String, description: String, vararg possibleTags: String): CounterMetricObject {
             return CounterMetricObject(component, name, description, possibleTags.toList())
@@ -73,6 +75,15 @@ interface MetricObject<M : Any> {
      * Compares with another [MetricObject] ignoring tags.
      */
     fun isLike(another: MetricObject<*>): Boolean = component == another.component && name == another.name && this::class == another::class
+
+    /**
+     * Compares with another [MetricObject] respecting tags of [another].
+     */
+    fun isSuperOf(another: MetricObject<*>): Boolean =
+            component == another.component
+                    && name == another.name
+                    && this::class == another::class
+                    && tags == another.tags.filterKeys { it in tags.keys }
 }
 
 

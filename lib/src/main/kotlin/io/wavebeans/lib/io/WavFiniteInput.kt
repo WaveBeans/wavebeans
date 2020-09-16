@@ -26,7 +26,7 @@ class WavFiniteInput(
         private val content: Content? = null
 ) : FiniteInput<Sample>, SinglePartitionBean {
 
-    private val samplesProcessed = samplesProcessedOnInputMetric.withTags(clazzTag to this::class.jvmName)
+    private val samplesProcessed = samplesProcessedOnInputMetric.withTags(clazzTag to WavFiniteInput::class.jvmName)
 
     override val parameters: BeanParams = params
 

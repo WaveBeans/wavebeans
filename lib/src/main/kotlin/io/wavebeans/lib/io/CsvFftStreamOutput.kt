@@ -43,7 +43,7 @@ class CsvFftStreamOutput(
                 stream,
                 sampleRate,
                 writer,
-                this::class
+                CsvFftStreamOutput::class
         ) {
 
             override fun header(): ByteArray? = null
