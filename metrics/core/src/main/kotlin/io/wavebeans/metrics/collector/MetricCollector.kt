@@ -5,12 +5,19 @@ import io.wavebeans.metrics.*
 import mu.KotlinLogging
 import java.io.Closeable
 import java.lang.Thread.sleep
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.*
 import kotlin.reflect.jvm.jvmName
 
+/**
+ * Metric Collector is an implementation of [MetricConnector] that collects values from for
+ * the specified [metricObject] locally -- if registered via [MetricService.registerConnector], or remotelly from
+ * specified [downstreamCollectors]. The remote connections are established automatically or can be done manually
+ * via [MetricCollector.attachCollector] call.
+ *
+ * The collector may collect only one specified [metricObject] respecting the [MetricObject.tags], the unspecfiued
+ * tags are ignored are aggregated together. If the [metricObject] needs ot be collected are verified by
+ * [MetricObject.isSuperOf] check.
+ */
 @Suppress("UNCHECKED_CAST")
 abstract class MetricCollector<T : Any>(
         val metricObject: MetricObject<out Any>,
@@ -24,20 +31,31 @@ abstract class MetricCollector<T : Any>(
 
     companion object {
         private val log = KotlinLogging.logger { }
+        private val threadGroup = ThreadGroup(MetricCollector::class.simpleName)
+        private val executor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor { Thread(threadGroup, it) }
+
+        init {
+            Runtime.getRuntime().addShutdownHook(Thread {
+                executor.let {
+                    it.shutdown()
+                    if (!it.awaitTermination(5000, TimeUnit.MILLISECONDS)) {
+                        it.shutdownNow()
+                    }
+                }
+            })
+        }
     }
 
-    private val threadGroup = ThreadGroup(MetricCollector::class.simpleName + "@${refreshIntervalMs}ms")
-    private var executor: ScheduledExecutorService? = null
     private val metricCollectorIds = ConcurrentHashMap<String, Long>()
 
     @Volatile
     private var isAttached: Boolean = false
     private val timeseries = TimeseriesList(granularValueInMs, accumulator)
+    private var task: ScheduledFuture<*>? = null
 
     init {
         if (downstreamCollectors.isNotEmpty() && refreshIntervalMs > 0) {
-            executor = Executors.newSingleThreadScheduledExecutor { Thread(threadGroup, it) }
-            executor?.scheduleAtFixedRate(
+            task = executor.scheduleAtFixedRate(
                     ::collectFromDownstream,
                     0,
                     refreshIntervalMs,
@@ -46,38 +64,9 @@ abstract class MetricCollector<T : Any>(
         }
     }
 
-    internal fun collectFromDownstream(collectUpToTimestamp: Long = System.currentTimeMillis()) {
-        val start = System.currentTimeMillis()
-        if (isAttached) {
-            try {
-                mergeWithDownstreamCollectors(collectUpToTimestamp)
-                log.trace { "Merged $metricObject with downstream on $downstreamCollectors. Took ${System.currentTimeMillis() - start}ms" }
-            } catch (e: Exception) {
-                log.warn(e) { "Error merging $metricObject with downstream on $downstreamCollectors. Took ${System.currentTimeMillis() - start}ms" }
-            }
-        } else {
-            log.info { "Attempting attach $metricObject to $downstreamCollectors..." }
-            if (attachCollector()) {
-                isAttached = true
-                log.info { "Attached $metricObject to $downstreamCollectors" }
-            } else {
-                log.info { "Couldn't attach $metricObject to $downstreamCollectors" }
-            }
-        }
+    override fun close() {
+        task?.cancel(false)
     }
-
-    fun awaitAttached(timeout: Long = 1000): Boolean {
-        val start = System.currentTimeMillis()
-        while (!this.isAttached) {
-            if (System.currentTimeMillis() - start < timeout)
-                sleep(0)
-            else
-                return false
-        }
-        return true
-    }
-
-    fun isAttached(): Boolean = isAttached
 
     override fun increment(metricObject: CounterMetricObject, delta: Double) {
         if (this.metricObject.isSuperOf(metricObject)) {
@@ -109,27 +98,30 @@ abstract class MetricCollector<T : Any>(
         }
     }
 
+    /**
+     * Performs the collection of the values from collector. The internal state of the collector
+     * is cleaned up up to the [collectUpToTimestamp] time marker. The values are aggregated according to the
+     * collector paramteres.
+     */
     fun collectValues(collectUpToTimestamp: Long): List<TimedValue<T>> {
         return timeseries.removeAllBefore(collectUpToTimestamp)
     }
 
+    /**
+     * Merges the collector internal value with specified sequence of [TimedValue]s. The specified values will
+     * be aggregated according to the parameters specified by the collector.
+     */
     fun merge(with: Sequence<TimedValue<T>>) {
         timeseries.merge(with)
     }
 
-    fun mergeWithDownstreamCollectors(collectUpToTimestamp: Long) {
-        downstreamCollectors.forEach { location ->
-            MetricApiClient(location).use { metricApiClient ->
-                merge(
-                        metricApiClient.collectValues(
-                                collectUpToTimestamp,
-                                metricCollectorIds.getValue(location)
-                        ).map { deserialize(it.serializedValue) at it.timestamp }
-                )
-            }
-        }
-    }
-
+    /**
+     * Tries to attach the collector to downstream ones via [MetricApiClient.attachCollector]. All attach attempts should be
+     * performed successfully in order for this method to return true. During attempt it doens't try to connect once
+     * again to collectors which are a;ready connected.
+     *
+     * @return true if eventually all downstream collectors are connected, otherwise false.
+     */
     fun attachCollector(): Boolean {
         return downstreamCollectors.all { location ->
             if (!metricCollectorIds.containsKey(location)) {
@@ -159,11 +151,67 @@ abstract class MetricCollector<T : Any>(
         }
     }
 
-    override fun close() {
-        executor?.let {
-            it.shutdown()
-            if (!it.awaitTermination(5000, TimeUnit.MILLISECONDS)) {
-                it.shutdownNow()
+    /**
+     * Synchronously awaits attaching to the downstream collector.
+     *
+     * @param timeout amount of time to spend waiting.
+     *
+     * @return true if collector has been attached within timeout, otherwise false.
+     */
+    fun awaitAttached(timeout: Long = 1000): Boolean {
+        val start = System.currentTimeMillis()
+        while (!this.isAttached) {
+            if (System.currentTimeMillis() - start < timeout)
+                sleep(0)
+            else
+                return false
+        }
+        return true
+    }
+
+    /**
+     * Represents the current attachement state to the downstream collectors. Does not perform the actual check.
+     */
+    fun isAttached(): Boolean = isAttached
+
+    /**
+     * Performs the collection of the metrics from all downstream collectors. If not all collectors are attached
+     * performs the attach first. The method call do not fail on [Exception].
+     */
+    internal fun collectFromDownstream(collectUpToTimestamp: Long = System.currentTimeMillis()) {
+        val start = System.currentTimeMillis()
+        if (isAttached) {
+            try {
+                mergeWithDownstreamCollectors(collectUpToTimestamp)
+                log.trace { "Merged $metricObject with downstream on $downstreamCollectors. Took ${System.currentTimeMillis() - start}ms" }
+            } catch (e: Exception) {
+                log.warn(e) { "Error merging $metricObject with downstream on $downstreamCollectors. Took ${System.currentTimeMillis() - start}ms" }
+            }
+        } else {
+            log.info { "Attempting attach $metricObject to $downstreamCollectors..." }
+            if (attachCollector()) {
+                isAttached = true
+                log.info { "Attached $metricObject to $downstreamCollectors" }
+            } else {
+                log.info { "Couldn't attach $metricObject to $downstreamCollectors" }
+            }
+        }
+    }
+
+    /**
+     * Performs the merge with the downstream provider. One by one calls the [MetricApiClient.collectValues] to
+     * [MetricCollector.collectValues] from the downstream collectors to [merge] them after into the collector
+     * current state.
+     */
+    internal fun mergeWithDownstreamCollectors(collectUpToTimestamp: Long) {
+        downstreamCollectors.forEach { location ->
+            MetricApiClient(location).use { metricApiClient ->
+                merge(
+                        metricApiClient.collectValues(
+                                collectUpToTimestamp,
+                                metricCollectorIds.getValue(location)
+                        ).map { deserialize(it.serializedValue) at it.timestamp }
+                )
             }
         }
     }
@@ -171,8 +219,6 @@ abstract class MetricCollector<T : Any>(
     override fun toString(): String {
         return "MetricCollector(metricObject=$metricObject, downstreamCollectors=$downstreamCollectors, refreshIntervalMs=$refreshIntervalMs, granularValueInMs=$granularValueInMs)"
     }
-
-
 }
 
 

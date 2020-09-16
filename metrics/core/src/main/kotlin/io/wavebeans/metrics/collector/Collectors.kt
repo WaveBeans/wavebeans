@@ -7,6 +7,15 @@ import io.wavebeans.metrics.TimeMetricObject
 import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.jvm.jvmName
 
+/**
+ * Creates [MetricCollector] of the specified class. Class is being found using current caller class loader.
+ *
+ * At least one of the constructors must have 4 parameters:
+ * * [MetricObject]
+ * * [downstreamCollectors] as `List<String>`
+ * * [refreshIntervalMs] as `Long`
+ * * [granularValueInMs] as `Long`
+ */
 fun createCollector(
         collectorClass: String,
         metricObject: MetricObject<*>,
@@ -48,6 +57,11 @@ fun createCollector(
     }
 }
 
+/**
+ * The collector for [TimeMetricObject]. If the collector should respect tags the [MetricObject] should already be with tags.
+ *
+ * The data is accumulated as [TimeAccumulator] by summing up using [TimeAccumulator.plus] operator.
+ */
 class TimeMetricCollector(
         metricObject: TimeMetricObject,
         downstreamCollectors: List<String> = emptyList(),
@@ -64,6 +78,9 @@ class TimeMetricCollector(
 
 )
 
+/**
+ * Creates the [TimeMetricCollector].
+ */
 fun TimeMetricObject.collector(
         downstreamCollectors: List<String> = emptyList(),
         refreshIntervalMs: Long = 5000,
@@ -77,6 +94,11 @@ fun TimeMetricObject.collector(
     )
 }
 
+/**
+ * The collector for [CounterMetricObject]. If the collector should respect tags the [MetricObject] should already be with tags.
+ *
+ * The data is accumulated as [Double] by summing up using [Double.plus] operator.
+ */
 class CounterMetricCollector(
         metricObject: CounterMetricObject,
         downstreamCollectors: List<String> = emptyList(),
@@ -93,6 +115,9 @@ class CounterMetricCollector(
 
 )
 
+/**
+ * Creates [CounterMetricCollector].
+ */
 fun CounterMetricObject.collector(
         downstreamCollectors: List<String> = emptyList(),
         refreshIntervalMs: Long = 5000,
@@ -106,6 +131,11 @@ fun CounterMetricObject.collector(
     )
 }
 
+/**
+ * The collector for [GaugeMetricObject]. If the collector should respect tags the [MetricObject] should already be with tags.
+ *
+ * The data is accumulated as [GaugeAccumulator] by summing up using [GaugeAccumulator.plus] operator.
+ */
 class GaugeMetricCollector(
         metricObject: GaugeMetricObject,
         downstreamCollectors: List<String> = emptyList(),
@@ -122,7 +152,9 @@ class GaugeMetricCollector(
 
 )
 
-
+/**
+ * Creates [GaugeMetricCollector].
+ */
 fun GaugeMetricObject.collector(
         downstreamCollectors: List<String> = emptyList(),
         refreshIntervalMs: Long = 5000,
