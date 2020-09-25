@@ -4,7 +4,7 @@ import mu.KotlinLogging.logger
 import org.jetbrains.kotlin.cli.common.repl.ReplCodeLine
 import org.jetbrains.kotlin.cli.common.repl.ReplCompileResult
 import org.jetbrains.kotlin.cli.common.repl.ReplEvalResult
-import org.jetbrains.kotlin.scripting.compiler.plugin.impl.KJvmCompiledModuleInMemory
+import org.jetbrains.kotlin.scripting.compiler.plugin.impl.KJvmCompiledModuleInMemoryImpl
 import java.io.Closeable
 import java.io.File
 import java.util.concurrent.*
@@ -18,6 +18,7 @@ import kotlin.script.experimental.jvm.JvmDependency
 import kotlin.script.experimental.jvm.impl.KJvmCompiledScript
 import kotlin.script.experimental.jvmhost.repl.JvmReplCompiler
 import kotlin.script.experimental.jvmhost.repl.JvmReplEvaluator
+import kotlin.script.experimental.util.LinkedSnippet
 
 class ScriptRunner(
         private val content: String,
@@ -139,7 +140,7 @@ Unit
             throw IllegalStateException("Compilation took more than 30 sec", e)
         }
 
-        ((compileResult.data as KJvmCompiledScript<*>).compiledModule as KJvmCompiledModuleInMemory)
+        (((compileResult.data as LinkedSnippet<*>).get() as KJvmCompiledScript).getCompiledModule() as KJvmCompiledModuleInMemoryImpl)
                 .compilerOutputFiles.forEach { (className, byteArray) ->
                     val outputFile = File(additionalClassesDir, className)
                     outputFile.parentFile.mkdirs()
