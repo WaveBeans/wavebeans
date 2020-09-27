@@ -20,11 +20,14 @@ object FacilitatorCliSpec : Spek({
         it("should return 0 exit code") { assertThat(cli.call()).isEqualTo(0) }
         it("should have specific output") {
             assertThat(String(ostream.toByteArray())).isEqualTo(
-                    "The following config attributes of facilitatorConfig are supported:\n" +
+                    "The following config attributes of `facilitatorConfig` are supported:\n" +
                             "- communicatorPort: [simple type, class java.lang.Integer] <required>. The port the communicator server will start and Facilitator will be reachable for API calls.. Default value: N/A\n" +
                             "- threadsNumber: [simple type, class java.lang.Integer] <required>. The capacity of working pool for this facilitator. It is going to be shared across all jobs. Default value: N/A\n" +
                             "- callTimeoutMillis: [simple type, class java.lang.Long] <optional>. The maximum time the facilitator will wait for the answer from the pod, in milliseconds. Default value: 5000\n" +
-                            "- onServerShutdownTimeoutMillis: [simple type, class java.lang.Long] <optional>. The time to wait before killing the Communicator server even if it doesn't confirm that. Default value: 5000\n"
+                            "- onServerShutdownTimeoutMillis: [simple type, class java.lang.Long] <optional>. The time to wait before killing the Communicator server even if it doesn't confirm that. Default value: 5000\n" +
+                            "- metricConnectors: [collection type; class java.util.List, contains [simple type, class io.wavebeans.metrics.MetricConnectorDescriptor]] <optional>. The list of metric connectors to register for Facilitator. Each is a instance of `class io.wavebeans.metrics.MetricConnectorDescriptor`. It has the name of the connector class `val io.wavebeans.metrics.MetricConnectorDescriptor.clazz: kotlin.String` and map of properties to use as a constructor parameters `val io.wavebeans.metrics.MetricConnectorDescriptor.properties: kotlin.collections.Map<kotlin.String, kotlin.String>`. Default value: []\n" +
+                            "Communicator confiuguration under `facilitatorConfig.communicatorConfig`:\n" +
+                            "- maxInboundMessage: [simple type, class java.lang.Integer] <optional>. Communicator gRPC server `maxInboundMessage` in bytes. Default value: 4194304\n"
             )
         }
     }

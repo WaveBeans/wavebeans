@@ -10,6 +10,7 @@ import io.wavebeans.execution.medium.PodCallResultBuilder
 import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.lib.WaveBeansClassLoader
 import io.wavebeans.lib.table.TableRegistry
+import io.wavebeans.metrics.MetricConnectorDescriptor
 import io.wavebeans.metrics.collector.MetricGrpcService
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.modules.SerializersModule
@@ -34,7 +35,9 @@ class Facilitator(
         private val podCallResultBuilder: PodCallResultBuilder = SerializablePodCallResultBuilder(),
         private val mediumBuilder: MediumBuilder = SerializableMediumBuilder(),
         private val executionThreadPool: ExecutionThreadPool = MultiThreadedExecutionThreadPool(threadsNumber),
-        private val podDiscovery: PodDiscovery = PodDiscovery.default
+        private val podDiscovery: PodDiscovery = PodDiscovery.default,
+        private val metricConnectorDescriptors: List<MetricConnectorDescriptor> = emptyList(),
+        private val maxInboundMessage: Int = 4 * 1024 * 1024
         // TODO probably inject table registry also
 ) : Closeable {
 
@@ -81,6 +84,7 @@ class Facilitator(
 
         communicatorPort?.let {
             communicator = ServerBuilder.forPort(it)
+                    .maxInboundMessageSize(maxInboundMessage)
                     .addService(TableGrpcService.instance(TableRegistry.default))
                     .addService(FacilitatorGrpcService.instance(this))
                     .addService(MetricGrpcService.instance())
@@ -88,6 +92,8 @@ class Facilitator(
                     .start()
             log.info { "Communicator on port $it started." }
         }
+
+        metricConnectorDescriptors.forEach(MetricConnectorDescriptor::createAndRegister)
 
         return this
     }

@@ -86,6 +86,8 @@ set CMD_LINE_ARGS=%*
 
 set CLASSPATH=$classpath
 <% if ( mainClassName.startsWith('--module ') ) { %>set MODULE_PATH=$modulePath<% } %>
+# User's classpath parameters
+set CLASSPATH=%EXTRA_CLASSPATH_BEFORE%;%CLASSPATH%;%EXTRA_CLASSPATH_AFTER%
 
 @rem Execute ${applicationName}
 "%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %${optsEnvironmentVar}% <% if ( appNameSystemProperty ) { %>"-D${appNameSystemProperty}=%APP_BASE_NAME%"<% } %> -classpath "%CLASSPATH%" <% if ( mainClassName.startsWith('--module ') ) { %>--module-path "%MODULE_PATH%" <% } %>${mainClassName} %CMD_LINE_ARGS%

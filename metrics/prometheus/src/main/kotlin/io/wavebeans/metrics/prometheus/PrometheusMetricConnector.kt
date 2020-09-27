@@ -14,18 +14,26 @@ import java.util.concurrent.ConcurrentHashMap
  * Implementation connector for Prometheus.
  *
  * NOTE: Metric and label names may have limited characters, everything illegal is automatically
- * replaced with underscore symbol no conform rules. Colon `:` used to separate component and name.
+ * replaced with underscore symbol to conform rules. Colon `:` used to separate component and name.
  */
-class PrometheusMetricConnector(
-        port: Int?,
-        private val registry: CollectorRegistry = CollectorRegistry.defaultRegistry
-) : MetricConnector, Closeable {
+class PrometheusMetricConnector : MetricConnector, Closeable {
 
-    private val server: HTTPServer? = port?.let { HTTPServer(InetSocketAddress(it), registry, true) }
+    private val registry: CollectorRegistry
 
-    private val prometheusMetrics = ConcurrentHashMap<MetricObject<*>, Array<Collector>>()
+    constructor(port: Int?, registry: CollectorRegistry) {
+        this.registry = registry
+        this.server = port?.let { HTTPServer(InetSocketAddress(it), registry, true) }
+        this.prometheusMetrics = ConcurrentHashMap<MetricObject<*>, Array<Collector>>()
+        this.invalidCharactersRegex = "[^a-zA-Z0-9_:]".toRegex()
+    }
 
-    private val invalidCharactersRegex = "[^a-zA-Z0-9_:]".toRegex()
+    constructor(port: Int?) : this(port, CollectorRegistry.defaultRegistry)
+
+    private val server: HTTPServer?
+
+    private val prometheusMetrics: ConcurrentHashMap<MetricObject<*>, Array<Collector>>
+
+    private val invalidCharactersRegex: Regex
 
     override fun increment(metricObject: CounterMetricObject, delta: Double) {
         val c = prometheusMetrics.computeIfAbsent(metricObject.withoutTags()) {

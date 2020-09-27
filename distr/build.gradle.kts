@@ -7,6 +7,8 @@ plugins {
 dependencies {
     project(":cli")
     project(":exe")
+    project(":metrics:core")
+    project(":metrics:prometheus")
 }
 
 
@@ -73,8 +75,26 @@ val makeExeScripts by tasks.registering(CreateStartScripts::class) {
     (windowsStartScriptGenerator as DefaultTemplateBasedStartScriptGenerator).template = resources.text.fromFile("resources/windows.txt")
 }
 
+val copyMetricsPrometheus by tasks.registering(Copy::class) {
+    dependsOn(":metrics:prometheus:jar")
+    val builtExtra = file("$buildDir/builtExtra/prometheus")
+    from(project(":metrics:prometheus").buildDir.absolutePath + "/libs")
+    from(
+            project(":metrics:prometheus").configurations
+                    .compileClasspath.get()
+                    .copyRecursive { it.group?.indexOf("io.prometheus") ?: -1 >= 0 }
+    )
+    destinationDir = builtExtra
+
+    doLast {
+        val cpFiles = builtExtra.listFiles()
+        File(builtExtra, "classpath-unix.txt").writeText(cpFiles?.joinToString(":") { it.name } ?: "")
+        File(builtExtra, "classpath-win.txt").writeText(cpFiles?.joinToString(";") { it.name } ?: "")
+    }
+}
+
 val copyAll by tasks.registering {
-    dependsOn(copyBuiltCli, makeCliScripts, copyBuiltExe, makeExeScripts)
+    dependsOn(copyBuiltCli, makeCliScripts, copyBuiltExe, makeExeScripts, copyMetricsPrometheus)
     val builtApps = file("$buildDir/builtApps")
     outputs.dirs(builtApps)
     doLast {
@@ -90,9 +110,9 @@ val copyAll by tasks.registering {
 
         File("$buildDir/builtCli/lib").copyRecursively(File(builtApps, "lib"), overwrite = true)
         File("$buildDir/builtExe/lib").copyRecursively(File(builtApps, "lib"), overwrite = true)
+        File("$buildDir/builtExtra").copyRecursively(File(builtApps, "extra"), overwrite = true)
     }
 }
-
 
 distributions {
     main {

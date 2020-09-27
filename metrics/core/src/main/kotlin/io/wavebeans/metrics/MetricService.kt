@@ -9,7 +9,7 @@ object MetricService : MetricConnector {
     private val metricConnectors: MutableList<MetricConnector> = mutableListOf()
 
     fun reset(): MetricService {
-        log.debug { "Resetting metric service from:\n${Thread.currentThread().stackTrace.joinToString("\n", postfix = "\n----end of stackTrace----") { "\t at $it" }}" }
+        log.debug { "Resetting metric service from:\n${Thread.currentThread().stackTrace.drop(4).joinToString("\n", postfix = "\n----end of stackTrace----") { "\t at $it" }}" }
         metricConnectors.clear()
         return this
     }
@@ -18,7 +18,7 @@ object MetricService : MetricConnector {
         metricConnectors += connector
         log.info {
             "Registered new connector $connector" +
-                    if (log.isDebugEnabled) " from:\n${Thread.currentThread().stackTrace.joinToString("\n", postfix = "\n----end of stackTrace----") { "\t at $it" }}"
+                    if (log.isDebugEnabled) " from:\n${Thread.currentThread().stackTrace.drop(4).joinToString("\n", postfix = "\n----end of stackTrace----") { "\t at $it" }}"
                     else ""
         }
         return this

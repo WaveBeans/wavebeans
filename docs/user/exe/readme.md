@@ -136,14 +136,14 @@ The configuration file is in the HOCON format and has the following format:
 
 ```hocon
 facilitatorConfig {
-    listeningPortRange: {start: 4000, end: 4000}
+    communicatorPort: 4000,
     threadsNumber: 1
 }
 ```
 
 It requires two items:
-* `listeningPortRange` -- the range of ports to choose from during start up. Chooses the first random port if it's not occupied. If you want to specify specific port, make `start` and `end` the same.
-* `threadsNumber` -- the number of worker threads to be used to execute the stream. It may use a few more threads for different purposes, but they are not going to be that heavily occupied like that one. Consider specifying no more than you have CPU cores/vCPUs available.
+* `communicatorPort` -- the ports to support communication on, Overseer will perform all API calls via that gRPC port.
+* `threadsNumber` -- the number of worker threads to be used to execute the stream. It may use a few more threads for different purposes, but they are not going to be that heavily occupied like that ones. Consider specifying no more than you have CPU cores/vCPUs available.
 
 The rest of the items are optional and always can be found if called for help:
 

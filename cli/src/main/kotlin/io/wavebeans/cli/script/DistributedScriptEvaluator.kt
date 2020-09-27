@@ -25,19 +25,11 @@ class DistributedScriptEvaluator(
                 partitions,
                 additionalClasses = additionalClasses ?: emptyMap(),
                 ignoreLocations = listOf(
-                        ".*kotlin-main-kts-[\\d.]+.jar".toRegex(),
-                        ".*kotlin-compiler-embeddable-[\\d.]+.jar".toRegex(),
-                        ".*kotlin-scripting-compiler-embeddable-[\\d.]+.jar".toRegex(),
-                        ".*kotlin-scripting-compiler-impl-embeddable-[\\d.]+.jar".toRegex(),
-                        ".*kotlin-scripting-jvm-[\\d.]+.jar".toRegex(),
-                        ".*kotlin-scripting-jvm-host-embeddable-[\\d.]+.jar".toRegex(),
-                        ".*kotlin-scripting-common-[\\d.]+.jar".toRegex(),
-                        ".*kotlin-script-runtime-[\\d.]+.jar".toRegex(),
-                        ".*kotlin-daemon-embeddable-[\\d.]+.jar".toRegex(),
-                        ".*trove4j-[\\d.]+.jar".toRegex(),
-                        ".*wavebeans/lib/cli-[\\d.]+.jar".toRegex(),
-                        ".*wavebeans/lib/http-[\\d.]+.jar".toRegex(),
-                        ".*wavebeans/lib/exe-[\\d.]+.jar".toRegex()
+                        ".*kotlin.+[.]jar".toRegex(),
+                        ".*ktor.+[.]jar".toRegex(),
+                        ".*netty.+[.]jar".toRegex(),
+                        ".*trove4j-[\\d.]+[.]jar".toRegex(),
+                        ".*wavebeans.+[.]jar".toRegex()
                 )
         )
         return overseer.eval(sampleRate)
