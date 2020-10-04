@@ -8,7 +8,7 @@ import io.wavebeans.execution.distributed.proto.toProtoValue
 import io.wavebeans.lib.WaveBeansClassLoader
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import kotlinx.serialization.protobuf.ProtoId
+import kotlinx.serialization.protobuf.ProtoNumber
 import kotlin.reflect.KClass
 import kotlin.reflect.jvm.jvmName
 
@@ -63,9 +63,9 @@ fun ExceptionObj?.toProtoValue(): ExceptionObjProtoValue =
 
 @Serializable
 class ExceptionObjProtoValue(
-        @ProtoId(1)
+        @ProtoNumber(1)
         override val isNull: Boolean,
-        @ProtoId(2)
+        @ProtoNumber(2)
         val exceptionBuf: ByteArray
 ) : ProtoValue<ExceptionObj> {
 

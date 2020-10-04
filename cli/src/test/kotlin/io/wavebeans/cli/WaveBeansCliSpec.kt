@@ -9,6 +9,7 @@ import io.ktor.client.features.ServerResponseException
 import io.ktor.client.request.get
 import io.wavebeans.cli.WaveBeansCli.Companion.name
 import io.wavebeans.cli.WaveBeansCli.Companion.options
+import io.wavebeans.cli.script.RunMode
 import io.wavebeans.execution.PodDiscovery
 import io.wavebeans.execution.distributed.Facilitator
 import io.wavebeans.lib.WaveBeansClassLoader
@@ -85,7 +86,7 @@ object WaveBeansCliSpec : Spek({
                             name,
                             "--execute-file", scriptFile.absolutePath,
                             "--time",
-                            "--run-mode", "multi-thread",
+                            "--run-mode", RunMode.MULTI_THREADED.id,
                             "--threads", "1",
                             "--partitions", "1"
                     )),
@@ -101,7 +102,7 @@ object WaveBeansCliSpec : Spek({
 
         describe("Short-living from executed on distributed environment") {
 
-            val portRange = 40000..40001
+            val portRange = 40002..40003
             val gardeners = portRange.map {
                 Facilitator(
                         communicatorPort = it,
@@ -131,7 +132,7 @@ object WaveBeansCliSpec : Spek({
                             name,
                             "--execute-file", scriptFile.absolutePath,
                             "--time",
-                            "--run-mode", "distributed",
+                            "--run-mode", RunMode.DISTRIBUTED.id,
                             "--partitions", "2",
                             "--facilitators", portRange.map { "127.0.0.1:$it" }.joinToString(",")
                     )),
@@ -162,7 +163,7 @@ object WaveBeansCliSpec : Spek({
         }
 
         describe("HTTP API in distributed mode") {
-            val portRange = 40000..40001
+            val portRange = 40004..40005
             val gardeners = portRange.map {
                 Facilitator(
                         communicatorPort = it,
