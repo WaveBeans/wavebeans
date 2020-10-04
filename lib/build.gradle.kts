@@ -1,7 +1,7 @@
 plugins {
     val kotlinVersion: String by System.getProperties()
 
-    id("org.jetbrains.kotlin.plugin.serialization") version kotlinVersion
+    kotlin("plugin.serialization") version kotlinVersion
 }
 
 dependencies {
@@ -10,5 +10,5 @@ dependencies {
 
     implementation(project(":filesystems:core"))
     implementation(project(":metrics:core"))
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime:$kotlinxSerializationRuntimeVersion")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationRuntimeVersion")
 }

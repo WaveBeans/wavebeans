@@ -10,7 +10,7 @@ import io.wavebeans.lib.Sample
 import io.wavebeans.lib.sampleOf
 import io.wavebeans.lib.stream.window.Window
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.protobuf.ProtoId
+import kotlinx.serialization.protobuf.ProtoNumber
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.lifecycle.CachingMode.SCOPE
 import org.spekframework.spek2.style.specification.describe
@@ -39,13 +39,13 @@ object SerializablePodCallResultSpec : Spek({
 
             @Serializable
             data class Clazz(
-                    @ProtoId(1)
+                    @ProtoNumber(1)
                     val s: String,
-                    @ProtoId(2)
+                    @ProtoNumber(2)
                     val l: Long,
-                    @ProtoId(3)
+                    @ProtoNumber(3)
                     val d: Double,
-                    @ProtoId(4)
+                    @ProtoNumber(4)
                     val lb: List<Boolean>
             )
 
@@ -208,7 +208,7 @@ object SerializablePodCallResultSpec : Spek({
         describe("list of lists of objects") {
             @Serializable
             data class Obj(
-                    @ProtoId(1)
+                    @ProtoNumber(1)
                     val a: Int
             )
 

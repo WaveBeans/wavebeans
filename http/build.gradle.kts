@@ -14,7 +14,7 @@ dependencies {
     val kotlinxSerializationRuntimeVersion: String by System.getProperties()
     val ktorVersion: String by System.getProperties()
 
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime:$kotlinxSerializationRuntimeVersion")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationRuntimeVersion")
 
     implementation("io.ktor:ktor-server-core:$ktorVersion")
     implementation("io.ktor:ktor-server-netty:$ktorVersion")

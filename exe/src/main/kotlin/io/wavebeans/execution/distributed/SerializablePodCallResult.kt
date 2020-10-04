@@ -11,7 +11,7 @@ import io.wavebeans.execution.medium.PodCallResultBuilder
 import io.wavebeans.lib.WaveBeansClassLoader
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.protobuf.ProtoId
+import kotlinx.serialization.protobuf.ProtoNumber
 import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.io.OutputStream
@@ -83,12 +83,12 @@ class SerializablePodCallResult(
 
 @Serializable
 internal class SerializablePodCallResultContainer(
-        @ProtoId(1)
+        @ProtoNumber(1)
         val call: Call,
-        @ProtoId(2)
+        @ProtoNumber(2)
         val objSerializerRef: String,
-        @ProtoId(3)
+        @ProtoNumber(3)
         val objBuffer: ByteArrayProtoValue,
-        @ProtoId(4)
+        @ProtoNumber(4)
         val exception: ExceptionObjProtoValue
 )

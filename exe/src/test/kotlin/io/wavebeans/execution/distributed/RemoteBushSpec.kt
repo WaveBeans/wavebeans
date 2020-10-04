@@ -24,6 +24,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutionException
 
 class RemoteBushSpec : Spek({
+    val communicatorPort = 40205
     describe("Calling Remote bush") {
         val gardener = mock<Gardener>()
         val podDiscovery = object : PodDiscovery() {}
@@ -42,7 +43,7 @@ class RemoteBushSpec : Spek({
                 }
 
         val facilitator = Facilitator(
-                communicatorPort = 40000,
+                communicatorPort = communicatorPort,
                 threadsNumber = 1,
                 gardener = gardener,
                 onServerShutdownTimeoutMillis = 100,
@@ -69,7 +70,7 @@ class RemoteBushSpec : Spek({
                         .then { CompletableFuture<PodCallResult>().also { it.complete(podCallResult) } }
                 podDiscovery.registerBush(bushKey, bush)
 
-                RemoteBush(bushKey, "127.0.0.1:40000")
+                RemoteBush(bushKey, "127.0.0.1:$communicatorPort")
             }
 
             it("should start") {
@@ -86,7 +87,7 @@ class RemoteBushSpec : Spek({
         describe("Pointing to non-existing bush") {
             // no bush
             val bushKey by memoized { newBushKey() }
-            val remoteBush by memoized { RemoteBush(bushKey, "127.0.0.1:40000") }
+            val remoteBush by memoized { RemoteBush(bushKey, "127.0.0.1:$communicatorPort") }
 
             it("should start") {
                 assertThat(remoteBush.start()).isEqualTo(Unit)
