@@ -31,7 +31,7 @@ class MultiThreadedOverseer(
     override fun eval(sampleRate: Float): List<Future<ExecutionResult>> {
         ExecutionConfig.threadsLimitForJvm = threadsCount
         ExecutionConfig.initForMultiThreadedProcessing()
-        log.info { "Deploying topology: ${TopologySerializer.serialize(topology, jsonPretty())}" }
+        log.info { "Deploying topology: ${TopologySerializer.serializePretty(topology)}" }
         val pods = PodBuilder(topology).build()
         log.info { "Pods: $pods" }
         controllers += Gardener()
