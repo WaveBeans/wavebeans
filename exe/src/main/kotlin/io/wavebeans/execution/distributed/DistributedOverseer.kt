@@ -16,6 +16,7 @@ import mu.KotlinLogging
 import java.io.File
 import java.io.FileOutputStream
 import java.util.concurrent.*
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.jar.JarEntry
 import java.util.jar.JarFile
 import java.util.jar.JarOutputStream
@@ -55,6 +56,7 @@ class DistributedOverseer(
             }
         }
     }
+    private val isDraining = AtomicBoolean(false)
 
     private inner class FacilitatorCheckJob(val location: String) : Runnable {
 
@@ -89,7 +91,7 @@ class DistributedOverseer(
                 log.info(e) { "Failed execution on $location for job $jobKey" }
                 future.completeExceptionally(e)
             }
-            if (needReschedule) {
+            if (!isDraining.get() && needReschedule) {
                 reschedule()
             } else {
                 facilitatorApiClient.close()
@@ -319,6 +321,7 @@ class DistributedOverseer(
     override fun close() {
         log.info { "Closing overseer for job $jobKey. Status of futures: $locationFutures" }
         log.info { "Shutting down the Facilitator check pool" }
+        isDraining.set(true)
         facilitatorsCheckPool.shutdown()
         if (!facilitatorsCheckPool.awaitTermination(5000, TimeUnit.MILLISECONDS)) {
             facilitatorsCheckPool.shutdownNow()

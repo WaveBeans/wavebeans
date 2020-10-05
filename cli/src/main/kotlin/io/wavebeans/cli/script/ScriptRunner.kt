@@ -105,7 +105,6 @@ try {
         .all { it.finished }
 } catch (e : java.lang.InterruptedException) {
     log.info { "Script evaluation interrupted" }
-    // nothing to do
 } catch (e : Exception) {
     log.error(e) { "Script evaluation failed" } 
     e.printStackTrace(System.err)
