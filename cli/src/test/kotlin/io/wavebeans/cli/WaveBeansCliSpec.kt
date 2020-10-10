@@ -191,7 +191,7 @@ object WaveBeansCliSpec : Spek({
                             "--execute", "440.sine().map { it }.trim(1000).toTable(\"table1\").out()",
                             "--http", "12345",
                             "--http-wait", "1",
-                            "--http-communicator-port", "12346",
+                            "--http-communicator-port", "12348",
                             "--verbose",
                             "--run-mode", "distributed",
                             "--partitions", "2",
