@@ -7,8 +7,6 @@ plugins {
 dependencies {
     project(":cli")
     project(":exe")
-    project(":metrics:core")
-    project(":metrics:prometheus")
 }
 
 
