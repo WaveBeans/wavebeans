@@ -1,6 +1,6 @@
 # Monitoring
 
-WaveBeans uses metric approach to be monitored, and can be connected to a variety of monitoring systems, i.e. Prometheus, as well as provides the same metrics for application. And it always easy to develop your own
+WaveBeans uses metric approach to be monitored, and can be connected to a variety of monitoring systems, i.e. Prometheus, as well as provides the same metrics for application. And it always easy to develop your own.
 
 ## Metrics
 
