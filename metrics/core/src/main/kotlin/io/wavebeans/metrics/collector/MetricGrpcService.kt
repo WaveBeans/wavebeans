@@ -48,7 +48,7 @@ class MetricGrpcService(
     ) {
         responseObserver.single("MetricGrpcService.attachCollector", request) {
             val collectorClass = request.collectorClass
-            val downstreamCollectors = request.downstreamCollectorsList.map { it }
+            val downstreamCollectors = request.downstreamCollectorsList
             val refreshIntervalMs = request.refreshIntervalMs
             val granularValueInMs = request.granularValueInMs
             val metricObject = MetricObject.of(request.metricObject)
