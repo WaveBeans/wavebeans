@@ -51,7 +51,7 @@ abstract class MetricCollector<T : Any>(
     @Volatile
     private var isAttached: Boolean = false
     private val timeseries = TimeseriesList(granularValueInMs, accumulator)
-    private var task: ScheduledFuture<*>? = null
+    private val task: ScheduledFuture<*>?
 
     init {
         if (downstreamCollectors.isNotEmpty() && refreshIntervalMs > 0) {
@@ -61,6 +61,8 @@ abstract class MetricCollector<T : Any>(
                     refreshIntervalMs,
                     TimeUnit.MILLISECONDS
             )
+        } else {
+            task = null
         }
     }
 
