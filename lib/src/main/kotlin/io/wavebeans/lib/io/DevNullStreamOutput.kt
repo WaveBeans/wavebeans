@@ -18,7 +18,7 @@ class DevNullStreamOutput<T : Any>(
     }
 
     override fun writer(sampleRate: Float): Writer {
-        val samplesCounter = samplesProcessedOnOutputMetric.withTags(clazzTag to DevNullStreamOutput::class.jvmName)
+        val samplesProcessed = samplesProcessedOnOutputMetric.withTags(clazzTag to DevNullStreamOutput::class.jvmName)
         val sampleIterator = input.asSequence(sampleRate).iterator()
         var sampleCounter = 0L
         return object : Writer {
@@ -26,7 +26,7 @@ class DevNullStreamOutput<T : Any>(
                 return if (sampleIterator.hasNext()) {
                     sampleIterator.next()
                     sampleCounter++
-                    samplesCounter.increment()
+                    samplesProcessed.increment()
                     true
                 } else {
                     false
@@ -36,7 +36,6 @@ class DevNullStreamOutput<T : Any>(
             override fun close() {
                 log.debug { "[/DEV/NULL] Written $sampleCounter samples" }
             }
-
         }
     }
 }
