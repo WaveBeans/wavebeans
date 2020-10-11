@@ -73,6 +73,6 @@ class HttpService(
             }
         }
         server = null
+        communicatorServer = null
     }
 }
-
