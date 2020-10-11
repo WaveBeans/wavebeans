@@ -152,14 +152,14 @@ object WaveBeansCliSpec : Spek({
                     cli = DefaultParser().parse(options, arrayOf(
                             name,
                             "--execute", "440.sine().trim(1000).toTable(\"table1\").out()",
-                            "--http", "12345",
+                            "--http", "12349",
                             "--http-wait", "1",
                             "--verbose"
                     )),
                     printer = PrintWriter(out)
             )
 
-            assertHttpHandling(cli, out)
+            assertHttpHandling(cli, out, 12349)
         }
 
         describe("HTTP API in distributed mode") {
@@ -189,7 +189,7 @@ object WaveBeansCliSpec : Spek({
                     cli = DefaultParser().parse(options, arrayOf(
                             name,
                             "--execute", "440.sine().map { it }.trim(1000).toTable(\"table1\").out()",
-                            "--http", "12345",
+                            "--http", "12350",
                             "--http-wait", "1",
                             "--http-communicator-port", "12348",
                             "--verbose",
@@ -200,12 +200,12 @@ object WaveBeansCliSpec : Spek({
                     printer = PrintWriter(out)
             )
 
-            assertHttpHandling(cli, out)
+            assertHttpHandling(cli, out, 12350)
         }
     }
 })
 
-private fun Suite.assertHttpHandling(cli: WaveBeansCli, out: ByteArrayOutputStream) {
+private fun Suite.assertHttpHandling(cli: WaveBeansCli, out: ByteArrayOutputStream, port: Int) {
     val log = KotlinLogging.logger {  }
     val pool = Executors.newSingleThreadExecutor()
 
@@ -216,7 +216,7 @@ private fun Suite.assertHttpHandling(cli: WaveBeansCli, out: ByteArrayOutputStre
         fun result(): List<String> {
             return runBlocking {
                 HttpClient(CIO).use { client ->
-                    val response = client.get<String>(URL("http://localhost:12345/table/table1/last?interval=1.ms"))
+                    val response = client.get<String>(URL("http://localhost:$port/table/table1/last?interval=1.ms"))
                     response
                 }
             }.split("[\\r\\n]+".toRegex()).filterNot { it.isEmpty() }
