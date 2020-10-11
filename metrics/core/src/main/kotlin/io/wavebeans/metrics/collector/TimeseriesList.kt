@@ -18,8 +18,10 @@ class TimeseriesList<T : Any>(
     @Volatile
     private var timeseries = ArrayList<TimedValue<T>>()
 
+    @Volatile
     private var lastValueTimestamp: Long = -1
 
+    @Volatile
     private var lastValue: T? = null
 
     /**
