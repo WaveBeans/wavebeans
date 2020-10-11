@@ -586,6 +586,8 @@ object MetricCollectorSpec : Spek({
             beforeGroup {
                 server1.start()
                 server2.start()
+                remoteMetricCollector.collectFromDownstream()
+                assertThat(remoteMetricCollector.awaitAttached()).isTrue()
             }
 
             afterGroup {
@@ -594,9 +596,8 @@ object MetricCollectorSpec : Spek({
                 remoteMetricCollector.close()
             }
 
-            it("should attach on first iteration") {
-                remoteMetricCollector.collectFromDownstream()
-                assertThat(remoteMetricCollector.awaitAttached()).isTrue()
+            it("should be already attached on first iteration") {
+                assertThat(remoteMetricCollector.isAttached()).isTrue()
             }
 
             it("should get values from downstream collector") {
