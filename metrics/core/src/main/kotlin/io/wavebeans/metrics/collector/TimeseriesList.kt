@@ -5,7 +5,7 @@ package io.wavebeans.metrics.collector
  * if the [granularValueInMs] is greater than 0. Granular is accumulated value for a period of time, the accumulation
  * is performed with the specifed function [accumulator].
  *
- * The current implementation is on of [ArrayList], the thread safety is guaranteed by synchronized methods. It is not
+ * The current implementation is based on [ArrayList] type, the thread safety is guaranteed by synchronized methods. It is not
  * recommended to use that implementation to store a lot of values, please consider always using [granularValueInMs] and clean
  * up the list by [TimeseriesList.removeAllBefore] or [TimeseriesList.leaveOnlyLast] on time, it doesn't perform
  * any operation asynchronously.
