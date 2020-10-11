@@ -1,6 +1,6 @@
 # Monitoring
 
-WaveBeans uses metric approach to be monitored, and can be connected to a variety of monitoring systems, i.e. Prometheus, as well as provides the same metrics for application. And it always easy to develop your own
+WaveBeans uses metric approach to be monitored, and can be connected to a variety of monitoring systems, i.e. Prometheus, as well as provides the same metrics for application. And it always easy to develop your own.
 
 ## Metrics
 
@@ -8,7 +8,7 @@ The list of metrics and there description you may find in the source file [io/wa
 
 ## Prometheus
 
-In order to use Prometheus, first of all you need to make sure the `metrics.prometheus` project is in your classpath. This the small library that spins up the Prometheus server and listens to WaveBeans metrics within the current JVM instance.
+In order to use Prometheus, first of all you need to make sure the `metrics.prometheus` project is in your classpath. This is the small library that spins up the Prometheus server and listens to WaveBeans metrics within the current JVM instance.
 
 In order to add it just update the gradle file with the new dependecny. I.e. `build.gradle.kts`:
 
@@ -48,7 +48,7 @@ facilitatorConfig {
 }
 ```
 
-Once the facilitator started the Prometheus may connect to the configured port and start collecting metrics.
+Once the facilitator started, the Prometheus may connect to the configured port and start collecting metrics.
 
 For example:
 
@@ -80,7 +80,7 @@ For example:
    export EXTRA_CLASSPATH_AFTER="<WAVEBEANS_HOME>/extra/prometheus/*"
    ```
    
-   * Start facilitator, you should the `Started server on 2440` message. You may find logs under `logs/` folder in the current directory.
+   * Start facilitator, you should see the `Started server on 2440` message. You may find logs under `logs/` folder in the current directory.
    
    ```bash
    wavebeans-faciliator config.conf
@@ -137,7 +137,7 @@ Additional parameters to local mode is:
 * `downstreamCollectors` - the list of the servers to collect from in format `<host-or-ip-address>:<port>`, in most cases that would be facilitator locations.
 * Additionally `refreshIntervalMs` first iterations are spent to connect to downstream collectors unless all of them are connected instead of performing the actual job.
 
-### 
+### Querying values
 
 To collect all values from the collector, you may call `collectValues()`, which return the list of `TimedValue<T>`, where `T` is the type return by your metric. Once the method is called, the internal state of the collector is cleaned up up to the time point you've specified , so make sure you've stored the values, you won't get them once again.
 
