@@ -137,6 +137,13 @@ object DistributedMetricCollectionSpec : Spek({
                             granularValueInMs = 1000
                     )
 
+            val totalCollector = samplesProcessedOnOutputMetric
+                    .collector(
+                            facilitatorsLocations,
+                            refreshIntervalMs = 100,
+                            granularValueInMs = 1000
+                    )
+
             val outputs = listOf(
                     440.sine().trim(1000).toDevNull(),
                     42.sine().trim(500).toCsv("file://${File.createTempFile("test", ".csv").also { it.deleteOnExit() }.absolutePath}")
@@ -157,8 +164,10 @@ object DistributedMetricCollectionSpec : Spek({
 
             assertThat(collector1.collectValues(Long.MAX_VALUE).sumBy { it.value.toInt() }).isEqualTo(44100)
             assertThat(collector2.collectValues(Long.MAX_VALUE).sumBy { it.value.toInt() }).isEqualTo(22050)
+            assertThat(totalCollector.collectValues(Long.MAX_VALUE).sumBy { it.value.toInt() }).isEqualTo(44100 + 22050)
             collector1.close()
             collector2.close()
+            totalCollector.close()
         }
     }
 })
