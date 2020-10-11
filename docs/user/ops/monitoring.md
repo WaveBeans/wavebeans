@@ -8,7 +8,7 @@ The list of metrics and there description you may find in the source file [io/wa
 
 ## Prometheus
 
-In order to use Prometheus, first of all you need to make sure the `metrics.prometheus` project is in your classpath. This the small library that spins up the Prometheus server and listens to WaveBeans metrics within the current JVM instance.
+In order to use Prometheus, first of all you need to make sure the `metrics.prometheus` project is in your classpath. This is the small library that spins up the Prometheus server and listens to WaveBeans metrics within the current JVM instance.
 
 In order to add it just update the gradle file with the new dependecny. I.e. `build.gradle.kts`:
 
