@@ -118,7 +118,7 @@ abstract class MetricCollector<T : Any>(
     /**
      * Tries to attach the collector to downstream ones via [MetricApiClient.attachCollector]. All attach attempts should be
      * performed successfully in order for this method to return true. During attempt it doens't try to connect once
-     * again to collectors which are a;ready connected.
+     * again to collectors which are already connected.
      *
      * @return true if eventually all downstream collectors are connected, otherwise false.
      */
@@ -220,5 +220,4 @@ abstract class MetricCollector<T : Any>(
         return "MetricCollector(metricObject=$metricObject, downstreamCollectors=$downstreamCollectors, refreshIntervalMs=$refreshIntervalMs, granularValueInMs=$granularValueInMs)"
     }
 }
-
 
