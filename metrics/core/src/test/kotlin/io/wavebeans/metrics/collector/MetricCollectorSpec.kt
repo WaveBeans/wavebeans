@@ -9,8 +9,7 @@ import io.wavebeans.metrics.MetricObject
 import io.wavebeans.metrics.MetricService
 import io.wavebeans.metrics.eachIndexed
 import org.spekframework.spek2.Spek
-import org.spekframework.spek2.lifecycle.CachingMode.SCOPE
-import org.spekframework.spek2.lifecycle.CachingMode.TEST
+import org.spekframework.spek2.lifecycle.CachingMode.*
 import org.spekframework.spek2.style.specification.describe
 import java.lang.Thread.sleep
 
@@ -335,7 +334,7 @@ object MetricCollectorSpec : Spek({
     describe("Distributed mode") {
 
         describe("One downstream collector") {
-            val port = 40000
+            val port = 50000
 
             val counter by memoized(SCOPE) { MetricObject.counter("component", "count", "") }
             val time by memoized(SCOPE) { MetricObject.time("component", "time", "") }
@@ -510,7 +509,7 @@ object MetricCollectorSpec : Spek({
         }
 
         describe("Collecting automatically") {
-            val port = 40000
+            val port = 50002
 
             val counter by memoized(SCOPE) { MetricObject.counter("component1", "name1", "") }
 
@@ -533,8 +532,8 @@ object MetricCollectorSpec : Spek({
             }
 
             afterGroup {
-                server.shutdownNow()
                 remoteMetricCollector.close()
+                server.shutdownNow()
             }
 
             it("should attach on first iteration") {
@@ -557,12 +556,12 @@ object MetricCollectorSpec : Spek({
         }
 
         describe("Two downstream collectors") {
-            val port1 = 40000
-            val port2 = 40001
+            val port1 = 50004
+            val port2 = 50005
 
-            val counter by memoized(SCOPE) { MetricObject.counter("component1", "name1", "") }
+            val counter by memoized(EACH_GROUP) { MetricObject.counter("component1_TwoDownstreamCollectors", "name1_TwoDownstreamCollectors", "") }
 
-            val remoteMetricCollector by memoized(SCOPE) {
+            val remoteMetricCollector by memoized(EACH_GROUP) {
                 counter.collector(
                         downstreamCollectors = listOf("localhost:$port1", "localhost:$port2"),
                         granularValueInMs = 0,
@@ -570,13 +569,13 @@ object MetricCollectorSpec : Spek({
                 )
             }
 
-            val server1 by memoized(SCOPE) {
+            val server1 by memoized(EACH_GROUP) {
                 ServerBuilder.forPort(port1)
                         .addService(MetricGrpcService.instance())
                         .build()
             }
 
-            val server2 by memoized(SCOPE) {
+            val server2 by memoized(EACH_GROUP) {
                 ServerBuilder.forPort(port2)
                         .addService(MetricGrpcService.instance())
                         .build()
@@ -586,21 +585,19 @@ object MetricCollectorSpec : Spek({
             beforeGroup {
                 server1.start()
                 server2.start()
+                // attach to downstream collectors
                 remoteMetricCollector.collectFromDownstream()
                 assertThat(remoteMetricCollector.awaitAttached()).isTrue()
             }
 
             afterGroup {
+                remoteMetricCollector.close()
                 server1.shutdownNow()
                 server2.shutdownNow()
-                remoteMetricCollector.close()
-            }
-
-            it("should be already attached on first iteration") {
-                assertThat(remoteMetricCollector.isAttached()).isTrue()
             }
 
             it("should get values from downstream collector") {
+                assertThat(remoteMetricCollector.isAttached()).isTrue()
                 counter.increment(1.0)
                 counter.increment(2.0)
                 counter.increment(3.0)

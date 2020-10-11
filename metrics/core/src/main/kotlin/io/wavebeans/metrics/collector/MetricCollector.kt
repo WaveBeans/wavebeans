@@ -50,6 +50,10 @@ abstract class MetricCollector<T : Any>(
 
     @Volatile
     private var isAttached: Boolean = false
+    @Volatile
+    private var isDraining: Boolean = false
+    @Volatile
+    private var isFinished: Boolean = false
     private val timeseries = TimeseriesList(granularValueInMs, accumulator)
     private val task: ScheduledFuture<*>?
 
@@ -67,7 +71,26 @@ abstract class MetricCollector<T : Any>(
     }
 
     override fun close() {
-        task?.cancel(false)
+        task?.let {
+            log.info { "Metric collector $this is closing..." }
+            isDraining = true
+            it.cancel(false)
+            val start = System.currentTimeMillis()
+            val closeTimeout = 5000
+            var closedProperly = false
+            while (System.currentTimeMillis() - start < closeTimeout) {
+                if (it.isDone && isFinished) {
+                    closedProperly = true
+                    break
+                }
+            }
+            if (!closedProperly) log.warn {
+                "The metric collector $this hasn't been closed properly " +
+                        "within $closeTimeout ms. The task is $task"
+            } else {
+                log.info { "Metric collector $this has closed successfully" }
+            }
+        }
     }
 
     override fun increment(metricObject: CounterMetricObject, delta: Double) {
@@ -181,21 +204,24 @@ abstract class MetricCollector<T : Any>(
      * performs the attach first. The method call do not fail on [Exception].
      */
     internal fun collectFromDownstream(collectUpToTimestamp: Long = System.currentTimeMillis()) {
-        val start = System.currentTimeMillis()
-        if (isAttached) {
-            try {
-                mergeWithDownstreamCollectors(collectUpToTimestamp)
-                log.trace { "Merged $metricObject with downstream on $downstreamCollectors. Took ${System.currentTimeMillis() - start}ms" }
-            } catch (e: Exception) {
-                log.warn(e) { "Error merging $metricObject with downstream on $downstreamCollectors. Took ${System.currentTimeMillis() - start}ms" }
-            }
-        } else {
-            log.info { "Attempting attach $metricObject to $downstreamCollectors..." }
-            if (attachCollector()) {
-                isAttached = true
-                log.info { "Attached $metricObject to $downstreamCollectors" }
+        if (!isDraining && !isFinished) {
+            val start = System.currentTimeMillis()
+            if (isAttached) {
+                try {
+                    mergeWithDownstreamCollectors(collectUpToTimestamp)
+                    log.trace { "Merged $metricObject with downstream on $downstreamCollectors. Took ${System.currentTimeMillis() - start}ms" }
+                    if (isDraining) isFinished = true
+                } catch (e: Exception) {
+                    log.warn(e) { "Error merging $metricObject with downstream on $downstreamCollectors. Took ${System.currentTimeMillis() - start}ms" }
+                }
             } else {
-                log.info { "Couldn't attach $metricObject to $downstreamCollectors" }
+                log.info { "Attempting attach $metricObject to $downstreamCollectors..." }
+                if (attachCollector()) {
+                    isAttached = true
+                    log.info { "Attached $metricObject to $downstreamCollectors" }
+                } else {
+                    log.info { "Couldn't attach $metricObject to $downstreamCollectors" }
+                }
             }
         }
     }
