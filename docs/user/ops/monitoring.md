@@ -80,7 +80,7 @@ For example:
    export EXTRA_CLASSPATH_AFTER="<WAVEBEANS_HOME>/extra/prometheus/*"
    ```
    
-   * Start facilitator, you should the `Started server on 2440` message. You may find logs under `logs/` folder in the current directory.
+   * Start facilitator, you should see the `Started server on 2440` message. You may find logs under `logs/` folder in the current directory.
    
    ```bash
    wavebeans-faciliator config.conf
