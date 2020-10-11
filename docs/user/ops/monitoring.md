@@ -137,7 +137,7 @@ Additional parameters to local mode is:
 * `downstreamCollectors` - the list of the servers to collect from in format `<host-or-ip-address>:<port>`, in most cases that would be facilitator locations.
 * Additionally `refreshIntervalMs` first iterations are spent to connect to downstream collectors unless all of them are connected instead of performing the actual job.
 
-### 
+### Querying values
 
 To collect all values from the collector, you may call `collectValues()`, which return the list of `TimedValue<T>`, where `T` is the type return by your metric. Once the method is called, the internal state of the collector is cleaned up up to the time point you've specified , so make sure you've stored the values, you won't get them once again.
 
