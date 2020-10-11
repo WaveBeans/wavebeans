@@ -9,7 +9,6 @@ import io.wavebeans.lib.stream.window.WindowStreamParams
 import io.wavebeans.lib.stream.window.WindowStreamParamsSerializer
 import io.wavebeans.lib.table.*
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
 import kotlinx.serialization.modules.*
 
 fun jsonCompact(paramsModule: SerializersModule? = null) = Json {

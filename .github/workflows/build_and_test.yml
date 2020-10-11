@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - uses: WaveBeans/wavebeans/docker/gh-build@kotlin-1.4
+      - uses: WaveBeans/wavebeans/docker/gh-build@develop
         env:
           DBX_TEST_CLIENT_ID: ${{ secrets.DBX_TEST_CLIENT_ID }}
           DBX_TEST_ACCESS_TOKEN: ${{ secrets.DBX_TEST_ACCESS_TOKEN }}

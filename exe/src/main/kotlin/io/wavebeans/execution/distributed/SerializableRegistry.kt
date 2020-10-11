@@ -3,7 +3,6 @@ package io.wavebeans.execution.distributed
 import io.wavebeans.lib.stream.window.Window
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.serializer
-import kotlinx.serialization.serializerByTypeToken
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSuperclassOf
 
