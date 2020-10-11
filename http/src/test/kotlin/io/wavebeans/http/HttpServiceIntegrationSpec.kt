@@ -68,32 +68,33 @@ object HttpServiceIntegrationSpec : Spek({
         val port = 12346
         val httpService = HttpService(serverPort = port, gracePeriodMillis = 100, timeoutMillis = 100)
 
-        beforeGroup { httpService.start() }
-        afterGroup { httpService.close() }
-
         val o = 440.sine().toSampleTable("audioIntegration1", 1.s)
 
         val overseer = SingleThreadedOverseer(listOf(o))
         overseer.eval(44100.0f)
-        afterGroup { overseer.close() }
-
-        val result by memoized {
-            runBlocking {
+        fun result(): ByteArray {
+            return runBlocking {
                 HttpClient(CIO) {
                     install(HttpTimeout) {
                         requestTimeoutMillis = 1000
                     }
                 }.use { client ->
-                    client.get<ByteArray>(URL("http://localhost:$port/audio/audioIntegration1/stream/wav"))
+                    client.get(URL("http://localhost:$port/audio/audioIntegration1/stream/wav?limit=1ms"))
                 }
             }
         }
 
+        beforeGroup { httpService.start() }
+        afterGroup {
+            httpService.close()
+            overseer.close()
+        }
+
         it("should stream data for a little bit") {
-            assertThat(result).all {
+            assertThat(result()).all {
                 size().isGreaterThan(44)
                 prop("First 44 bytes") { it.copyOfRange(0, 44) }
-                        .isEqualTo(WavHeader(BitDepth.BIT_16, 44100.0f, 1, Int.MAX_VALUE))
+                        .isEqualTo(WavHeader(BitDepth.BIT_16, 44100.0f, 1, Int.MAX_VALUE).header())
             }
         }
     }
