@@ -48,7 +48,7 @@ facilitatorConfig {
 }
 ```
 
-Once the facilitator started the Prometheus may connect to the configured port and start collecting metrics.
+Once the facilitator started, the Prometheus may connect to the configured port and start collecting metrics.
 
 For example:
 
