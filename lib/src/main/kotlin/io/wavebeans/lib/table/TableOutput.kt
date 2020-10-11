@@ -6,8 +6,15 @@ import io.wavebeans.lib.io.Writer
 import io.wavebeans.lib.stream.SampleCountMeasurement
 import io.wavebeans.lib.stream.map
 import io.wavebeans.lib.stream.window.window
-import kotlinx.serialization.*
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.encoding.CompositeDecoder
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import java.util.concurrent.TimeUnit.NANOSECONDS
 import kotlin.reflect.KClass
 import kotlin.reflect.jvm.jvmName
@@ -74,7 +81,7 @@ class TableOutputParams<T : Any>(
 ) : BeanParams()
 
 object TableOutputParamsSerializer : KSerializer<TableOutputParams<*>> {
-    override val descriptor: SerialDescriptor = SerialDescriptor(TableOutputParams::class.jvmName) {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(TableOutputParams::class.jvmName) {
         element("tableName", String.serializer().descriptor)
         element("tableType", String.serializer().descriptor)
         element("maximumDataLength", TimeMeasure.serializer().descriptor)
@@ -90,7 +97,7 @@ object TableOutputParamsSerializer : KSerializer<TableOutputParams<*>> {
         @Suppress("UNCHECKED_CAST")
         loop@ while (true) {
             when (val i = dec.decodeElementIndex(descriptor)) {
-                CompositeDecoder.READ_DONE -> break@loop
+                CompositeDecoder.DECODE_DONE -> break@loop
                 0 -> tableName = dec.decodeStringElement(descriptor, i)
                 1 -> tableType = WaveBeansClassLoader.classForName(dec.decodeStringElement(descriptor, i)).kotlin
                 2 -> maximumDataLength = dec.decodeSerializableElement(descriptor, i, TimeMeasure.serializer())

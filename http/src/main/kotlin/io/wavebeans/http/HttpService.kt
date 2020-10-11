@@ -2,18 +2,15 @@ package io.wavebeans.http
 
 import io.grpc.Server
 import io.grpc.ServerBuilder
-import io.ktor.application.feature
-import io.ktor.application.install
-import io.ktor.features.CORS
-import io.ktor.server.engine.ApplicationEngine
-import io.ktor.server.engine.applicationEngineEnvironment
-import io.ktor.server.engine.connector
-import io.ktor.server.engine.embeddedServer
-import io.ktor.server.netty.Netty
+import io.ktor.application.*
+import io.ktor.features.*
+import io.ktor.server.engine.*
+import io.ktor.server.netty.*
 import io.wavebeans.lib.table.TableRegistry
 import mu.KotlinLogging
+import org.slf4j.event.Level
 import java.io.Closeable
-import java.util.concurrent.TimeUnit.*
+import java.util.concurrent.TimeUnit.MILLISECONDS
 
 class HttpService(
         private val serverPort: Int = 8080,
@@ -27,7 +24,7 @@ class HttpService(
         private val log = KotlinLogging.logger { }
     }
 
-    private lateinit var server: ApplicationEngine
+    private var server: ApplicationEngine? = null
     private var communicatorServer: Server? = null
 
     fun start(wait: Boolean = false): HttpService {
@@ -36,6 +33,9 @@ class HttpService(
             module {
                 tableService(tableRegistry)
                 audioService(tableRegistry)
+                install(CallLogging) {
+                    level = Level.INFO
+                }
                 install(CORS) {
                     allowNonSimpleContentTypes = true
                     anyHost()
@@ -61,9 +61,15 @@ class HttpService(
     }
 
     override fun close() {
-        server.stop(gracePeriodMillis, timeoutMillis)
-        if (communicatorServer?.shutdown()?.awaitTermination(gracePeriodMillis, MILLISECONDS) == false) {
-            communicatorServer?.shutdownNow()
+        server?.let {
+            log.info { "Stopping HTTP Service on port $serverPort..." }
+            it.stop(gracePeriodMillis, timeoutMillis)
+        }
+        communicatorServer?.let {
+            log.info { "Stopping HTTP Communicator Service on port $communicatorPort..." }
+            if (!it.shutdown().awaitTermination(gracePeriodMillis, MILLISECONDS)) {
+                it.shutdownNow()
+            }
         }
     }
 }

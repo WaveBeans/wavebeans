@@ -22,7 +22,6 @@ import org.spekframework.spek2.lifecycle.CachingMode.SCOPE
 import org.spekframework.spek2.style.specification.Suite
 import org.spekframework.spek2.style.specification.describe
 import java.io.File
-import java.io.IOException
 import java.lang.Thread.sleep
 import java.util.concurrent.Executors
 import kotlin.math.abs
@@ -30,13 +29,15 @@ import kotlin.math.abs
 object DistributedOverseerSpec : Spek({
 
     val log = KotlinLogging.logger {}
-    val facilitatorsLocations = listOf("127.0.0.1:40001", "127.0.0.1:40002")
+    val port1 = 40101
+    val port2 = 40102
+    val facilitatorsLocations = listOf("127.0.0.1:$port1", "127.0.0.1:$port2")
 
     val pool by memoized(SCOPE) { Executors.newCachedThreadPool() }
 
     beforeGroup {
-        pool.submit { startFacilitator(40001) }
-        pool.submit { startFacilitator(40002) }
+        pool.submit { startFacilitator(port1) }
+        pool.submit { startFacilitator(port2) }
 
         facilitatorsLocations.forEach {
             FacilitatorApiClient(it).use { facilitatorApiClient ->
@@ -82,12 +83,15 @@ object DistributedOverseerSpec : Spek({
             }
 
             it("shouldn't throw any exceptions") {
-                val exceptions = distributed.eval(44100.0f).mapNotNull { it.get().exception }
+                val exceptions = distributed.eval(44100.0f)
+                        .mapNotNull { it.get().exception }
+
                 distributed.close()
                 assertThat(exceptions).isEmpty()
             }
             it("shouldn't throw any exceptions") {
-                val exceptions = single.eval(44100.0f).mapNotNull { it.get().exception }
+                val exceptions = single.eval(44100.0f)
+                        .mapNotNull { it.get().exception }
                 single.close()
                 assertThat(exceptions).isEmpty()
             }
@@ -168,7 +172,8 @@ object DistributedOverseerSpec : Spek({
             }
 
             it("should throw exceptions") {
-                val exceptions = distributed.eval(44100.0f).mapNotNull { it.get().exception }
+                val exceptions = distributed.eval(44100.0f)
+                        .mapNotNull { it.get().exception }
                 distributed.close()
                 assertBlock(assertThat(exceptions))
             }
@@ -223,7 +228,7 @@ object DistributedOverseerSpec : Spek({
                     )
                     .replace(
                             "/[*]FACILITATOR_LIST[*]/.*/[*]FACILITATOR_LIST[*]/".toRegex(),
-                            "listOf(\"127.0.0.1:40001\", \"127.0.0.1:40002\")"
+                            "listOf(\"127.0.0.1:$port1\", \"127.0.0.1:$port2\")"
                     )
                     .also { log.info { "$name:\n$it" } }
         }

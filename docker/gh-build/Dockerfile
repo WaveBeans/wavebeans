@@ -2,11 +2,11 @@ FROM openjdk:8
 
 MAINTAINER WaveBeans
 
-LABEL "com.github.actions.name"="JDK 8 with Kotlin 1.3.72"
+LABEL "com.github.actions.name"="JDK 8 with Kotlin 1.4.0"
 LABEL "com.github.actions.description"="Can run java app and uses Kotlin SDK"
 
 RUN cd /usr/lib && \
-    wget -q https://github.com/JetBrains/kotlin/releases/download/v1.3.72/kotlin-compiler-1.3.72.zip && \
+    wget -q https://github.com/JetBrains/kotlin/releases/download/v1.4.0/kotlin-compiler-1.4.0.zip && \
     unzip kotlin-compiler-*.zip && \
     rm kotlin-compiler-*.zip
 

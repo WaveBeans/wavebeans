@@ -1,0 +1,1 @@
+* **[Breaking changes]** Now based on Kotlin 1.4. Previous Kotlin versions are not guaranteed to work.

@@ -2,8 +2,14 @@ package io.wavebeans.execution.distributed
 
 import io.wavebeans.execution.medium.Medium
 import io.wavebeans.execution.medium.MediumBuilder
-import io.wavebeans.execution.medium.MediumSerializer
-import kotlinx.serialization.*
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.encoding.CompositeDecoder
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlin.reflect.jvm.jvmName
 
 class SerializableMediumBuilder : MediumBuilder {
@@ -39,7 +45,7 @@ class SerializableMedium(
 }
 
 object SerializableMediumSerializer : KSerializer<SerializableMedium> {
-    override val descriptor: SerialDescriptor = SerialDescriptor(SerializableMedium::class.jvmName) {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(SerializableMedium::class.jvmName) {
         element("items", ListObjectSerializer.descriptor)
     }
 
@@ -48,7 +54,7 @@ object SerializableMediumSerializer : KSerializer<SerializableMedium> {
         var l: List<Any>? = null
         loop@ while (true) {
             when (val i = dec.decodeElementIndex(descriptor)) {
-                CompositeDecoder.READ_DONE -> break@loop
+                CompositeDecoder.DECODE_DONE -> break@loop
                 0 -> l = dec.decodeSerializableElement(descriptor, i, ListObjectSerializer)
                 else -> throw SerializationException("Unknown index $i")
             }

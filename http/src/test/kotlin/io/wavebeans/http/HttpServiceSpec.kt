@@ -4,12 +4,10 @@ import assertk.Assert
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
+import io.ktor.http.*
 import io.ktor.http.HttpMethod.Companion.Get
-import io.ktor.http.HttpStatusCode
-import io.ktor.server.testing.TestApplicationEngine
-import io.ktor.server.testing.createTestEnvironment
-import io.ktor.server.testing.handleRequest
-import io.ktor.util.KtorExperimentalAPI
+import io.ktor.server.testing.*
+import io.ktor.util.*
 import io.wavebeans.execution.MultiThreadedOverseer
 import io.wavebeans.execution.SingleThreadedOverseer
 import io.wavebeans.lib.*
@@ -23,10 +21,14 @@ import io.wavebeans.lib.stream.window.window
 import io.wavebeans.lib.table.TableRegistry
 import io.wavebeans.lib.table.toSampleTable
 import io.wavebeans.lib.table.toTable
-import kotlinx.serialization.*
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import org.spekframework.spek2.Spek
-import org.spekframework.spek2.lifecycle.CachingMode.*
 import org.spekframework.spek2.style.specification.describe
 import java.util.concurrent.TimeUnit
 
@@ -132,7 +134,7 @@ object HttpServiceSpec : Spek({
 
                 class BSerializer : KSerializer<B> {
 
-                    override val descriptor: SerialDescriptor = SerialDescriptor("B") {
+                    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("B") {
                         element("v", String.serializer().descriptor)
                     }
 

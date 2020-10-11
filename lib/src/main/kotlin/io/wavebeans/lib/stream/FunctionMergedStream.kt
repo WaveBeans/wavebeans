@@ -1,7 +1,15 @@
 package io.wavebeans.lib.stream
 
 import io.wavebeans.lib.*
-import kotlinx.serialization.*
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.encoding.CompositeDecoder
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlin.reflect.jvm.jvmName
 
 fun <T1 : Any, T2 : Any, R : Any> BeanStream<T1>.merge(with: BeanStream<T2>, merge: (Pair<T1?, T2?>) -> R): BeanStream<R> =
         this.merge(with, Fn.wrap(merge))
@@ -12,7 +20,7 @@ fun <T1 : Any, T2 : Any, R : Any> BeanStream<T1>.merge(with: BeanStream<T2>, mer
 
 object FunctionMergedStreamParamsSerializer : KSerializer<FunctionMergedStreamParams<*, *, *>> {
 
-    override val descriptor: SerialDescriptor = SerialDescriptor("FunctionMergedStreamParams") {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(FunctionMergedStreamParams::class.jvmName) {
         element("mergeFn", FnSerializer.descriptor)
     }
 
@@ -22,7 +30,7 @@ object FunctionMergedStreamParamsSerializer : KSerializer<FunctionMergedStreamPa
         @Suppress("UNCHECKED_CAST")
         loop@ while (true) {
             when (val i = dec.decodeElementIndex(descriptor)) {
-                CompositeDecoder.READ_DONE -> break@loop
+                CompositeDecoder.DECODE_DONE -> break@loop
                 0 -> fn = dec.decodeSerializableElement(descriptor, i, FnSerializer) as Fn<Pair<Any?, Any?>, Any>
                 else -> throw SerializationException("Unknown index $i")
             }

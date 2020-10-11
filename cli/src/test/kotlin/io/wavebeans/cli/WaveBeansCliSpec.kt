@@ -9,6 +9,7 @@ import io.ktor.client.features.ServerResponseException
 import io.ktor.client.request.get
 import io.wavebeans.cli.WaveBeansCli.Companion.name
 import io.wavebeans.cli.WaveBeansCli.Companion.options
+import io.wavebeans.cli.script.RunMode
 import io.wavebeans.execution.PodDiscovery
 import io.wavebeans.execution.distributed.Facilitator
 import io.wavebeans.lib.WaveBeansClassLoader
@@ -85,7 +86,7 @@ object WaveBeansCliSpec : Spek({
                             name,
                             "--execute-file", scriptFile.absolutePath,
                             "--time",
-                            "--run-mode", "multi-thread",
+                            "--run-mode", RunMode.MULTI_THREADED.id,
                             "--threads", "1",
                             "--partitions", "1"
                     )),
@@ -101,7 +102,7 @@ object WaveBeansCliSpec : Spek({
 
         describe("Short-living from executed on distributed environment") {
 
-            val portRange = 40000..40001
+            val portRange = 40002..40003
             val gardeners = portRange.map {
                 Facilitator(
                         communicatorPort = it,
@@ -131,7 +132,7 @@ object WaveBeansCliSpec : Spek({
                             name,
                             "--execute-file", scriptFile.absolutePath,
                             "--time",
-                            "--run-mode", "distributed",
+                            "--run-mode", RunMode.DISTRIBUTED.id,
                             "--partitions", "2",
                             "--facilitators", portRange.map { "127.0.0.1:$it" }.joinToString(",")
                     )),
@@ -151,18 +152,18 @@ object WaveBeansCliSpec : Spek({
                     cli = DefaultParser().parse(options, arrayOf(
                             name,
                             "--execute", "440.sine().trim(1000).toTable(\"table1\").out()",
-                            "--http", "12345",
+                            "--http", "12349",
                             "--http-wait", "1",
                             "--verbose"
                     )),
                     printer = PrintWriter(out)
             )
 
-            assertHttpHandling(cli, out)
+            assertHttpHandling(cli, out, 12349)
         }
 
         describe("HTTP API in distributed mode") {
-            val portRange = 40000..40001
+            val portRange = 40004..40005
             val gardeners = portRange.map {
                 Facilitator(
                         communicatorPort = it,
@@ -188,9 +189,9 @@ object WaveBeansCliSpec : Spek({
                     cli = DefaultParser().parse(options, arrayOf(
                             name,
                             "--execute", "440.sine().map { it }.trim(1000).toTable(\"table1\").out()",
-                            "--http", "12345",
+                            "--http", "12350",
                             "--http-wait", "1",
-                            "--http-communicator-port", "12346",
+                            "--http-communicator-port", "12348",
                             "--verbose",
                             "--run-mode", "distributed",
                             "--partitions", "2",
@@ -199,12 +200,12 @@ object WaveBeansCliSpec : Spek({
                     printer = PrintWriter(out)
             )
 
-            assertHttpHandling(cli, out)
+            assertHttpHandling(cli, out, 12350)
         }
     }
 })
 
-private fun Suite.assertHttpHandling(cli: WaveBeansCli, out: ByteArrayOutputStream) {
+private fun Suite.assertHttpHandling(cli: WaveBeansCli, out: ByteArrayOutputStream, port: Int) {
     val log = KotlinLogging.logger {  }
     val pool = Executors.newSingleThreadExecutor()
 
@@ -215,7 +216,7 @@ private fun Suite.assertHttpHandling(cli: WaveBeansCli, out: ByteArrayOutputStre
         fun result(): List<String> {
             return runBlocking {
                 HttpClient(CIO).use { client ->
-                    val response = client.get<String>(URL("http://localhost:12345/table/table1/last?interval=1.ms"))
+                    val response = client.get<String>(URL("http://localhost:$port/table/table1/last?interval=1.ms"))
                     response
                 }
             }.split("[\\r\\n]+".toRegex()).filterNot { it.isEmpty() }

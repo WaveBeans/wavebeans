@@ -11,8 +11,10 @@ object TopologySerializer {
     }
 
     private val json = jsonCompact(paramsModule)
+    private val pretty = jsonPretty(paramsModule)
 
-    fun deserialize(topology: String): Topology = json.parse(Topology.serializer(), topology)
+    fun deserialize(topology: String): Topology = json.decodeFromString(Topology.serializer(), topology)
 
-    fun serialize(topology: Topology, json: Json = this.json): String = json.stringify(Topology.serializer(), topology)
+    fun serialize(topology: Topology): String = json.encodeToString(Topology.serializer(), topology)
+    fun serializePretty(topology: Topology): String = pretty.encodeToString(Topology.serializer(), topology)
 }

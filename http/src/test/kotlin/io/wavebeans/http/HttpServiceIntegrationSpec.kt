@@ -3,7 +3,6 @@ package io.wavebeans.http
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
-import assertk.fail
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.features.HttpTimeout
@@ -23,7 +22,6 @@ import io.wavebeans.lib.table.toTable
 import kotlinx.coroutines.runBlocking
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
-import java.lang.IllegalArgumentException
 import java.net.URL
 
 @KtorExperimentalAPI
@@ -32,7 +30,8 @@ object HttpServiceIntegrationSpec : Spek({
 
     describe("Table service") {
 
-        val httpService = HttpService(serverPort = 12345, gracePeriodMillis = 100, timeoutMillis = 100, communicatorPort = 20000)
+        val port = 12345
+        val httpService = HttpService(serverPort = port, gracePeriodMillis = 100, timeoutMillis = 100)
 
         beforeGroup { httpService.start() }
         afterGroup { httpService.close() }
@@ -48,7 +47,7 @@ object HttpServiceIntegrationSpec : Spek({
         val result by memoized {
             runBlocking {
                 HttpClient(CIO).use { client ->
-                    client.get<String>(URL("http://localhost:12345/table/tableIntegration1/last?interval=1.ms"))
+                    client.get<String>(URL("http://localhost:$port/table/tableIntegration1/last?interval=1.ms"))
                 }
             }
         }
@@ -66,45 +65,51 @@ object HttpServiceIntegrationSpec : Spek({
 
     describe("Audio service") {
 
-        val httpService = HttpService(serverPort = 12345, gracePeriodMillis = 100, timeoutMillis = 100, communicatorPort = 20000)
-
-        beforeGroup { httpService.start() }
-        afterGroup { httpService.close() }
+        val port = 12346
+        val httpService = HttpService(serverPort = port, gracePeriodMillis = 100, timeoutMillis = 100)
 
         val o = 440.sine().toSampleTable("audioIntegration1", 1.s)
 
         val overseer = SingleThreadedOverseer(listOf(o))
         overseer.eval(44100.0f)
-        afterGroup { overseer.close() }
-
-        val result by memoized {
-            runBlocking {
+        fun result(): ByteArray {
+            return runBlocking {
                 HttpClient(CIO) {
                     install(HttpTimeout) {
                         requestTimeoutMillis = 1000
                     }
                 }.use { client ->
-                    client.get<ByteArray>(URL("http://localhost:12345/audio/audioIntegration1/stream/wav"))
+                    client.get(URL("http://localhost:$port/audio/audioIntegration1/stream/wav?limit=1ms"))
                 }
             }
         }
 
+        beforeGroup { httpService.start() }
+        afterGroup {
+            httpService.close()
+            overseer.close()
+        }
+
         it("should stream data for a little bit") {
-            assertThat(result).all {
+            assertThat(result()).all {
                 size().isGreaterThan(44)
                 prop("First 44 bytes") { it.copyOfRange(0, 44) }
-                        .isEqualTo(WavHeader(BitDepth.BIT_16, 44100.0f, 1, Int.MAX_VALUE))
+                        .isEqualTo(WavHeader(BitDepth.BIT_16, 44100.0f, 1, Int.MAX_VALUE).header())
             }
         }
     }
 
     describe("Running in distributed mode") {
 
+        val httpPort = 12347
+        val communicatorPort = 20000
+        val facilitatorPort1 = 4000
+        val facilitatorPort2 = 4001
         val httpService = HttpService(
-                serverPort = 12345,
+                serverPort = httpPort,
                 gracePeriodMillis = 100,
                 timeoutMillis = 100,
-                communicatorPort = 20000,
+                communicatorPort = communicatorPort,
                 tableRegistry = TableRegistryImpl() //just isolated instance
         )
 
@@ -112,14 +117,14 @@ object HttpServiceIntegrationSpec : Spek({
         val o = 440.sine().toSampleTable("tableDistributed", 1.s)
 
         val facilitator1 = Facilitator(
-                communicatorPort = 4000,
+                communicatorPort = facilitatorPort1,
                 threadsNumber = 1,
                 podDiscovery = object : PodDiscovery() {},
                 onServerShutdownTimeoutMillis = 100
         ).start()
 
         val facilitator2 = Facilitator(
-                communicatorPort = 4001,
+                communicatorPort = facilitatorPort2,
                 threadsNumber = 1,
                 podDiscovery = object : PodDiscovery() {},
                 onServerShutdownTimeoutMillis = 100
@@ -127,8 +132,8 @@ object HttpServiceIntegrationSpec : Spek({
 
         val overseer = DistributedOverseer(
                 listOf(o),
-                listOf("127.0.0.1:4000", "127.0.0.1:4001"),
-                listOf("127.0.0.1:20000"),
+                listOf("127.0.0.1:$facilitatorPort1", "127.0.0.1:$facilitatorPort2"),
+                listOf("127.0.0.1:$communicatorPort"),
                 partitionsCount = 1
         )
 
@@ -149,7 +154,7 @@ object HttpServiceIntegrationSpec : Spek({
         val result by memoized {
             runBlocking {
                 HttpClient(CIO).use { client ->
-                    client.get<String>(URL("http://localhost:12345/table/tableDistributed/last?interval=100ms"))
+                    client.get<String>(URL("http://localhost:$httpPort/table/tableDistributed/last?interval=100ms"))
                 }
             }
         }

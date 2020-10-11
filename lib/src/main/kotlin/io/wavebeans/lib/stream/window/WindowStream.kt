@@ -1,8 +1,15 @@
 package io.wavebeans.lib.stream.window
 
 import io.wavebeans.lib.*
-import kotlinx.serialization.*
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.encoding.CompositeDecoder
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlin.reflect.jvm.jvmName
 
 /**
@@ -44,7 +51,7 @@ fun <T : Any> BeanStream<T>.window(size: Int, step: Int, zeroElFn: () -> T): Bea
 
 object WindowStreamParamsSerializer : KSerializer<WindowStreamParams<*>> {
 
-    override val descriptor: SerialDescriptor = SerialDescriptor(WindowStreamParams::class.jvmName) {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(WindowStreamParams::class.jvmName) {
         element("windowSize", Int.serializer().descriptor)
         element("step", Int.serializer().descriptor)
         element("zeroElFn", String.serializer().descriptor)
@@ -57,7 +64,7 @@ object WindowStreamParamsSerializer : KSerializer<WindowStreamParams<*>> {
         var funcClazzName: String? = null
         loop@ while (true) {
             when (val i = dec.decodeElementIndex(descriptor)) {
-                CompositeDecoder.READ_DONE -> break@loop
+                CompositeDecoder.DECODE_DONE -> break@loop
                 0 -> windowSize = dec.decodeIntElement(descriptor, i)
                 1 -> step = dec.decodeIntElement(descriptor, i)
                 2 -> funcClazzName = dec.decodeStringElement(descriptor, i)

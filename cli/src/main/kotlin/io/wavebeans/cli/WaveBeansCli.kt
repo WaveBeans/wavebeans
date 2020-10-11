@@ -71,7 +71,8 @@ class WaveBeansCli(
             val content = cli.get(e) { it }
                     ?: cli.getRequired(f) { File(it).readText() }
 
-            val runMode = cli.get(m) { RunMode.byId(it) } ?: RunMode.LOCAL
+            val runMode = cli.get(m) { checkNotNull(RunMode.byId(it)) { "Mode $it is not recognized" } }
+                    ?: RunMode.LOCAL
             if (verbosePrint) printer.printLine("Running mode: ${runMode.id}")
             val runOptions = mutableMapOf<String, Any>()
             if (runMode == RunMode.MULTI_THREADED) {

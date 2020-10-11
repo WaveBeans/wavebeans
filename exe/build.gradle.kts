@@ -17,7 +17,7 @@ dependencies {
 
     val kotlinxSerializationRuntimeVersion: String by System.getProperties()
 
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime:$kotlinxSerializationRuntimeVersion")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationRuntimeVersion")
 
     // distributed execution dependencies
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinxSerializationRuntimeVersion")

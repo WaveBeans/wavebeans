@@ -1,9 +1,16 @@
 package io.wavebeans.lib
 
-import kotlinx.serialization.*
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.nullable
 import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.encoding.CompositeDecoder
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlin.reflect.jvm.jvmName
 
 private const val fnClazz = "fnClazz"
@@ -211,7 +218,7 @@ object FnInitParametersSerializer : KSerializer<FnInitParameters> {
 
     private val mapSerializer = MapSerializer(String.serializer(), String.serializer())
 
-    override val descriptor: SerialDescriptor = SerialDescriptor(FnInitParameters::class.jvmName) {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(FnInitParameters::class.jvmName) {
         element("parametersMap", mapSerializer.descriptor)
     }
 
@@ -220,7 +227,7 @@ object FnInitParametersSerializer : KSerializer<FnInitParameters> {
         var params: Map<String, String>? = null
         loop@ while (true) {
             when (val i = dec.decodeElementIndex(descriptor)) {
-                CompositeDecoder.READ_DONE -> break@loop
+                CompositeDecoder.DECODE_DONE -> break@loop
                 0 -> params = dec.decodeSerializableElement(
                         descriptor,
                         i,
@@ -247,7 +254,7 @@ object FnInitParametersSerializer : KSerializer<FnInitParameters> {
 
 @Suppress("UNCHECKED_CAST")
 object FnSerializer : KSerializer<Fn<*, *>> {
-    override val descriptor: SerialDescriptor = SerialDescriptor(Fn::class.jvmName) {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(Fn::class.jvmName) {
         element("fnClass", String.serializer().descriptor)
         element("initParams", FnInitParametersSerializer.descriptor)
     }
@@ -258,7 +265,7 @@ object FnSerializer : KSerializer<Fn<*, *>> {
         var fnClazz: Class<Fn<Any, Any>>? = null
         loop@ while (true) {
             when (val i = dec.decodeElementIndex(descriptor)) {
-                CompositeDecoder.READ_DONE -> break@loop
+                CompositeDecoder.DECODE_DONE -> break@loop
                 0 -> fnClazz = WaveBeansClassLoader.classForName(dec.decodeStringElement(descriptor, i)) as Class<Fn<Any, Any>>
                 1 -> initParams = dec.decodeSerializableElement(descriptor, i, FnInitParameters.serializer())
                 else -> throw SerializationException("Unknown index $i")
