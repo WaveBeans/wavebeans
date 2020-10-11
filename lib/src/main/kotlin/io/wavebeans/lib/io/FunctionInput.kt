@@ -1,6 +1,8 @@
 package io.wavebeans.lib.io
 
 import io.wavebeans.lib.*
+import io.wavebeans.metrics.clazzTag
+import io.wavebeans.metrics.samplesProcessedOnInputMetric
 import kotlinx.serialization.*
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
@@ -47,10 +49,12 @@ class Input<T : Any>(
         override val parameters: InputParams<T>
 ) : BeanStream<T>, SourceBean<T>, SinglePartitionBean {
 
+    private val samplesProcessed = samplesProcessedOnInputMetric.withTags(clazzTag to parameters.generator::class.jvmName)
+
     override fun asSequence(sampleRate: Float): Sequence<T> =
             (0..Long.MAX_VALUE).asSequence()
                     .map { parameters.generator.apply(Pair(it, sampleRate)) }
                     .takeWhile { it != null }
-                    .map { it!! }
+                    .map { samplesProcessed.increment(); it!! }
 
 }

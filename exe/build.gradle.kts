@@ -14,6 +14,7 @@ dependencies {
 
     implementation(project(":lib"))
     implementation(project(":proto"))
+    implementation(project(":metrics:core"))
 
     val kotlinxSerializationRuntimeVersion: String by System.getProperties()
 

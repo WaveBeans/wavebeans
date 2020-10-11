@@ -1,14 +1,19 @@
 package io.wavebeans.execution.distributed
 
 import com.uchuhimo.konf.Config
+import com.uchuhimo.konf.Item
 import com.uchuhimo.konf.source.Source
 import com.uchuhimo.konf.source.hocon
+import io.wavebeans.metrics.MetricConnector
+import io.wavebeans.metrics.MetricService
 import mu.KotlinLogging
 import java.io.PrintStream
 import java.util.concurrent.Callable
 import java.util.concurrent.CountDownLatch
 import java.util.jar.JarFile
 import java.util.jar.Manifest
+import kotlin.reflect.KFunction
+import kotlin.reflect.typeOf
 import kotlin.system.exitProcess
 
 fun main(args: Array<String>) {
@@ -55,10 +60,12 @@ class FacilitatorCli(
         lateinit var configFilePath: String
         when (args[0].toLowerCase()) {
             configDescribeOption -> {
-                printWriter.println("The following config attributes of facilitatorConfig are supported:\n" + FacilitatorConfig.items.joinToString("\n") {
-                    "- ${it.name}: ${it.type} <${if (it.isRequired) "required" else "optional"}>. ${it.description}. " +
-                            "Default value: ${if (it.isOptional) it.asOptionalItem.default?.toString() else "N/A"}"
-                })
+                printWriter.println("""
+                            |The following config attributes of `facilitatorConfig` are supported:
+                            |${FacilitatorConfig.items.joinToString("\n") { it.string() }}
+                            |Communicator confiuguration under `facilitatorConfig.communicatorConfig`:
+                            |${FacilitatorConfig.CommunicatorConfig.items.joinToString("\n") { it.string() }}
+                    """.trimMargin("|"))
                 printWriter.flush()
                 return 0
             }
@@ -88,6 +95,7 @@ class FacilitatorCli(
             Config { addSpec(FacilitatorConfig) }.withSource(Source.from.hocon.file(configFilePath))
         } catch (e: Exception) {
             printWriter.println("Can't parse the config file: " + e.message)
+            e.printStackTrace(printWriter)
             printWriter.flush()
             return 1
         }
@@ -101,7 +109,9 @@ class FacilitatorCli(
                 communicatorPort = config[FacilitatorConfig.communicatorPort],
                 threadsNumber = config[FacilitatorConfig.threadsNumber],
                 callTimeoutMillis = config[FacilitatorConfig.callTimeoutMillis],
-                onServerShutdownTimeoutMillis = config[FacilitatorConfig.onServerShutdownTimeoutMillis]
+                onServerShutdownTimeoutMillis = config[FacilitatorConfig.onServerShutdownTimeoutMillis],
+                metricConnectorDescriptors = config[FacilitatorConfig.metricConnectors],
+                maxInboundMessage = config[FacilitatorConfig.CommunicatorConfig.maxInboundMessage],
         )
 
         facilitator!!.start()
@@ -116,3 +126,6 @@ class FacilitatorCli(
         return 0
     }
 }
+
+private fun Item<*>.string(): String = "- ${name}: ${type} <${if (isRequired) "required" else "optional"}>. ${description}. " +
+        "Default value: ${if (isOptional) asOptionalItem.default?.toString() else "N/A"}"

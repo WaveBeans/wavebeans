@@ -82,6 +82,9 @@ case "`uname`" in
 esac
 
 CLASSPATH=$classpath
+# User's classpath parameters
+CLASSPATH=\$EXTRA_CLASSPATH_BEFORE:\$CLASSPATH:\$EXTRA_CLASSPATH_AFTER
+
 <% if ( mainClassName.startsWith('--module ') ) { %>MODULE_PATH=$modulePath<% } %>
 
 # Determine the Java command to use to start the JVM.

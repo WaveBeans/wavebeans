@@ -1,12 +1,17 @@
 package io.wavebeans.lib.io
 
 import io.wavebeans.lib.BeanStream
+import io.wavebeans.metrics.clazzTag
+import io.wavebeans.metrics.samplesProcessedOnOutputMetric
 import mu.KotlinLogging
+import kotlin.reflect.KClass
+import kotlin.reflect.jvm.jvmName
 
 abstract class AbstractWriter<T : Any>(
         val stream: BeanStream<T>,
         val sampleRate: Float,
-        val writerDelegate: WriterDelegate
+        val writerDelegate: WriterDelegate,
+        outputClazz: KClass<*>
 ) : Writer {
 
     companion object {
@@ -18,6 +23,8 @@ abstract class AbstractWriter<T : Any>(
         writerDelegate.footerFn = ::footer
     }
 
+    private val samplesCounter = samplesProcessedOnOutputMetric.withTags(clazzTag to outputClazz.jvmName)
+
     protected abstract fun header(): ByteArray?
 
     protected abstract fun footer(): ByteArray?
@@ -28,6 +35,7 @@ abstract class AbstractWriter<T : Any>(
         return if (sampleIterator.hasNext()) {
             val bytes = serialize(sampleIterator.next())
             writerDelegate.write(bytes, 0, bytes.size)
+            samplesCounter.increment()
             true
         } else {
             log.debug { "[$this] The stream is over" }

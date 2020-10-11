@@ -28,6 +28,7 @@ class HttpService(
     private var communicatorServer: Server? = null
 
     fun start(wait: Boolean = false): HttpService {
+        if (server != null) throw IllegalStateException("Can't start the server, it is already started")
         log.info { "Starting HTTP Service on port $serverPort" }
         val env = applicationEngineEnvironment {
             module {
@@ -71,6 +72,7 @@ class HttpService(
                 it.shutdownNow()
             }
         }
+        server = null
+        communicatorServer = null
     }
 }
-

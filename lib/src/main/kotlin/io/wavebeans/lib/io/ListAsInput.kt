@@ -4,6 +4,8 @@ import io.wavebeans.lib.BeanParams
 import io.wavebeans.lib.SourceBean
 import io.wavebeans.lib.WaveBeansClassLoader
 import io.wavebeans.lib.stream.FiniteStream
+import io.wavebeans.metrics.clazzTag
+import io.wavebeans.metrics.samplesProcessedOnInputMetric
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.ListSerializer
@@ -82,8 +84,10 @@ class ListAsInput<T : Any>(
         override val parameters: ListAsInputParams
 ) : FiniteStream<T>, SourceBean<T> {
 
+    private val samplesProcessed = samplesProcessedOnInputMetric.withTags(clazzTag to ListAsInput::class.jvmName)
+
     @Suppress("UNCHECKED_CAST")
-    override fun asSequence(sampleRate: Float): Sequence<T> = parameters.list.asSequence().map { it as T }
+    override fun asSequence(sampleRate: Float): Sequence<T> = parameters.list.asSequence().map { samplesProcessed.increment(); it as T }
 
     override fun length(timeUnit: TimeUnit): Long = 0
 }

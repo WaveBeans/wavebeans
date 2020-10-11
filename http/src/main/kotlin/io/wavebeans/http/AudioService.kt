@@ -13,6 +13,7 @@ import io.wavebeans.lib.io.*
 import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.table.TableRegistry
 import io.wavebeans.lib.table.TimeseriesTableDriver
+import io.wavebeans.metrics.*
 import mu.KotlinLogging
 import java.io.BufferedOutputStream
 import java.io.InputStream
@@ -67,6 +68,7 @@ fun Application.audioService(tableRegistry: TableRegistry) {
 class AudioService(internal val tableRegistry: TableRegistry) {
     companion object {
         private val log = KotlinLogging.logger { }
+
     }
 
     fun <T : Any> stream(
@@ -76,9 +78,20 @@ class AudioService(internal val tableRegistry: TableRegistry) {
             limit: TimeMeasure?,
             offset: TimeMeasure?
     ): InputStream {
+        val metricTags = arrayOf(
+                tableTag to tableName,
+                bitDepthTag to bitDepth.bits.toString(),
+                formatTag to format.contentType.toString(),
+                limitTag to (limit?.toString() ?: "n/a"),
+                offsetTag to (offset?.toString() ?: "n/a")
+        )
+        audioStreamRequestMetric.withTags(*metricTags).increment()
+        val _startTime = System.currentTimeMillis()
         val table = tableRegistry.byName<T>(tableName)
         return when (format) {
             AudioStreamOutputFormat.WAV -> streamAsWav(table, bitDepth, limit, offset)
+        }.also {
+            audioStreamRequestTimeMetric.withTags(*metricTags).time(System.currentTimeMillis() - _startTime)
         }
     }
 
@@ -88,7 +101,13 @@ class AudioService(internal val tableRegistry: TableRegistry) {
             limit: TimeMeasure?,
             offset: TimeMeasure?
     ): InputStream {
-
+        val audioStreamBytesSentMetricObj = audioStreamBytesSentMetric.withTags(
+                tableTag to table.tableName,
+                bitDepthTag to bitDepth.bits.toString(),
+                formatTag to "wav",
+                limitTag to (limit?.toString() ?: "n/a"),
+                offsetTag to (offset?.toString() ?: "n/a")
+        )
         val nextBytes: Queue<Byte> = LinkedTransferQueue<Byte>()
         val writerDelegate = object : WriterDelegate() {
             override fun write(b: Int) {
@@ -107,7 +126,8 @@ class AudioService(internal val tableRegistry: TableRegistry) {
                             bitDepth,
                             sampleRate,
                             1,
-                            writerDelegate
+                            writerDelegate,
+                            AudioService::class
                     )
                     SampleArray::class -> WavWriterFromSampleArray(
                             (table as TimeseriesTableDriver<SampleArray>).stream(offset ?: 0.s)
@@ -115,7 +135,8 @@ class AudioService(internal val tableRegistry: TableRegistry) {
                             bitDepth,
                             sampleRate,
                             1,
-                            writerDelegate
+                            writerDelegate,
+                            AudioService::class
                     )
                     else -> throw UnsupportedOperationException("Table type $tableType is not supported for audio streaming")
                 }
@@ -125,16 +146,19 @@ class AudioService(internal val tableRegistry: TableRegistry) {
 
         return object : InputStream() {
             override fun read(): Int {
-                try {
+                return try {
                     if (headerIdx < header.size) {
-                        return header[headerIdx++].toInt() and 0xFF
+                        header[headerIdx++].toInt() and 0xFF
+                    } else {
+                        if (nextBytes.isEmpty()) writer.write()
+
+                        if (nextBytes.isNotEmpty()) (nextBytes.poll().toInt() and 0xFF)
+                        else -1
                     }
-                    if (nextBytes.isEmpty()) writer.write()
-                    return if (nextBytes.isNotEmpty()) (nextBytes.poll().toInt() and 0xFF) else -1
                 } catch (e: ClassCastException) {
                     log.error(e) { "Table $table has wrong type" }
-                    return -1
-                }
+                    -1
+                }.also { if (it != -1) audioStreamBytesSentMetricObj.increment() }
             }
         }
     }

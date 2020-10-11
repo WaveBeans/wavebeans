@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package io.wavebeans.communicator;
+
+service MetricApi {
+  rpc CollectValues (CollectValuesRequest) returns (stream TimedValue);
+  rpc AttachCollector (AttachCollectorRequest) returns (AttachCollectorResponse);
+}
+
+message CollectValuesRequest {
+  int64 collectUpToTimestamp = 1;
+  int64 collectorId = 2;
+}
+
+message MetricObject {
+  string type = 1;
+  string component = 2;
+  string name = 3;
+  map<string, string> tags = 4;
+}
+
+message TimedValue {
+  int64 timestamp = 1;
+  string serializedValue = 2;
+}
+
+message AttachCollectorRequest {
+  MetricObject metricObject = 2;
+  string collectorClass = 3;
+  repeated string downstreamCollectors = 4;
+  int64 refreshIntervalMs = 5;
+  int64 granularValueInMs = 6;
+}
+
+message AttachCollectorResponse {
+  int64 collectorId = 1;
+}

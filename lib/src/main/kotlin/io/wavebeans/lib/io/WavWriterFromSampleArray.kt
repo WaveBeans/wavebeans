@@ -4,14 +4,16 @@ import io.wavebeans.lib.BeanStream
 import io.wavebeans.lib.BitDepth
 import io.wavebeans.lib.SampleArray
 import io.wavebeans.lib.SinglePartitionBean
+import kotlin.reflect.KClass
 
 class WavWriterFromSampleArray(
         stream: BeanStream<SampleArray>,
         val bitDepth: BitDepth,
         sampleRate: Float,
         val numberOfChannels: Int,
-        writerDelegate: WriterDelegate
-) : AbstractWriter<SampleArray>(stream, sampleRate, writerDelegate), SinglePartitionBean {
+        writerDelegate: WriterDelegate,
+        outputClazz: KClass<*>
+) : AbstractWriter<SampleArray>(stream, sampleRate, writerDelegate, outputClazz), SinglePartitionBean {
 
     private var dataSize: Int = 0
 

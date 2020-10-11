@@ -1,4 +1,4 @@
-package io.wavebeans.execution.distributed
+package io.wavebeans.tests
 
 data class CommandResult(
         val exitCode: Int,

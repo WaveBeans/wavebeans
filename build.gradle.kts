@@ -48,12 +48,12 @@ subprojects {
         implementation(kotlin("reflect"))
         implementation("io.github.microutils:kotlin-logging:1.7.7")
 
+        testImplementation(project(":tests"))
         testImplementation("org.spekframework.spek2:spek-dsl-jvm:$spekVersion")
         testRuntimeOnly("org.spekframework.spek2:spek-runner-junit5:$spekVersion")
         testImplementation("com.willowtreeapps.assertk:assertk-jvm:0.13")
         testImplementation("com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0")
         testImplementation("ch.qos.logback:logback-classic:1.2.3")
-
     }
 
     java {
@@ -101,14 +101,24 @@ publishing {
             artifactId = "http"
         }
         create<MavenPublication>("filesystems.core") {
-            from(subprojects.first { it.name == "core" }.components["java"])
+            from(subprojects.first { it.name == "core" && it.parent?.name == "filesystems" }.components["java"])
             groupId = "io.wavebeans.filesystems"
             artifactId = "core"
         }
         create<MavenPublication>("filesystems.dropbox") {
-            from(subprojects.first { it.name == "dropbox" }.components["java"])
+            from(subprojects.first { it.name == "dropbox" && it.parent?.name == "filesystems" }.components["java"])
             groupId = "io.wavebeans.filesystems"
             artifactId = "dropbox"
+        }
+        create<MavenPublication>("metrics.core") {
+            from(subprojects.first { it.name == "core" && it.parent?.name == "metrics" }.components["java"])
+            groupId = "io.wavebeans.metrics"
+            artifactId = "core"
+        }
+        create<MavenPublication>("metrics.prometheus") {
+            from(subprojects.first { it.name == "prometheus" && it.parent?.name == "metrics" }.components["java"])
+            groupId = "io.wavebeans.metrics"
+            artifactId = "prometheus"
         }
     }
 }
@@ -116,7 +126,7 @@ publishing {
 bintray {
     user = findProperty("bintray.user")?.toString() ?: ""
     key = findProperty("bintray.key")?.toString() ?: ""
-    setPublications("lib", "exe", "proto", "http", "filesystems.core", "filesystems.dropbox")
+    setPublications("lib", "exe", "proto", "http", "filesystems.core", "filesystems.dropbox", "metrics.core", "metrics.prometheus")
     pkg(delegateClosureOf<com.jfrog.bintray.gradle.BintrayExtension.PackageConfig> {
         repo = "wavebeans"
         name = "wavebeans"

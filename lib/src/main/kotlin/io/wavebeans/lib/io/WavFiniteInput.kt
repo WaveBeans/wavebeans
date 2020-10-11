@@ -4,11 +4,14 @@ import io.wavebeans.fs.core.WbFileDriver
 import io.wavebeans.lib.*
 import io.wavebeans.lib.stream.FiniteToStream
 import io.wavebeans.lib.stream.stream
+import io.wavebeans.metrics.clazzTag
+import io.wavebeans.metrics.samplesProcessedOnInputMetric
 import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 import java.io.InputStream
 import java.net.URI
 import java.util.concurrent.TimeUnit
+import kotlin.reflect.jvm.jvmName
 
 fun wave(uri: String): FiniteInput<Sample> = WavFiniteInput(WavFiniteInputParams(URI(uri)))
 
@@ -22,6 +25,8 @@ class WavFiniteInput(
         val params: WavFiniteInputParams,
         private val content: Content? = null
 ) : FiniteInput<Sample>, SinglePartitionBean {
+
+    private val samplesProcessed = samplesProcessedOnInputMetric.withTags(clazzTag to WavFiniteInput::class.jvmName)
 
     override val parameters: BeanParams = params
 
@@ -70,7 +75,9 @@ class WavFiniteInput(
     override fun samplesCount(): Int = cnt.size / cnt.bitDepth.bytesPerSample
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> =
-            ByteArrayLittleEndianDecoder(cnt.sampleRate, cnt.bitDepth).sequence(sampleRate, cnt.buffer)
+            ByteArrayLittleEndianDecoder(cnt.sampleRate, cnt.bitDepth)
+                    .sequence(sampleRate, cnt.buffer)
+                    .map { samplesProcessed.increment(); it }
 }
 
 class WavFileReaderException(message: String, cause: Exception?) : Exception(message, cause) {

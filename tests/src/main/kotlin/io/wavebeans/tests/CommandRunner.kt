@@ -1,8 +1,7 @@
-package io.wavebeans.execution.distributed
+package io.wavebeans.tests
 
 import mu.KotlinLogging
 import java.io.ByteArrayOutputStream
-import java.util.concurrent.Callable
 import java.util.concurrent.TimeUnit
 import kotlin.random.Random
 
