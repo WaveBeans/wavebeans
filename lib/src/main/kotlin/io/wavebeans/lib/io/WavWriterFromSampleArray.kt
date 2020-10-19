@@ -11,7 +11,7 @@ class WavWriterFromSampleArray(
         val bitDepth: BitDepth,
         sampleRate: Float,
         val numberOfChannels: Int,
-        writerDelegate: WriterDelegate,
+        writerDelegate: WriterDelegate<Unit>,
         outputClazz: KClass<*>
 ) : AbstractWriter<SampleArray>(stream, sampleRate, writerDelegate, outputClazz), SinglePartitionBean {
 

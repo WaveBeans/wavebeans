@@ -33,9 +33,25 @@ val samplesProcessedOnOutputMetric = MetricObject.counter(
         "Counts the number of samples processed by the output",
         clazzTag
 )
+
 val samplesProcessedOnInputMetric = MetricObject.counter(
         "io.wavebeans.lib.input",
         "samplesProcessed",
         "Counts the number of samples processed by the input",
         clazzTag, typeTag
 )
+
+val flushedOnOutputMetric = MetricObject.counter(
+        "io.wavebeans.lib.output",
+        "flushed",
+        "Counts the number of times the output was flushed if applicable",
+        clazzTag
+)
+
+val bytesProcessedOnOutputMetric = MetricObject.counter(
+        "io.wavebeans.lib.output",
+        "bytesProcessed",
+        "Counts the number of bytes processed by the output",
+        clazzTag
+)
+

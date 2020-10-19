@@ -1,15 +1,13 @@
 package io.wavebeans.http
 
-import io.ktor.application.Application
-import io.ktor.application.call
-import io.ktor.features.BadRequestException
-import io.ktor.features.NotFoundException
-import io.ktor.http.ContentType
-import io.ktor.response.respondOutputStream
-import io.ktor.routing.get
-import io.ktor.routing.routing
+import io.ktor.application.*
+import io.ktor.features.*
+import io.ktor.http.*
+import io.ktor.response.*
+import io.ktor.routing.*
 import io.wavebeans.lib.*
 import io.wavebeans.lib.io.*
+import io.wavebeans.lib.stream.map
 import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.table.TableRegistry
 import io.wavebeans.lib.table.TimeseriesTableDriver
@@ -109,7 +107,11 @@ class AudioService(internal val tableRegistry: TableRegistry) {
                 offsetTag to (offset?.toString() ?: "n/a")
         )
         val nextBytes: Queue<Byte> = LinkedTransferQueue<Byte>()
-        val writerDelegate = object : WriterDelegate() {
+        val writerDelegate = object : WriterDelegate<Unit> {
+            override var headerFn: () -> ByteArray? = { throw UnsupportedOperationException() }
+            override var footerFn: () -> ByteArray? = { throw UnsupportedOperationException() }
+            override fun flush(argument: Unit?) = throw UnsupportedOperationException()
+            override fun close() = throw UnsupportedOperationException()
             override fun write(b: Int) {
                 nextBytes.add(b.toByte())
             }
@@ -119,25 +121,17 @@ class AudioService(internal val tableRegistry: TableRegistry) {
         val tableType = table.tableType
         val writer: Writer =
                 @Suppress("UNCHECKED_CAST")
-                when (tableType) {
-                    Sample::class -> WavWriter(
-                            (table as TimeseriesTableDriver<Sample>).stream(offset ?: 0.s)
-                                    .let { if (limit != null) it.trim(limit.ns(), TimeUnit.NANOSECONDS) else it },
-                            bitDepth,
-                            sampleRate,
-                            1,
-                            writerDelegate,
-                            AudioService::class
-                    )
-                    SampleArray::class -> WavWriterFromSampleArray(
-                            (table as TimeseriesTableDriver<SampleArray>).stream(offset ?: 0.s)
-                                    .let { if (limit != null) it.trim(limit.ns(), TimeUnit.NANOSECONDS) else it },
-                            bitDepth,
-                            sampleRate,
-                            1,
-                            writerDelegate,
-                            AudioService::class
-                    )
+                when {
+                    tableType.isInstance(Sample::class) || tableType.isInstance(SampleArray::class) ->
+                        AnyWavWriter(
+                                (table as TimeseriesTableDriver<Sample>).stream(offset ?: 0.s).map { it as Any }
+                                        .let { if (limit != null) it.trim(limit.ns(), TimeUnit.NANOSECONDS) else it },
+                                bitDepth,
+                                sampleRate,
+                                1,
+                                writerDelegate,
+                                AudioService::class
+                        )
                     else -> throw UnsupportedOperationException("Table type $tableType is not supported for audio streaming")
                 }
 

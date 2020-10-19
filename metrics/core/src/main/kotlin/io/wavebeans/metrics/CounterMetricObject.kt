@@ -24,6 +24,4 @@ data class CounterMetricObject(
      * Calls [MetricConnector.decrement] on [MetricService].
      */
     fun decrement(delta: Double = 1.0) = MetricService.decrement(this, delta)
-
-
 }
