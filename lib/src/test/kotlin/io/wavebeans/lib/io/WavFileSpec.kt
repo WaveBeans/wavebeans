@@ -3,7 +3,6 @@ package io.wavebeans.lib.io
 import assertk.assertThat
 import assertk.assertions.isCloseTo
 import assertk.assertions.prop
-import com.google.common.io.Files
 import io.wavebeans.lib.*
 import io.wavebeans.lib.BitDepth.*
 import io.wavebeans.lib.stream.map
@@ -14,6 +13,7 @@ import org.spekframework.spek2.Spek
 import org.spekframework.spek2.lifecycle.CachingMode.TEST
 import org.spekframework.spek2.style.specification.describe
 import java.io.File
+import java.nio.file.Files
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAccessor
@@ -58,7 +58,7 @@ object WavFileSpec : Spek({
                 val index: Long
         )
 
-        val directory by memoized(TEST) { Files.createTempDir() }
+        val directory by memoized(TEST) { Files.createTempDirectory("tmp").toFile() }
         fun outputFiles() = directory.listFiles()?.map { it!! }?.sortedBy { it.name } ?: emptyList()
 
         fun run(input: BeanStream<Sample>, durationMs: Long, chunkSize: Int, bitDepth: BitDepth) {
@@ -66,8 +66,8 @@ object WavFileSpec : Spek({
                 constructor(chunkSize: Int) : this(FnInitParameters().add("chunkSize", chunkSize))
 
                 override fun apply(argument: IndexedSample): Managed<OutputSignal, TemporalAccessor, Sample> {
-                    val chunkSize = initParams.int("chunkSize")
-                    return if (chunkSize > 0 && argument.index > 0 && argument.index % chunkSize == 0L) {
+                    val cz = initParams.int("chunkSize")
+                    return if (cz > 0 && argument.index > 0 && argument.index % cz == 0L) {
                         argument.sample.withOutputSignal(FlushOutputSignal, ZonedDateTime.now())
                     } else {
                         argument.sample.withOutputSignal(NoopOutputSignal, null)
@@ -121,7 +121,7 @@ object WavFileSpec : Spek({
                     run(input, 10, 0, bitDepth)
                     val n = 1920
                     val expected = input.asSequence(sampleRate).take(n).toList()
-                    assertThat(outputFiles()).eachIndexed(1) { file, index ->
+                    assertThat(outputFiles()).eachIndexed(1) { file, _ ->
                         file.prop("content") { wave("file://${it.absolutePath}").asSequence(sampleRate).toList() }
                                 .eachIndexed(n) { v, i -> v.isCloseTo(expected[i], precision) }
                     }
@@ -136,7 +136,7 @@ object WavFileSpec : Spek({
                 val index: Long
         )
 
-        val directory by memoized(TEST) { Files.createTempDir() }
+        val directory by memoized(TEST) { Files.createTempDirectory("tmp").toFile() }
         fun outputFiles() = directory.listFiles()?.map { it!! }?.sortedBy { it.name } ?: emptyList()
         val windowSize = 128
 
@@ -145,8 +145,8 @@ object WavFileSpec : Spek({
                 constructor(chunkSize: Int) : this(FnInitParameters().add("chunkSize", chunkSize))
 
                 override fun apply(argument: IndexedSampleArray): Managed<OutputSignal, TemporalAccessor, SampleArray> {
-                    val chunkSize = initParams.int("chunkSize")
-                    return if (chunkSize > 0 && argument.index > 0 && argument.index % chunkSize == 0L) {
+                    val cz = initParams.int("chunkSize")
+                    return if (cz > 0 && argument.index > 0 && argument.index % cz == 0L) {
                         argument.sample.withOutputSignal(FlushOutputSignal, ZonedDateTime.now())
                     } else {
                         argument.sample.withOutputSignal(NoopOutputSignal, null)
@@ -205,7 +205,7 @@ object WavFileSpec : Spek({
                     run(input, 10, 0, bitDepth)
                     val n = 15 * windowSize
                     val expected = input.asSequence(sampleRate).take(n).toList()
-                    assertThat(outputFiles()).eachIndexed(1) { file, index ->
+                    assertThat(outputFiles()).eachIndexed(1) { file, _ ->
                         file.prop("content") { wave("file://${it.absolutePath}").asSequence(sampleRate).toList() }
                                 .eachIndexed(n) { v, i -> v.isCloseTo(expected[i], precision) }
                     }

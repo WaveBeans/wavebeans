@@ -18,7 +18,7 @@ import kotlin.reflect.jvm.jvmName
 
 object DistributedMetricCollectionSpec : Spek({
 
-    val facilitatorPorts = listOf(40001, 40002)
+    val facilitatorPorts = listOf(40101, 40102)
 
     val facilitatorsLocations = facilitatorPorts.map { "127.0.0.1:$it" }
 

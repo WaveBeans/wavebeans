@@ -3,13 +3,13 @@ package io.wavebeans.lib.io
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.prop
-import com.google.common.io.Files
 import io.wavebeans.lib.eachIndexed
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.lifecycle.CachingMode.TEST
 import org.spekframework.spek2.style.specification.describe
 import java.io.File
 import java.net.URI
+import java.nio.file.Files
 
 object FileWriterDelegateSpec : Spek({
     describe("Single file") {
@@ -81,7 +81,7 @@ object FileWriterDelegateSpec : Spek({
     }
 
     describe("Suffixed file writer") {
-        val directory by memoized(TEST) { Files.createTempDir() }
+        val directory by memoized(TEST) { Files.createTempDirectory("tmp").toFile() }
         val delegate by memoized(TEST) {
             var i = 0
             suffixedFileWriterDelegate<Unit>("file://${directory.absolutePath}/test.out") {
@@ -127,7 +127,7 @@ object FileWriterDelegateSpec : Spek({
 })
 
 private fun WriterDelegate<Unit>.performWrites(contents: List<String>) {
-    contents.forEachIndexed { i, it ->
+    contents.forEach {
         this.write(it.toByteArray())
         this.flush(null)
     }

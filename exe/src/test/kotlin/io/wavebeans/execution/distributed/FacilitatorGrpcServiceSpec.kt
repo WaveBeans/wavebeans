@@ -32,13 +32,15 @@ import kotlin.reflect.jvm.jvmName
 class FacilitatorGrpcServiceSpec : Spek({
     val gardener: Gardener = mock()
     val podDiscovery = object : PodDiscovery() {}
+    val port1 = 40300
+    val port2 = 40301
     val facilitator = Facilitator(
-            communicatorPort = 40000,
+            communicatorPort = port1,
             threadsNumber = 1,
             gardener = gardener,
             podDiscovery = podDiscovery
     )
-    val facilitatorApiClient by memoized(SCOPE) { FacilitatorApiClient("127.0.0.1:40000") }
+    val facilitatorApiClient by memoized(SCOPE) { FacilitatorApiClient("127.0.0.1:$port1") }
 
     beforeGroup {
         facilitator.start()
@@ -227,7 +229,7 @@ class FacilitatorGrpcServiceSpec : Spek({
                     .addBushEndpoints(
                             RegisterBushEndpointsRequest.BushEndpoint.newBuilder()
                                     .setBushKey(bushKey1.toString())
-                                    .setLocation("127.0.0.1:40000")
+                                    .setLocation("127.0.0.1:$port1")
                                     .addPods(
                                             RegisterBushEndpointsRequest.BushEndpoint.PodKey.newBuilder()
                                                     .setId(podKey1.id).setPartition(podKey1.partition)
@@ -243,7 +245,7 @@ class FacilitatorGrpcServiceSpec : Spek({
                     .addBushEndpoints(
                             RegisterBushEndpointsRequest.BushEndpoint.newBuilder()
                                     .setBushKey(bushKey2.toString())
-                                    .setLocation("127.0.0.1:40001")
+                                    .setLocation("127.0.0.1:$port2")
                                     .addPods(
                                             RegisterBushEndpointsRequest.BushEndpoint.PodKey.newBuilder()
                                                     .setId(podKey3.id).setPartition(podKey3.partition)
@@ -263,13 +265,13 @@ class FacilitatorGrpcServiceSpec : Spek({
             assertThat(podDiscovery.bush(bushKey1))
                     .isNotNull()
                     .isInstanceOf(RemoteBush::class)
-                    .prop("endpoint") { it.endpoint }.isEqualTo("127.0.0.1:40000")
+                    .prop("endpoint") { it.endpoint }.isEqualTo("127.0.0.1:$port1")
         }
         it("should discover remote bush 2") {
             assertThat(podDiscovery.bush(bushKey2))
                     .isNotNull()
                     .isInstanceOf(RemoteBush::class)
-                    .prop("endpoint") { it.endpoint }.isEqualTo("127.0.0.1:40001")
+                    .prop("endpoint") { it.endpoint }.isEqualTo("127.0.0.1:$port2")
         }
         it("should discover pods on remote bush 1") {
             assertThat(podDiscovery.bushFor(podKey1)).isEqualTo(bushKey1)

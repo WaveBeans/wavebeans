@@ -121,17 +121,25 @@ class AudioService(internal val tableRegistry: TableRegistry) {
         val tableType = table.tableType
         val writer: Writer =
                 @Suppress("UNCHECKED_CAST")
-                when {
-                    tableType.isInstance(Sample::class) || tableType.isInstance(SampleArray::class) ->
-                        AnyWavWriter(
-                                (table as TimeseriesTableDriver<Sample>).stream(offset ?: 0.s).map { it as Any }
-                                        .let { if (limit != null) it.trim(limit.ns(), TimeUnit.NANOSECONDS) else it },
-                                bitDepth,
-                                sampleRate,
-                                1,
-                                writerDelegate,
-                                AudioService::class
-                        )
+                when (tableType){
+                    Sample::class -> AnyWavWriter(
+                            (table as TimeseriesTableDriver<Sample>).stream(offset ?: 0.s)
+                                    .let { if (limit != null) it.trim(limit.ns(), TimeUnit.NANOSECONDS) else it } as BeanStream<Any>,
+                            bitDepth,
+                            sampleRate,
+                            1,
+                            writerDelegate,
+                            AudioService::class
+                    )
+                    SampleArray::class -> AnyWavWriter(
+                            (table as TimeseriesTableDriver<SampleArray>).stream(offset ?: 0.s)
+                                    .let { if (limit != null) it.trim(limit.ns(), TimeUnit.NANOSECONDS) else it } as BeanStream<Any>,
+                            bitDepth,
+                            sampleRate,
+                            1,
+                            writerDelegate,
+                            AudioService::class
+                    )
                     else -> throw UnsupportedOperationException("Table type $tableType is not supported for audio streaming")
                 }
 
