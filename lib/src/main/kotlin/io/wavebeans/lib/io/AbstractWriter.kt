@@ -1,13 +1,11 @@
 package io.wavebeans.lib.io
 
 import io.wavebeans.lib.BeanStream
-import io.wavebeans.lib.stream.Measured
-import io.wavebeans.lib.stream.SampleCountMeasurement
+import io.wavebeans.lib.Managed
 import io.wavebeans.metrics.bytesProcessedOnOutputMetric
 import io.wavebeans.metrics.clazzTag
 import io.wavebeans.metrics.flushedOnOutputMetric
 import io.wavebeans.metrics.samplesProcessedOnOutputMetric
-import kotlinx.serialization.Serializable
 import mu.KotlinLogging
 import kotlin.reflect.KClass
 import kotlin.reflect.jvm.jvmName
@@ -110,19 +108,7 @@ abstract class AbstractPartialWriter<T : Any, A : Any>(
 typealias OutputSignal = Byte
 
 const val NoopOutputSignal: OutputSignal = 0x00
-const val FlushOutputSignal: OutputSignal = 0x02
-
-/**
- * The sample wrapper that allows to send the specific signals over the stream.
- */
-@Serializable
-data class Managed<S, A, T>(
-        val signal: S,
-        val argument: A?,
-        val payload: T
-) : Measured {
-    override fun measure(): Int = SampleCountMeasurement.samplesInObject(payload as Any)
-}
+const val FlushOutputSignal: OutputSignal = 0x01
 
 fun <T : Any, A : Any> T.withOutputSignal(signal: OutputSignal, argument: A? = null): Managed<OutputSignal, A, T> = Managed(signal, argument, this)
 

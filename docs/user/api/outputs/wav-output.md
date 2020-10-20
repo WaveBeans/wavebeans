@@ -1,25 +1,28 @@
-WAV-file output
-=========
+# WAV-file output
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**
 
 - [Overview](#overview)
+- [Controlling output](#controlling-output)
+  - [Noop signal](#noop-signal)
+  - [Flush signal](#flush-signal)
+- [Performance boost](#performance-boost)
 - [Low-level API](#low-level-api)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-Overview
---------
+## Overview
 
-The [WAV](https://en.wikipedia.org/wiki/WAV) is very popular format to store uncompressed audio as file. Currently WaveBeans supports only files with single channel -- mono. The sampling rate and bit depth can be any. It can be used only to store stream of samples -- `BeanStream<Sample>`.
+The [WAV](https://en.wikipedia.org/wiki/WAV) is a very popular format to store uncompressed audio as file. Currently, WaveBeans supports only files with single channel -- mono. The sampling rate and bit depth can vary. It can be used only to store stream of samples `BeanStream<Sample>` or [buffered](#performance-boost) stream of samples `BeanStream<SampleArray>`.
 
-Writing to wave file is 2 step process:
-1. While the stream is being processed, the sample is stored as a temporary file. That means you could run the stream as long as you need and you don't need to define the length of the output beforehand.
-2. The final wave file is formed when you're attempting to close the output. It is very important to remember this -- you always need to close the output before trying to find the file in the file system.
+Writing to wav-file is 2 step process:
+1. While the stream is being processed, the sample is stored as a temporary file. That means you could run the stream as long as you need, and you don't need to define the length of the output beforehand.
+2. The final wav-file is formed when you're attempting to close the output. It is very important to remember this -- you always need to close the output before trying to find the file in the file system.
 
-To store the stream into a wav file you would need to call one of the following function, each function defines specific parameters of the container.
+To store the stream into a wav-file you call one of the following function, each function defines specific parameters of the container:
+
 1. Mono 8 bit -- `toMono8bitWav("file:///path/to/file.wav")` 
 2. Mono 16 bit -- `toMono16bitWav("file:///path/to/file.wav")` 
 3. Mono 24 bit -- `toMono24bitWav("file:///path/to/file.wav")` 
@@ -31,10 +34,112 @@ To store the stream into a wav file you would need to call one of the following 
     .toMono16bitWav("file:///path/to/file.wav")
 ```
 
-*Note: Don't forget to follow general rules to [execute the stream](../../exe/readme.md)*
+*Note: Don't forget to follow general rules to [execute the stream](../../exe/readme.md).*
 
-Low-level API
---------
+## Controlling output
+
+The same stream parts can be stored into different files if that is needed. The example of such cases: you want to cut the signal into let's say equal-sized parts, or detect the silence and store samples into multiple files removing the silence on the way.
+
+In order to do that you need to wrap the [Sample](../readme.md#sample) or [SampleArray](../readme.md#samplearray) with [Managed](../readme.md#managed-type) class and then whenever you feel it is the time -- send the flush signal. For convenience, you may use function `io.wavebeans.lib.io.AbstractWriterKt.withOutputSignal` on top of any non-nullable type, though sometimes compilere can't interfer the types, and you would need to specify them explicitly:
+
+```kotlin
+// from Sample type and no arguments for `NoopOutputSignal` signal
+sample.withOutputSignal<Sample, Unit>(NoopOutputSignal)
+
+// from Int type and new instance of custom type `ArgumentType`of argument for `FlushOutputSignal` signal 
+int.withOutputSignal<Int, ArgumentType>(FlushOutputSignal, ArgumentType("some-value"))
+```
+
+To be able to output `Managed` stream into wav-file you need to call one of the wav output functions (see above) specifying the suffix function that translates the argument into a string:
+
+```kotlin
+managedStream.toMono8bitWav("file:///path/to/file.wav") { argument -> "-${format(argument)}" } 
+managedStream.toMono16bitWav("file:///path/to/file.wav") { argument -> "-${format(argument)}" } 
+managedStream.toMono24bitWav("file:///path/to/file.wav") { argument -> "-${format(argument)}" } 
+managedStream.toMono32bitWav("file:///path/to/file.wav") { argument -> "-${format(argument)}" } 
+```
+
+The argument is provided at the moment the signal is fired.
+
+*Note: it is recommended to apply [buffering](#performance-boost) to avoid excessive object creation for each sample, even small buffers help.*
+
+### Noop signal
+
+As the stream becomes "managed" the signal must be specified, if nothing needs to be performed you still forced to specify something. `io.wavebeans.lib.io.AbstractWriterKt.NoopOutputSignal` is not handled by the output and completely ignored, use it every time you don't want to affect the stream. 
+
+### Flush signal
+
+The flush signal `io.wavebeans.lib.io.AbstractWriterKt.FlushOutputSignal` allows you to tell the output to immediately close and flush the current buffer and start a new one. The file name is augmented with suffix: `file:///path/to.wav` becomes `file:///path/to${suffix}.wav`, the suffix is generated by the provided function. 
+
+Here is an example that cuts signal into ~1 sec pieces. The idea here is to mark every sample with its time marker, group together all samples within ~2ms time range to make sure the time markers are unique, and flush everytime the ~2ms time range crosses the 1 sec notch:
+
+```kotlin
+val timeStreamMs = input { (i, sampleRate) -> i / (sampleRate / 1000.0).toLong() }
+440.sine()
+        .merge(timeStreamMs) { (signal, time) ->
+            checkNotNull(signal)
+            checkNotNull(time)
+            signal to time
+        }
+        // ~2ms windows within desired sample rate 44100Hz
+        .window(89) { ZeroSample to 0 }
+        .map { window ->
+            val samples = window.elements.map { it.first }
+            val timeMarker = window.elements.first().second
+            sampleArrayOf(samples).withOutputSignal(
+                    if (timeMarker > 0 // ignore the first marker to avoid flushing empty file
+                            && timeMarker % 1000 < 2 // target every second notch with 2 ms precision
+                    ) FlushOutputSignal else NoopOutputSignal,
+                    ZonedDateTime.now() to timeMarker
+            )
+        }
+        .trim(20, TimeUnit.SECONDS)
+        .toMono16bitWav("file:///home/user/sine.wav") { a ->
+            val dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss-SSS")
+            "-${dtf.format(a?.first ?: ZonedDateTime.now())}-${a?.second ?: 0}"
+        }
+```
+
+If you run example above you'll have something like this in your output directory:
+
+```text
+$ la    
+  total 3536
+  -rw-r--r--  1 user  staff    86K Oct 20 17:06 sine-2020-10-20-17-06-18-805-0.wav
+  -rw-r--r--  1 user  staff    86K Oct 20 17:06 sine-2020-10-20-17-06-19-213-1001.wav
+  -rw-r--r--  1 user  staff    86K Oct 20 17:06 sine-2020-10-20-17-06-19-254-2000.wav
+  -rw-r--r--  1 user  staff    86K Oct 20 17:06 sine-2020-10-20-17-06-19-337-3001.wav
+  -rw-r--r--  1 user  staff    86K Oct 20 17:06 sine-2020-10-20-17-06-19-385-4000.wav
+  -rw-r--r--  1 user  staff    86K Oct 20 17:06 sine-2020-10-20-17-06-19-411-5000.wav
+  -rw-r--r--  1 user  staff    86K Oct 20 17:06 sine-2020-10-20-17-06-19-438-6001.wav
+  -rw-r--r--  1 user  staff    86K Oct 20 17:06 sine-2020-10-20-17-06-19-463-7000.wav
+  -rw-r--r--  1 user  staff    86K Oct 20 17:06 sine-2020-10-20-17-06-19-488-8001.wav
+  -rw-r--r--  1 user  staff    86K Oct 20 17:06 sine-2020-10-20-17-06-19-517-9001.wav
+  -rw-r--r--  1 user  staff    86K Oct 20 17:06 sine-2020-10-20-17-06-19-541-10000.wav
+  -rw-r--r--  1 user  staff    86K Oct 20 17:06 sine-2020-10-20-17-06-19-561-11001.wav
+  -rw-r--r--  1 user  staff    86K Oct 20 17:06 sine-2020-10-20-17-06-19-578-12000.wav
+  -rw-r--r--  1 user  staff    86K Oct 20 17:06 sine-2020-10-20-17-06-19-596-13000.wav
+  -rw-r--r--  1 user  staff    86K Oct 20 17:06 sine-2020-10-20-17-06-19-610-14001.wav
+  -rw-r--r--  1 user  staff    86K Oct 20 17:06 sine-2020-10-20-17-06-19-623-15000.wav
+  -rw-r--r--  1 user  staff    86K Oct 20 17:06 sine-2020-10-20-17-06-19-637-16001.wav
+  -rw-r--r--  1 user  staff    86K Oct 20 17:06 sine-2020-10-20-17-06-19-652-17001.wav
+  -rw-r--r--  1 user  staff    86K Oct 20 17:06 sine-2020-10-20-17-06-19-670-18000.wav
+  -rw-r--r--  1 user  staff    86K Oct 20 17:06 sine-2020-10-20-17-06-19-684-19001.wav
+  -rw-r--r--  1 user  staff   4.0K Oct 20 17:06 sine-2020-10-20-17-06-19-697-20000.wav
+```
+
+## Performance boost
+
+For some cases it is possible to have a small buffer while processing the stream. In this case, using [SampleArray](../readme.md#samplearray) may help to reduce the overhead on the processing pipeline. Wav output support working with this type of sample out of the box, so you won't need to flatten it back. To use that approach, simply [window](../operations/window-operation.md) the stream with desired length, [remap](../operations/map-operation.md) it to [SampleArray](../readme.md#samplearray), and you may store it directly to the wav-file:
+
+```kotlin
+stream
+    .window(128).map { sampleArrayOf(it) }
+    .trim(20, TimeUnit.SECONDS)
+    .toMono16bitWav("file:///home/user/sine.wav")
+```
+
+## Low-level API
 
 As any other API within WaveBeans framework, WAV output is just a wrapper around a class. You may create the instance of this class by specifying the stream it needs to read from and a set of parameters.
 

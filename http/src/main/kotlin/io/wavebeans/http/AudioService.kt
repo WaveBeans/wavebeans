@@ -7,7 +7,6 @@ import io.ktor.response.*
 import io.ktor.routing.*
 import io.wavebeans.lib.*
 import io.wavebeans.lib.io.*
-import io.wavebeans.lib.stream.map
 import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.table.TableRegistry
 import io.wavebeans.lib.table.TimeseriesTableDriver
@@ -122,7 +121,7 @@ class AudioService(internal val tableRegistry: TableRegistry) {
         val writer: Writer =
                 @Suppress("UNCHECKED_CAST")
                 when (tableType){
-                    Sample::class -> AnyWavWriter(
+                    Sample::class -> WavWriter(
                             (table as TimeseriesTableDriver<Sample>).stream(offset ?: 0.s)
                                     .let { if (limit != null) it.trim(limit.ns(), TimeUnit.NANOSECONDS) else it } as BeanStream<Any>,
                             bitDepth,
@@ -131,7 +130,7 @@ class AudioService(internal val tableRegistry: TableRegistry) {
                             writerDelegate,
                             AudioService::class
                     )
-                    SampleArray::class -> AnyWavWriter(
+                    SampleArray::class -> WavWriter(
                             (table as TimeseriesTableDriver<SampleArray>).stream(offset ?: 0.s)
                                     .let { if (limit != null) it.trim(limit.ns(), TimeUnit.NANOSECONDS) else it } as BeanStream<Any>,
                             bitDepth,

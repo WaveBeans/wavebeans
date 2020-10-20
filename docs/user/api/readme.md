@@ -14,6 +14,7 @@
   - [Window of any type T](#window-of-any-type-t)
   - [FftSample](#fftsample)
   - [User defined type](#user-defined-type)
+  - [Managed type](#managed-type)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -271,3 +272,7 @@ time sec,sample1,sample2
 0.00007,0.1542514499,0.9147423578
 0.00009,-0.6669380617,-0.9873392775
 ```
+
+### Managed type
+
+[TODO]
