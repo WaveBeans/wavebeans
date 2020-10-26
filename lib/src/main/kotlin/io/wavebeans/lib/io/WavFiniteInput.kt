@@ -173,10 +173,10 @@ class WavFileReader(
         if (descriptor.numberOfChannels == 1) {
             val bb = ByteArray(dataSize)
             val c = source.read(bb)
-            if (c != dataSize) TODO("handle stream reading better")
+            if (c != dataSize) throw IllegalStateException("Read $c bytes but expected $dataSize")
             return Pair(descriptor, bb)
         } else {
-            TODO("implement non-mono wav files")
+            throw UnsupportedOperationException("Mono wav-files are supported only.")
         }
     }
 

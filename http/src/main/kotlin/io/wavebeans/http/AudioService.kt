@@ -111,6 +111,11 @@ class AudioService(internal val tableRegistry: TableRegistry) {
             override var footerFn: () -> ByteArray? = { throw UnsupportedOperationException() }
             override fun flush(argument: Unit?) = throw UnsupportedOperationException()
             override fun close() = throw UnsupportedOperationException()
+            override fun finalizeBuffer(argument: Unit?) = throw UnsupportedOperationException()
+
+            override fun initBuffer(argument: Unit?) {
+            }
+
             override fun write(b: Int) {
                 nextBytes.add(b.toByte())
             }
@@ -120,7 +125,7 @@ class AudioService(internal val tableRegistry: TableRegistry) {
         val tableType = table.tableType
         val writer: Writer =
                 @Suppress("UNCHECKED_CAST")
-                when (tableType){
+                when (tableType) {
                     Sample::class -> WavWriter(
                             (table as TimeseriesTableDriver<Sample>).stream(offset ?: 0.s)
                                     .let { if (limit != null) it.trim(limit.ns(), TimeUnit.NANOSECONDS) else it } as BeanStream<Any>,

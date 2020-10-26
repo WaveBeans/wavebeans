@@ -36,44 +36,79 @@ class FileWriterDelegate<A : Any>(
     override var headerFn: () -> ByteArray? = { null }
     override var footerFn: () -> ByteArray? = { null }
 
-    @Volatile private lateinit var uri: URI
-    @Volatile private lateinit var tmpFile: WbFile
-    @Volatile private lateinit var file: WbFileOutputStream
-    @Volatile private lateinit var buffer: OutputStream
-    @Volatile private var isEmpty = false
-    @Volatile private var latestArgument: A? = null
+    @Volatile
+    private lateinit var uri: URI
 
-    init {
-        initBuffer(null)
-    }
+    @Volatile
+    private lateinit var tmpFile: WbFile
+
+    @Volatile
+    private lateinit var file: WbFileOutputStream
+
+    @Volatile
+    private lateinit var buffer: OutputStream
+
+    @Volatile
+    private var isReady: Boolean? = null
+        private set
+
+    @Volatile
+    private var isEmpty = true
+
+    @Volatile
+    private var latestArgument: A? = null
 
     override fun write(b: Int) {
+        check(isReady == true) { "The buffer is not ready to write into, initialize it first with initBuffer(). " }
         if (isEmpty) {
-            initBuffer(latestArgument)
+            log.trace { "[$this] Initializing buffer on write [latestArgument=$latestArgument, isEmpty=$isEmpty]" }
+            doInitBuffer(latestArgument)
+            latestArgument = null
             isEmpty = false
         }
         buffer.write(b)
     }
 
     override fun flush(argument: A?) {
-        finalizeBuffer()
-        latestArgument = argument
-        isEmpty = true
+        log.trace { "[$this] Flushing buffer [argument=$argument, isEmpty=$isEmpty]" }
+        if (!isEmpty) {
+            doFinalizeBuffer()
+            latestArgument = argument
+        }
     }
 
     override fun close() {
-        if (!isEmpty) finalizeBuffer()
+        log.trace { "[$this] Closing delegate" }
+        if (!isEmpty) doFinalizeBuffer()
     }
 
-    private fun initBuffer(argument: A?) {
+    override fun initBuffer(argument: A?) {
+        log.trace { "[$this] Initializing buffer [argument=$argument, isReady=$isReady]" }
+        check(isReady == null || isReady == false) {
+            "The delegate is not finalized to get initialized once again, finalize it first with finalizeBuffer()."
+        }
+        latestArgument = argument
+        isReady = true
+    }
+
+    override fun finalizeBuffer(argument: A?) {
+        log.trace { "[$this] Finalizing buffer [argument=$argument, isReady=$isReady]" }
+        check(isReady != null && isReady == true) {
+            "The delegate is not ready to get finalized, initialize it first with initBuffer()."
+        }
+        doFinalizeBuffer()
+        isReady = false
+    }
+
+    private fun doInitBuffer(argument: A?) {
         uri = uriGenerationStrategy.invoke(argument)
         tmpFile = localFileFactory.createTemporaryWbFile("file-writer-output", ".tmp")
         file = tmpFile.createWbFileOutputStream()
         buffer = BufferedOutputStream(file, bufferSize)
     }
 
-    private fun finalizeBuffer() {
-        log.info { "[$this] Closing the writer" }
+    private fun doFinalizeBuffer() {
+        log.info { "[$this] Closing the buffer..." }
         try {
             buffer.close()
             log.debug { "[$this] Buffer closed" }
@@ -119,8 +154,8 @@ class FileWriterDelegate<A : Any>(
         } else {
             log.warn { "[$this] Temporary file is not found. Seems everything is closed already." }
         }
+        isEmpty = true
     }
-
 }
 
 fun <A : Any> plainFileWriterDelegate(uri: String): FileWriterDelegate<Unit> = FileWriterDelegate({ URI(uri) })

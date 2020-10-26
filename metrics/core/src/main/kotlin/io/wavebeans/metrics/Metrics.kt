@@ -48,6 +48,13 @@ val flushedOnOutputMetric = MetricObject.counter(
         clazzTag
 )
 
+val gateStateOnOutputMetric = MetricObject.gauge(
+        "io.wavebeans.lib.output",
+        "gate.state",
+        "Reflects the state of the gate of the specific output, 0 is closed, 1 is opened",
+        clazzTag
+)
+
 val bytesProcessedOnOutputMetric = MetricObject.counter(
         "io.wavebeans.lib.output",
         "bytesProcessed",

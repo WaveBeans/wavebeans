@@ -16,7 +16,7 @@ package io.wavebeans.lib.io
  *
  * @param A type of the flush arguments.
  */
-interface WriterDelegate<A: Any> {
+interface WriterDelegate<A : Any> {
 
     /**
      * Injected header function to use to write some bytes before the actual content during finalization step.
@@ -57,9 +57,25 @@ interface WriterDelegate<A: Any> {
      * for the next content.
      *
      * @param argument the argument to  bypass, usually used for new name generation, follow the documentation
-     *                 of concrete implementation.
+     *                 of the specific implementation.
      */
     fun flush(argument: A?)
+
+    /**
+     * Manually initiates the new buffer if it isn't initialized yet. Depending on implementation may or may not support multiple calls.
+     *
+     * @param argument the argument to  bypass, usually used for new name generation, follow the documentation
+     *                 of the specific implementation.
+     */
+    fun initBuffer(argument: A?)
+
+    /**
+     * Manually finallizes the new buffer if it isn't initialized yet. Depending on implementation may or may not support multiple calls.
+     *
+     * @param argument the argument to  bypass, usually used for new name generation, follow the documentation
+     *                 of the specific implementation.
+     */
+    fun finalizeBuffer(argument: A?)
 
     /**
      * Closes the writer and finalizes the current "buffer". When called, it is not expected to call any other method more.
