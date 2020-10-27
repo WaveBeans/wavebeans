@@ -8,6 +8,7 @@
 - [Controlling output](#controlling-output)
   - [Noop signal](#noop-signal)
   - [Flush signal](#flush-signal)
+  - [Open and close gate signals](#open-and-close-gate-signals)
 - [Performance boost](#performance-boost)
 - [Low-level API](#low-level-api)
 
@@ -126,6 +127,55 @@ $ la
   -rw-r--r--  1 user  staff    86K Oct 20 17:06 sine-2020-10-20-17-06-19-670-18000.wav
   -rw-r--r--  1 user  staff    86K Oct 20 17:06 sine-2020-10-20-17-06-19-684-19001.wav
   -rw-r--r--  1 user  staff   4.0K Oct 20 17:06 sine-2020-10-20-17-06-19-697-20000.wav
+```
+
+### Open and close gate signals
+
+The gate allows you to define if the output should be stored or ignored. When the gate is opened, all samples which are coming in are stored in the buffer, when the gate is closed the current buffer (if it's not empty) flushed on the disk. The following coming in samples are ignored unless the next open gate signal is emitted. When the output is created, the gate is already opened.
+
+To open the gate send `io.wavebeans.lib.io.AbstractWriterKt.OpenGateOutputSignal`, to close `io.wavebeans.lib.io.AbstractWriterKt.CloseGateOutputSignal`. The same consequent signals has no effect. I.e. if the gate is already opened, the open gate signal will remain the gate opened, and the signal is completely omitted, even monitoring metrics are not affected. The similar is true for close gate signal.
+
+As an application the following may work as an example. Let's assume we have a stream of signals with silence between them, and the signal overall is noisy. The task is to sample the signal into separate files removing out the silence. The idea would be to chunk the singal, and check if the chunk represents silence, hence when we see the silence we start sending `CloseGateOutputSignal`, first of which will flush the output, when sigmal gets back to normal, we continue sending `OpenGateOutputSignal`, which opens the gate and start filling in th buffer.
+
+```kotlin
+val noise = input { sampleOf(Random.nextInt()) }
+val silence = (noise * 0.1).trim(100)
+val sample1 = (440.sine() + noise * 0.01).trim(500)
+val sample2 = (220.sine() + noise * 0.01).trim(500)
+val sample3 = (880.sine() + noise * 0.01).trim(500)
+
+(sample1..silence..sample2..silence..sample2..sample3) // represents the signal
+        .window(20)
+        .map {
+            val noiseLevel = 0.11 
+            val signal =
+                    if (
+                        it.elements.map(::abs).average() // The "level" for the chunk as an average function 
+                                                         // of all absolute values of the waveform
+                             < noiseLevel                // should be less than defined noise level
+                                                         // to call it "silence".
+                    ) {
+                        CloseGateOutputSignal
+                    } else {
+                        OpenGateOutputSignal
+                    }
+
+            sampleArrayOf(it).withOutputSignal(signal, ZonedDateTime.now())
+        }
+        .toMono16bitWav("file:///home/user/sine.wav") { a ->
+            val dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss-SSS")
+            "-${dtf.format(a ?: ZonedDateTime.now())}-${Random.nextInt(Int.MAX_VALUE).toString(36)}"
+        }
+```
+
+which results in something like this, where each file contains a specific piece of the input signal:
+
+```text
+$ la 
+total 352
+-rw-r--r--  1 user  staff    43K Oct 27 16:35 sine-2020-10-27-16-35-16-216-wkimkn.wav
+-rw-r--r--  1 user  staff    43K Oct 27 16:35 sine-2020-10-27-16-35-16-483-l0rgtv.wav
+-rw-r--r--  1 user  staff    86K Oct 27 16:35 sine-2020-10-27-16-35-16-572-h9d60l.wav
 ```
 
 ## Performance boost

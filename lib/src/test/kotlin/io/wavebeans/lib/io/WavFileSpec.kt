@@ -221,6 +221,7 @@ object WavFileSpec : Spek({
                     }
                 }
             }
+
             val suffix: (Pair<TemporalAccessor, Long>?) -> String = { a ->
                 val dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss-SSS")
                 "-${dtf.format(a?.first ?: ZonedDateTime.now())}-${a?.second ?: 0}"
@@ -260,6 +261,67 @@ object WavFileSpec : Spek({
                     assertThat(outputFiles()).eachIndexed(1) { file, _ ->
                         file.prop("content") { wave("file://${it.absolutePath}").asSequence(sampleRate).toList() }
                                 .eachIndexed(overallSize) { v, i -> v.isCloseTo(expected[i], precision) }
+                    }
+                }
+            }
+        }
+    }
+
+    describe("Consequent open-close gate signals on sample stream") {
+        data class IndexedSample(
+                val sample: Sample,
+                val index: Long
+        )
+
+        val directory by memoized(TEST) { Files.createTempDirectory("tmp").toFile() }
+        fun outputFiles() = directory.listFiles()?.map { it!! }?.sortedBy { it.name } ?: emptyList()
+
+        fun run(input: BeanStream<Sample>, durationMs: Long, chunkSize: Int, bitDepth: BitDepth) {
+            class FlushController(params: FnInitParameters) : Fn<IndexedSample, Managed<OutputSignal, Pair<TemporalAccessor, Long>, Sample>>(params) {
+                constructor(chunkSize: Int) : this(FnInitParameters().add("chunkSize", chunkSize))
+
+                override fun apply(argument: IndexedSample): Managed<OutputSignal, Pair<TemporalAccessor, Long>, Sample> {
+                    val cz = initParams.int("chunkSize")
+                    // close or open gate is sent with each sample, but only the first one actually makes difference
+                    // the effect is the same as to send open/close gate signal on the very fisrt chunk
+                    // and then sending noop in between.
+                    return if (argument.index / cz % 2 == 0L)
+                        argument.sample.withOutputSignal(OpenGateOutputSignal, ZonedDateTime.now() to argument.index)
+                    else
+                        argument.sample.withOutputSignal(CloseGateOutputSignal, ZonedDateTime.now() to argument.index)
+                }
+            }
+
+            val suffix: (Pair<TemporalAccessor, Long>?) -> String = { a ->
+                val dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss-SSS")
+                "-${dtf.format(a?.first ?: ZonedDateTime.now())}-${a?.second ?: 0}"
+            }
+            val uri = "file://${directory.absolutePath}/test.wav"
+            val o = input
+                    .merge(input { it.first }) { (sample, index) ->
+                        checkNotNull(sample)
+                        checkNotNull(index)
+                        IndexedSample(sample, index)
+                    }
+                    .map(FlushController(chunkSize))
+                    .trim(durationMs)
+            evaluate(o, bitDepth, uri, suffix)
+        }
+
+        listOf(BIT_8 to 1e-2, BIT_16 to 1e-4, BIT_24 to 1e-6, BIT_32 to 1e-9).forEach { (bitDepth, precision) ->
+            describe("$bitDepth with precision $precision") {
+                val input by memoized(TEST) { seqStream() }
+                val chunkSize = 384
+                val chunksCount = 5
+                val filesCount = 3
+                val overallLengthMs = 10L
+
+                it("should read only even chunks out of 3 files") {
+                    run(input, overallLengthMs, chunkSize, bitDepth)
+                    val expected = input.asSequence(sampleRate).take(chunkSize * chunksCount).toList()
+                    assertThat(outputFiles()).eachIndexed(filesCount) { file, index ->
+                        file.prop("content") { wave("file://${it.absolutePath}").asSequence(sampleRate).toList() }
+                                .eachIndexed(chunkSize) { v, i -> v.isCloseTo(expected[chunkSize * index * 2 + i], precision) }
                     }
                 }
             }

@@ -86,26 +86,28 @@ abstract class AbstractPartialWriter<T : Any, A : Any>(
             val next = sampleIterator.next()
             when (next.signal) {
                 FlushOutputSignal -> {
-                    log.trace { "[$this] Trying to flush [argument=${next.argument}]" }
+                    log.debug { "[$this] Got FlushOutputSignal [argument=${next.argument}]" }
                     writerDelegate.flush(next.argument, ::header, ::footer)
                     log.debug { "[$this] The writer flushed [argument=${next.argument}]" }
                     flushedCounterMetric.increment()
                 }
                 OpenGateOutputSignal -> {
-                    log.trace { "[$this] Trying to open the gate [argument=${next.argument}]" }
-                    check(!isGateOpened) { "Gate should be closed to perform the open." }
-                    isGateOpened = true
-                    writerDelegate.initBuffer(next.argument)
-                    log.debug { "[$this] The writer has opened the gate [argument=${next.argument}]" }
-                    gateStateMetric.increment(1.0)
+                    log.debug { "[$this] Got OpenGateOutputSignal [isGateOpened=$isGateOpened, argument=${next.argument}]" }
+                    if (!isGateOpened) {
+                        isGateOpened = true
+                        writerDelegate.initBuffer(next.argument)
+                        log.debug { "[$this] The writer has opened the gate [argument=${next.argument}]" }
+                        gateStateMetric.increment(1.0)
+                    } // else signal is ignored
                 }
                 CloseGateOutputSignal -> {
-                    log.trace { "[$this] Trying to close the gate [argument=${next.argument}]" }
-                    check(isGateOpened) { "Gate should be opened to perform the close." }
-                    isGateOpened = false
-                    writerDelegate.finalizeBuffer(next.argument, ::header, ::footer)
-                    log.debug { "[$this] The writer has closed the gate [argument=${next.argument}]" }
-                    gateStateMetric.decrement(1.0)
+                    log.trace { "[$this] Got CloseGateOutputSignal [isGateOpened=$isGateOpened, argument=${next.argument}]" }
+                    if (isGateOpened) {
+                        isGateOpened = false
+                        writerDelegate.finalizeBuffer(next.argument, ::header, ::footer)
+                        log.debug { "[$this] The writer has closed the gate [argument=${next.argument}]" }
+                        gateStateMetric.decrement(1.0)
+                    } // else signal is ignored
                 }
             }
             if (isGateOpened) {
