@@ -33,9 +33,6 @@ class FileWriterDelegate<A : Any>(
         private val log = KotlinLogging.logger { }
     }
 
-    override var headerFn: () -> ByteArray? = { null }
-    override var footerFn: () -> ByteArray? = { null }
-
     @Volatile
     private lateinit var uri: URI
 
@@ -69,17 +66,17 @@ class FileWriterDelegate<A : Any>(
         buffer.write(b)
     }
 
-    override fun flush(argument: A?) {
+    override fun flush(argument: A?, headerFn: () -> ByteArray?, footerFn: () -> ByteArray?) {
         log.trace { "[$this] Flushing buffer [argument=$argument, isEmpty=$isEmpty]" }
         if (!isEmpty) {
-            doFinalizeBuffer()
+            doFinalizeBuffer(headerFn, footerFn)
             latestArgument = argument
         }
     }
 
-    override fun close() {
+    override fun close(headerFn: () -> ByteArray?, footerFn: () -> ByteArray?) {
         log.trace { "[$this] Closing delegate" }
-        if (!isEmpty) doFinalizeBuffer()
+        if (!isEmpty) doFinalizeBuffer(headerFn, footerFn)
     }
 
     override fun initBuffer(argument: A?) {
@@ -91,12 +88,12 @@ class FileWriterDelegate<A : Any>(
         isReady = true
     }
 
-    override fun finalizeBuffer(argument: A?) {
+    override fun finalizeBuffer(argument: A?, headerFn: () -> ByteArray?, footerFn: () -> ByteArray?) {
         log.trace { "[$this] Finalizing buffer [argument=$argument, isReady=$isReady]" }
         check(isReady != null && isReady == true) {
             "The delegate is not ready to get finalized, initialize it first with initBuffer()."
         }
-        doFinalizeBuffer()
+        doFinalizeBuffer(headerFn, footerFn)
         isReady = false
     }
 
@@ -107,7 +104,7 @@ class FileWriterDelegate<A : Any>(
         buffer = BufferedOutputStream(file, bufferSize)
     }
 
-    private fun doFinalizeBuffer() {
+    private fun doFinalizeBuffer(headerFn: () -> ByteArray?, footerFn: () -> ByteArray?) {
         log.info { "[$this] Closing the buffer..." }
         try {
             buffer.close()

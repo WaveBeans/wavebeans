@@ -27,7 +27,8 @@ object TableOutputSpec : Spek({
                         override fun apply(argument: TableOutputParams<SampleArray>): TimeseriesTableDriver<SampleArray> {
                             return driver
                         }
-                    }
+                    },
+                    automaticCleanupEnabled = true
             )
         }
 

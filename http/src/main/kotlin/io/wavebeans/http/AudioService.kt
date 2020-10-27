@@ -107,14 +107,14 @@ class AudioService(internal val tableRegistry: TableRegistry) {
         )
         val nextBytes: Queue<Byte> = LinkedTransferQueue<Byte>()
         val writerDelegate = object : WriterDelegate<Unit> {
-            override var headerFn: () -> ByteArray? = { throw UnsupportedOperationException() }
-            override var footerFn: () -> ByteArray? = { throw UnsupportedOperationException() }
-            override fun flush(argument: Unit?) = throw UnsupportedOperationException()
-            override fun close() = throw UnsupportedOperationException()
-            override fun finalizeBuffer(argument: Unit?) = throw UnsupportedOperationException()
+            override fun flush(argument: Unit?, headerFn: () -> ByteArray?, footerFn: () -> ByteArray?) =
+                    throw UnsupportedOperationException()
+            override fun finalizeBuffer(argument: Unit?, headerFn: () -> ByteArray?, footerFn: () -> ByteArray?) =
+                    throw UnsupportedOperationException()
+            override fun close(headerFn: () -> ByteArray?, footerFn: () -> ByteArray?) =
+                    throw UnsupportedOperationException()
 
-            override fun initBuffer(argument: Unit?) {
-            }
+            override fun initBuffer(argument: Unit?) {}
 
             override fun write(b: Int) {
                 nextBytes.add(b.toByte())

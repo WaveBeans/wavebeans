@@ -19,8 +19,6 @@ abstract class AbstractWriter<T : Any>(
     }
 
     init {
-        writerDelegate.headerFn = ::header
-        writerDelegate.footerFn = ::footer
         writerDelegate.initBuffer(null)
     }
 
@@ -49,8 +47,8 @@ abstract class AbstractWriter<T : Any>(
     protected abstract fun serialize(element: T): ByteArray
 
     override fun close() {
-        writerDelegate.finalizeBuffer(null)
-        writerDelegate.close()
+        writerDelegate.finalizeBuffer(null, ::header, ::footer)
+        writerDelegate.close(::header, ::footer)
     }
 
 }
@@ -73,8 +71,6 @@ abstract class AbstractPartialWriter<T : Any, A : Any>(
     private var isGateOpened = true
 
     init {
-        writerDelegate.headerFn = ::header
-        writerDelegate.footerFn = ::footer
         gateStateMetric.set(1.0)
         writerDelegate.initBuffer(null)
     }
@@ -91,7 +87,7 @@ abstract class AbstractPartialWriter<T : Any, A : Any>(
             when (next.signal) {
                 FlushOutputSignal -> {
                     log.trace { "[$this] Trying to flush [argument=${next.argument}]" }
-                    writerDelegate.flush(next.argument)
+                    writerDelegate.flush(next.argument, ::header, ::footer)
                     log.debug { "[$this] The writer flushed [argument=${next.argument}]" }
                     flushedCounterMetric.increment()
                 }
@@ -107,7 +103,7 @@ abstract class AbstractPartialWriter<T : Any, A : Any>(
                     log.trace { "[$this] Trying to close the gate [argument=${next.argument}]" }
                     check(isGateOpened) { "Gate should be opened to perform the close." }
                     isGateOpened = false
-                    writerDelegate.finalizeBuffer(next.argument)
+                    writerDelegate.finalizeBuffer(next.argument, ::header, ::footer)
                     log.debug { "[$this] The writer has closed the gate [argument=${next.argument}]" }
                     gateStateMetric.decrement(1.0)
                 }
@@ -127,7 +123,7 @@ abstract class AbstractPartialWriter<T : Any, A : Any>(
     protected abstract fun serialize(element: T): ByteArray
 
     override fun close() {
-        writerDelegate.close()
+        writerDelegate.close(::header, ::footer)
     }
 }
 

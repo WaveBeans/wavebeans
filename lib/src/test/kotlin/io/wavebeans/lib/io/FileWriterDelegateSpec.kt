@@ -41,10 +41,8 @@ object FileWriterDelegateSpec : Spek({
             val input = (0..100).joinToString("") { "1234567890" }
             val header = "header1234567890"
             val footer = "footer1234567890"
-            delegate.headerFn = { header.toByteArray() }
-            delegate.footerFn = { footer.toByteArray() }
             delegate.write(input.toByteArray())
-            delegate.close()
+            delegate.close({ header.toByteArray() }, { footer.toByteArray() })
 
             assertThat(outputFile.readText()).isEqualTo(header + input + footer)
         }
@@ -74,10 +72,7 @@ object FileWriterDelegateSpec : Spek({
             val header = "header1234567890"
             val footer = "footer1234567890"
 
-            delegate.headerFn = { header.toByteArray() }
-            delegate.footerFn = { footer.toByteArray() }
-
-            delegate.performWritesWithFlush(contents)
+            delegate.performWritesWithFlush(contents, header, footer)
 
             assertThat(outputFiles).eachIndexed(contents.size) { file, index ->
                 file.prop("content") { it.readText() }.isEqualTo(header + contents[index] + footer)
@@ -109,10 +104,7 @@ object FileWriterDelegateSpec : Spek({
             val header = "header1234567890"
             val footer = "footer1234567890"
 
-            delegate.headerFn = { header.toByteArray() }
-            delegate.footerFn = { footer.toByteArray() }
-
-            delegate.performWritesWithManualBufferManagement(contents)
+            delegate.performWritesWithManualBufferManagement(contents, header, footer)
 
             assertThat(outputFiles).eachIndexed(contents.size) { file, index ->
                 file.prop("content") { it.readText() }.isEqualTo(header + contents[index] + footer)
@@ -151,10 +143,7 @@ object FileWriterDelegateSpec : Spek({
             val header = "header1234567890"
             val footer = "footer1234567890"
 
-            delegate.headerFn = { header.toByteArray() }
-            delegate.footerFn = { footer.toByteArray() }
-
-            delegate.performWritesWithFlush(contents)
+            delegate.performWritesWithFlush(contents, header, footer)
 
             assertThat(outputFiles).eachIndexed(contents.size) { file, index ->
                 file.prop("content") { it.readText() }.isEqualTo(header + contents[index] + footer)
@@ -167,25 +156,25 @@ object FileWriterDelegateSpec : Spek({
 
 private val log = KotlinLogging.logger { }
 
-private fun WriterDelegate<Unit>.performWritesWithFlush(contents: List<String>) {
+private fun WriterDelegate<Unit>.performWritesWithFlush(contents: List<String>, header: String? = null, footer: String? = null) {
     contents.forEach {
-        log.debug {"Writing buffer value=$it"}
+        log.debug { "Writing buffer value=$it" }
         this.write(it.toByteArray())
-        this.flush(null)
+        this.flush(null, { header?.toByteArray() }, { footer?.toByteArray() })
     }
-    this.close()
+    this.close({ header?.toByteArray() }, { footer?.toByteArray() })
 }
 
 
-private fun WriterDelegate<Unit>.performWritesWithManualBufferManagement(contents: List<String>) {
+private fun WriterDelegate<Unit>.performWritesWithManualBufferManagement(contents: List<String>, header: String? = null, footer: String? = null) {
     contents.forEachIndexed { index, value ->
-        log.debug {"Writing buffer index=$index, value=$value"}
+        log.debug { "Writing buffer index=$index, value=$value" }
         if (index > 0)
             this.initBuffer(null)
         this.write(value.toByteArray())
         if (index < contents.size - 1)
-            this.finalizeBuffer(null)
+            this.finalizeBuffer(null, { header?.toByteArray() }, { footer?.toByteArray() })
     }
-    this.close()
+    this.close({ header?.toByteArray() }, { footer?.toByteArray() })
 }
 

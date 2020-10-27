@@ -19,18 +19,6 @@ package io.wavebeans.lib.io
 interface WriterDelegate<A : Any> {
 
     /**
-     * Injected header function to use to write some bytes before the actual content during finalization step.
-     * If there is no header to be written returns `null`
-     */
-    var headerFn: () -> ByteArray?
-
-    /**
-     * Injected footer function to use to write some bytes after the actual content during finalization step.
-     * If there is no footer to be written returns `null`
-     */
-    var footerFn: () -> ByteArray?
-
-    /**
      * Writes the [Byte] represented as [Int] to the current buffer.
      *
      * @param b byte to write into a buffer.
@@ -58,8 +46,12 @@ interface WriterDelegate<A : Any> {
      *
      * @param argument the argument to  bypass, usually used for new name generation, follow the documentation
      *                 of the specific implementation.
+     * @param headerFn  function to use to write some bytes before the actual content. If there is no header to be
+     *                  written returns `null`. Default implementation returns `null`.
+     * @param footerFn  function to use to write some bytes after the actual content. If there is no footer to be
+     *                  written returns `null`. Default implementation returns `null`.
      */
-    fun flush(argument: A?)
+    fun flush(argument: A?, headerFn: () -> ByteArray? = { null }, footerFn: () -> ByteArray? = { null })
 
     /**
      * Manually initiates the new buffer if it isn't initialized yet. Depending on implementation may or may not support multiple calls.
@@ -74,11 +66,20 @@ interface WriterDelegate<A : Any> {
      *
      * @param argument the argument to  bypass, usually used for new name generation, follow the documentation
      *                 of the specific implementation.
+     * @param headerFn  function to use to write some bytes before the actual content. If there is no header to be
+     *                  written returns `null`. Default implementation returns `null`.
+     * @param footerFn  function to use to write some bytes after the actual content. If there is no footer to be
+     *                  written returns `null`. Default implementation returns `null`.
      */
-    fun finalizeBuffer(argument: A?)
+    fun finalizeBuffer(argument: A?, headerFn: () -> ByteArray? = { null }, footerFn: () -> ByteArray? = { null })
 
     /**
      * Closes the writer and finalizes the current "buffer". When called, it is not expected to call any other method more.
+     *
+     * @param headerFn  function to use to write some bytes before the actual content. If there is no header to be
+     *                  written returns `null`. Default implementation returns `null`.
+     * @param footerFn  function to use to write some bytes after the actual content. If there is no footer to be
+     *                  written returns `null`. Default implementation returns `null`.
      */
-    fun close()
+    fun close(headerFn: () -> ByteArray? = { null }, footerFn: () -> ByteArray? = { null })
 }
