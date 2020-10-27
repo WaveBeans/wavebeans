@@ -334,7 +334,9 @@ object MetricCollectorSpec : Spek({
     describe("Distributed mode") {
 
         describe("One downstream collector") {
-            val port = 50000
+            var portHolder = 50000
+
+            val port by memoized(SCOPE) { portHolder++ }
 
             val counter by memoized(SCOPE) { MetricObject.counter("component", "count", "") }
             val time by memoized(SCOPE) { MetricObject.time("component", "time", "") }
