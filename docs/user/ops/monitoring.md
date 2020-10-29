@@ -1,20 +1,20 @@
+# Monitoring
+
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+**Table of Contents**
 
-- [Monitoring](#monitoring)
-  - [Metrics](#metrics)
-  - [Prometheus](#prometheus)
-    - [Metrics collection in distributed mode](#metrics-collection-in-distributed-mode)
-  - [Usage within application](#usage-within-application)
-    - [Creating in Local mode](#creating-in-local-mode)
-    - [Creating in Distributed mode](#creating-in-distributed-mode)
-    - [Querying values](#querying-values)
-  - [Connecting your own monitoring system](#connecting-your-own-monitoring-system)
+- [Metrics](#metrics)
+- [Prometheus](#prometheus)
+  - [Metrics collection in distributed mode](#metrics-collection-in-distributed-mode)
+- [Usage within application](#usage-within-application)
+  - [Creating in Local mode](#creating-in-local-mode)
+  - [Creating in Distributed mode](#creating-in-distributed-mode)
+  - [Querying values](#querying-values)
+- [Connecting your own monitoring system](#connecting-your-own-monitoring-system)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-# Monitoring
 
 WaveBeans uses metric approach to be monitored, and can be connected to a variety of monitoring systems, i.e. Prometheus, as well as provides the same metrics for application. And it always easy to develop your own.
 
