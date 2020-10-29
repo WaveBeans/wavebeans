@@ -57,10 +57,12 @@ inline fun <reified T : Any> BeanStream<T>.toMono32bitWav(uri: String): StreamOu
  * used to dump the current "buffer" and create the new one, the argument [A] may be passed at this moment. The [suffix]
  * function is used to generate the next suffix of the output.
  *
+ * The managing signal is of type [OutputSignal].
+ *
  * @param uri    the URI to stream to, i.e. `file:///home/user/my.wav`
  * @param suffix the function that based on argument of type [A] which is obtained from the moment the
- *               [FlushOutputSignal] was generated. The suffix inserted after the name and before the extension:
- *               `file:///home/user/my${suffix}.wav`
+ *               [FlushOutputSignal] or [OpenGateOutputSignal] was emitted. The suffix inserted after the name
+ *               and before the extension: `file:///home/user/my${suffix}.wav`
  * @param A      the type of the argument, use [Unit] if it's not applicable. Bear in mind that the [A] should be
  *               [Serializable] for some cases. Argument may be null if it wasn't specified, or on the very first run.
  * @param T      the type of the sample of input and output streams. Either [Sample] or [SampleArray].
@@ -77,6 +79,8 @@ inline fun <A : Any, reified T : Any> BeanStream<Managed<OutputSignal, A, T>>.to
  * with LE byte order. It is based on stream of [Managed] <[Sample]> or <[SampleArray]>. The signal [FlushOutputSignal] is
  * used to dump the current "buffer" and create the new one, the argument [A] may be passed at this moment. The [suffix]
  * function is used to generate the next suffix of the output.
+ *
+ * The managing signal is of type [OutputSignal].
  *
  * @param uri    the URI to stream to, i.e. `file:///home/user/my.wav`
  * @param suffix the function that based on argument of type [A] which is obtained from the moment the
@@ -99,6 +103,8 @@ inline fun <A : Any, reified T : Any> BeanStream<Managed<OutputSignal, A, T>>.to
  * used to dump the current "buffer" and create the new one, the argument [A] may be passed at this moment. The [suffix]
  * function is used to generate the next suffix of the output.
  *
+ * The managing signal is of type [OutputSignal].
+ *
  * @param uri    the URI to stream to, i.e. `file:///home/user/my.wav`
  * @param suffix the function that based on argument of type [A] which is obtained from the moment the
  *               [FlushOutputSignal] was generated. The suffix inserted after the name and before the extension:
@@ -120,6 +126,8 @@ inline fun <A : Any, reified T : Any> BeanStream<Managed<OutputSignal, A, T>>.to
  * used to dump the current "buffer" and create the new one, the argument [A] may be passed at this moment. The [suffix]
  * function is used to generate the next suffix of the output.
  *
+ * The managing signal is of type [OutputSignal].
+ *
  * @param uri    the URI to stream to, i.e. `file:///home/user/my.wav`
  * @param suffix the function that based on argument of type [A] which is obtained from the moment the
  *               [FlushOutputSignal] was generated. The suffix inserted after the name and before the extension:
@@ -140,6 +148,8 @@ inline fun <A : Any, reified T : Any> BeanStream<Managed<OutputSignal, A, T>>.to
  * or <[SampleArray]>. In case of [Managed] stream the signal [FlushOutputSignal] is used to dump the current "buffer"
  * and create the new one, the argument [A] may be passed at this moment. The [suffix] function is used to generate the
  * next suffix of the output. If the [suffix] is specified the stream is enforced to be [Managed], otherwise **Simple**.
+ *
+ * The managing signal is of type [OutputSignal].
  *
  * **For internal use only.**
  *

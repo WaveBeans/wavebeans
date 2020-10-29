@@ -137,6 +137,12 @@ abstract class AbstractPartialWriter<T : Any, A : Any>(
 
 /**
  * The signals that [AbstractWriter] handles.
+ *
+ * Known usages:
+ *  * [NoopOutputSignal]
+ *  * [FlushOutputSignal]
+ *  * [OpenGateOutputSignal]
+ *  * [CloseGateOutputSignal]
  */
 typealias OutputSignal = Byte
 
