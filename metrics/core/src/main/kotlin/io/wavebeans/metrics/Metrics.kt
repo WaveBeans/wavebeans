@@ -34,6 +34,13 @@ val samplesProcessedOnOutputMetric = MetricObject.counter(
         clazzTag
 )
 
+val samplesSkippedOnOutputMetric = MetricObject.counter(
+        "io.wavebeans.lib.output",
+        "samplesSkipped",
+        "Counts the number of samples skipped by the output, i.e. due to the gate closed and so on",
+        clazzTag
+)
+
 val samplesProcessedOnInputMetric = MetricObject.counter(
         "io.wavebeans.lib.input",
         "samplesProcessed",

@@ -16,6 +16,36 @@ fun BeanStream<Sample>.toCsv(
     )
 }
 
+fun <A : Any> BeanStream<Managed<OutputSignal, A, Sample>>.toCsv(
+        uri: String,
+        suffix: (A?) -> String,
+        timeUnit: TimeUnit = TimeUnit.MILLISECONDS,
+        encoding: String = "UTF-8"
+): StreamOutput<Managed<OutputSignal, A, Sample>> {
+    return toCsv(
+            uri = uri,
+            header = listOf("time ${timeUnit.abbreviation()}", "value"),
+            elementSerializer = SampleCsvFn(timeUnit),
+            suffix = Fn.wrap(suffix),
+            encoding = encoding
+    )
+}
+
+fun <A : Any> BeanStream<Managed<OutputSignal, A, Sample>>.toCsv(
+        uri: String,
+        suffix: Fn<A?, String>,
+        timeUnit: TimeUnit = TimeUnit.MILLISECONDS,
+        encoding: String = "UTF-8"
+): StreamOutput<Managed<OutputSignal, A, Sample>> {
+    return toCsv(
+            uri = uri,
+            header = listOf("time ${timeUnit.abbreviation()}", "value"),
+            elementSerializer = SampleCsvFn(timeUnit),
+            suffix = suffix,
+            encoding = encoding
+    )
+}
+
 class SampleCsvFn(parameters: FnInitParameters) : Fn<Triple<Long, Float, Sample>, List<String>>(parameters) {
 
     constructor(timeUnit: TimeUnit) : this(FnInitParameters().addObj("timeUnit", timeUnit) { it.name })

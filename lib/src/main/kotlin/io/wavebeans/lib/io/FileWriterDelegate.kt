@@ -157,9 +157,10 @@ class FileWriterDelegate<A : Any>(
 
 fun <A : Any> plainFileWriterDelegate(uri: String): FileWriterDelegate<Unit> = FileWriterDelegate({ URI(uri) })
 
-fun <A : Any> suffixedFileWriterDelegate(uri: String, suffix: (A?) -> String): FileWriterDelegate<A> = FileWriterDelegate({ argument ->
-    val u = URI(uri)
-    val f = File(u.path)
-    val newFilePath = f.parent + File.separatorChar + f.nameWithoutExtension + suffix(argument) + "." + f.extension
-    URI(u.scheme + "://" + newFilePath)
-})
+fun <A : Any> suffixedFileWriterDelegate(uri: String, suffix: (A?) -> String): FileWriterDelegate<A> =
+        FileWriterDelegate({ argument ->
+            val u = URI(uri)
+            val f = File(u.path)
+            val newFilePath = f.parent + File.separatorChar + f.nameWithoutExtension + suffix(argument) + "." + f.extension
+            URI(u.scheme + "://" + newFilePath)
+        })

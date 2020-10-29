@@ -34,7 +34,7 @@ fun SerializersModuleBuilder.beanParams() {
         subclass(SineGeneratedInputParams::class, SineGeneratedInputParams.serializer())
         subclass(NoParams::class, NoParams.serializer())
         subclass(TrimmedFiniteSampleStreamParams::class, TrimmedFiniteSampleStreamParams.serializer())
-        subclass(CsvStreamOutputParams::class, CsvWindowStreamOutputParamsSerializer)
+        subclass(CsvStreamOutputParams::class, CsvStreamOutputParamsSerializer)
         subclass(BeanGroupParams::class, BeanGroupParams.serializer())
         subclass(CsvFftStreamOutputParams::class, CsvFftStreamOutputParams.serializer())
         subclass(FftStreamParams::class, FftStreamParams.serializer())

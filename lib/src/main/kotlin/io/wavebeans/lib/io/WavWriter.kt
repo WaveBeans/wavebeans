@@ -42,6 +42,8 @@ class WavPartialWriter<A : Any>(
 
     override fun serialize(element: Any): ByteArray = serializeWav(element, bitDepth) { dataSize += it }
 
+    override fun skip(element: Any) {}
+
 }
 
 private fun serializeWav(element: Any, bitDepth: BitDepth, dataSizeInc: (Int) -> Unit): ByteArray {

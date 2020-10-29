@@ -63,7 +63,8 @@ abstract class AbstractPartialWriter<T : Any, A : Any>(
         private val log = KotlinLogging.logger { }
     }
 
-    private val samplesCounterMetric = samplesProcessedOnOutputMetric.withTags(clazzTag to outputClazz.jvmName)
+    private val samplesProcessedMetric = samplesProcessedOnOutputMetric.withTags(clazzTag to outputClazz.jvmName)
+    private val samplesSkippedMetric = samplesSkippedOnOutputMetric.withTags(clazzTag to outputClazz.jvmName)
     private val flushedCounterMetric = flushedOnOutputMetric.withTags(clazzTag to outputClazz.jvmName)
     private val gateStateMetric = gateStateOnOutputMetric.withTags(clazzTag to outputClazz.jvmName)
 
@@ -113,7 +114,10 @@ abstract class AbstractPartialWriter<T : Any, A : Any>(
             if (isGateOpened) {
                 val bytes = serialize(next.payload)
                 writerDelegate.write(bytes, 0, bytes.size)
-                samplesCounterMetric.increment()
+                samplesProcessedMetric.increment()
+            } else {
+                skip(next.payload)
+                samplesSkippedMetric.increment()
             }
             true
         } else {
@@ -123,6 +127,8 @@ abstract class AbstractPartialWriter<T : Any, A : Any>(
     }
 
     protected abstract fun serialize(element: T): ByteArray
+
+    protected abstract fun skip(element: T)
 
     override fun close() {
         writerDelegate.close(::header, ::footer)
