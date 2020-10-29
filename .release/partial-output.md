@@ -1,0 +1,1 @@
+* [ [#86](https://github.com/WaveBeans/wavebeans/issues/86) ] [Managing](/docs/user/api/readme.md#managed-type) and controlling [WAV](/docs/user/api/outputs/wav-output.md#controlling-output) and [CSV](/docs/user/api/outputs/csv-outputs.md#controlling-output) outputs

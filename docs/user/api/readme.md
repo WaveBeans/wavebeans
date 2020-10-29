@@ -275,4 +275,6 @@ time sec,sample1,sample2
 
 ### Managed type
 
-[TODO]
+Managed type `io.wavebeans.lib.Managed` allows you to wrap the sample of any type, and specify some managing singal with an argument along the way, so the operation down the line may perform accordingly. What exactly is going to be done is up to the operation. The `Managed` has 3 type parameters: `S` the type of the signal, `A` the type of the argument and `T` the type of the payload.
+
+One of the examples of current application of the managed sample is managing [wav](/docs/user/api/outputs/wav-output.md#controlling-output) and [csv](/docs/user/api/outputs/csv-outputs.md#controlling-output) outputs.

@@ -8,6 +8,10 @@
 - [Writing Samples](#writing-samples)
 - [Writing FFT samples](#writing-fft-samples)
 - [User defined CSV output](#user-defined-csv-output)
+- [Controlling output](#controlling-output)
+  - [Noop signal](#noop-signal)
+  - [Flush signal](#flush-signal)
+  - [Open and close gate signals](#open-and-close-gate-signals)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
