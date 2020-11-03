@@ -10,6 +10,7 @@ import io.wavebeans.lib.stream.map
 import io.wavebeans.lib.stream.merge
 import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.stream.window.window
+import io.wavebeans.tests.eachIndexed
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.lifecycle.CachingMode.TEST
 import org.spekframework.spek2.style.specification.describe

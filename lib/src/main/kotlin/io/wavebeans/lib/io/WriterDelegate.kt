@@ -62,7 +62,7 @@ interface WriterDelegate<A : Any> {
     fun initBuffer(argument: A?)
 
     /**
-     * Manually finallizes the new buffer if it isn't initialized yet. Depending on implementation may or may not support multiple calls.
+     * Manually finalizes the new buffer if it isn't initialized yet. Depending on implementation may or may not support multiple calls.
      *
      * @param argument the argument to  bypass, usually used for new name generation, follow the documentation
      *                 of the specific implementation.

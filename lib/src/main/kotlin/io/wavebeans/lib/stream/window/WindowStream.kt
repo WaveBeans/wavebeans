@@ -71,8 +71,12 @@ object WindowStreamParamsSerializer : KSerializer<WindowStreamParams<*>> {
                 else -> throw SerializationException("Unknown index $i")
             }
         }
+        val classForName = WaveBeansClassLoader.classForName(funcClazzName!!)
+        val constructor = classForName.getDeclaredConstructor()
+        constructor.isAccessible = true
+
         @Suppress("UNCHECKED_CAST")
-        val funcByName = WaveBeansClassLoader.classForName(funcClazzName!!).newInstance() as () -> Any
+        val funcByName = constructor.newInstance() as () -> Any
         return WindowStreamParams(windowSize!!, step!!, funcByName)
     }
 

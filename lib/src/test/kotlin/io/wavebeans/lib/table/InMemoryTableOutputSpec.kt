@@ -11,6 +11,7 @@ import io.wavebeans.lib.stream.fft.fft
 import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.stream.window.Window
 import io.wavebeans.lib.stream.window.window
+import io.wavebeans.tests.eachIndexed
 import mu.KotlinLogging
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.lifecycle.CachingMode.*

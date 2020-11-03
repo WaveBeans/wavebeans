@@ -36,7 +36,7 @@ object ExecutionConfig {
         }
 
     /**
-     * Whether use ZIP compression of the serizalied objects dursing transfer. May put additional presure on CPU
+     * Whether use ZIP compression of the serialized objects during transfer. May put additional pressure on CPU
      */
     var serializationCompression = true
 

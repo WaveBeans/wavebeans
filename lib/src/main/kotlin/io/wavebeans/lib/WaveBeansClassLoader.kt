@@ -58,18 +58,19 @@ object WaveBeansClassLoader {
 
     private fun tryPrimitives(name: String): Class<*>? {
         return when (name) {
-            "byte" -> Byte::class.java
-            "short" -> Short::class.java
-            "int" -> Int::class.java
-            "long" -> Long::class.java
-            "float" -> Float::class.java
-            "double" -> Double::class.java
-            "ByteArray" -> ByteArray::class.java
-            "ShortArray" -> ShortArray::class.java
-            "IntArray" -> IntArray::class.java
-            "LongArray" -> LongArray::class.java
-            "FloatArray" -> FloatArray::class.java
-            "DoubleArray" -> DoubleArray::class.java
+            "byte", "kotlin.Byte" -> Byte::class.java
+            "short", "kotlin.Short" -> Short::class.java
+            "int", "kotlin.Int" -> Int::class.java
+            "long", "kotlin.Long" -> Long::class.java
+            "float", "kotlin.Float" -> Float::class.java
+            "double", "kotlin.Double" -> Double::class.java
+            "ByteArray", "kotlin.ByteArray" -> ByteArray::class.java
+            "ShortArray", "kotlin.ShortArray" -> ShortArray::class.java
+            "IntArray", "kotlin.IntArray" -> IntArray::class.java
+            "LongArray", "kotlin.LongArray" -> LongArray::class.java
+            "FloatArray", "kotlin.FloatArray" -> FloatArray::class.java
+            "DoubleArray", "kotlin.DoubleArray" -> DoubleArray::class.java
+            "Any", "kotlin.Any" -> Any::class.java
             else -> null
         }
     }

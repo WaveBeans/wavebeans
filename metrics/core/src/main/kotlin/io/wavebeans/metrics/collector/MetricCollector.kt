@@ -21,7 +21,7 @@ import kotlin.reflect.jvm.jvmName
 @Suppress("UNCHECKED_CAST")
 abstract class MetricCollector<T : Any>(
         val metricObject: MetricObject<out Any>,
-        private val downstreamCollectors: List<String>,
+        val downstreamCollectors: List<String>,
         private val refreshIntervalMs: Long,
         private val granularValueInMs: Long,
         accumulator: (T, T) -> T,
@@ -58,15 +58,15 @@ abstract class MetricCollector<T : Any>(
     private val task: ScheduledFuture<*>?
 
     init {
-        if (downstreamCollectors.isNotEmpty() && refreshIntervalMs > 0) {
-            task = executor.scheduleAtFixedRate(
+        task = if (downstreamCollectors.isNotEmpty() && refreshIntervalMs > 0) {
+            executor.scheduleAtFixedRate(
                     ::collectFromDownstream,
                     0,
                     refreshIntervalMs,
                     TimeUnit.MILLISECONDS
             )
         } else {
-            task = null
+            null
         }
     }
 
@@ -148,32 +148,35 @@ abstract class MetricCollector<T : Any>(
      * @return true if eventually all downstream collectors are connected, otherwise false.
      */
     fun attachCollector(): Boolean {
-        return downstreamCollectors.all { location ->
-            if (!metricCollectorIds.containsKey(location)) {
-                MetricApiClient(location).use { metricApiClient ->
-                    try {
-                        val collectorId = metricApiClient.attachCollector(
-                                this::class.jvmName,
-                                emptyList(),
-                                metricObject.type,
-                                metricObject.name,
-                                metricObject.component,
-                                metricObject.tags,
-                                refreshIntervalMs,
-                                granularValueInMs
-                        )
-                        metricCollectorIds[location] = collectorId
-                        log.info { "Attached to collector of $metricObject on $location under id $collectorId" }
-                        true
-                    } catch (e: Exception) {
-                        log.info(e) { "Can't attach collector of $metricObject on $location" }
-                        false
+        if (!isAttached) {
+            isAttached = downstreamCollectors.all { location ->
+                if (!metricCollectorIds.containsKey(location)) {
+                    MetricApiClient(location).use { metricApiClient ->
+                        try {
+                            val collectorId = metricApiClient.attachCollector(
+                                    this::class.jvmName,
+                                    emptyList(),
+                                    metricObject.type,
+                                    metricObject.name,
+                                    metricObject.component,
+                                    metricObject.tags,
+                                    refreshIntervalMs,
+                                    granularValueInMs
+                            )
+                            metricCollectorIds[location] = collectorId
+                            log.info { "Attached to collector of $metricObject on $location under id $collectorId" }
+                            true
+                        } catch (e: Exception) {
+                            log.info(e) { "Can't attach collector of $metricObject on $location" }
+                            false
+                        }
                     }
+                } else {
+                    true
                 }
-            } else {
-                true
             }
         }
+        return isAttached
     }
 
     /**
@@ -203,7 +206,7 @@ abstract class MetricCollector<T : Any>(
      * Performs the collection of the metrics from all downstream collectors. If not all collectors are attached
      * performs the attach first. The method call do not fail on [Exception].
      */
-    internal fun collectFromDownstream(collectUpToTimestamp: Long = System.currentTimeMillis()) {
+    fun collectFromDownstream(collectUpToTimestamp: Long = System.currentTimeMillis()) {
         if (!isDraining && !isFinished) {
             val start = System.currentTimeMillis()
             if (isAttached) {
@@ -217,7 +220,6 @@ abstract class MetricCollector<T : Any>(
             } else {
                 log.info { "Attempting attach $metricObject to $downstreamCollectors..." }
                 if (attachCollector()) {
-                    isAttached = true
                     log.info { "Attached $metricObject to $downstreamCollectors" }
                 } else {
                     log.info { "Couldn't attach $metricObject to $downstreamCollectors" }

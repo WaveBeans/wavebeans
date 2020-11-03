@@ -65,6 +65,8 @@ class DistributedOverseer(
 
         private val facilitatorApiClient = FacilitatorApiClient(location)
 
+        private var iterationCounter = 0L
+
         fun start() {
             locationFutures[location] = future
             reschedule()
@@ -76,10 +78,10 @@ class DistributedOverseer(
                 val result = fetchResult()
                 if (result != null) {
                     if (result.exception != null) {
-                        log.info(result.exception) { "Completting with exception on $location for job $jobKey" }
+                        log.info(result.exception) { "[#$iterationCounter] Completting with exception on $location for job $jobKey" }
                         future.complete(ExecutionResult.error(result.exception))
                     } else {
-                        log.info { "Completting successfully on $location for job $jobKey" }
+                        log.info { "[#$iterationCounter] Completing successfully on $location for job $jobKey" }
                         future.complete(ExecutionResult.success())
                     }
                 } else {
@@ -87,7 +89,7 @@ class DistributedOverseer(
                 }
             } catch (e: Throwable) {
                 if (e is OutOfMemoryError) throw e // most likely no resources to handle. Just fail
-                log.info(e) { "Failed execution on $location for job $jobKey" }
+                log.info(e) { "[#$iterationCounter] Failed execution on $location for job $jobKey" }
                 future.completeExceptionally(e)
             }
             if (!isDraining.get() && needReschedule) {
@@ -95,6 +97,7 @@ class DistributedOverseer(
             } else {
                 facilitatorApiClient.close()
             }
+            iterationCounter++
         }
 
         private fun reschedule() {
@@ -108,7 +111,7 @@ class DistributedOverseer(
                 result.all { it.status == DONE || it.status == CANCELLED || it.status == FAILED }
                         && result.any { it.status == FAILED } -> {
                     log.error {
-                        "Errors during job $jobKey execution:\n" + result
+                        "[$iterationCounter] Errors during job $jobKey execution:\n" + result
                                 // compiler failure on 1.4-M2
                                 //.mapNotNull { it.exception }
                                 .map { it.exception }

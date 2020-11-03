@@ -101,7 +101,7 @@ class FacilitatorCli(
         }
 
         log.info {
-            "Staring Facilitator with following config:n\"" +
+            "Staring Facilitator with following config:\n" +
                     config.toMap().entries.joinToString("\n") { "${it.key} = ${it.value}" }
         }
 

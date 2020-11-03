@@ -128,17 +128,19 @@ class FileWriterDelegate<A : Any>(
         }
 
         if (tmpFile.exists()) {
+            val buf = ByteArray(bufferSize)
             val resultFileStream = WbFileDriver.createFile(uri).createWbFileOutputStream()
             resultFileStream.use { f ->
                 val header = headerFn()
                 if (header != null) f.write(header)
 
                 tmpFile.createWbFileInputStream().use { tmpF ->
-                    val buf = ByteArray(bufferSize)
                     do {
                         val r = tmpF.read(buf)
-                        if (r != -1) f.write(buf, 0, r)
-                        log.trace { "[$this] Copied other $bufferSize bytes from $tmpFile to file with uri=$uri" }
+                        if (r != -1) {
+                            f.write(buf, 0, r)
+                            log.trace { "[$this] Copied other $r bytes from $tmpFile to file with uri=$uri" }
+                        }
                     } while (r != -1)
                 }
 

@@ -2,7 +2,7 @@ package io.wavebeans.lib.io
 
 import assertk.assertThat
 import assertk.assertions.isCloseTo
-import io.wavebeans.lib.eachIndexed
+import io.wavebeans.tests.eachIndexed
 import io.wavebeans.lib.stream.rangeProjection
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe

@@ -5,7 +5,8 @@ import io.wavebeans.execution.config.ExecutionConfig
 import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.lib.AnyBean
 import io.wavebeans.lib.BeanParams
-import io.wavebeans.lib.BeanStream
+import io.wavebeans.lib.stream.FiniteStream
+import java.util.concurrent.TimeUnit
 
 abstract class MergingPodProxy(
         override val forPartition: Int,
@@ -13,7 +14,7 @@ abstract class MergingPodProxy(
         val bushCallerRepository: BushCallerRepository = BushCallerRepository.default(podDiscovery),
         val prefetchBucketAmount: Int = ExecutionConfig.prefetchBucketAmount,
         val partitionSize: Int = ExecutionConfig.partitionSize
-) : BeanStream<Any>, PodProxy {
+) : FiniteStream<Any>, PodProxy {
 
     abstract val readsFrom: List<PodKey>
 
@@ -59,5 +60,9 @@ abstract class MergingPodProxy(
 
     override fun toString(): String {
         return "${this::class.simpleName}->$readsFrom for $forPartition"
+    }
+
+    override fun length(timeUnit: TimeUnit): Long {
+        throw UnsupportedOperationException("Not a finite pod proxy")
     }
 }

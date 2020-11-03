@@ -10,6 +10,7 @@ import io.wavebeans.lib.stream.map
 import io.wavebeans.lib.stream.merge
 import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.stream.window.window
+import io.wavebeans.tests.eachIndexed
 import mu.KotlinLogging
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.lifecycle.CachingMode.TEST
@@ -19,7 +20,6 @@ import java.nio.file.Files
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAccessor
-import kotlin.random.Random
 
 private const val sampleRate = 192000.0f
 private val log = KotlinLogging.logger { }

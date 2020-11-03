@@ -178,6 +178,58 @@ total 352
 -rw-r--r--  1 user  staff    86K Oct 27 16:35 sine-2020-10-27-16-35-16-572-h9d60l.wav
 ```
 
+### Close output signal
+
+Close output signal `io.wavebeans.lib.io.AbstractWriterKt.CloseOutputSignal` allows you to end the stream even if the actual stream is not over. Technically, it forces the writer to tell the executor that it has finished. When the `CloseOutputSignal` is handled the current buffer is also flushed, respecting the gate. 
+
+For example, that allows you to provide managing signal in your initial signal and populate it into the output accordingly, i.e. close the stream as soon as you get the certain sample sequence. Here on every window it checks if the `endSequence` is inside it, and if that is so, returns the wave before the `endSequence` along with `CloseOutputSignal`: 
+
+```kotlin
+val endSequence = listOf(1, 2, 1, 3, 1, 4, 1, 5, 1, 6).map { sampleOf(it * 1000) }
+val endSignal = endSequence.input()
+val signal = 440.sine().trim(1000)
+val noise = input { sampleOf(Random.nextInt()) }
+
+class SequenceDetectFn(initParameters: FnInitParameters) : Fn<Window<Sample>, Managed<OutputSignal, Unit, SampleArray>>(initParameters) {
+
+    constructor(endSequence: List<Sample>) : this(FnInitParameters().addDoubles("endSequence", endSequence))
+
+    override fun apply(argument: Window<Sample>): Managed<OutputSignal, Unit, SampleArray> {
+        val es = initParams.doubles("endSequence")
+        val ei = argument.elements.iterator()
+        var ai = es.iterator()
+        var startedAt = -1
+        var i = 0
+        while (ei.hasNext() && ai.hasNext()) {
+            val e = ei.next()
+            val a = ai.next()
+            if (a != e) {
+                ai = es.iterator()
+                startedAt = -1
+            } else if (startedAt == -1) {
+                startedAt = i
+            }
+            i++
+        }
+
+        if (ai.hasNext()) startedAt = -1
+
+        return if (startedAt == -1) {
+            sampleArrayOf(argument).withOutputSignal(NoopOutputSignal)
+        } else {
+            sampleArrayOf(argument.elements.subList(0, startedAt)).withOutputSignal(CloseOutputSignal)
+        }
+    }
+}
+
+(signal..endSignal..noise)
+        .window(endSequence.size * 10)
+        .map(SequenceDetectFn(endSequence))
+        .toMono16bitWav("file:///home/user/sine.wav") { "-${Random.nextInt().toString(36)}" }
+```
+
+The code above will generate only one file that contains the `signal` value. One thing to point out here, the initial signal may not end, i.e. the rest of the singal `noise` is infinite stream, but it is still work as expected.
+
 ## Performance boost
 
 For some cases it is possible to have a small buffer while processing the stream. In this case, using [SampleArray](../readme.md#samplearray) may help to reduce the overhead on the processing pipeline. Wav output support working with this type of sample out of the box, so you won't need to flatten it back. To use that approach, simply [window](../operations/window-operation.md) the stream with desired length, [remap](../operations/map-operation.md) it to [SampleArray](../readme.md#samplearray), and you may store it directly to the wav-file:

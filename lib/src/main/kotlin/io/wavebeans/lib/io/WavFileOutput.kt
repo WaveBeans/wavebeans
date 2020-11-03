@@ -1,7 +1,16 @@
 package io.wavebeans.lib.io
 
 import io.wavebeans.lib.*
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.encoding.CompositeDecoder
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlin.reflect.jvm.jvmName
 
 /**
  * Streams the mono channel signal into the file with wav format, each sample is stored as unsigned 8 bit integer.
@@ -197,7 +206,7 @@ inline fun <R : Any, A : Any, reified T : Any> BeanStream<R>.toWav(
  *
  * @param [A] if the [suffix] function is used, then the type of its argument, otherwise you mau use [Unit].
  */
-@Serializable
+@Serializable(with = WavFileOutputParamsSerializer::class)
 data class WavFileOutputParams<A : Any>(
         /**
          * The URI to stream to, i.e. `file:///home/user/my.wav`.
@@ -216,6 +225,50 @@ data class WavFileOutputParams<A : Any>(
          */
         val suffix: Fn<A?, String> = Fn.wrap { "" },
 ) : BeanParams()
+
+object WavFileOutputParamsSerializer: KSerializer<WavFileOutputParams<*>> {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(WavFileOutputParams::class.jvmName) {
+        element("uri", String.serializer().descriptor)
+        element("bitDepth", Int.serializer().descriptor)
+        element("numberOfChannels", Int.serializer().descriptor)
+        element("suffix", FnSerializer.descriptor)
+    }
+
+    override fun deserialize(decoder: Decoder): WavFileOutputParams<*> {
+        val dec = decoder.beginStructure(descriptor)
+        var uri: String? = null
+        var bitDepth: Int? = null
+        var numberOfChannels: Int? = null
+        var suffix: Fn<*, *>? = null
+        loop@ while (true) {
+            when (val i = dec.decodeElementIndex(descriptor)) {
+                CompositeDecoder.DECODE_DONE -> break@loop
+                0 -> uri = dec.decodeStringElement(descriptor, i)
+                1 -> bitDepth = dec.decodeIntElement(descriptor, i)
+                2 -> numberOfChannels = dec.decodeIntElement(descriptor, i)
+                3 -> suffix = dec.decodeSerializableElement(descriptor, i, FnSerializer)
+                else -> throw SerializationException("Unknown index $i")
+            }
+        }
+        @Suppress("UNCHECKED_CAST")
+        return WavFileOutputParams(
+                uri!!,
+                BitDepth.of(bitDepth!!),
+                numberOfChannels!!,
+                suffix!! as Fn<Any?, String>
+        )
+    }
+
+    override fun serialize(encoder: Encoder, value: WavFileOutputParams<*>) {
+        val structure = encoder.beginStructure(descriptor)
+        structure.encodeStringElement(descriptor, 0, value.uri)
+        structure.encodeSerializableElement(descriptor, 1, Int.serializer(), value.bitDepth.bits)
+        structure.encodeSerializableElement(descriptor, 2, Int.serializer(), value.numberOfChannels)
+        structure.encodeSerializableElement(descriptor, 3, FnSerializer, value.suffix)
+        structure.endStructure(descriptor)
+    }
+
+}
 
 /**
  * Performs the output of the [stream] to a single wav-file. Uses [WavWriter] ot perform the actual writing.

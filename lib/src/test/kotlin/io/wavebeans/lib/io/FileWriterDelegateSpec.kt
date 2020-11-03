@@ -3,7 +3,7 @@ package io.wavebeans.lib.io
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.prop
-import io.wavebeans.lib.eachIndexed
+import io.wavebeans.tests.eachIndexed
 import mu.KotlinLogging
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.lifecycle.CachingMode.TEST

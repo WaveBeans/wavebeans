@@ -66,14 +66,19 @@ abstract class AbstractPartialWriter<T : Any, A : Any>(
     private val samplesProcessedMetric = samplesProcessedOnOutputMetric.withTags(clazzTag to outputClazz.jvmName)
     private val samplesSkippedMetric = samplesSkippedOnOutputMetric.withTags(clazzTag to outputClazz.jvmName)
     private val flushedCounterMetric = flushedOnOutputMetric.withTags(clazzTag to outputClazz.jvmName)
+    private val outputStateMetric = io.wavebeans.metrics.outputStateMetric.withTags(clazzTag to outputClazz.jvmName)
     private val gateStateMetric = gateStateOnOutputMetric.withTags(clazzTag to outputClazz.jvmName)
 
     @Volatile
     private var isGateOpened = true
 
+    @Volatile
+    private var isOutputOpened = true
+
     init {
         gateStateMetric.set(1.0)
         writerDelegate.initBuffer(null)
+        outputStateMetric.set(1.0)
     }
 
     protected abstract fun header(): ByteArray?
@@ -83,44 +88,59 @@ abstract class AbstractPartialWriter<T : Any, A : Any>(
     private val sampleIterator = stream.asSequence(sampleRate).iterator()
 
     override fun write(): Boolean {
-        return if (sampleIterator.hasNext()) {
+
+        return if (isOutputOpened && sampleIterator.hasNext()) {
             val next = sampleIterator.next()
+
+            fun doWrite() {
+                if (isGateOpened) {
+                    val bytes = serialize(next.payload)
+                    writerDelegate.write(bytes, 0, bytes.size)
+                    samplesProcessedMetric.increment()
+                } else {
+                    skip(next.payload)
+                    samplesSkippedMetric.increment()
+                }
+            }
+
             when (next.signal) {
                 FlushOutputSignal -> {
                     log.debug { "[$this] Got FlushOutputSignal [argument=${next.argument}]" }
                     writerDelegate.flush(next.argument, ::header, ::footer)
-                    log.debug { "[$this] The writer flushed [argument=${next.argument}]" }
+                    log.info { "[$this] The writer flushed [argument=${next.argument}]" }
                     flushedCounterMetric.increment()
                 }
                 OpenGateOutputSignal -> {
-                    log.debug { "[$this] Got OpenGateOutputSignal [isGateOpened=$isGateOpened, argument=${next.argument}]" }
                     if (!isGateOpened) {
+                        log.debug { "[$this] Got OpenGateOutputSignal [isGateOpened=$isGateOpened, argument=${next.argument}]" }
                         isGateOpened = true
                         writerDelegate.initBuffer(next.argument)
-                        log.debug { "[$this] The writer has opened the gate [argument=${next.argument}]" }
+                        log.info { "[$this] The writer has opened the gate [argument=${next.argument}]" }
                         gateStateMetric.increment(1.0)
                     } // else signal is ignored
                 }
                 CloseGateOutputSignal -> {
-                    log.trace { "[$this] Got CloseGateOutputSignal [isGateOpened=$isGateOpened, argument=${next.argument}]" }
                     if (isGateOpened) {
+                        log.debug { "[$this] Got CloseGateOutputSignal [isGateOpened=$isGateOpened, argument=${next.argument}]" }
                         isGateOpened = false
                         writerDelegate.finalizeBuffer(next.argument, ::header, ::footer)
-                        log.debug { "[$this] The writer has closed the gate [argument=${next.argument}]" }
+                        log.info { "[$this] The writer has closed the gate [argument=${next.argument}]" }
                         gateStateMetric.decrement(1.0)
                     } // else signal is ignored
                 }
+                CloseOutputSignal -> {
+                    log.debug { "[$this] Got CloseOutputSignal [isGateOpened=$isGateOpened, argument=${next.argument}]" }
+                    doWrite()
+                    isOutputOpened = false
+                    isGateOpened = false
+                    writerDelegate.finalizeBuffer(next.argument, ::header, ::footer)
+                    outputStateMetric.set(0.0)
+                }
             }
-            if (isGateOpened) {
-                val bytes = serialize(next.payload)
-                writerDelegate.write(bytes, 0, bytes.size)
-                samplesProcessedMetric.increment()
-            } else {
-                skip(next.payload)
-                samplesSkippedMetric.increment()
-            }
+            doWrite()
             true
         } else {
+            outputStateMetric.set(0.0)
             log.debug { "[$this] The stream is over" }
             false
         }
@@ -136,13 +156,14 @@ abstract class AbstractPartialWriter<T : Any, A : Any>(
 }
 
 /**
- * The signals that [AbstractWriter] handles.
+ * The signals that [AbstractPartialWriter] handles.
  *
  * Known usages:
  *  * [NoopOutputSignal]
  *  * [FlushOutputSignal]
  *  * [OpenGateOutputSignal]
  *  * [CloseGateOutputSignal]
+ *  * [CloseOutputSignal]
  */
 typealias OutputSignal = Byte
 
@@ -170,6 +191,12 @@ const val OpenGateOutputSignal: OutputSignal = 0x02
  * * The current buffer is flushed when caught the signal. The sample provided with the singal is not skipped.
  */
 const val CloseGateOutputSignal: OutputSignal = 0x03
+
+/**
+ * Controls if the output is closed. Even if the actual stream is not over, the signal may close the output.
+ * Very convenient to stream infinite streams into a file.
+ */
+const val CloseOutputSignal: OutputSignal = 0x04
 
 fun <T : Any, A : Any> T.withOutputSignal(signal: OutputSignal, argument: A? = null): Managed<OutputSignal, A, T> = Managed(signal, argument, this)
 
