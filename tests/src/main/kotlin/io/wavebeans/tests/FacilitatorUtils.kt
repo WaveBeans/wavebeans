@@ -58,7 +58,7 @@ fun startFacilitator(
     }
 }
 
-fun waitForFacilitatorToStart(location: String, timeoutMs: Int = 5000) {
+fun waitForFacilitatorToStart(location: String, timeoutMs: Int = 30000) {
     log.info { "Waiting for facilitator to start on location $location." }
     FacilitatorApiClient(location).use { facilitatorApiClient ->
         val startedAt = System.currentTimeMillis()
@@ -74,7 +74,7 @@ fun waitForFacilitatorToStart(location: String, timeoutMs: Int = 5000) {
     log.info { "Facilitator on location $location started." }
 }
 
-fun terminateFacilitator(location: String, timeoutMs: Int = 5000) {
+fun terminateFacilitator(location: String, timeoutMs: Int = 30000) {
     log.info { "Terminating facilitator on location $location" }
     FacilitatorApiClient(location).use { facilitatorApiClient ->
         facilitatorApiClient.terminate()
