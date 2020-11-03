@@ -5,7 +5,6 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
 import assertk.assertions.support.fail
-import io.wavebeans.communicator.FacilitatorApiClient
 import io.wavebeans.execution.SingleThreadedOverseer
 import io.wavebeans.execution.eachIndexed
 import io.wavebeans.lib.Sample
@@ -23,15 +22,15 @@ import org.spekframework.spek2.lifecycle.CachingMode.SCOPE
 import org.spekframework.spek2.style.specification.Suite
 import org.spekframework.spek2.style.specification.describe
 import java.io.File
-import java.lang.Thread.sleep
 import java.util.concurrent.Executors
 import kotlin.math.abs
+import kotlin.random.Random
 
 object DistributedOverseerSpec : Spek({
 
     val log = KotlinLogging.logger {}
-    val port1 = 40101
-    val port2 = 40102
+    val port1 = Random.nextInt(10000, 50000)
+    val port2 = Random.nextInt(10000, 50000)
     val facilitatorsLocations = listOf("127.0.0.1:$port1", "127.0.0.1:$port2")
 
     val pool by memoized(SCOPE) { Executors.newCachedThreadPool() }
