@@ -33,7 +33,7 @@ object PartialFlushSpec : Spek({
 
     val outputDir by memoized(TEST) { Files.createTempDirectory("tmp").toFile() }
     fun outputFiles() = outputDir.listFiles()?.toList()?.sorted() ?: emptyList<File>()
-    val ports = arrayOf(Random.nextInt(10000, 50000), Random.nextInt(10000, 50000))
+    val ports = createPorts(2)
     val facilitatorLocations = listOf("localhost:${ports[0]}", "localhost:${ports[1]}")
 
     beforeEachTest {

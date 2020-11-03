@@ -29,15 +29,14 @@ import kotlin.random.Random
 object DistributedOverseerSpec : Spek({
 
     val log = KotlinLogging.logger {}
-    val port1 = Random.nextInt(10000, 50000)
-    val port2 = Random.nextInt(10000, 50000)
-    val facilitatorsLocations = listOf("127.0.0.1:$port1", "127.0.0.1:$port2")
+    val ports = createPorts(2)
+    val facilitatorsLocations = listOf("127.0.0.1:${ports[0]}", "127.0.0.1:${ports[1]}")
 
     val pool by memoized(SCOPE) { Executors.newCachedThreadPool() }
 
     beforeGroup {
-        pool.submit { startFacilitator(port1) }
-        pool.submit { startFacilitator(port2) }
+        pool.submit { startFacilitator(ports[0]) }
+        pool.submit { startFacilitator(ports[1]) }
 
         facilitatorsLocations.forEach(::waitForFacilitatorToStart)
     }
@@ -215,7 +214,7 @@ object DistributedOverseerSpec : Spek({
                     )
                     .replace(
                             "/[*]FACILITATOR_LIST[*]/.*/[*]FACILITATOR_LIST[*]/".toRegex(),
-                            "listOf(\"127.0.0.1:$port1\", \"127.0.0.1:$port2\")"
+                            "listOf(\"127.0.0.1:${ports[0]}\", \"127.0.0.1:${ports[1]}\")"
                     )
                     .also { log.info { "$name:\n$it" } }
         }
