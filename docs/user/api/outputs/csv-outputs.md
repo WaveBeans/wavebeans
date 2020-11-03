@@ -274,3 +274,7 @@ The flush signal `io.wavebeans.lib.io.AbstractWriterKt.FlushOutputSignal` allows
 The gate allows you to define if the output should be stored or ignored. When the gate is opened, all samples which are coming in are stored in the buffer, when the gate is closed the current buffer (if it's not empty) flushed on the disk. The following coming in samples are ignored unless the next open gate signal is emitted. When the output is created, the gate is already opened.
 
 To open the gate send `io.wavebeans.lib.io.AbstractWriterKt.OpenGateOutputSignal`, to close `io.wavebeans.lib.io.AbstractWriterKt.CloseGateOutputSignal`. The same consequent signals has no effect. I.e. if the gate is already opened, the open gate signal will remain the gate opened, and the signal is completely omitted, even monitoring metrics are not affected. The similar is true for close gate signal.
+
+### Close output signal
+
+Close output signal `io.wavebeans.lib.io.AbstractWriterKt.CloseOutputSignal` allows you to end the stream even if the actual stream is not over. Technically, it forces the writer to tell the executor that it has finished. When the `CloseOutputSignal` is handled the current buffer including the current sample is also flushed, respecting the gate. 

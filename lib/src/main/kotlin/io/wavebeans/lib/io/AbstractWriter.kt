@@ -68,6 +68,7 @@ abstract class AbstractPartialWriter<T : Any, A : Any>(
     private val flushedCounterMetric = flushedOnOutputMetric.withTags(clazzTag to outputClazz.jvmName)
     private val outputStateMetric = io.wavebeans.metrics.outputStateMetric.withTags(clazzTag to outputClazz.jvmName)
     private val gateStateMetric = gateStateOnOutputMetric.withTags(clazzTag to outputClazz.jvmName)
+    private val bytesCounter = bytesProcessedOnOutputMetric.withTags(clazzTag to outputClazz.jvmName)
 
     @Volatile
     private var isGateOpened = true
@@ -93,13 +94,16 @@ abstract class AbstractPartialWriter<T : Any, A : Any>(
             val next = sampleIterator.next()
 
             fun doWrite() {
-                if (isGateOpened) {
-                    val bytes = serialize(next.payload)
-                    writerDelegate.write(bytes, 0, bytes.size)
-                    samplesProcessedMetric.increment()
-                } else {
-                    skip(next.payload)
-                    samplesSkippedMetric.increment()
+                if (isOutputOpened) {
+                    if (isGateOpened) {
+                        val bytes = serialize(next.payload)
+                        writerDelegate.write(bytes, 0, bytes.size)
+                        samplesProcessedMetric.increment()
+                        bytesCounter.increment(bytes.size.toDouble())
+                    } else {
+                        skip(next.payload)
+                        samplesSkippedMetric.increment()
+                    }
                 }
             }
 
@@ -132,8 +136,11 @@ abstract class AbstractPartialWriter<T : Any, A : Any>(
                     log.debug { "[$this] Got CloseOutputSignal [isGateOpened=$isGateOpened, argument=${next.argument}]" }
                     doWrite()
                     isOutputOpened = false
-                    isGateOpened = false
-                    writerDelegate.finalizeBuffer(next.argument, ::header, ::footer)
+                    if (isGateOpened) {
+                        writerDelegate.finalizeBuffer(next.argument, ::header, ::footer)
+                        isGateOpened = false
+                        gateStateMetric.decrement(1.0)
+                    }
                     outputStateMetric.set(0.0)
                 }
             }

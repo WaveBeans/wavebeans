@@ -180,7 +180,7 @@ total 352
 
 ### Close output signal
 
-Close output signal `io.wavebeans.lib.io.AbstractWriterKt.CloseOutputSignal` allows you to end the stream even if the actual stream is not over. Technically, it forces the writer to tell the executor that it has finished. When the `CloseOutputSignal` is handled the current buffer is also flushed, respecting the gate. 
+Close output signal `io.wavebeans.lib.io.AbstractWriterKt.CloseOutputSignal` allows you to end the stream even if the actual stream is not over. Technically, it forces the writer to tell the executor that it has finished. When the `CloseOutputSignal` is handled the current buffer including the current sample is also flushed, respecting the gate. 
 
 For example, that allows you to provide managing signal in your initial signal and populate it into the output accordingly, i.e. close the stream as soon as you get the certain sample sequence. Here on every window it checks if the `endSequence` is inside it, and if that is so, returns the wave before the `endSequence` along with `CloseOutputSignal`: 
 
