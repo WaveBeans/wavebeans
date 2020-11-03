@@ -18,12 +18,16 @@ abstract class AbstractWriter<T : Any>(
         private val log = KotlinLogging.logger { }
     }
 
-    init {
-        writerDelegate.initBuffer(null)
-    }
-
     private val samplesCounter = samplesProcessedOnOutputMetric.withTags(clazzTag to outputClazz.jvmName)
     private val bytesCounter = bytesProcessedOnOutputMetric.withTags(clazzTag to outputClazz.jvmName)
+    private val outputStateMetric = io.wavebeans.metrics.outputStateMetric.withTags(clazzTag to outputClazz.jvmName)
+    private val gateStateMetric = gateStateOnOutputMetric.withTags(clazzTag to outputClazz.jvmName)
+
+    init {
+        gateStateMetric.set(1.0)
+        writerDelegate.initBuffer(null)
+        outputStateMetric.set(1.0)
+    }
 
     protected abstract fun header(): ByteArray?
 
@@ -49,6 +53,8 @@ abstract class AbstractWriter<T : Any>(
     override fun close() {
         writerDelegate.finalizeBuffer(null, ::header, ::footer)
         writerDelegate.close(::header, ::footer)
+        gateStateMetric.set(0.0)
+        outputStateMetric.set(0.0)
     }
 
 }
@@ -139,7 +145,7 @@ abstract class AbstractPartialWriter<T : Any, A : Any>(
                     if (isGateOpened) {
                         writerDelegate.finalizeBuffer(next.argument, ::header, ::footer)
                         isGateOpened = false
-                        gateStateMetric.decrement(1.0)
+                        gateStateMetric.set(0.0)
                     }
                     outputStateMetric.set(0.0)
                 }
@@ -147,7 +153,6 @@ abstract class AbstractPartialWriter<T : Any, A : Any>(
             doWrite()
             true
         } else {
-            outputStateMetric.set(0.0)
             log.debug { "[$this] The stream is over" }
             false
         }
@@ -159,6 +164,8 @@ abstract class AbstractPartialWriter<T : Any, A : Any>(
 
     override fun close() {
         writerDelegate.close(::header, ::footer)
+        gateStateMetric.set(0.0)
+        outputStateMetric.set(0.0)
     }
 }
 

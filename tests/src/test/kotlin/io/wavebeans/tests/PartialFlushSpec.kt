@@ -111,21 +111,21 @@ object PartialFlushSpec : Spek({
                             .prop("flushesCount") { v -> v.map { it.value }.sum() }
                             .isCloseTo(19.0, 1e-16)
 
-                    assertThat(gateState.collect())
+                    assertThat(gateState.collect(), "At the end the gate is closed")
                             .prop("lastReport") { it.last().value.increment }
-                            .isEqualTo(1.0)
+                            .isEqualTo(0.0)
 
-                    assertThat(outputState.collect())
+                    assertThat(outputState.collect(), "At the end the output is closed")
                             .prop("lastReport") { it.last().value.increment }
                             .isEqualTo(0.0)
 
                     val expectedSampleGenerated = sampleRate * 2.0 /*sec*/ * 2.0 /*inputs*/
-                    assertThat(inputProcessed.collect())
+                    assertThat(inputProcessed.collect(), "All inputs are read")
                             .prop("values.sum()") { it.map { it.value }.sum() }
                             .isCloseTo(expectedSampleGenerated, expectedSampleGenerated * 0.05)
 
                     val expectedBytesProcessed = sampleRate * 2.0 /*sec*/ * BitDepth.BIT_16.bytesPerSample
-                    assertThat(bytesProcessed.collect())
+                    assertThat(bytesProcessed.collect(), "2 sec of data is being written")
                             .prop("values.sum()") { it.map { it.value }.sum() }
                             .isCloseTo(expectedBytesProcessed, expectedBytesProcessed * 0.05)
 
@@ -184,7 +184,7 @@ object PartialFlushSpec : Spek({
                     assertThat(gateState.collect(), "Gate history").all {
                         prop("openedReported") { it.count { it.value.increment == 1.0 } }.isEqualTo(3)
                         prop("closedReported") { it.count { it.value.increment == -1.0 } }.isEqualTo(2)
-                        prop("lastReported") { it.last().value.increment }.isEqualTo(1.0)
+                        prop("lastReported") { it.last().value.increment }.isEqualTo(0.0)
                     }
 
                     assertThat(outputState.collect(), "Output is closed")
@@ -354,8 +354,8 @@ object PartialFlushSpec : Spek({
 
                     assertThat(gateState.collect(), "Gate history is open-close-open-close").all {
                         prop("openedReported") { it.count { it.value.increment == 1.0 } }.isEqualTo(2)
-                        prop("closedReported") { it.count { it.value.increment == -1.0 } }.isEqualTo(2)
-                        prop("lastReported") { it.last().value.increment }.isEqualTo(-1.0)
+                        prop("closedReported") { it.count { it.value.increment == -1.0 } }.isEqualTo(1)
+                        prop("lastReported") { it.last().value.increment }.isEqualTo(0.0)
                     }
 
                     assertThat(outputState.collect(), "Output is closed")
