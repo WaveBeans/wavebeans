@@ -2,7 +2,7 @@ package io.wavebeans.lib.stream.fft
 
 import assertk.assertThat
 import assertk.assertions.*
-import io.wavebeans.lib.eachIndexed
+import io.wavebeans.tests.eachIndexed
 import io.wavebeans.lib.io.sine
 import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.stream.window.window

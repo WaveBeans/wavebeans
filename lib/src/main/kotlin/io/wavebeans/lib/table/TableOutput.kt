@@ -30,13 +30,15 @@ import kotlin.reflect.jvm.jvmName
  */
 inline fun <reified T : Any> BeanStream<T>.toTable(
         tableName: String,
-        maximumDataLength: TimeMeasure = 1.d
+        maximumDataLength: TimeMeasure = 1.d,
+        automaticCleanupEnabled: Boolean = true
 ): TableOutput<T> = TableOutput(
         this,
         TableOutputParams(
                 tableName,
                 T::class,
-                maximumDataLength
+                maximumDataLength,
+                automaticCleanupEnabled
         )
 )
 
@@ -55,13 +57,15 @@ inline fun <reified T : Any> BeanStream<T>.toTable(
 fun BeanStream<Sample>.toSampleTable(
         tableName: String,
         maximumDataLength: TimeMeasure = 1.d,
-        sampleArrayBuffer: Int = 0
+        sampleArrayBuffer: Int = 0,
+        automaticCleanupEnabled: Boolean = true
 ): TableOutput<out Any> = TableOutput(
         (if (sampleArrayBuffer > 0) this.window(sampleArrayBuffer).map { sampleArrayOf(it) } else this) as BeanStream<Any>,
         TableOutputParams<Any>(
                 tableName,
                 if (sampleArrayBuffer > 0) SampleArray::class else Sample::class,
-                maximumDataLength
+                maximumDataLength,
+                automaticCleanupEnabled
         )
 )
 
@@ -71,11 +75,13 @@ class TableOutputParams<T : Any>(
         val tableName: String,
         val tableType: KClass<out T>,
         val maximumDataLength: TimeMeasure,
+        val automaticCleanupEnabled: Boolean,
         val tableDriverFactory: Fn<TableOutputParams<T>, TimeseriesTableDriver<T>> = Fn.wrap {
             InMemoryTimeseriesTableDriver(
                     it.tableName,
                     it.tableType,
-                    TimeTableRetentionPolicy(it.maximumDataLength)
+                    TimeTableRetentionPolicy(it.maximumDataLength),
+                    it.automaticCleanupEnabled
             )
         }
 ) : BeanParams()
@@ -85,6 +91,7 @@ object TableOutputParamsSerializer : KSerializer<TableOutputParams<*>> {
         element("tableName", String.serializer().descriptor)
         element("tableType", String.serializer().descriptor)
         element("maximumDataLength", TimeMeasure.serializer().descriptor)
+        element("automaticCleanupEnabled", Boolean.serializer().descriptor)
         element("tableDriverFactory", FnSerializer.descriptor)
     }
 
@@ -93,6 +100,7 @@ object TableOutputParamsSerializer : KSerializer<TableOutputParams<*>> {
         var tableName: String? = null
         var tableType: KClass<*>? = null
         var maximumDataLength: TimeMeasure? = null
+        var automaticCleanupEnabled: Boolean? = null
         var tableDriverFactory: Fn<TableOutputParams<Any>, TimeseriesTableDriver<Any>>? = null
         @Suppress("UNCHECKED_CAST")
         loop@ while (true) {
@@ -101,12 +109,13 @@ object TableOutputParamsSerializer : KSerializer<TableOutputParams<*>> {
                 0 -> tableName = dec.decodeStringElement(descriptor, i)
                 1 -> tableType = WaveBeansClassLoader.classForName(dec.decodeStringElement(descriptor, i)).kotlin
                 2 -> maximumDataLength = dec.decodeSerializableElement(descriptor, i, TimeMeasure.serializer())
-                3 -> tableDriverFactory = dec.decodeSerializableElement(descriptor, i, FnSerializer)
+                3 -> automaticCleanupEnabled = dec.decodeBooleanElement(descriptor, i)
+                4 -> tableDriverFactory = dec.decodeSerializableElement(descriptor, i, FnSerializer)
                         as Fn<TableOutputParams<Any>, TimeseriesTableDriver<Any>>
                 else -> throw SerializationException("Unknown index $i")
             }
         }
-        return TableOutputParams(tableName!!, tableType!!, maximumDataLength!!, tableDriverFactory!!)
+        return TableOutputParams(tableName!!, tableType!!, maximumDataLength!!, automaticCleanupEnabled!!, tableDriverFactory!!)
     }
 
     override fun serialize(encoder: Encoder, value: TableOutputParams<*>) {
@@ -114,7 +123,8 @@ object TableOutputParamsSerializer : KSerializer<TableOutputParams<*>> {
         structure.encodeStringElement(descriptor, 0, value.tableName)
         structure.encodeStringElement(descriptor, 1, value.tableType.jvmName)
         structure.encodeSerializableElement(descriptor, 2, TimeMeasure.serializer(), value.maximumDataLength)
-        structure.encodeSerializableElement(descriptor, 3, FnSerializer, value.tableDriverFactory)
+        structure.encodeSerializableElement(descriptor, 3, Boolean.serializer(), value.automaticCleanupEnabled)
+        structure.encodeSerializableElement(descriptor, 4, FnSerializer, value.tableDriverFactory)
         structure.endStructure(descriptor)
     }
 }

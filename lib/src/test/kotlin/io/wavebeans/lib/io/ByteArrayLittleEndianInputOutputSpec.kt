@@ -28,7 +28,7 @@ private class ByteArrayFileOutputMock(
         get() = throw UnsupportedOperationException()
 
     override fun writer(sampleRate: Float): Writer {
-        return object : AbstractWriter<Sample>(stream, sampleRate, FileWriterDelegate(uri = file.toURI()), ByteArrayFileOutputMock::class) {
+        return object : AbstractWriter<Sample>(stream, sampleRate, FileWriterDelegate({ file.toURI() }), ByteArrayFileOutputMock::class) {
 
             override fun header(): ByteArray? = null
 

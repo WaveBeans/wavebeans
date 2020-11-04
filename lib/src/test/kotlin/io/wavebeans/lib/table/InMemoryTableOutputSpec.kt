@@ -11,6 +11,7 @@ import io.wavebeans.lib.stream.fft.fft
 import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.stream.window.Window
 import io.wavebeans.lib.stream.window.window
+import io.wavebeans.tests.eachIndexed
 import mu.KotlinLogging
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.lifecycle.CachingMode.*
@@ -112,7 +113,7 @@ object InMemoryTableOutputSpec : Spek({
             val output by memoized(SCOPE) {
                 seqStream()
                         .trim(100)
-                        .toTable(tableName, 25.ms)
+                        .toTable(tableName, 25.ms, automaticCleanupEnabled = false)
             }
             val writer by memoized(SCOPE) { output.writer(1000.0f) }
             val table by memoized(SCOPE) { TableRegistry.default.byName<Sample>(tableName) as InMemoryTimeseriesTableDriver }
@@ -161,7 +162,7 @@ object InMemoryTableOutputSpec : Spek({
                 val output = seqStream()
                         .window(10)
                         .trim(100)
-                        .toTable(tableName, 25.ms)
+                        .toTable(tableName, 25.ms, automaticCleanupEnabled = false)
 
                 val writer = output.writer(1000.0f)
 
@@ -217,7 +218,7 @@ object InMemoryTableOutputSpec : Spek({
                         .window(10)
                         .fft(32)
                         .trim(100)
-                        .toTable(tableName, 25.ms)
+                        .toTable(tableName, 25.ms, automaticCleanupEnabled = false)
 
                 val writer by memoized(SCOPE) { output.writer(1000.0f) }
 
@@ -271,7 +272,7 @@ object InMemoryTableOutputSpec : Spek({
         describe("No initial offset") {
             val tableName = "tableStream1"
 
-            val writer by memoized(SCOPE) { seqStream().toTable(tableName, 25.ms).writer(1000.0f) }
+            val writer by memoized(SCOPE) { seqStream().toTable(tableName, 25.ms, automaticCleanupEnabled = false).writer(1000.0f) }
             val table by memoized(SCOPE) {
                 TableRegistry.default.byName<Sample>(tableName) as InMemoryTimeseriesTableDriver
             }
@@ -348,7 +349,7 @@ object InMemoryTableOutputSpec : Spek({
             }
         }
 
-        describe("With some intial offset") {
+        describe("With some initial offset") {
             val tableName = "tableStream2"
             val writer by memoized(SCOPE) {
                 seqStream().toTable(tableName, 25.ms).writer(1000.0f)

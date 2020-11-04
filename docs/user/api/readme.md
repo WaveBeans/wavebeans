@@ -14,6 +14,7 @@
   - [Window of any type T](#window-of-any-type-t)
   - [FftSample](#fftsample)
   - [User defined type](#user-defined-type)
+  - [Managed type](#managed-type)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -271,3 +272,9 @@ time sec,sample1,sample2
 0.00007,0.1542514499,0.9147423578
 0.00009,-0.6669380617,-0.9873392775
 ```
+
+### Managed type
+
+Managed type `io.wavebeans.lib.Managed` allows you to wrap the sample of any type, and specify some managing singal with an argument along the way, so the operation down the line may perform accordingly. What exactly is going to be done is up to the operation. The `Managed` has 3 type parameters: `S` the type of the signal, `A` the type of the argument and `T` the type of the payload.
+
+One of the examples of current application of the managed sample is managing [wav](/docs/user/api/outputs/wav-output.md#controlling-output) and [csv](/docs/user/api/outputs/csv-outputs.md#controlling-output) outputs.

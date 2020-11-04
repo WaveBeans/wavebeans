@@ -33,9 +33,46 @@ val samplesProcessedOnOutputMetric = MetricObject.counter(
         "Counts the number of samples processed by the output",
         clazzTag
 )
+
+val samplesSkippedOnOutputMetric = MetricObject.counter(
+        "io.wavebeans.lib.output",
+        "samplesSkipped",
+        "Counts the number of samples skipped by the output, i.e. due to the gate closed and so on",
+        clazzTag
+)
+
 val samplesProcessedOnInputMetric = MetricObject.counter(
         "io.wavebeans.lib.input",
         "samplesProcessed",
         "Counts the number of samples processed by the input",
         clazzTag, typeTag
 )
+
+val flushedOnOutputMetric = MetricObject.counter(
+        "io.wavebeans.lib.output",
+        "flushed",
+        "Counts the number of times the output was flushed if applicable",
+        clazzTag
+)
+
+val gateStateOnOutputMetric = MetricObject.gauge(
+        "io.wavebeans.lib.output",
+        "gate.state",
+        "Reflects the state of the gate of the specific output, 0 is closed, 1 is opened",
+        clazzTag
+)
+
+val bytesProcessedOnOutputMetric = MetricObject.counter(
+        "io.wavebeans.lib.output",
+        "bytesProcessed",
+        "Counts the number of bytes processed by the output",
+        clazzTag
+)
+
+val outputStateMetric = MetricObject.gauge(
+        "io.wavebeans.lib.output",
+        "state",
+        "Reflects the state of the specific output, 0 is closed, 1 is opened",
+        clazzTag
+)
+

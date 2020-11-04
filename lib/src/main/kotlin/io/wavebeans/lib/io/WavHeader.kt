@@ -52,7 +52,7 @@ class WavHeader(
         try {
             d.writeInt(v)
         } catch (e: Exception) {
-            throw WavOutputException("Can't write `$v` for `$target`.", e)
+            throw IllegalStateException("Can't write `$v` for `$target`.", e)
         }
     }
 
@@ -60,7 +60,7 @@ class WavHeader(
         try {
             d.writeShort(v.toInt())
         } catch (e: Exception) {
-            throw WavOutputException("Can't write `$v` for `$target`.", e)
+            throw IllegalStateException("Can't write `$v` for `$target`.", e)
         }
     }
 
@@ -71,7 +71,7 @@ class WavHeader(
                     .toByteArray()
             d.write(b)
         } catch (e: Exception) {
-            throw WavOutputException("Can't write `$v` for $target.", e)
+            throw IllegalStateException("Can't write `$v` for $target.", e)
         }
 
     }
@@ -83,7 +83,7 @@ class WavHeader(
                     .toByteArray()
             d.write(b)
         } catch (e: Exception) {
-            throw WavOutputException("Can't write `$v` for $target", e)
+            throw IllegalStateException("Can't write `$v` for $target", e)
         }
 
     }

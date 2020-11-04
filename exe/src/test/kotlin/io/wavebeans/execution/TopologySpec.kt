@@ -80,8 +80,8 @@ object TopologySpec : Spek({
                     .isNotNull()
                     .all {
                         matchesPredicate { it.type.endsWith("CsvStreamOutput") }
-                        matchesPredicate { it.params is CsvStreamOutputParams<*> }
-                        matchesPredicate { (it.params as CsvStreamOutputParams<*>).uri == "file:///some1.csv" }
+                        matchesPredicate { it.params is CsvStreamOutputParams<*, *> }
+                        matchesPredicate { (it.params as CsvStreamOutputParams<*, *>).uri == "file:///some1.csv" }
                     }
         }
 
@@ -90,8 +90,8 @@ object TopologySpec : Spek({
                     .isNotNull()
                     .all {
                         matchesPredicate { it.type.endsWith("CsvStreamOutput") }
-                        matchesPredicate { it.params is CsvStreamOutputParams<*> }
-                        matchesPredicate { (it.params as CsvStreamOutputParams<*>).uri == "file:///some2.csv" }
+                        matchesPredicate { it.params is CsvStreamOutputParams<*, *> }
+                        matchesPredicate { (it.params as CsvStreamOutputParams<*, *>).uri == "file:///some2.csv" }
                     }
         }
     }

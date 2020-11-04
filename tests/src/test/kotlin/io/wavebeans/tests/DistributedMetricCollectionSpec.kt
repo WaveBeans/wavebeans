@@ -18,7 +18,7 @@ import kotlin.reflect.jvm.jvmName
 
 object DistributedMetricCollectionSpec : Spek({
 
-    val facilitatorPorts = listOf(40001, 40002)
+    val facilitatorPorts = createPorts(2)
 
     val facilitatorsLocations = facilitatorPorts.map { "127.0.0.1:$it" }
 
@@ -27,25 +27,7 @@ object DistributedMetricCollectionSpec : Spek({
     beforeGroup {
         facilitatorPorts.forEach {
             pool.submit {
-                startFacilitator(it, customLoggingConfig = """
-                <configuration debug="false">
-
-                    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-                        <!-- encoders are  by default assigned the type
-                             ch.qos.logback.classic.encoder.PatternLayoutEncoder -->
-                        <encoder>
-                            <pattern>[[[$it]]] %d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
-                        </encoder>
-                    </appender>
-
-                    <logger name="io.grpc.netty.shaded.io.grpc.netty.NettyClientHandler" level="INFO" />
-                    <logger name="io.grpc.netty.shaded.io.grpc.netty.NettyServerHandler" level="INFO" />
-
-                    <root level="INFO">
-                        <appender-ref ref="STDOUT" />
-                    </root>
-                </configuration>
-            """.trimIndent())
+                startFacilitator(it)
             }
         }
 

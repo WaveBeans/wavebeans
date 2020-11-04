@@ -3,6 +3,7 @@ package io.wavebeans.lib.stream
 import io.wavebeans.lib.Sample
 import io.wavebeans.lib.SampleArray
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.math.max
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.jvm.jvmName
@@ -16,6 +17,7 @@ object SampleCountMeasurement {
         registerType(Number::class) { 1 }
         registerType(Sample::class) { 1 }
         registerType(SampleArray::class) { it.size }
+        registerType(Pair::class) { max(samplesInObject(it.first!!), samplesInObject(it.second!!)) }
         registerType(List::class) { l ->
             l.asSequence()
                     .map {
@@ -37,7 +39,7 @@ object SampleCountMeasurement {
         else {
             val measurer = cache[obj::class.jvmName]
                     ?: types.entries.firstOrNull { obj::class.isSubclassOf(it.key) }
-                            ?.let { cache[it.key.jvmName] = it.value; it }
+                            ?.also { cache[it.key.jvmName] = it.value }
                             ?.value
                     ?: throw IllegalStateException("${obj::class} is not registered within ${SampleCountMeasurement::class.simpleName}," +
                             " use registerType() function or extend your class with ${Measured::class.simpleName} interface")

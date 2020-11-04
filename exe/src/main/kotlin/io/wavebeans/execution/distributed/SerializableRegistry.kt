@@ -27,5 +27,6 @@ object SerializableRegistry {
     init {
         register(List::class, ListObjectSerializer)
         register(Window::class, WindowOfAnySerializer)
+        register(Pair::class, PairOfAnySerializer)
     }
 }

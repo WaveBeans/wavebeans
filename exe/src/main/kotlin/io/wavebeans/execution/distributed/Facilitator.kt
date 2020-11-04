@@ -17,6 +17,7 @@ import kotlinx.serialization.modules.SerializersModule
 import mu.KotlinLogging
 import java.io.Closeable
 import java.io.FileOutputStream
+import java.io.IOException
 import java.io.InputStream
 import java.util.concurrent.*
 
@@ -82,20 +83,33 @@ class Facilitator(
         ExecutionConfig.mediumBuilder(mediumBuilder)
         ExecutionConfig.executionThreadPool(executionThreadPool)
 
-        communicatorPort?.let {
-            communicator = ServerBuilder.forPort(it)
-                    .maxInboundMessageSize(maxInboundMessage)
-                    .addService(TableGrpcService.instance(TableRegistry.default))
-                    .addService(FacilitatorGrpcService.instance(this))
-                    .addService(MetricGrpcService.instance())
-                    .build()
-                    .start()
-            log.info { "Communicator on port $it started." }
-        }
+        tryStartCommunicator()
 
         metricConnectorDescriptors.forEach(MetricConnectorDescriptor::createAndRegister)
 
         return this
+    }
+
+    private fun tryStartCommunicator() {
+        var i = 0
+        while (true) {
+            try {
+                communicatorPort?.let {
+                    communicator = ServerBuilder.forPort(it)
+                            .maxInboundMessageSize(maxInboundMessage)
+                            .addService(TableGrpcService.instance(TableRegistry.default))
+                            .addService(FacilitatorGrpcService.instance(this))
+                            .addService(MetricGrpcService.instance())
+                            .build()
+                            .start()
+                    log.info { "Communicator on port $it started." }
+                }
+                break
+            } catch (e: IOException) {
+                log.debug(e) { "Can't start communicator on port $communicatorPort" }
+            }
+            if (++i >= 10) throw IllegalStateException("Can't start communicator on port $communicatorPort within $i attempts")
+        }
     }
 
     fun startupClasses(): List<ClassDesc> = startupClasses

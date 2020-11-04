@@ -16,7 +16,7 @@ open class PodDiscovery protected constructor() {
 
     open fun bushFor(podKey: PodKey): BushKey {
         val bushKey = pods[podKey] ?: throw IllegalStateException("Can't locate bush for pod with key $podKey")
-        log.debug { "Requested bush for $podKey: $bushKey" }
+        log.trace { "Requested bush for $podKey: $bushKey" }
         return bushKey
     }
 
@@ -33,7 +33,7 @@ open class PodDiscovery protected constructor() {
     }
 
     open fun bush(bushKey: BushKey): Bush? = bushes[bushKey].also {
-        log.debug { "Got bush for key $bushKey: $it" }
+        log.trace { "Got bush for key $bushKey: $it" }
     }
 
     open fun unregisterBush(bushKey: BushKey) {

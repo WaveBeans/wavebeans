@@ -24,12 +24,13 @@ internal data class Item<T : Any>(val timeMarker: TimeMeasure, val value: T)
 class InMemoryTimeseriesTableDriver<T : Any>(
         override val tableName: String,
         override val tableType: KClass<*>,
-        private val retentionPolicy: TableRetentionPolicy
+        private val retentionPolicy: TableRetentionPolicy,
+        private val automaticCleanupEnabled: Boolean = true
 ) : TimeseriesTableDriver<T> {
 
     companion object {
         private val log = KotlinLogging.logger { }
-        private val scheduledExecutor = Executors.newSingleThreadScheduledExecutor { Thread(it, "InMemoryTimeseriesTableDriver") }
+        private val scheduledExecutor = Executors.newSingleThreadScheduledExecutor { Thread(it, "InMemoryTimeseriesTableDriverThread") }
 
         init {
             Runtime.getRuntime().addShutdownHook(Thread {
@@ -56,7 +57,7 @@ class InMemoryTimeseriesTableDriver<T : Any>(
     override fun init(sampleRate: Float) {
         sampleRateValue[0] = sampleRate
         log.debug { "[$this] Initializing driver" }
-        if (cleanUpTask == null) {
+        if (cleanUpTask == null && automaticCleanupEnabled) {
             log.debug { "[$this] Setting cleanup task" }
             cleanUpTask = scheduledExecutor.scheduleAtFixedRate({ performCleanup() }, 0, 5000, TimeUnit.MILLISECONDS)
         }

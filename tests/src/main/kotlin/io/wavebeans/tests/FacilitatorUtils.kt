@@ -1,9 +1,34 @@
 package io.wavebeans.tests
 
 import io.wavebeans.communicator.FacilitatorApiClient
+import mu.KotlinLogging
 import java.io.File
 
-fun startFacilitator(port: Int, threadsNumber: Int = 1, customLoggingConfig: String? = null) {
+private val log = KotlinLogging.logger { }
+
+fun startFacilitator(
+        port: Int,
+        threadsNumber: Int = 1,
+        facilitatorLogLevel: String = "INFO"
+) {
+    log.info { "Starting facilitator on port=$port, threadsNumber=$threadsNumber, facilitatorLogLevel=$facilitatorLogLevel" }
+    val customLoggingConfig = """
+                    <configuration debug="false">
+
+                    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+                        <encoder>
+                            <pattern>[[[$port]]] %d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+                        </encoder>
+                    </appender>
+
+                    <logger name="io.grpc.netty.shaded.io.grpc.netty.NettyClientHandler" level="INFO" />
+                    <logger name="io.grpc.netty.shaded.io.grpc.netty.NettyServerHandler" level="INFO" />
+
+                    <root level="$facilitatorLogLevel">
+                        <appender-ref ref="STDOUT" />
+                    </root>
+                </configuration>
+            """.trimIndent()
     val confFile = File.createTempFile("facilitator-config", ".conf").also { it.deleteOnExit() }
     confFile.writeText("""
         facilitatorConfig {
@@ -12,7 +37,7 @@ fun startFacilitator(port: Int, threadsNumber: Int = 1, customLoggingConfig: Str
         }
     """.trimIndent())
 
-    val loggingFile = customLoggingConfig?.let {
+    val loggingFile = customLoggingConfig.let {
         val logFile = File.createTempFile("log-config", ".xml").also { it.deleteOnExit() }
         logFile.writeText(customLoggingConfig)
         logFile.absolutePath
@@ -20,8 +45,8 @@ fun startFacilitator(port: Int, threadsNumber: Int = 1, customLoggingConfig: Str
 
     val runner = CommandRunner(
             javaCmd(),
-            *((
-                    loggingFile?.let { listOf("-Dlogback.configurationFile=$it") } ?: emptyList()) + listOf(
+            *(listOf(
+                    "-Dlogback.configurationFile=$loggingFile",
                     "-cp", System.getProperty("java.class.path"),
                     "io.wavebeans.execution.distributed.FacilitatorCliKt", confFile.absolutePath
             )).toTypedArray()
@@ -33,19 +58,35 @@ fun startFacilitator(port: Int, threadsNumber: Int = 1, customLoggingConfig: Str
     }
 }
 
-fun waitForFacilitatorToStart(location: String) {
+fun waitForFacilitatorToStart(location: String, timeoutMs: Int = 30000) {
+    log.info { "Waiting for facilitator to start on location $location." }
     FacilitatorApiClient(location).use { facilitatorApiClient ->
+        val startedAt = System.currentTimeMillis()
         while (true) {
             if (facilitatorApiClient.status())
                 break
+            if (System.currentTimeMillis() - startedAt > timeoutMs)
+                throw IllegalStateException("Facilitator at $location start timed out")
             // continue trying
             Thread.sleep(1)
         }
     }
+    log.info { "Facilitator on location $location started." }
 }
 
-fun terminateFacilitator(location: String) {
+fun terminateFacilitator(location: String, timeoutMs: Int = 30000) {
+    log.info { "Terminating facilitator on location $location" }
     FacilitatorApiClient(location).use { facilitatorApiClient ->
         facilitatorApiClient.terminate()
+        val startedAt = System.currentTimeMillis()
+        while (true) {
+            if (!facilitatorApiClient.status())
+                break
+            if (System.currentTimeMillis() - startedAt > timeoutMs)
+                throw IllegalStateException("Facilitator at $location can stop within timeout")
+            // continue trying
+            Thread.sleep(1)
+        }
     }
+    log.info { "Terminated facilitator on location $location" }
 }

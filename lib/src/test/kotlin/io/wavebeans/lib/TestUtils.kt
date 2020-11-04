@@ -38,15 +38,6 @@ fun BeanStream<Sample>.listOfShortsAsInts(sampleRate: Float, samplesToRead: Int 
                 .toList()
 
 
-fun <T> Assert<Iterable<T>>.eachIndexed(expectedSize: Int? = null, f: (Assert<T>, Int) -> Unit) = given { actual ->
-    all {
-        expectedSize?.let { assertThat(actual.count(), "elements count").isEqualTo(it) }
-        actual.forEachIndexed { index, item ->
-            f(assertThat(item, name = "${name ?: ""}${show(index, "[]")}"), index)
-        }
-    }
-}
-
 fun Assert<BeanStream<Sample>>.isCloseTo(v: BeanStream<Sample>, sampleRate: Float, samplesToCompare: Int, delta: Double) = given { actual ->
     val actualss = actual.asSequence(sampleRate).take(samplesToCompare).toList()
     val vss = v.asSequence(sampleRate).take(samplesToCompare).toList()

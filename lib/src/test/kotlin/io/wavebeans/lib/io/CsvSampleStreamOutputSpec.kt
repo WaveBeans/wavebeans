@@ -2,18 +2,14 @@ package io.wavebeans.lib.io
 
 import assertk.assertThat
 import assertk.assertions.*
-import io.wavebeans.lib.eachIndexed
+import io.wavebeans.tests.eachIndexed
 import io.wavebeans.lib.stream.minus
 import io.wavebeans.lib.stream.trim
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
-import java.io.BufferedReader
 import java.io.File
-import java.io.FileInputStream
-import java.io.InputStreamReader
 import java.lang.Thread.sleep
 import java.util.concurrent.TimeUnit
-import kotlin.streams.toList
 
 
 class CsvSampleStreamOutputSpec : Spek({

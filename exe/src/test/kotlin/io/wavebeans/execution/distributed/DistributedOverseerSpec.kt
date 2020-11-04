@@ -5,7 +5,6 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
 import assertk.assertions.support.fail
-import io.wavebeans.communicator.FacilitatorApiClient
 import io.wavebeans.execution.SingleThreadedOverseer
 import io.wavebeans.execution.eachIndexed
 import io.wavebeans.lib.Sample
@@ -23,22 +22,21 @@ import org.spekframework.spek2.lifecycle.CachingMode.SCOPE
 import org.spekframework.spek2.style.specification.Suite
 import org.spekframework.spek2.style.specification.describe
 import java.io.File
-import java.lang.Thread.sleep
 import java.util.concurrent.Executors
 import kotlin.math.abs
+import kotlin.random.Random
 
 object DistributedOverseerSpec : Spek({
 
     val log = KotlinLogging.logger {}
-    val port1 = 40101
-    val port2 = 40102
-    val facilitatorsLocations = listOf("127.0.0.1:$port1", "127.0.0.1:$port2")
+    val ports = createPorts(2)
+    val facilitatorsLocations = listOf("127.0.0.1:${ports[0]}", "127.0.0.1:${ports[1]}")
 
     val pool by memoized(SCOPE) { Executors.newCachedThreadPool() }
 
     beforeGroup {
-        pool.submit { startFacilitator(port1) }
-        pool.submit { startFacilitator(port2) }
+        pool.submit { startFacilitator(ports[0]) }
+        pool.submit { startFacilitator(ports[1]) }
 
         facilitatorsLocations.forEach(::waitForFacilitatorToStart)
     }
@@ -216,7 +214,7 @@ object DistributedOverseerSpec : Spek({
                     )
                     .replace(
                             "/[*]FACILITATOR_LIST[*]/.*/[*]FACILITATOR_LIST[*]/".toRegex(),
-                            "listOf(\"127.0.0.1:$port1\", \"127.0.0.1:$port2\")"
+                            "listOf(\"127.0.0.1:${ports[0]}\", \"127.0.0.1:${ports[1]}\")"
                     )
                     .also { log.info { "$name:\n$it" } }
         }

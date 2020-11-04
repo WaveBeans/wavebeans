@@ -24,6 +24,7 @@ object PodRegistry {
         registerPodProxy(typeOf<FiniteStream<*>>(), AnyFiniteStreamPodProxy::class.constructors.first())
         registerPodProxy(typeOf<BeanStream<*>>(), AnyStreamPodProxy::class.constructors.first())
 
+        registerMergingPodProxy(typeOf<FiniteStream<*>>(), AnyFiniteStreamMergingPodProxy::class.constructors.first())
         registerMergingPodProxy(typeOf<BeanStream<*>>(), AnyStreamMergingPodProxy::class.constructors.first())
 
         registerPod(typeOf<FiniteStream<*>>(), AnyFiniteStreamingPod::class.constructors.single { it.parameters.size == 2 })

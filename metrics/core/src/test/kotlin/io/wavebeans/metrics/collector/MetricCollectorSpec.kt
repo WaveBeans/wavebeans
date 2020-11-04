@@ -12,6 +12,7 @@ import org.spekframework.spek2.Spek
 import org.spekframework.spek2.lifecycle.CachingMode.*
 import org.spekframework.spek2.style.specification.describe
 import java.lang.Thread.sleep
+import kotlin.random.Random
 
 object MetricCollectorSpec : Spek({
 
@@ -334,8 +335,7 @@ object MetricCollectorSpec : Spek({
     describe("Distributed mode") {
 
         describe("One downstream collector") {
-            val port = 50000
-
+            val port by memoized(SCOPE) { Random.nextInt(10000, 50000) }
             val counter by memoized(SCOPE) { MetricObject.counter("component", "count", "") }
             val time by memoized(SCOPE) { MetricObject.time("component", "time", "") }
             val gauge by memoized(SCOPE) { MetricObject.gauge("component", "gauge", "") }
@@ -509,8 +509,7 @@ object MetricCollectorSpec : Spek({
         }
 
         describe("Collecting automatically") {
-            val port = 50002
-
+            val port by memoized(SCOPE) { Random.nextInt(10000, 50000) }
             val counter by memoized(SCOPE) { MetricObject.counter("component1", "name1", "") }
 
             val remoteMetricCollector by memoized(SCOPE) {
@@ -556,8 +555,8 @@ object MetricCollectorSpec : Spek({
         }
 
         describe("Two downstream collectors") {
-            val port1 = 50004
-            val port2 = 50005
+            val port1 by memoized(EACH_GROUP) { Random.nextInt(10000, 50000) }
+            val port2 by memoized(EACH_GROUP) { Random.nextInt(10000, 50000) }
 
             val counter by memoized(EACH_GROUP) { MetricObject.counter("component1_TwoDownstreamCollectors", "name1_TwoDownstreamCollectors", "") }
 

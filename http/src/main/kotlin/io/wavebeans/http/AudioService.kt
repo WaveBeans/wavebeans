@@ -1,13 +1,10 @@
 package io.wavebeans.http
 
-import io.ktor.application.Application
-import io.ktor.application.call
-import io.ktor.features.BadRequestException
-import io.ktor.features.NotFoundException
-import io.ktor.http.ContentType
-import io.ktor.response.respondOutputStream
-import io.ktor.routing.get
-import io.ktor.routing.routing
+import io.ktor.application.*
+import io.ktor.features.*
+import io.ktor.http.*
+import io.ktor.response.*
+import io.ktor.routing.*
 import io.wavebeans.lib.*
 import io.wavebeans.lib.io.*
 import io.wavebeans.lib.stream.trim
@@ -109,7 +106,16 @@ class AudioService(internal val tableRegistry: TableRegistry) {
                 offsetTag to (offset?.toString() ?: "n/a")
         )
         val nextBytes: Queue<Byte> = LinkedTransferQueue<Byte>()
-        val writerDelegate = object : WriterDelegate() {
+        val writerDelegate = object : WriterDelegate<Unit> {
+            override fun flush(argument: Unit?, headerFn: () -> ByteArray?, footerFn: () -> ByteArray?) =
+                    throw UnsupportedOperationException()
+            override fun finalizeBuffer(argument: Unit?, headerFn: () -> ByteArray?, footerFn: () -> ByteArray?) =
+                    throw UnsupportedOperationException()
+            override fun close(headerFn: () -> ByteArray?, footerFn: () -> ByteArray?) =
+                    throw UnsupportedOperationException()
+
+            override fun initBuffer(argument: Unit?) {}
+
             override fun write(b: Int) {
                 nextBytes.add(b.toByte())
             }
@@ -122,16 +128,16 @@ class AudioService(internal val tableRegistry: TableRegistry) {
                 when (tableType) {
                     Sample::class -> WavWriter(
                             (table as TimeseriesTableDriver<Sample>).stream(offset ?: 0.s)
-                                    .let { if (limit != null) it.trim(limit.ns(), TimeUnit.NANOSECONDS) else it },
+                                    .let { if (limit != null) it.trim(limit.ns(), TimeUnit.NANOSECONDS) else it } as BeanStream<Any>,
                             bitDepth,
                             sampleRate,
                             1,
                             writerDelegate,
                             AudioService::class
                     )
-                    SampleArray::class -> WavWriterFromSampleArray(
+                    SampleArray::class -> WavWriter(
                             (table as TimeseriesTableDriver<SampleArray>).stream(offset ?: 0.s)
-                                    .let { if (limit != null) it.trim(limit.ns(), TimeUnit.NANOSECONDS) else it },
+                                    .let { if (limit != null) it.trim(limit.ns(), TimeUnit.NANOSECONDS) else it } as BeanStream<Any>,
                             bitDepth,
                             sampleRate,
                             1,

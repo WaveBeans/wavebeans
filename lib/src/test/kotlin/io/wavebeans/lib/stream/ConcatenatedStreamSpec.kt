@@ -9,7 +9,7 @@ import assertk.assertions.isInstanceOf
 import assertk.assertions.prop
 import io.wavebeans.lib.BeanStream
 import io.wavebeans.lib.Sample
-import io.wavebeans.lib.eachIndexed
+import io.wavebeans.tests.eachIndexed
 import io.wavebeans.lib.seqStream
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
