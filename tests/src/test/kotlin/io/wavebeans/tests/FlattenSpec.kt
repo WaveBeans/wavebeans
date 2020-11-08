@@ -20,7 +20,7 @@ import kotlin.math.abs
 
 object FlattenSpec : Spek({
 
-    val outputFile by memoized(CachingMode.TEST) { File.createTempFile("tmp", ".wav", File("/users/asubb/tmp/")) }
+    val outputFile by memoized(CachingMode.TEST) { File.createTempFile("tmp", ".wav") }
     val ports = createPorts(2)
     val facilitatorLocations = listOf("localhost:${ports[0]}", "localhost:${ports[1]}")
 
