@@ -47,5 +47,6 @@ fun SerializersModuleBuilder.beanParams() {
         subclass(TableOutputParams::class, TableOutputParamsSerializer)
         subclass(TableDriverStreamParams::class, TableDriverStreamParams.serializer())
         subclass(WavFileOutputParams::class, WavFileOutputParamsSerializer)
+        subclass(FlattenWindowStreamsParams::class, FlattenWindowStreamsParamsSerializer)
     }
 }

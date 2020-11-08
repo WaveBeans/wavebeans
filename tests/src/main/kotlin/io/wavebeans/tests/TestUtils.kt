@@ -3,7 +3,9 @@ package io.wavebeans.tests
 import assertk.Assert
 import assertk.all
 import assertk.assertions.isEqualTo
+import assertk.assertions.isLessThanOrEqualTo
 import assertk.assertions.isTrue
+import assertk.assertions.size
 import assertk.assertions.support.show
 
 fun <T> Assert<Iterable<T>>.eachIndexed(expectedSize: Int? = null, f: (Assert<T>, Int) -> Unit) = given { actual ->
@@ -16,6 +18,7 @@ fun <T> Assert<Iterable<T>>.eachIndexed(expectedSize: Int? = null, f: (Assert<T>
 }
 
 fun <T> Assert<List<T>>.isContainedBy(expected: List<T>, isEqual: (T, T) -> Boolean = { a, b -> a == b }) = given { actual ->
+    assertThat(actual, "Actual").size().isLessThanOrEqualTo(expected.size)
     val ei = expected.iterator()
     var ai = actual.iterator()
     var isContained = false

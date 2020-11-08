@@ -48,7 +48,7 @@ inline fun <reified T : Any> BeanStream<T>.toTable(
  * @param tableName the name of the table to perform the output to. The table then can be located via [TableRegistry]
  * @param maximumDataLength the maximum data length to keep in the table, the rest are going to be removed once they
  * are out of the defined interval. The sample required to be registered with [SampleCountMeasurement]
- * @param sampleArrayBuffer if more than 0 then samples are grouped into [SampleArray] before storing into the table.
+ * @param sampleVectorBufferSize if more than 0 then samples are grouped into [SampleVector] before storing into the table.
  * That allows to reduce the memory footprint and overall improves perfomance for some cases, though by additional delay in the signal.
  *
  * @return the [TableOutput] which is a terminal action for the execuion.
@@ -57,13 +57,13 @@ inline fun <reified T : Any> BeanStream<T>.toTable(
 fun BeanStream<Sample>.toSampleTable(
         tableName: String,
         maximumDataLength: TimeMeasure = 1.d,
-        sampleArrayBuffer: Int = 0,
+        sampleVectorBufferSize: Int = 0,
         automaticCleanupEnabled: Boolean = true
 ): TableOutput<out Any> = TableOutput(
-        (if (sampleArrayBuffer > 0) this.window(sampleArrayBuffer).map { sampleArrayOf(it) } else this) as BeanStream<Any>,
+        (if (sampleVectorBufferSize > 0) this.window(sampleVectorBufferSize).map { sampleVectorOf(it) } else this) as BeanStream<Any>,
         TableOutputParams<Any>(
                 tableName,
-                if (sampleArrayBuffer > 0) SampleArray::class else Sample::class,
+                if (sampleVectorBufferSize > 0) SampleVector::class else Sample::class,
                 maximumDataLength,
                 automaticCleanupEnabled
         )

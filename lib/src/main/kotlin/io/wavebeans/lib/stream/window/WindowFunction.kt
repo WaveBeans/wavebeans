@@ -143,8 +143,29 @@ fun BeanStream<Window<Sample>>.blackman(): BeanStream<Window<Sample>> {
  * as a window function over the stream of windowed samples.
  */
 fun BeanStream<Window<Sample>>.hamming(): BeanStream<Window<Sample>> {
-    return this.windowFunction { (i, n) ->
-        val a0 = 25.0 / 46.0
-        sampleOf(a0 - (1 - a0) * cos(2 * PI * i / n))
-    }
+    return this.windowFunction { (i, n) -> sampleOf(hammingFunc(i, n)) }
+}
+
+/**
+ * Generates [n]-sized [hamming](https://en.wikipedia.org/wiki/Window_function#Hann_and_Hamming_windows)
+ * window function as a sequence
+ *
+ * @param n overall number of elements to be calculated
+ *
+ * @return the sequence of n consequent calculated values of the function.
+ */
+fun hammingFunc(n: Int): Sequence<Double> = (0 until n).asSequence().map { hammingFunc(it, n) }
+
+/**
+ * Calculates the [i]-th element out of [n] of [hamming](https://en.wikipedia.org/wiki/Window_function#Hann_and_Hamming_windows)
+ * window function
+ *
+ * @param i the index of the element to calculate, from 0 to n exclucive
+ * @param n overall number of elements to be calculated
+ *
+ * @return the function value.
+ */
+fun hammingFunc(i: Int, n: Int): Double {
+    val a0 = 25.0 / 46.0
+    return a0 - (1 - a0) * cos(2 * PI * i / n)
 }

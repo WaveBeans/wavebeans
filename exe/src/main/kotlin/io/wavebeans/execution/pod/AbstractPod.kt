@@ -171,7 +171,7 @@ abstract class AbstractPod<T : Any, B : BeanStream<T>>(
                 .mapNotNull { buf.poll() }
             log.trace {
                 "Returning [POD=$podKey] iteratorNext?iteratorKey=$iteratorKey&buckets=$buckets " +
-                        "[elements.size=${elements.size}]"// + "\n${elements.map { it as SampleArray }.flatMap { it.asList() }}"
+                        "[elements.size=${elements.size}]"
             }
             return if (elements.isEmpty()) null else elements
         } finally {

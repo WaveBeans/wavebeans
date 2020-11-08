@@ -21,7 +21,6 @@ import io.wavebeans.metrics.collector.collector
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.lifecycle.CachingMode.TEST
 import org.spekframework.spek2.style.specification.describe
-import org.spekframework.spek2.style.specification.xdescribe
 import java.io.File
 import java.lang.Thread.sleep
 import java.nio.file.Files
@@ -95,7 +94,7 @@ object PartialFlushSpec : Spek({
                             .map { window ->
                                 val samples = window.elements.map { it.first }
                                 val timeMarker = window.elements.first().second
-                                sampleArrayOf(samples).withOutputSignal(
+                                sampleVectorOf(samples).withOutputSignal(
                                         if (timeMarker > 0 // ignore the first marker to avoid flushing empty file
                                                 && timeMarker % 100 < 2 // target every 100 millisecond notch with 2 ms precision
                                         ) FlushOutputSignal else NoopOutputSignal,
@@ -175,8 +174,8 @@ object PartialFlushSpec : Spek({
                                     OpenGateOutputSignal
                                 }
 
-                                it.first?.let { w -> sampleArrayOf(w).withOutputSignal(signal, it.second) }
-                                        ?: sampleArrayOf(emptyList()).withOutputSignal(CloseOutputSignal)
+                                it.first?.let { w -> sampleVectorOf(w).withOutputSignal(signal, it.second) }
+                                        ?: sampleVectorOf(emptyList()).withOutputSignal(CloseOutputSignal)
                             }
                             .toMono16bitWav("file://${outputDir.absolutePath}/sine.wav") { "-${(it ?: 0).toString().padStart(2, '0')}" }
                     evaluate(o, sampleRate, locateFacilitators())
@@ -225,11 +224,11 @@ object PartialFlushSpec : Spek({
 
         describe("End the stream on specific sample sequence") {
             class SequenceDetectFn(initParameters: FnInitParameters)
-                : Fn<Window<Sample>, Managed<OutputSignal, Unit, SampleArray>>(initParameters) {
+                : Fn<Window<Sample>, Managed<OutputSignal, Unit, SampleVector>>(initParameters) {
 
                 constructor(endSequence: List<Sample>) : this(FnInitParameters().addDoubles("endSequence", endSequence))
 
-                override fun apply(argument: Window<Sample>): Managed<OutputSignal, Unit, SampleArray> {
+                override fun apply(argument: Window<Sample>): Managed<OutputSignal, Unit, SampleVector> {
                     val es = initParams.doubles("endSequence")
                     val ei = argument.elements.iterator()
                     var ai = es.iterator()
@@ -250,9 +249,9 @@ object PartialFlushSpec : Spek({
                     if (ai.hasNext()) startedAt = -1
 
                     return if (startedAt == -1) {
-                        sampleArrayOf(argument).withOutputSignal(NoopOutputSignal)
+                        sampleVectorOf(argument).withOutputSignal(NoopOutputSignal)
                     } else {
-                        sampleArrayOf(argument.elements.subList(0, startedAt)).withOutputSignal(CloseOutputSignal)
+                        sampleVectorOf(argument.elements.subList(0, startedAt)).withOutputSignal(CloseOutputSignal)
                     }
                 }
             }
@@ -340,13 +339,13 @@ object PartialFlushSpec : Spek({
                                     averageLevel < noiseLevel -> CloseGateOutputSignal
                                     else -> OpenGateOutputSignal
                                 }
-                                sampleArrayOf(w).withOutputSignal(signal, it.second)
+                                sampleVectorOf(w).withOutputSignal(signal, it.second)
                             }
                             .toCsv(
                                     uri = "file://${outputDir.absolutePath}/sine.wav",
                                     header = listOf("#") + (0 until windowSize).map { "sample#$it" },
-                                    elementSerializer = { (index, _, sampleArray) ->
-                                        listOf("$index") + sampleArray.map { String.format("%.10f", it) }
+                                    elementSerializer = { (index, _, sampleVector) ->
+                                        listOf("$index") + sampleVector.map { String.format("%.10f", it) }
                                     },
                                     suffix = { "-${(it ?: 0).toString().padStart(2, '0')}" }
                             )

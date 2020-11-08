@@ -206,7 +206,7 @@ The table service has time as an argument, but the data in stream is in samples 
 
 ## Audio Service
 
-Audio service allows you to get access to table of [Samples](../api/readme.md#sample) (or [SampleArrays](../api/readme.md#samplearray)) and convert it to a well known format like WAV on the fly. Currently only streaming use case is available.
+Audio service allows you to get access to table of [Samples](../api/readme.md#sample) (or [SampleVectors](../api/readme.md#samplevector)) and convert it to a well known format like WAV on the fly. Currently only streaming use case is available.
 
 To call the specific table to do an audio streaming, call the API over HTTP by path `/audio/{tableName}/stream/{format}`, where `tableName` is the name of the table you want to stream from, and `format` is the desired streaming format, at the moment `wav` only is supported.
 

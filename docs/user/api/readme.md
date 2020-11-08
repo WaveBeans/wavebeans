@@ -10,7 +10,7 @@
 - [Operations](#operations)
 - [Types](#types)
   - [Sample](#sample)
-  - [SampleArray](#samplearray)
+  - [SampleVector](#samplevector)
   - [Window of any type T](#window-of-any-type-t)
   - [FftSample](#fftsample)
   - [User defined type](#user-defined-type)
@@ -160,9 +160,9 @@ ZeroSample == 0.0    // = true
 a - b < 0            // = true
 ```
 
-### SampleArray
+### SampleVector
 
-SampleArray is the collection of Samples. It might be used for certain use cases, i.e. optimization purposes of [Table API](outputs/table-output.md#sample-type). A sample array can be created out of the list of samples, or specifying a list of samples one by one, or based on window:
+SampleVector is the collection of Samples. It might be used for certain use cases, i.e. optimization purposes of [Table API](outputs/table-output.md#sample-type). A sample vector can be created out of the list of samples, or specifying a list of samples one by one, or based on a window:
 
 ```kotlin
 val sample1 = sampleOf(1)
@@ -171,14 +171,14 @@ val sample3 = sampleOf(3)
 val sample4 = sampleOf(4)
 
 // based on list
-sampleArrayOf(listOf(sample1, sample2, sample3, sample4))
+sampleVectorOf(listOf(sample1, sample2, sample3, sample4))
 
 // specify samples one by one
-sampleArrayOf(sample1, sample2, sample3, sample4)
+sampleVectorOf(sample1, sample2, sample3, sample4)
 
 // based on window
 val window = myStream.window(4)
-sampleArrayOf(window)
+sampleVectorOf(window)
 ```
 
 ### Window of any type T
