@@ -16,6 +16,7 @@ import io.wavebeans.lib.io.sine
 import io.wavebeans.lib.io.toDevNull
 import io.wavebeans.lib.stream.trim
 import io.wavebeans.tests.compileCode
+import io.wavebeans.tests.findFreePort
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.modules.SerializersModule
 import org.spekframework.spek2.Spek
@@ -32,8 +33,8 @@ import kotlin.reflect.jvm.jvmName
 class FacilitatorGrpcServiceSpec : Spek({
     val gardener: Gardener = mock()
     val podDiscovery = object : PodDiscovery() {}
-    val port1 = 40300
-    val port2 = 40301
+    val port1 = findFreePort()
+    val port2 = findFreePort()
     val facilitator = Facilitator(
             communicatorPort = port1,
             threadsNumber = 1,
