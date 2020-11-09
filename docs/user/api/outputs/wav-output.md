@@ -9,6 +9,7 @@
   - [Noop signal](#noop-signal)
   - [Flush signal](#flush-signal)
   - [Open and close gate signals](#open-and-close-gate-signals)
+  - [Close output signal](#close-output-signal)
 - [Performance boost](#performance-boost)
 - [Low-level API](#low-level-api)
 
