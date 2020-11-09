@@ -92,7 +92,8 @@ fun terminateFacilitator(location: String, timeoutMs: Int = 30000) {
                 Thread.sleep(1)
             }
         } catch (e: ExecutionException) {
-            if (e !is StatusRuntimeException || e.status != Status.UNAVAILABLE) {
+            val cause = e.cause
+            if (cause !is StatusRuntimeException || cause.status != Status.UNAVAILABLE) {
                 throw e
             }
         }
