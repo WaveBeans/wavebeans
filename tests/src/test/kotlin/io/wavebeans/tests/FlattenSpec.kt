@@ -65,7 +65,7 @@ object FlattenSpec : Spek({
                 val sampleRate = 44100.0f
 
                 val input = (120.sine() + 240.sine() + 350.sine() + 40.sine() + 80.sine()) * 0.2
-                val o = input
+                val o = input.trim(lengthMs * 2)
                         .window(1001, 501)
                         .fft(2048)
                         .inverseFft()
@@ -89,7 +89,7 @@ object FlattenSpec : Spek({
                 val sampleRate = 400.0f
 
                 val input = (120.sine() + 40.sine() + 80.sine()) * 0.2
-                val o = input
+                val o = input.trim(lengthMs * 2)
                         .window(4)
                         .map {
                             val a = it.elements.average()

@@ -5,40 +5,63 @@ import io.wavebeans.lib.math.r
 import io.wavebeans.lib.stream.window.Window
 import kotlinx.serialization.Serializable
 
+/**
+ * Calculates the FFT of the specified windowed [Sample] stream. The [binCount] should be a power of 2, though the
+ * underlying window might of less size, remaining elements will be zero-padded.
+ *
+ * To improve the output you may use [io.wavebeans.lib.stream.window.windowFunction] beforehand on the window stream.
+ *
+ * @param binCount number of bins in the FFT calculation, should be of power of 2 and greater or equal to underlying [Window.size].
+ */
 fun BeanStream<Window<Sample>>.fft(binCount: Int): BeanStream<FftSample> = FftStream(this, FftStreamParams(binCount))
 
+/**
+ * Parameters for [FftStream]
+ */
 @Serializable
 data class FftStreamParams(
-        val n: Int
+        /**
+         * Number of bins in the FFT calculation, should be of power of 2 and greater or equal to underlying [Window.size]
+         */
+        val binCount: Int
 ) : BeanParams()
 
+/**
+ * Calculates the FFT of the specified windowed [Sample] stream. The [FftStreamParams.binCount] should be a power of 2, though the
+ * underlying window might of less size, remaining elements will be zero-padded.
+ *
+ * To improve the output you may use [io.wavebeans.lib.stream.window.windowFunction] beforehand on the window stream.
+ *
+ * @param input the input stream of windowed [Sample]s to read from.
+ * @param parameters tuning parameters, primarily [FftStreamParams.binCount].
+ */
 class FftStream(
         override val input: BeanStream<Window<Sample>>,
         override val parameters: FftStreamParams
-) : BeanStream<FftSample>, AlterBean<Window<Sample>, FftSample>, SinglePartitionBean {
+) : BeanStream<FftSample>, AlterBean<Window<Sample>, FftSample> {
 
     override fun asSequence(sampleRate: Float): Sequence<FftSample> {
         var idx = 0L
         return input.asSequence(sampleRate)
                 .map { window ->
-                    require(window.elements.size <= parameters.n) {
+                    require(window.elements.size <= parameters.binCount) {
                         "The window size (${window.elements.size}) " +
-                                "must be less or equal than N (${parameters.n})"
+                                "must be less or equal than N (${parameters.binCount})"
                     }
-                    require(!(parameters.n == 0 || parameters.n and (parameters.n - 1) != 0)) {
-                        "N should be power of 2 but ${parameters.n} found"
+                    require(!(parameters.binCount == 0 || parameters.binCount and (parameters.binCount - 1) != 0)) {
+                        "N should be power of 2 but ${parameters.binCount} found"
                     }
                     val m = window.elements.size
                     val fft = fft(
                             x = window.elements.asSequence()
                                     .map { it.r }
-                                    .zeropad(m, parameters.n),
-                            n = parameters.n
+                                    .zeropad(m, parameters.binCount),
+                            n = parameters.binCount
                     )
 
                     FftSample(
                             index = idx++,
-                            binCount = parameters.n,
+                            binCount = parameters.binCount,
                             samplesCount = m,
                             samplesLength = window.step,
                             fft = fft.toList(),
