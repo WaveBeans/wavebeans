@@ -44,6 +44,18 @@ object SampleVectorSpec : Spek({
         }
     }
 
+    describe("Extraction") {
+        val samples = listOf(1, 2, 3, 4, 5).map { sampleOf(it) }
+        it("should extract window with the step == size") {
+            val a = sampleVectorOf(samples)
+            assertThat(a.window()).isEqualTo(Window(5, 5, samples) { ZeroSample })
+        }
+        it("should extract window with the step != size") {
+            val a = sampleVectorOf(samples)
+            assertThat(a.window(3)).isEqualTo(Window(5, 3, samples) { ZeroSample })
+        }
+    }
+
     describe("Plus operator") {
         it("should sum up the vectors of the same size") {
             val a1 = sampleVectorOf(sampleOf(1), sampleOf(2), sampleOf(3))
