@@ -14,12 +14,26 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlin.reflect.jvm.jvmName
 
+/**
+ * Flattens the windowed stream of any type [T]. Flatten is a process that extracts a single stream of all elements to
+ * the continuous stream of [T].
+ *
+ * It provides the default [FlattenStreamsParams#overlapResolve] function implementation for [Sample] and [SampleVector]
+ * as a sum of their corresponding elements, if you need to change the behaviour consider specifying it explicitly
+ * via [overlapResolve] parameter.
+ *
+ * @param overlapResolve the function as [Fn] that resolves the conflict of overlapping elements while flattening
+ *                       the windows with step < size.
+ * @param T the type of the resulted element.
+ *
+ * @return the flattened stream of [T].
+ */
 @JvmName("flattenWindow")
-inline fun <reified T : Any> BeanStream<Window<T>>.flatten(): BeanStream<T> =
+inline fun <reified T : Any> BeanStream<Window<T>>.flatten(overlapResolve: Fn<Pair<T, T>, T>? = null): BeanStream<T> =
         FlattenWindowStream(
                 this,
                 FlattenWindowStreamsParams(
-                        when (T::class) {
+                        overlapResolve ?: when (T::class) {
                             Sample::class -> Fn.wrap { (a, b) -> (a as Sample + b as Sample) as T }
                             SampleVector::class -> Fn.wrap { (a, b) -> (a as SampleVector + b as SampleVector) as T }
                             else -> Fn.wrap { throw IllegalStateException("Overlap resolve function should be specified") }
@@ -27,20 +41,37 @@ inline fun <reified T : Any> BeanStream<Window<T>>.flatten(): BeanStream<T> =
                 )
         )
 
+/**
+ * Flattens the windowed stream of any type [T]. Flatten is a process that extracts a single stream of all elements to
+ * the continuous stream of [T].
+ *
+ * @param overlapResolve the function that resolves the conflict of overlapping elements while flattening the windows
+ *                       with step < size.
+ * @param T the type of the resulted element.
+ *
+ * @return the flattened stream of [T].
+ */
 @JvmName("flattenWindow")
-fun <T : Any> BeanStream<Window<T>>.flatten(overlapResolve: (Pair<T, T>) -> T): BeanStream<T> =
+inline fun <reified T : Any> BeanStream<Window<T>>.flatten(noinline overlapResolve: (Pair<T, T>) -> T): BeanStream<T> =
         this.flatten(Fn.wrap(overlapResolve))
 
-@JvmName("flattenWindow")
-fun <T : Any> BeanStream<Window<T>>.flatten(overlapResolve: Fn<Pair<T, T>, T>): BeanStream<T> =
-        FlattenWindowStream(this, FlattenWindowStreamsParams(overlapResolve))
-
+/**
+ * Parameters to use with [FlattenWindowStream].
+ *
+ * @param T the type of the resulted element.
+ */
 @Serializable(with = FlattenWindowStreamsParamsSerializer::class)
 class FlattenWindowStreamsParams<T : Any>(
+        /**
+         * The function as [Fn] that resolves the conflict of overlapping elements while flattening the windows with step < size.
+         */
         val overlapResolve: Fn<Pair<T, T>, T>
 ) : BeanParams()
 
-object FlattenWindowStreamsParamsSerializer: KSerializer<FlattenWindowStreamsParams<*>> {
+/**
+ * Serializer for [FlattenWindowStreamsParams].
+ */
+object FlattenWindowStreamsParamsSerializer : KSerializer<FlattenWindowStreamsParams<*>> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor(FlattenWindowStreamsParams::class.jvmName) {
         element("overlapResolve", FnSerializer.descriptor)
     }
@@ -69,7 +100,16 @@ object FlattenWindowStreamsParamsSerializer: KSerializer<FlattenWindowStreamsPar
 
 }
 
-
+/**
+ * Flattens the windowed stream of any type [T]. Flatten is a process that extracts a single stream of all elements to
+ * the continuous stream of [T].
+ *
+ * @param T the type of the resulted element.
+ * @param input the input stream to read the windowed elements of type [T] from.
+ * @param parameters the tuning paramters of the operation, mainly [FlattenWindowStreamsParams#overlapResolve] function.
+ *
+ * @return the flattened stream of [T].
+ */
 class FlattenWindowStream<T : Any>(
         override val input: BeanStream<Window<T>>,
         override val parameters: FlattenWindowStreamsParams<T>

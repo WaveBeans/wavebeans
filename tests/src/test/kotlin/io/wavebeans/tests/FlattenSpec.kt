@@ -81,4 +81,36 @@ object FlattenSpec : Spek({
             }
         }
     }
+
+    describe("Smoothing the signal") {
+        modes.forEach { (mode, locateFacilitators, evaluate) ->
+            it("should perform in $mode mode") {
+                val lengthMs = 100L
+                val sampleRate = 400.0f
+
+                val input = (120.sine() + 40.sine() + 80.sine()) * 0.2
+                val o = input
+                        .window(4)
+                        .map {
+                            val a = it.elements.average()
+                            (0 until it.size).map { a }
+                        }
+                        .flatten()
+                        .trim(lengthMs)
+                        .toMono16bitWav("file://${outputFile.absolutePath}")
+
+                evaluate(o, sampleRate, locateFacilitators())
+
+                val expected = input.trim(lengthMs).asSequence(sampleRate)
+                        .windowed(4, 4, partialWindows = true)
+                        .flatMap {
+                            val a = it.average()
+                            it.map { a }
+                        }
+                        .toList()
+                val actual = (wave("file://${outputFile.absolutePath}")).asSequence(sampleRate).toList()
+                assertThat(actual).isContainedBy(expected) { a, b -> abs(a - b) < 1e-4 }
+            }
+        }
+    }
 })
