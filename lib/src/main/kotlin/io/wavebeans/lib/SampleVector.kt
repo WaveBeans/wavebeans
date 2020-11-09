@@ -46,6 +46,16 @@ fun sampleVectorOf(vararg sample: Sample): SampleVector = SampleVector(sample.si
 fun sampleVectorOf(window: Window<Sample>): SampleVector = sampleVectorOf(window.elements)
 
 /**
+ * Creates a [SampleVector] using generator function
+ *
+ * @param n the size of the vector
+ * @param generator generator function that takes a pair of integers (Index and Total=n) as an argument and returns the [Sample].
+ *
+ *  @return the new [SampleVector].
+ */
+fun sampleVectorOf(n: Int, generator: (Int, Int) -> Sample): SampleVector = SampleVector(n) { generator(it, n) }
+
+/**
  * Applies the operation on two vectors, operation is consequently called on each corresponding pair.
  * The vectors might be different length, the result vector has the maximum length of both provided.
  * The absent elements are substituted with [ZeroSample].
@@ -80,14 +90,17 @@ inline fun SampleVector?.apply(other: SampleVector?, operation: (Sample, Sample)
  * Applies via [apply] the sum of [Sample]s operation.
  */
 operator fun SampleVector?.plus(other: SampleVector?): SampleVector? = apply(other) { a, b -> a + b }
+
 /**
  * Applies via [apply] the subtract of [Sample]s operation.
  */
 operator fun SampleVector?.minus(other: SampleVector?): SampleVector? = apply(other) { a, b -> a - b }
+
 /**
  * Applies via [apply] the multiply of [Sample]s operation.
  */
 operator fun SampleVector?.times(other: SampleVector?): SampleVector? = apply(other) { a, b -> a * b }
+
 /**
  * Applies via [apply] the division of [Sample]s operation.
  */

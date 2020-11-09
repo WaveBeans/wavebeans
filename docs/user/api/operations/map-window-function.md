@@ -103,6 +103,21 @@ input { (i, _) -> i }     // the type of the stream here is BeanStream<Long>
     )
 ``` 
 
+### Additional convenience functions
+
+For convenience all window functions are accessible when you add the suffix `Func` to the method call:
+
+* To calculate specific value on index `i` out of overall size `n`, i.e. `hammingFunc(i, n)`.
+* To calculate the whole window of size `n` as a Kotlin sequence, i.e. `hammingFunc(n)`. 
+
+All functions can be used to create a [SampleVector](../readme.md#samplevector) of size `n`:
+
+```kotlin
+sampleVectorOf(n, ::hammingFunc)
+```
+
+Which later on can be used in arithmetic operation with another vectors.
+
 ## Low Level API
 
 Low Level API of the operation is the function implementation `io.wavebeans.lib.stream.window.MapWindowFn` which gets two parameters: generation function and multiplication function.
