@@ -1,7 +1,9 @@
 package io.wavebeans.lib.stream.fft
 
 import io.wavebeans.lib.*
+import io.wavebeans.lib.io.input
 import io.wavebeans.lib.math.r
+import io.wavebeans.lib.stream.merge
 import io.wavebeans.lib.stream.window.Window
 import kotlinx.serialization.Serializable
 
@@ -13,7 +15,14 @@ import kotlinx.serialization.Serializable
  *
  * @param binCount number of bins in the FFT calculation, should be of power of 2 and greater or equal to underlying [Window.size].
  */
-fun BeanStream<Window<Sample>>.fft(binCount: Int): BeanStream<FftSample> = FftStream(this, FftStreamParams(binCount))
+fun BeanStream<Window<Sample>>.fft(binCount: Int): BeanStream<FftSample> =
+        FftStream(
+                this.merge(input { it.first }) { (window, index) ->
+                    requireNotNull(index)
+                    window?.let { index to it }
+                },
+                FftStreamParams(binCount)
+        )
 
 /**
  * Parameters for [FftStream]
@@ -36,14 +45,13 @@ data class FftStreamParams(
  * @param parameters tuning parameters, primarily [FftStreamParams.binCount].
  */
 class FftStream(
-        override val input: BeanStream<Window<Sample>>,
+        override val input: BeanStream<Pair<Long, Window<Sample>>>,
         override val parameters: FftStreamParams
-) : BeanStream<FftSample>, AlterBean<Window<Sample>, FftSample> {
+) : BeanStream<FftSample>, AlterBean<Pair<Long, Window<Sample>>, FftSample> {
 
     override fun asSequence(sampleRate: Float): Sequence<FftSample> {
-        var idx = 0L
         return input.asSequence(sampleRate)
-                .map { window ->
+                .map { (index, window) ->
                     require(window.elements.size <= parameters.binCount) {
                         "The window size (${window.elements.size}) " +
                                 "must be less or equal than N (${parameters.binCount})"
@@ -60,7 +68,7 @@ class FftStream(
                     )
 
                     FftSample(
-                            index = idx++,
+                            index = index,
                             binCount = parameters.binCount,
                             samplesCount = m,
                             samplesLength = window.step,

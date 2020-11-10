@@ -2,11 +2,13 @@ package io.wavebeans.lib.stream.fft
 
 import io.wavebeans.lib.math.ComplexNumber
 import io.wavebeans.lib.stream.Measured
+import kotlinx.serialization.Serializable
 import kotlin.math.PI
 import kotlin.math.log10
 import kotlin.math.min
 import kotlin.math.round
 
+@Serializable
 data class FftSample(
         /**
          * The index of the sample in the stream.

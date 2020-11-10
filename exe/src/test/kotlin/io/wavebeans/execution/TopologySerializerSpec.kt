@@ -184,8 +184,8 @@ object TopologySerializerSpec : Spek({
 
         val factor = 2 + 2 * 2
 
-        class MergeFn(initParams: FnInitParameters) : Fn<Pair<Sample?, Sample?>, Sample>(initParams) {
-            override fun apply(argument: Pair<Sample?, Sample?>): Sample {
+        class MergeFn(initParams: FnInitParameters) : Fn<Pair<Sample?, Sample?>, Sample?>(initParams) {
+            override fun apply(argument: Pair<Sample?, Sample?>): Sample? {
                 val f = initParams["factor"]?.toInt()!!
                 return argument.first ?: ZeroSample * f + argument.second
             }

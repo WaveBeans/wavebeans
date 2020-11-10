@@ -99,7 +99,7 @@ object DistributedOverseerSpec : Spek({
                 val output1 = input
                         .trim(500)
                         .toCsv("file:///${file1.absolutePath}")
-                val output2 = input
+                val output2 = input.trim(1000)
                         .window(101, 25)
                         .hamming()
                         .fft(128)

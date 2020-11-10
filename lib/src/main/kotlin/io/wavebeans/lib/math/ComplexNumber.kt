@@ -1,9 +1,11 @@
 package io.wavebeans.lib.math
 
+import kotlinx.serialization.Serializable
 import kotlin.math.*
 
 val CZERO = 0.r
 
+@Serializable
 data class ComplexNumber(val re: Double, val im: Double) : Comparable<ComplexNumber> {
 
     fun abs(): Double = sqrt(re * re + im * im)

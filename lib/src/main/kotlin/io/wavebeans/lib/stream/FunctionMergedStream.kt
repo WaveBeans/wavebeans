@@ -11,10 +11,10 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlin.reflect.jvm.jvmName
 
-fun <T1 : Any, T2 : Any, R : Any> BeanStream<T1>.merge(with: BeanStream<T2>, merge: (Pair<T1?, T2?>) -> R): BeanStream<R> =
+fun <T1 : Any, T2 : Any, R : Any> BeanStream<T1>.merge(with: BeanStream<T2>, merge: (Pair<T1?, T2?>) -> R?): BeanStream<R> =
         this.merge(with, Fn.wrap(merge))
 
-fun <T1 : Any, T2 : Any, R : Any> BeanStream<T1>.merge(with: BeanStream<T2>, merge: Fn<Pair<T1?, T2?>, R>): BeanStream<R> =
+fun <T1 : Any, T2 : Any, R : Any> BeanStream<T1>.merge(with: BeanStream<T2>, merge: Fn<Pair<T1?, T2?>, R?>): BeanStream<R> =
         FunctionMergedStream(this, with, FunctionMergedStreamParams(merge))
 
 
@@ -26,16 +26,16 @@ object FunctionMergedStreamParamsSerializer : KSerializer<FunctionMergedStreamPa
 
     override fun deserialize(decoder: Decoder): FunctionMergedStreamParams<*, *, *> {
         val dec = decoder.beginStructure(descriptor)
-        var fn: Fn<Pair<Any?, Any?>, Any>? = null
-        @Suppress("UNCHECKED_CAST")
+        var fn: Fn<*, *>? = null
         loop@ while (true) {
             when (val i = dec.decodeElementIndex(descriptor)) {
                 CompositeDecoder.DECODE_DONE -> break@loop
-                0 -> fn = dec.decodeSerializableElement(descriptor, i, FnSerializer) as Fn<Pair<Any?, Any?>, Any>
+                0 -> fn = dec.decodeSerializableElement(descriptor, i, FnSerializer)
                 else -> throw SerializationException("Unknown index $i")
             }
         }
-        return FunctionMergedStreamParams(fn!!)
+        @Suppress("UNCHECKED_CAST")
+        return FunctionMergedStreamParams(fn as Fn<Pair<Any?, Any?>, Any?>)
     }
 
     override fun serialize(encoder: Encoder, value: FunctionMergedStreamParams<*, *, *>) {
@@ -48,7 +48,7 @@ object FunctionMergedStreamParamsSerializer : KSerializer<FunctionMergedStreamPa
 
 @Serializable(with = FunctionMergedStreamParamsSerializer::class)
 class FunctionMergedStreamParams<T1 : Any, T2 : Any, R : Any>(
-        val merge: Fn<Pair<T1?, T2?>, R>
+        val merge: Fn<Pair<T1?, T2?>, R?>
 ) : BeanParams()
 
 class FunctionMergedStream<T1 : Any, T2 : Any, R : Any>(
@@ -65,17 +65,32 @@ class FunctionMergedStream<T1 : Any, T2 : Any, R : Any>(
         val mergeIterator = mergeStream.asSequence(sampleRate).iterator()
         return object : Iterator<R> {
 
+            var nextEl: R? = null
+
             override fun hasNext(): Boolean {
-                return sourceIterator.hasNext() || mergeIterator.hasNext()
+                return if (sourceIterator.hasNext() || mergeIterator.hasNext()) {
+                    advance()
+                    nextEl != null
+                } else {
+                    false
+                }
             }
 
             override fun next(): R {
-                check(sourceIterator.hasNext() || mergeIterator.hasNext()) { "No more elements in the stream" }
+                if (nextEl == null && !sourceIterator.hasNext() && !mergeIterator.hasNext())
+                    throw NoSuchElementException("No more elements to read")
+                advance()
+                val el = nextEl ?: throw NoSuchElementException("No more elements to read")
+                nextEl = null
+                return el
+            }
 
-                val s = if (sourceIterator.hasNext()) sourceIterator.next() else null
-                val m = if (mergeIterator.hasNext()) mergeIterator.next() else null
-
-                return parameters.merge.apply(Pair(s, m))
+            private fun advance() {
+                if (nextEl == null) {
+                    val s = if (sourceIterator.hasNext()) sourceIterator.next() else null
+                    val m = if (mergeIterator.hasNext()) mergeIterator.next() else null
+                    nextEl = parameters.merge.apply(Pair(s, m))
+                }
             }
 
         }.asSequence()
