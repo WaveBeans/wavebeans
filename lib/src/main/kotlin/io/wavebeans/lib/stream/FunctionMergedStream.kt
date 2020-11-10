@@ -68,7 +68,7 @@ class FunctionMergedStream<T1 : Any, T2 : Any, R : Any>(
             var nextEl: R? = null
 
             override fun hasNext(): Boolean {
-                return if (nextEl != null || sourceIterator.hasNext() || mergeIterator.hasNext()) {
+                return if (isNextElAvailable()) {
                     advance()
                     nextEl != null
                 } else {
@@ -77,13 +77,14 @@ class FunctionMergedStream<T1 : Any, T2 : Any, R : Any>(
             }
 
             override fun next(): R {
-                if (nextEl == null && !sourceIterator.hasNext() && !mergeIterator.hasNext())
-                    throw NoSuchElementException("No more elements to read")
+                if (!isNextElAvailable()) throw NoSuchElementException("No more elements to read")
                 advance()
                 val el = nextEl ?: throw NoSuchElementException("No more elements to read")
                 nextEl = null
                 return el
             }
+
+            private fun isNextElAvailable() = nextEl != null || sourceIterator.hasNext() || mergeIterator.hasNext()
 
             private fun advance() {
                 if (nextEl == null) {
@@ -92,8 +93,9 @@ class FunctionMergedStream<T1 : Any, T2 : Any, R : Any>(
                     nextEl = parameters.merge.apply(Pair(s, m))
                 }
             }
-
         }.asSequence()
+
+
     }
 }
 
