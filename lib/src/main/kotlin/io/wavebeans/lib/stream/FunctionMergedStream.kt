@@ -68,7 +68,7 @@ class FunctionMergedStream<T1 : Any, T2 : Any, R : Any>(
             var nextEl: R? = null
 
             override fun hasNext(): Boolean {
-                return if (sourceIterator.hasNext() || mergeIterator.hasNext()) {
+                return if (nextEl != null || sourceIterator.hasNext() || mergeIterator.hasNext()) {
                     advance()
                     nextEl != null
                 } else {

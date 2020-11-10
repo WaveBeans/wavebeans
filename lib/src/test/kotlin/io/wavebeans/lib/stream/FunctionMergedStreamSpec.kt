@@ -38,6 +38,16 @@ object FunctionMergedStreamSpec : Spek({
                                 listOf(9, 19)
                         )
             }
+
+
+            it("should return valid after cummin up of 3 consequent streams") {
+                val anotherMerging = (20..29).stream()
+                assertThat(source
+                        .merge(with = merging) { (x, y) -> x + y }
+                        .merge(with = anotherMerging) { (x, y) -> x + y }
+                        .toListInt()
+                ).isEqualTo((30..58 step 3).toList())
+            }
         }
 
         describe("merged with the smaller size") {
