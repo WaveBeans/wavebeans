@@ -9,6 +9,7 @@ Merge operation
 - [Handling streams of different lengths](#handling-streams-of-different-lengths)
 - [Using with two different input types](#using-with-two-different-input-types)
 - [Using as a class](#using-as-a-class)
+- [Running in distributed or multi-threaded mode](#running-in-distributed-or-multi-threaded-mode)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 

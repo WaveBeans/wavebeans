@@ -7,6 +7,7 @@
 - [Overview](#overview)
 - [Stream of `Sample` type](#stream-of-sample-type)
 - [Stream of any type](#stream-of-any-type)
+  - [Additional convenience functions](#additional-convenience-functions)
 - [Low Level API](#low-level-api)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
