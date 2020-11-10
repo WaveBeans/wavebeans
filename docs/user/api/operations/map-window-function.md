@@ -7,6 +7,7 @@
 - [Overview](#overview)
 - [Stream of `Sample` type](#stream-of-sample-type)
 - [Stream of any type](#stream-of-any-type)
+  - [Additional convenience functions](#additional-convenience-functions)
 - [Low Level API](#low-level-api)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -102,6 +103,21 @@ input { (i, _) -> i }     // the type of the stream here is BeanStream<Long>
         multiplyFn = { (a, b) -> a * b }
     )
 ``` 
+
+### Additional convenience functions
+
+For convenience all window functions are accessible when you add the suffix `Func` to the method call:
+
+* To calculate specific value on index `i` out of overall size `n`, i.e. `hammingFunc(i, n)`.
+* To calculate the whole window of size `n` as a Kotlin sequence, i.e. `hammingFunc(n)`. 
+
+All functions can be used to create a [SampleVector](../readme.md#samplevector) of size `n`:
+
+```kotlin
+sampleVectorOf(n, ::hammingFunc)
+```
+
+Which later on can be used in arithmetic operation with another vectors.
 
 ## Low Level API
 

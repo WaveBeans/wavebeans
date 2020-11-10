@@ -45,25 +45,32 @@ import kotlin.math.cos
 class MapWindowFn<T : Any>(initParameters: FnInitParameters) : Fn<Window<T>, Window<T>>(initParameters) {
 
     /**
-     * Creates an instance of [MapWindowFn]
-     * @param windowFunction function to be used to generate the values. Has two values:
-     *  1. the current index to generate for and
-     *  2. overall amount of sample-entities will be asked to generate.
-     * @param multiplyFn -- function to be used to multiply the corresponding sample-entities while applying the window function.
+     * Creates an instance of [MapWindowFn].
+     * @param windowFunction populates [MapWindowFn.windowFunction]
+     * @param multiplyFn populates [MapWindowFn.multiplyFn]
      */
     constructor(windowFunction: Fn<Pair<Int, Int>, T>, multiplyFn: Fn<Pair<T, T>, T>) : this(FnInitParameters()
             .add("fn", windowFunction)
             .add("multiplyFn", multiplyFn)
     )
 
-    override fun apply(argument: Window<T>): Window<T> {
-        val fn = initParams.fn<Pair<Int, Int>, T>("fn")
-        val multiplyFn = initParams.fn<Pair<T, T>, T>("multiplyFn")
+    /**
+     * Function to be used to generate the values. Has two values:
+     *  1. the current index to generate for and
+     *  2. overall amount of sample-entities will be asked to generate.
+     */
+    val windowFunction = initParams.fn<Pair<Int, Int>, T>("fn")
 
+    /**
+     * Function to be used to multiply the corresponding sample-entities while applying the window function.
+     */
+    val multiplyFn = initParams.fn<Pair<T, T>, T>("multiplyFn")
+
+    override fun apply(argument: Window<T>): Window<T> {
         val windowSize = argument.elements.size
 
         val windowFunction = (0 until windowSize).asSequence()
-                .map { index -> fn.apply(Pair(index, windowSize)) }
+                .map { index -> windowFunction.apply(Pair(index, windowSize)) }
         return argument.copy(
                 elements = argument.elements.asSequence()
                         .zip(windowFunction)
@@ -73,6 +80,16 @@ class MapWindowFn<T : Any>(initParameters: FnInitParameters) : Fn<Window<T>, Win
     }
 }
 
+/**
+ * Applies [MapWindowFn] with [map] operation specifying [func] as a [MapWindowFn.windowFunction] and
+ * [multiplyFn] as a [MapWindowFn.multiplyFn]
+ *
+ * @param func populates [MapWindowFn.windowFunction]
+ * @param multiplyFn populates [MapWindowFn.multiplyFn]
+ * @param T the non-nullable type of the windowed sample.
+ *
+ * @return the stream of windowed [T]
+ */
 fun <T : Any> BeanStream<Window<T>>.windowFunction(
         func: Fn<Pair<Int, Int>, T>,
         multiplyFn: Fn<Pair<T, T>, T>
@@ -80,6 +97,16 @@ fun <T : Any> BeanStream<Window<T>>.windowFunction(
     return this.map(MapWindowFn(func, multiplyFn))
 }
 
+/**
+ * Applies [MapWindowFn] with [map] operation specifying [func] as a [MapWindowFn.windowFunction] and
+ * [multiplyFn] as a [MapWindowFn.multiplyFn]
+ *
+ * @param func populates [MapWindowFn.windowFunction]
+ * @param multiplyFn populates [MapWindowFn.multiplyFn]
+ * @param T the non-nullable type of the windowed sample.
+ *
+ * @return the stream of windowed [T]
+ */
 fun <T : Any> BeanStream<Window<T>>.windowFunction(
         func: (Pair<Int, Int>) -> T,
         multiplyFn: (Pair<T, T>) -> T
@@ -111,18 +138,60 @@ fun BeanStream<Window<Sample>>.windowFunction(func: (Pair<Int, Int>) -> Sample):
  * as a window function over the stream of windowed samples.
  */
 fun BeanStream<Window<Sample>>.rectangle(): BeanStream<Window<Sample>> {
-    return this.windowFunction { sampleOf(1.0) }
+    return this.windowFunction { sampleOf(rectangleFunc(0, 0)) }
 }
+
+/**
+ * Generates [n]-sized [rectangle](https://en.wikipedia.org/wiki/Window_function#Rectangular_window)
+ * window function as a sequence
+ *
+ * @param n overall number of elements to be calculated
+ *
+ * @return the sequence of n consequent calculated values of the function.
+ */
+fun rectangleFunc(n: Int): Sequence<Double> = (0 until n).asSequence().map { rectangleFunc(it, n) }
+
+/**
+ * Calculates the [i]-th element out of [n] of [rectangle](https://en.wikipedia.org/wiki/Window_function#Rectangular_window)
+ * window function
+ *
+ * @param i the index of the element to calculate, from 0 to n exclucive
+ * @param n overall number of elements to be calculated
+ *
+ * @return the function value.
+ */
+fun rectangleFunc(i: Int, n: Int): Double = 1.0
 
 /**
  * Applies [MapWindowFn] with [triangular](https://en.wikipedia.org/wiki/Window_function#Triangular_window)
  * as a window function over the stream of windowed samples.
  */
 fun BeanStream<Window<Sample>>.triangular(): BeanStream<Window<Sample>> {
-    return this.windowFunction { (i, n) ->
-        val halfN = n / 2.0
-        sampleOf(1.0 - abs((i - halfN) / halfN))
-    }
+    return this.windowFunction { (i, n) -> sampleOf(triangularFunc(i, n)) }
+}
+
+/**
+ * Generates [n]-sized [triangular](https://en.wikipedia.org/wiki/Window_function#Triangular_window)
+ * window function as a sequence
+ *
+ * @param n overall number of elements to be calculated
+ *
+ * @return the sequence of n consequent calculated values of the function.
+ */
+fun triangularFunc(n: Int): Sequence<Double> = (0 until n).asSequence().map { triangularFunc(it, n) }
+
+/**
+ * Calculates the [i]-th element out of [n] of [triangular](https://en.wikipedia.org/wiki/Window_function#Triangular_window)
+ * window function
+ *
+ * @param i the index of the element to calculate, from 0 to n exclucive
+ * @param n overall number of elements to be calculated
+ *
+ * @return the function value.
+ */
+fun triangularFunc(i: Int, n: Int): Double {
+    val halfN = n / 2.0
+    return 1.0 - abs((i - halfN) / halfN)
 }
 
 /**
@@ -130,12 +199,33 @@ fun BeanStream<Window<Sample>>.triangular(): BeanStream<Window<Sample>> {
  * as a window function over the stream of windowed samples.
  */
 fun BeanStream<Window<Sample>>.blackman(): BeanStream<Window<Sample>> {
-    return this.windowFunction { (i, n) ->
-        val a0 = 0.42
-        val a1 = 0.5
-        val a2 = 0.08
-        sampleOf(a0 - a1 * cos(2 * PI * i / n) + a2 * cos(4 * PI * i / n))
-    }
+    return this.windowFunction { (i, n) -> sampleOf(blackmanFunc(i, n)) }
+}
+
+/**
+ * Generates [n]-sized [blackman](https://en.wikipedia.org/wiki/Window_function#Blackman_window)
+ * window function as a sequence
+ *
+ * @param n overall number of elements to be calculated
+ *
+ * @return the sequence of n consequent calculated values of the function.
+ */
+fun blackmanFunc(n: Int): Sequence<Double> = (0 until n).asSequence().map { blackmanFunc(it, n) }
+
+/**
+ * Calculates the [i]-th element out of [n] of [blackman](https://en.wikipedia.org/wiki/Window_function#Blackman_window)
+ * window function
+ *
+ * @param i the index of the element to calculate, from 0 to n exclucive
+ * @param n overall number of elements to be calculated
+ *
+ * @return the function value.
+ */
+fun blackmanFunc(i: Int, n: Int): Double {
+    val a0 = 0.42
+    val a1 = 0.5
+    val a2 = 0.08
+    return a0 - a1 * cos(2 * PI * i / n) + a2 * cos(4 * PI * i / n)
 }
 
 /**
@@ -143,8 +233,29 @@ fun BeanStream<Window<Sample>>.blackman(): BeanStream<Window<Sample>> {
  * as a window function over the stream of windowed samples.
  */
 fun BeanStream<Window<Sample>>.hamming(): BeanStream<Window<Sample>> {
-    return this.windowFunction { (i, n) ->
-        val a0 = 25.0 / 46.0
-        sampleOf(a0 - (1 - a0) * cos(2 * PI * i / n))
-    }
+    return this.windowFunction { (i, n) -> sampleOf(hammingFunc(i, n)) }
+}
+
+/**
+ * Generates [n]-sized [hamming](https://en.wikipedia.org/wiki/Window_function#Hann_and_Hamming_windows)
+ * window function as a sequence
+ *
+ * @param n overall number of elements to be calculated
+ *
+ * @return the sequence of n consequent calculated values of the function.
+ */
+fun hammingFunc(n: Int): Sequence<Double> = (0 until n).asSequence().map { hammingFunc(it, n) }
+
+/**
+ * Calculates the [i]-th element out of [n] of [hamming](https://en.wikipedia.org/wiki/Window_function#Hann_and_Hamming_windows)
+ * window function
+ *
+ * @param i the index of the element to calculate, from 0 to n exclucive
+ * @param n overall number of elements to be calculated
+ *
+ * @return the function value.
+ */
+fun hammingFunc(i: Int, n: Int): Double {
+    val a0 = 25.0 / 46.0
+    return a0 - (1 - a0) * cos(2 * PI * i / n)
 }

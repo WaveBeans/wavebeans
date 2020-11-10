@@ -43,8 +43,8 @@ object WavFileSpec : Spek({
                             }
                 }
 
-                it("should read the same sine when sampled with SampleArray") {
-                    evaluate(input.window(64).map { sampleArrayOf(it) }, bitDepth, file)
+                it("should read the same sine when sampled with SampleVector") {
+                    evaluate(input.window(64).map { sampleVectorOf(it) }, bitDepth, file)
                     val inputAsArray = input.asSequence(sampleRate).toList().toTypedArray()
                     assertThat(wave("file://${file.absolutePath}").asSequence(sampleRate).toList())
                             .eachIndexed(expectedSize) { sample, idx ->
@@ -122,9 +122,9 @@ object WavFileSpec : Spek({
         }
     }
 
-    describe("Partial flush on sample array stream") {
-        data class IndexedSampleArray(
-                val sample: SampleArray,
+    describe("Partial flush on sample vector stream") {
+        data class IndexedSampleVector(
+                val sample: SampleVector,
                 val index: Long
         )
 
@@ -133,10 +133,10 @@ object WavFileSpec : Spek({
         val windowSize = 128
 
         fun run(input: BeanStream<Sample>, durationMs: Long, chunkSize: Int, bitDepth: BitDepth) {
-            class FlushController(params: FnInitParameters) : Fn<IndexedSampleArray, Managed<OutputSignal, Pair<TemporalAccessor, Long>, SampleArray>>(params) {
+            class FlushController(params: FnInitParameters) : Fn<IndexedSampleVector, Managed<OutputSignal, Pair<TemporalAccessor, Long>, SampleVector>>(params) {
                 constructor(chunkSize: Int) : this(FnInitParameters().add("chunkSize", chunkSize))
 
-                override fun apply(argument: IndexedSampleArray): Managed<OutputSignal, Pair<TemporalAccessor, Long>, SampleArray> {
+                override fun apply(argument: IndexedSampleVector): Managed<OutputSignal, Pair<TemporalAccessor, Long>, SampleVector> {
                     val cz = initParams.int("chunkSize")
                     return if (cz > 0 && argument.index > 0 && argument.index % cz == 0L) {
                         argument.sample.withOutputSignal(FlushOutputSignal, ZonedDateTime.now() to argument.index)
@@ -153,11 +153,11 @@ object WavFileSpec : Spek({
             val uri = "file://${directory.absolutePath}/test.wav"
             val o = input
                     .window(windowSize)
-                    .map { sampleArrayOf(it) }
-                    .merge(input { it.first }) { (sampleArray, index) ->
-                        checkNotNull(sampleArray)
+                    .map { sampleVectorOf(it) }
+                    .merge(input { it.first }) { (sampleVector, index) ->
+                        checkNotNull(sampleVector)
                         checkNotNull(index)
-                        IndexedSampleArray(sampleArray, index)
+                        IndexedSampleVector(sampleVector, index)
                     }
                     .map(FlushController(chunkSize))
                     .trim(durationMs)

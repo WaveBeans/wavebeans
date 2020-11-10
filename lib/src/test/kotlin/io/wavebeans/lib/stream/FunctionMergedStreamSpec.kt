@@ -38,6 +38,16 @@ object FunctionMergedStreamSpec : Spek({
                                 listOf(9, 19)
                         )
             }
+
+
+            it("should return valid values after summing up of 3 streams consequently") {
+                val anotherMerging = (20..29).stream()
+                assertThat(source
+                        .merge(with = merging) { (x, y) -> x + y }
+                        .merge(with = anotherMerging) { (x, y) -> x + y }
+                        .toListInt()
+                ).isEqualTo((30..58 step 3).toList())
+            }
         }
 
         describe("merged with the smaller size") {
@@ -97,6 +107,42 @@ object FunctionMergedStreamSpec : Spek({
                         )
             }
         }
+
+        describe("merged with the infinite size stream") {
+            val merging = input { (i, _) -> sampleOf((i + 10).toInt()) }
+
+            it("should return valid sum") {
+                assertThat(source.merge(with = merging) { (x, y) -> x + y }.toListInt(take = 20))
+                        .isEqualTo((10..28 step 2).toList() + (20..29))
+
+            }
+
+            it("should return valid windows") {
+                assertThat(source.merge(with = merging) { (x, y) -> windowOf(x, y) }.toListWindowInt(take = 20))
+                        .isListOf(
+                                listOf(0, 10),
+                                listOf(1, 11),
+                                listOf(2, 12),
+                                listOf(3, 13),
+                                listOf(4, 14),
+                                listOf(5, 15),
+                                listOf(6, 16),
+                                listOf(7, 17),
+                                listOf(8, 18),
+                                listOf(9, 19),
+                                listOf(0, 20),
+                                listOf(0, 21),
+                                listOf(0, 22),
+                                listOf(0, 23),
+                                listOf(0, 24),
+                                listOf(0, 25),
+                                listOf(0, 26),
+                                listOf(0, 27),
+                                listOf(0, 28),
+                                listOf(0, 29),
+                        )
+            }
+        }
     }
 
     describe("Int and float stream") {
@@ -132,5 +178,8 @@ object FunctionMergedStreamSpec : Spek({
 private fun windowOf(x: Sample?, y: Sample?) =
         Window.ofSamples(2, 2, listOf(x ?: ZeroSample, y ?: ZeroSample))
 
-private fun BeanStream<Sample>.toListInt() = this.asSequence(1.0f).map { it.asInt() }.toList()
-private fun BeanStream<Window<Sample>>.toListWindowInt() = this.asSequence(1.0f).map { it.elements.map { it.asInt() } }.toList()
+private fun BeanStream<Sample>.toListInt(take: Int = Int.MAX_VALUE) =
+        this.asSequence(1.0f).take(take).map { it.asInt() }.toList()
+
+private fun BeanStream<Window<Sample>>.toListWindowInt(take: Int = Int.MAX_VALUE) =
+        this.asSequence(1.0f).take(take).map { it.elements.map { it.asInt() } }.toList()

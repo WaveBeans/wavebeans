@@ -306,7 +306,7 @@ object HttpServiceSpec : Spek({
 
         describe("Streaming Wav") {
             val o = 440.sine().trim(2000).toSampleTable("mySampleTable", 1.s)
-            val o2 = 440.sine().trim(2000).toSampleTable("mySampleArrayTable", 1.s, 441)
+            val o2 = 440.sine().trim(2000).toSampleTable("mySampleVectorTable", 1.s, 441)
             val overseer = MultiThreadedOverseer(listOf(o, o2), 2, 1)
 
             beforeGroup { overseer.eval(44100.0f).all { it.get().finished } }
@@ -379,8 +379,8 @@ object HttpServiceSpec : Spek({
                     assertThat(response.status()).isNotNull().isEqualTo(HttpStatusCode.BadRequest)
                 }
             }
-            it("should return stream for existing sample array table") {
-                engine.handleRequest(Get, "/audio/mySampleArrayTable/stream/wav?limit=100ms&offset=1s").apply {
+            it("should return stream for existing sample vector table") {
+                engine.handleRequest(Get, "/audio/mySampleVectorTable/stream/wav?limit=100ms&offset=1s").apply {
                     assertThat(response.status()).isNotNull().isEqualTo(HttpStatusCode.OK)
                     assertThat(response.headers)
                             .prop("Content-Type") { it["Content-Type"] }

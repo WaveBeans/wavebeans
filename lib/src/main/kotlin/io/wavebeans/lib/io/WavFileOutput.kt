@@ -14,7 +14,7 @@ import kotlin.reflect.jvm.jvmName
 
 /**
  * Streams the mono channel signal into the file with wav format, each sample is stored as unsigned 8 bit integer.
- * It is based on stream of [Sample] or [SampleArray].
+ * It is based on stream of [Sample] or [SampleVector].
  *
  * @param uri the URI to stream to, i.e. `file:///home/user/my.wav`
  * @param T   the type of the sample of input and hence output streams.
@@ -26,10 +26,10 @@ inline fun <reified T : Any> BeanStream<T>.toMono8bitWav(uri: String): StreamOut
 
 /**
  * Streams the mono channel signal into the file with wav format, each sample is stored as signed 16 bit
- * integer with LE byte order. It is based on stream of [Sample] or [SampleArray].
+ * integer with LE byte order. It is based on stream of [Sample] or [SampleVector].
  *
  * @param uri the URI to stream to, i.e. `file:///home/user/my.wav`
- * @param T   the type of the sample of input and hence output streams. Either [Sample] or [SampleArray].
+ * @param T   the type of the sample of input and hence output streams. Either [Sample] or [SampleVector].
  *
  * @return [StreamOutput] to run the processing on.
  */
@@ -38,7 +38,7 @@ inline fun <reified T : Any> BeanStream<T>.toMono16bitWav(uri: String): StreamOu
 
 /**
  * Streams the mono channel signal into the file with wav format, each sample is stored as signed 24 bit
- * integer with LE byte order. It is based on stream of [Sample] or [SampleArray].
+ * integer with LE byte order. It is based on stream of [Sample] or [SampleVector].
  *
  * @param uri the URI to stream to, i.e. `file:///home/user/my.wav`
  * @param T   the type of the sample of input and hence output streams.
@@ -50,7 +50,7 @@ inline fun <reified T : Any> BeanStream<T>.toMono24bitWav(uri: String): StreamOu
 
 /**
  * Streams the mono channel signal into the file with wav format, each sample is stored as signed 32 bit
- * integer with LE byte order. It is based on stream of [Sample] or [SampleArray].
+ * integer with LE byte order. It is based on stream of [Sample] or [SampleVector].
  *
  * @param uri the URI to stream to, i.e. `file:///home/user/my.wav`
  * @param T   the type of the sample of input and hence output streams.
@@ -62,7 +62,7 @@ inline fun <reified T : Any> BeanStream<T>.toMono32bitWav(uri: String): StreamOu
 
 /**
  * Streams the mono channel signal into the file with wav format, each sample is stored as unsigned 8 bit
- * integer. It is based on stream of [Managed] <[Sample]> or <[SampleArray]>. The signal [FlushOutputSignal] is
+ * integer. It is based on stream of [Managed] <[Sample]> or <[SampleVector]>. The signal [FlushOutputSignal] is
  * used to dump the current "buffer" and create the new one, the argument [A] may be passed at this moment. The [suffix]
  * function is used to generate the next suffix of the output.
  *
@@ -74,7 +74,7 @@ inline fun <reified T : Any> BeanStream<T>.toMono32bitWav(uri: String): StreamOu
  *               and before the extension: `file:///home/user/my${suffix}.wav`
  * @param A      the type of the argument, use [Unit] if it's not applicable. Bear in mind that the [A] should be
  *               [Serializable] for some cases. Argument may be null if it wasn't specified, or on the very first run.
- * @param T      the type of the sample of input and output streams. Either [Sample] or [SampleArray].
+ * @param T      the type of the sample of input and output streams. Either [Sample] or [SampleVector].
  *
  * @return [StreamOutput] to run the processing on.
  */
@@ -85,7 +85,7 @@ inline fun <A : Any, reified T : Any> BeanStream<Managed<OutputSignal, A, T>>.to
 
 /**
  * Streams the mono channel signal into the file with wav format, each sample is stored as signed 16 bit integer
- * with LE byte order. It is based on stream of [Managed] <[Sample]> or <[SampleArray]>. The signal [FlushOutputSignal] is
+ * with LE byte order. It is based on stream of [Managed] <[Sample]> or <[SampleVector]>. The signal [FlushOutputSignal] is
  * used to dump the current "buffer" and create the new one, the argument [A] may be passed at this moment. The [suffix]
  * function is used to generate the next suffix of the output.
  *
@@ -97,7 +97,7 @@ inline fun <A : Any, reified T : Any> BeanStream<Managed<OutputSignal, A, T>>.to
  *               `file:///home/user/my${suffix}.wav`
  * @param A      the type of the argument, use [Unit] if it's not applicable. Bear in mind that the [A] should be
  *               [Serializable] for some cases. Argument may be null if it wasn't specified, or on the very first run.
- * @param T      the type of the sample of input and output streams. Either [Sample] or [SampleArray].
+ * @param T      the type of the sample of input and output streams. Either [Sample] or [SampleVector].
  *
  * @return [StreamOutput] to run the processing on.
  */
@@ -108,7 +108,7 @@ inline fun <A : Any, reified T : Any> BeanStream<Managed<OutputSignal, A, T>>.to
 
 /**
  * Streams the mono channel signal into the file with wav format, each sample is stored as signed 24 bit integer
- * with LE byte order. It is based on stream of [Managed] <[Sample]> or <[SampleArray]>. The signal [FlushOutputSignal] is
+ * with LE byte order. It is based on stream of [Managed] <[Sample]> or <[SampleVector]>. The signal [FlushOutputSignal] is
  * used to dump the current "buffer" and create the new one, the argument [A] may be passed at this moment. The [suffix]
  * function is used to generate the next suffix of the output.
  *
@@ -120,7 +120,7 @@ inline fun <A : Any, reified T : Any> BeanStream<Managed<OutputSignal, A, T>>.to
  *               `file:///home/user/my${suffix}.wav`
  * @param A      the type of the argument, use [Unit] if it's not applicable. Bear in mind that the [A] should be
  *               [Serializable] for some cases. Argument may be null if it wasn't specified, or on the very first run.
- * @param T      the type of the sample of input and output streams. Either [Sample] or [SampleArray].
+ * @param T      the type of the sample of input and output streams. Either [Sample] or [SampleVector].
  *
  * @return [StreamOutput] to run the processing on.
  */
@@ -131,7 +131,7 @@ inline fun <A : Any, reified T : Any> BeanStream<Managed<OutputSignal, A, T>>.to
 
 /**
  * Streams the mono channel signal into the file with wav format, each sample is stored as signed 32 bit integer
- * with LE byte order. It is based on stream of [Managed] <[Sample]> or <[SampleArray]>. The signal [FlushOutputSignal] is
+ * with LE byte order. It is based on stream of [Managed] <[Sample]> or <[SampleVector]>. The signal [FlushOutputSignal] is
  * used to dump the current "buffer" and create the new one, the argument [A] may be passed at this moment. The [suffix]
  * function is used to generate the next suffix of the output.
  *
@@ -143,7 +143,7 @@ inline fun <A : Any, reified T : Any> BeanStream<Managed<OutputSignal, A, T>>.to
  *               `file:///home/user/my${suffix}.wav`
  * @param A      the type of the argument, use [Unit] if it's not applicable. Bear in mind that the [A] should be
  *               [Serializable] for some cases. Argument may be null if it wasn't specified, or on the very first run.
- * @param T      the type of the sample of input and output streams. Either [Sample] or [SampleArray].
+ * @param T      the type of the sample of input and output streams. Either [Sample] or [SampleVector].
  *
  * @return [StreamOutput] to run the processing on.
  */
@@ -154,7 +154,7 @@ inline fun <A : Any, reified T : Any> BeanStream<Managed<OutputSignal, A, T>>.to
 
 /**
  * Streams signal into the file with wav format. It is based on **Simple** or [Managed] stream of <[Sample]>
- * or <[SampleArray]>. In case of [Managed] stream the signal [FlushOutputSignal] is used to dump the current "buffer"
+ * or <[SampleVector]>. In case of [Managed] stream the signal [FlushOutputSignal] is used to dump the current "buffer"
  * and create the new one, the argument [A] may be passed at this moment. The [suffix] function is used to generate the
  * next suffix of the output. If the [suffix] is specified the stream is enforced to be [Managed], otherwise **Simple**.
  *
@@ -163,7 +163,7 @@ inline fun <A : Any, reified T : Any> BeanStream<Managed<OutputSignal, A, T>>.to
  * **For internal use only.**
  *
  * @param uri              the URI to stream to, i.e. `file:///home/user/my.wav`.
- * @param bitDepth         the numeric type to use to store the sample of [Sample] or [SampleArray].
+ * @param bitDepth         the numeric type to use to store the sample of [Sample] or [SampleVector].
  * @param numberOfChannels number of cahnnels to use, only mono (1) is supported at the moment.
  * @param suffix           the function that based on argument of type [A] which is obtained from the moment the
  *                         [FlushOutputSignal] was generated. The suffix inserted after the name and before the extension:
@@ -171,7 +171,7 @@ inline fun <A : Any, reified T : Any> BeanStream<Managed<OutputSignal, A, T>>.to
  *
  * @param A      the type of the argument, use [Unit] if it's not applicable. Bear in mind that the [A] should be
  *               [Serializable] for some cases. Argument may be null if it wasn't specified, or on the very first run.
- * @param T      the type of the sample of input and output streams. Either [Sample] or [SampleArray].
+ * @param T      the type of the sample of input and output streams. Either [Sample] or [SampleVector].
  * @param R      the type of the stream to return.
  *
  * @return [StreamOutput] of type [R] to run the further processing on.
@@ -184,13 +184,13 @@ inline fun <R : Any, A : Any, reified T : Any> BeanStream<R>.toWav(
         noinline suffix: ((A?) -> String)? = null
 ): StreamOutput<R> {
     when {
-        (T::class == Sample::class || T::class == SampleArray::class) && suffix != null -> {
+        (T::class == Sample::class || T::class == SampleVector::class) && suffix != null -> {
             return WavPartialFileOutput(
                     this as BeanStream<Managed<OutputSignal, A, Any>>,
                     WavFileOutputParams(uri, bitDepth, numberOfChannels, Fn.wrap(suffix))
             ) as StreamOutput<R>
         }
-        (T::class == Sample::class || T::class == SampleArray::class) && suffix == null -> {
+        (T::class == Sample::class || T::class == SampleVector::class) && suffix == null -> {
             return WavFileOutput(
                     this as BeanStream<Any>,
                     WavFileOutputParams(uri, bitDepth, numberOfChannels)
@@ -277,7 +277,7 @@ object WavFileOutputParamsSerializer: KSerializer<WavFileOutputParams<*>> {
  */
 class WavFileOutput(
         /**
-         * The stream to store into a wav-file. Can be of type [Sample] or [SampleArray].
+         * The stream to store into a wav-file. Can be of type [Sample] or [SampleVector].
          */
         val stream: BeanStream<Any>,
         /**
@@ -309,7 +309,7 @@ class WavFileOutput(
  */
 class WavPartialFileOutput<A : Any>(
         /**
-         * The [Managed] stream to store into a wav-file. Sample type can be one of [Sample] or [SampleArray].
+         * The [Managed] stream to store into a wav-file. Sample type can be one of [Sample] or [SampleVector].
          */
         val stream: BeanStream<Managed<OutputSignal, A, Any>>,
         /**

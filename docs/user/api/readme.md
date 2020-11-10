@@ -10,7 +10,7 @@
 - [Operations](#operations)
 - [Types](#types)
   - [Sample](#sample)
-  - [SampleArray](#samplearray)
+  - [SampleVector](#samplevector)
   - [Window of any type T](#window-of-any-type-t)
   - [FftSample](#fftsample)
   - [User defined type](#user-defined-type)
@@ -160,9 +160,9 @@ ZeroSample == 0.0    // = true
 a - b < 0            // = true
 ```
 
-### SampleArray
+### SampleVector
 
-SampleArray is the collection of Samples. It might be used for certain use cases, i.e. optimization purposes of [Table API](outputs/table-output.md#sample-type). A sample array can be created out of the list of samples, or specifying a list of samples one by one, or based on window:
+SampleVector is the collection of Samples. It might be used for certain use cases, i.e. optimization purposes of [Table API](outputs/table-output.md#sample-type). A sample vector can be created out of the list of samples, or specifying a list of samples one by one, based on a window, or generation function:
 
 ```kotlin
 val sample1 = sampleOf(1)
@@ -171,15 +171,34 @@ val sample3 = sampleOf(3)
 val sample4 = sampleOf(4)
 
 // based on list
-sampleArrayOf(listOf(sample1, sample2, sample3, sample4))
+sampleVectorOf(listOf(sample1, sample2, sample3, sample4))
 
 // specify samples one by one
-sampleArrayOf(sample1, sample2, sample3, sample4)
+sampleVectorOf(sample1, sample2, sample3, sample4)
 
 // based on window
 val window = myStream.window(4)
-sampleArrayOf(window)
+sampleVectorOf(window)
+
+// based on generation function
+sampleVectorOf(32) { i, n -> sampleOf(i.toDouble() / n) }
+
+// or specifying some window function -- the function that has similar signature
+sampleVectorOf(n, ::hammingFunc)
 ```
+
+There are a few operations available on the whole vector, all allows to have both operands as `null`:
+
+* Sum via `+` sign, or explicit `plus()` call.
+* Subtract via `-` sign or explicit `minus()` call.
+* Multiplication via `*` sign or explicit `times()` call.
+* Division via `/` sign or explicit `div()` call, the division be zero returns infinity.
+
+Overall rules for all operations:
+
+* Applies the operation on two vectors, operation is consequently called on each corresponding pair.
+* The vectors might be different length, the result vector has the maximum length of both provided. The absent elements are substituted with `ZeroSample`.
+* Returns `null` only if both operands are `null`, otherwise at least zero-length vector is returned.
 
 ### Window of any type T
 

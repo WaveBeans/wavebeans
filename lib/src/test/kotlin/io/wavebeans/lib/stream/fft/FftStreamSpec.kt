@@ -4,6 +4,9 @@ import assertk.assertThat
 import assertk.assertions.*
 import io.wavebeans.tests.eachIndexed
 import io.wavebeans.lib.io.sine
+import io.wavebeans.lib.io.sineSweep
+import io.wavebeans.lib.stream.plus
+import io.wavebeans.lib.stream.rangeTo
 import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.stream.window.window
 import org.spekframework.spek2.Spek
@@ -81,4 +84,32 @@ class FftStreamSpec : Spek({
         }
     }
 
+    describe("Inverse FFT") {
+        val signals = listOf(
+                "440Hz sine" to 440.sine(),
+                "440Hz+1230Hz sine" to (440.sine() + 1230.sine()),
+                "440Hz..1230Hz sine sweep" to ((440..1230).sineSweep(0.5, 0.1, sweepDelta = 0.01)),
+                "312Hz,440Hz,1230Hz concatenated sines" to (312.sine().trim(30)..440.sine().trim(30)..1230.sine()),
+        )
+
+        signals.forEach { (name, signal) ->
+            it("should return the same signal after inverse transformation: $name") {
+                val n = 4096
+                val l = signal
+                        .window(501)
+                        .fft(512)
+                        .inverseFft()
+                        .asSequence(44100.0f)
+                        .flatMap { it.elements }
+                        .take(n)
+                        .toList()
+
+                val e = signal.asSequence(44100.0f).take(n).toList().toTypedArray()
+                assertThat(l).eachIndexed(n) { sample, index ->
+                    sample.isCloseTo(e[index], 1e-10)
+                }
+            }
+
+        }
+    }
 })

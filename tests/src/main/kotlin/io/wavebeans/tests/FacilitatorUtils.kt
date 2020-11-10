@@ -1,8 +1,11 @@
 package io.wavebeans.tests
 
+import io.grpc.Status
+import io.grpc.StatusRuntimeException
 import io.wavebeans.communicator.FacilitatorApiClient
 import mu.KotlinLogging
 import java.io.File
+import java.util.concurrent.ExecutionException
 
 private val log = KotlinLogging.logger { }
 
@@ -77,15 +80,22 @@ fun waitForFacilitatorToStart(location: String, timeoutMs: Int = 30000) {
 fun terminateFacilitator(location: String, timeoutMs: Int = 30000) {
     log.info { "Terminating facilitator on location $location" }
     FacilitatorApiClient(location).use { facilitatorApiClient ->
-        facilitatorApiClient.terminate()
-        val startedAt = System.currentTimeMillis()
-        while (true) {
-            if (!facilitatorApiClient.status())
-                break
-            if (System.currentTimeMillis() - startedAt > timeoutMs)
-                throw IllegalStateException("Facilitator at $location can stop within timeout")
-            // continue trying
-            Thread.sleep(1)
+        try {
+            facilitatorApiClient.terminate()
+            val startedAt = System.currentTimeMillis()
+            while (true) {
+                if (!facilitatorApiClient.status())
+                    break
+                if (System.currentTimeMillis() - startedAt > timeoutMs)
+                    throw IllegalStateException("Facilitator at $location can stop within timeout")
+                // continue trying
+                Thread.sleep(1)
+            }
+        } catch (e: ExecutionException) {
+            val cause = e.cause
+            if (cause !is StatusRuntimeException || cause.status != Status.UNAVAILABLE) {
+                throw e
+            }
         }
     }
     log.info { "Terminated facilitator on location $location" }

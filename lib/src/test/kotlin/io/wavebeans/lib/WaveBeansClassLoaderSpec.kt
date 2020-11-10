@@ -37,7 +37,7 @@ object WaveBeansClassLoaderSpec : Spek({
 
         describe("Builtin classes") {
             it("should load Sample") { assertThat(classForName(Sample::class.jvmName)).isEqualTo(Sample::class.java) }
-            it("should load SampleArray") { assertThat(classForName(SampleArray::class.jvmName)).isEqualTo(SampleArray::class.java) }
+            it("should load SampleVector") { assertThat(classForName(SampleVector::class.jvmName)).isEqualTo(SampleVector::class.java) }
             it("should load FftSample") { assertThat(classForName(FftSample::class.jvmName)).isEqualTo(FftSample::class.java) }
             it("should load Window") { assertThat(classForName(Window::class.jvmName)).isEqualTo(Window::class.java) }
         }

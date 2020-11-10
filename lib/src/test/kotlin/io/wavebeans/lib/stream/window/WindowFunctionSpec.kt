@@ -7,6 +7,7 @@ import assertk.assertions.prop
 import io.wavebeans.lib.io.input
 import io.wavebeans.lib.isListOf
 import io.wavebeans.lib.sampleOf
+import io.wavebeans.lib.sampleVectorOf
 import io.wavebeans.lib.seqStream
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
@@ -71,69 +72,94 @@ object WindowFunctionSpec : Spek({
 
     describe("Triangular window function") {
         val n = 50
-        val tries = 3
-        val w = input { sampleOf(1.0) }
-                .window(n)
-                .triangular()
-                .asSequence(1.0f)
-                .take(tries)
-                .toList()
+        val triangularValues = (0 until n).map { i ->
+            val halfN = n / 2.0
+            sampleOf(1.0 - abs((i - halfN) / halfN))
+        }
 
         it("should return all blackman values inside windows") {
-            val triangularValues = (0 until n).map { i ->
-                val halfN = n / 2.0
-                sampleOf(1.0 - abs((i - halfN) / halfN))
-            }
+            val tries = 3
+            val w = input { sampleOf(1.0) }
+                    .window(n)
+                    .triangular()
+                    .asSequence(1.0f)
+                    .take(tries)
+                    .toList()
 
             assertThat(w).each { v ->
                 v.prop("elements") { it.elements }.isEqualTo(triangularValues)
             }
         }
+        it("should create a sample vector") {
+            val o = sampleVectorOf(n, ::triangularFunc)
+            assertThat(o).isEqualTo(sampleVectorOf(triangularValues))
+        }
+        it("should read as sequence") {
+            val o = triangularFunc(n).toList()
+            assertThat(o).isEqualTo(triangularValues)
+        }
     }
 
     describe("Blackman window function") {
         val n = 50
-        val tries = 3
-        val w = input { sampleOf(1.0) }
-                .window(n)
-                .blackman()
-                .asSequence(1.0f)
-                .take(tries)
-                .toList()
+        val blackmanValues = (0 until n).map { i ->
+            val a0 = 0.42
+            val a1 = 0.5
+            val a2 = 0.08
+            sampleOf(a0 - a1 * cos(2 * PI * i / n) + a2 * cos(4 * PI * i / n))
+        }
 
         it("should return all blackman values inside windows") {
-            val blackmanValues = (0 until n).map { i ->
-                val a0 = 0.42
-                val a1 = 0.5
-                val a2 = 0.08
-                sampleOf(a0 - a1 * cos(2 * PI * i / n) + a2 * cos(4 * PI * i / n))
-            }
+            val tries = 3
+            val w = input { sampleOf(1.0) }
+                    .window(n)
+                    .blackman()
+                    .asSequence(1.0f)
+                    .take(tries)
+                    .toList()
 
             assertThat(w).each { v ->
                 v.prop("elements") { it.elements }.isEqualTo(blackmanValues)
             }
         }
+        it("should create a sample vector") {
+            val o = sampleVectorOf(n, ::blackmanFunc)
+            assertThat(o).isEqualTo(sampleVectorOf(blackmanValues))
+        }
+        it("should read as sequence") {
+            val o = blackmanFunc(n).toList()
+            assertThat(o).isEqualTo(blackmanValues)
+        }
     }
 
     describe("Hamming window function") {
         val n = 50
-        val tries = 3
-        val w = input { sampleOf(1.0) }
-                .window(n)
-                .hamming()
-                .asSequence(1.0f)
-                .take(tries)
-                .toList()
+
+        val hammingValues = (0 until n).map { i ->
+            val a0 = 25.0 / 46.0
+            sampleOf(a0 - (1 - a0) * cos(2 * PI * i / n))
+        }
 
         it("should return all blackman values inside windows") {
-            val hammingValues = (0 until n).map { i ->
-                val a0 = 25.0 / 46.0
-                sampleOf(a0 - (1 - a0) * cos(2 * PI * i / n))
-            }
+            val tries = 3
+            val w = input { sampleOf(1.0) }
+                    .window(n)
+                    .hamming()
+                    .asSequence(1.0f)
+                    .take(tries)
+                    .toList()
 
             assertThat(w).each { v ->
                 v.prop("elements") { it.elements }.isEqualTo(hammingValues)
             }
+        }
+        it("should create a sample vector") {
+            val o = sampleVectorOf(n, ::hammingFunc)
+            assertThat(o).isEqualTo(sampleVectorOf(hammingValues))
+        }
+        it("should read as sequence") {
+            val o = hammingFunc(n).toList()
+            assertThat(o).isEqualTo(hammingValues)
         }
     }
 

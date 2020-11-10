@@ -1,11 +1,11 @@
 package io.wavebeans.lib.math
 
-import kotlin.math.abs
-import kotlin.math.atan2
-import kotlin.math.sqrt
+import kotlinx.serialization.Serializable
+import kotlin.math.*
 
 val CZERO = 0.r
 
+@Serializable
 data class ComplexNumber(val re: Double, val im: Double) : Comparable<ComplexNumber> {
 
     fun abs(): Double = sqrt(re * re + im * im)
@@ -48,6 +48,8 @@ data class ComplexNumber(val re: Double, val im: Double) : Comparable<ComplexNum
 
 @Suppress("NOTHING_TO_INLINE")
 inline fun complex(re: Double, im: Double): ComplexNumber = ComplexNumber(re, im)
+@Suppress("NOTHING_TO_INLINE")
+inline fun complexOfPolarForm(abs: Double, phi: Double): ComplexNumber = complex(abs * cos(phi), abs * sin(phi))
 
 val Number.r: ComplexNumber
     get() = complex(this.toDouble(), 0.0)

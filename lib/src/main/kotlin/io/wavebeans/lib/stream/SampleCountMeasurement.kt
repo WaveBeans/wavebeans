@@ -1,7 +1,7 @@
 package io.wavebeans.lib.stream
 
 import io.wavebeans.lib.Sample
-import io.wavebeans.lib.SampleArray
+import io.wavebeans.lib.SampleVector
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.max
 import kotlin.reflect.KClass
@@ -16,7 +16,7 @@ object SampleCountMeasurement {
     init {
         registerType(Number::class) { 1 }
         registerType(Sample::class) { 1 }
-        registerType(SampleArray::class) { it.size }
+        registerType(SampleVector::class) { it.size }
         registerType(Pair::class) { max(samplesInObject(it.first!!), samplesInObject(it.second!!)) }
         registerType(List::class) { l ->
             l.asSequence()

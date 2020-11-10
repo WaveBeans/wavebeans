@@ -7,24 +7,21 @@ import com.nhaarman.mockitokotlin2.*
 import io.wavebeans.lib.*
 import io.wavebeans.lib.io.input
 import io.wavebeans.lib.stream.map
-import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.stream.window.window
-import org.mockito.verification.VerificationMode
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
-import java.util.concurrent.TimeUnit
 
 object TableOutputSpec : Spek({
-    describe("SampleArray content") {
-        val driver by memoized { mock<TimeseriesTableDriver<SampleArray>>() }
+    describe("SampleVector content") {
+        val driver by memoized { mock<TimeseriesTableDriver<SampleVector>>() }
 
         val params by memoized {
             TableOutputParams(
                     tableName = "test",
-                    tableType = SampleArray::class,
+                    tableType = SampleVector::class,
                     maximumDataLength = 1.m,
-                    tableDriverFactory = object : Fn<TableOutputParams<SampleArray>, TimeseriesTableDriver<SampleArray>>() {
-                        override fun apply(argument: TableOutputParams<SampleArray>): TimeseriesTableDriver<SampleArray> {
+                    tableDriverFactory = object : Fn<TableOutputParams<SampleVector>, TimeseriesTableDriver<SampleVector>>() {
+                        override fun apply(argument: TableOutputParams<SampleVector>): TimeseriesTableDriver<SampleVector> {
                             return driver
                         }
                     },
@@ -36,7 +33,7 @@ object TableOutputSpec : Spek({
             TableOutput(
                     input { (i, _) -> if (i < 2000) 1e-10 * i else null }
                             .window(1024)
-                            .map { sampleArrayOf(it) },
+                            .map { sampleVectorOf(it) },
                     params
             )
         }
@@ -47,7 +44,7 @@ object TableOutputSpec : Spek({
 
         it("should properly put correct values with according time markers") {
 
-            fun d(range: IntRange) = sampleArrayOf(
+            fun d(range: IntRange) = sampleVectorOf(
                     seqStream().asSequence(44100.0f)
                             .drop(range.first)
                             .take(range.last - range.first + 1)

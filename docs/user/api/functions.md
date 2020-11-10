@@ -28,7 +28,7 @@ For example within lambda expression:
 { parameter -> parameter.first * parameter.second } // if you use parameter directly
 { it.first * it.second }                            // or implicitly,
 { (sample, multiplier) -> sample * multiplier }     // instead you may destruct it and give them proper name, 
-                                                    // by specifying them inside parenthesises
+                                                    // by specifying them inside parentheses
 ```
 
 To use within class definition:

@@ -135,8 +135,8 @@ class AudioService(internal val tableRegistry: TableRegistry) {
                             writerDelegate,
                             AudioService::class
                     )
-                    SampleArray::class -> WavWriter(
-                            (table as TimeseriesTableDriver<SampleArray>).stream(offset ?: 0.s)
+                    SampleVector::class -> WavWriter(
+                            (table as TimeseriesTableDriver<SampleVector>).stream(offset ?: 0.s)
                                     .let { if (limit != null) it.trim(limit.ns(), TimeUnit.NANOSECONDS) else it } as BeanStream<Any>,
                             bitDepth,
                             sampleRate,

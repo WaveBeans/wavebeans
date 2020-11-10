@@ -39,7 +39,7 @@ For the type [Sample](../readme.md#sample) there is additional API available. Th
 stream.toSampleTable("tableName", 120.m)
 ```
 
-There is one additional parameter you may specify. For certain use cases like [audio streaming](../../http/readme.md#audio-service) it would be more efficient if the data is stored with larger granularity to reduce memory footprint and CPU usage. If you specify `sampleArrayBuffer` greater than 0, samples will be stored as [SampleArray](../readme.md#samplearray) with specified length. Though that would mean you can read whole buffer all at once only, for audio streaming that means increased latency. So choose wisely. Even the buffer of 512 samples reduces CPU usage and increases streaming thoughput drastially, and the latency is less than 100ms for sample rate 44100Hz.
+There is one additional parameter you may specify. For certain use cases like [audio streaming](../../http/readme.md#audio-service) it would be more efficient if the data is stored with larger granularity to reduce memory footprint and CPU usage. If you specify `sampleVectorBufferSize` greater than 0, samples will be stored as [SampleVector](../readme.md#samplevector) with specified length. Though that would mean you can read whole buffer all at once only, for audio streaming that means increased latency. So choose wisely. Even the buffer of 512 samples reduces CPU usage and increases streaming thoughput drastially, and the latency is less than 100ms for sample rate 44100Hz.
 
 ## Querying
 

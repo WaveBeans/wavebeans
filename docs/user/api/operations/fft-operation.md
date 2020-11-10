@@ -8,6 +8,7 @@ FFT operation
 - [Overview](#overview)
 - [Window Functions](#window-functions)
 - [FFT Sample](#fft-sample)
+- [Inverse FFT](#inverse-fft)
 - [Storing to CSV](#storing-to-csv)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -84,6 +85,23 @@ In the stream you may run further analysis, for example using [`map()` operation
     .fft(512)
     .map { it.magnitude().drop(it.bin(440.0)).first() }
 ``` 
+
+Inverse FFT
+---------
+
+Inverse FFT operation allows you to convert the stream of `FftSample` to a stream of windowed samples back. It is very convenient whenever you want to do some FFT-based tuning of the signal and then stream somewhere else. [Flatten](flatten.md#the-window-is-quite-different) operation helps to get it back fully to stream of `Sample`s. 
+
+To run the inverse FFT operation just call the `inverseFft()` on `BeanStream<FftSample>`. It doesn't require any parameters, they'll be extracted out of the `FftSample`, and the resulted window would be exactly the same it was created with.
+
+For example, the code below will do an FFT and then inverse which will result in exactly the same input signal:
+
+```kotlin
+440.sine()             // BeanStream<Sample>
+        .window(401)   // BeanStream<Window<Sample>>
+        .fft(512)      // BeanStream<FftSample> 
+        .inverseFft()  // BeanStream<Window<Sample>>
+        .flatten()     // BeanStream<Sample>
+```
 
 Storing to CSV
 ---------

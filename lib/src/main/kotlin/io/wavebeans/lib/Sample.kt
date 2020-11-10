@@ -8,8 +8,6 @@ const val INT_24BIT_MAX_VALUE = 0x7FFFFF
 /** Internal representation of sample. */
 typealias Sample = Double
 
-typealias SampleArray = DoubleArray
-
 const val ZeroSample: Sample = 0.0
 
 @Suppress("NOTHING_TO_INLINE")
@@ -59,18 +57,6 @@ inline fun Byte.asUnsignedByte(): Int {
     val it = this.toInt() and 0xFF
     return it and 0x7F or (it.inv() and 0x80)
 }
-
-@Suppress("NOTHING_TO_INLINE")
-fun sampleArrayOf(list: List<Sample>): SampleArray {
-    val i = list.iterator()
-    return SampleArray(list.size) { i.next() }
-}
-
-@Suppress("NOTHING_TO_INLINE")
-fun sampleArrayOf(vararg sample: Sample): SampleArray = SampleArray(sample.size) { sample[it] }
-
-@Suppress("NOTHING_TO_INLINE")
-fun sampleArrayOf(window: Window<Sample>): SampleArray = sampleArrayOf(window.elements)
 
 operator fun Sample?.plus(other: Sample?): Sample = (this ?: ZeroSample) + (other ?: ZeroSample)
 operator fun Sample?.plus(other: Sample): Sample = (this ?: ZeroSample) + other

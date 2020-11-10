@@ -9,6 +9,7 @@
   - [Noop signal](#noop-signal)
   - [Flush signal](#flush-signal)
   - [Open and close gate signals](#open-and-close-gate-signals)
+  - [Close output signal](#close-output-signal)
 - [Performance boost](#performance-boost)
 - [Low-level API](#low-level-api)
 
@@ -16,7 +17,7 @@
 
 ## Overview
 
-The [WAV](https://en.wikipedia.org/wiki/WAV) is a very popular format to store uncompressed audio as file. Currently, WaveBeans supports only files with single channel -- mono. The sampling rate and bit depth can vary. It can be used only to store stream of samples `BeanStream<Sample>` or [buffered](#performance-boost) stream of samples `BeanStream<SampleArray>`.
+The [WAV](https://en.wikipedia.org/wiki/WAV) is a very popular format to store uncompressed audio as file. Currently, WaveBeans supports only files with single channel -- mono. The sampling rate and bit depth can vary. It can be used only to store stream of samples `BeanStream<Sample>` or [buffered](#performance-boost) stream of samples `BeanStream<SampleVector>`.
 
 Writing to wav-file is 2 step process:
 1. While the stream is being processed, the sample is stored as a temporary file. That means you could run the stream as long as you need, and you don't need to define the length of the output beforehand.
@@ -41,7 +42,7 @@ To store the stream into a wav-file you call one of the following function, each
 
 The same stream parts can be stored into different files if that is needed. The example of such cases: you want to cut the signal into let's say equal-sized parts, or detect the silence and store samples into multiple files removing the silence on the way.
 
-In order to do that you need to wrap the [Sample](../readme.md#sample) or [SampleArray](../readme.md#samplearray) with [Managed](../readme.md#managed-type) class and then whenever you feel it is the time -- send the flush signal. For convenience, you may use function `io.wavebeans.lib.io.AbstractWriterKt.withOutputSignal` on top of any non-nullable type, though sometimes compilere can't interfer the types, and you would need to specify them explicitly:
+In order to do that you need to wrap the [Sample](../readme.md#sample) or [SampleVector](../readme.md#samplevector) with [Managed](../readme.md#managed-type) class and then whenever you feel it is the time -- send the flush signal. For convenience, you may use function `io.wavebeans.lib.io.AbstractWriterKt.withOutputSignal` on top of any non-nullable type, though sometimes compilere can't interfer the types, and you would need to specify them explicitly:
 
 ```kotlin
 // from Sample type and no arguments for `NoopOutputSignal` signal
@@ -87,7 +88,7 @@ val timeStreamMs = input { (i, sampleRate) -> i / (sampleRate / 1000.0).toLong()
         .map { window ->
             val samples = window.elements.map { it.first }
             val timeMarker = window.elements.first().second
-            sampleArrayOf(samples).withOutputSignal(
+            sampleVectorOf(samples).withOutputSignal(
                     if (timeMarker > 0 // ignore the first marker to avoid flushing empty file
                             && timeMarker % 1000 < 2 // target every second notch with 2 ms precision
                     ) FlushOutputSignal else NoopOutputSignal,
@@ -160,7 +161,7 @@ val sample3 = (880.sine() + noise * 0.01).trim(500)
                         OpenGateOutputSignal
                     }
 
-            sampleArrayOf(it).withOutputSignal(signal, ZonedDateTime.now())
+            sampleVectorOf(it).withOutputSignal(signal, ZonedDateTime.now())
         }
         .toMono16bitWav("file:///home/user/sine.wav") { a ->
             val dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss-SSS")
@@ -190,11 +191,11 @@ val endSignal = endSequence.input()
 val signal = 440.sine().trim(1000)
 val noise = input { sampleOf(Random.nextInt()) }
 
-class SequenceDetectFn(initParameters: FnInitParameters) : Fn<Window<Sample>, Managed<OutputSignal, Unit, SampleArray>>(initParameters) {
+class SequenceDetectFn(initParameters: FnInitParameters) : Fn<Window<Sample>, Managed<OutputSignal, Unit, SampleVector>>(initParameters) {
 
     constructor(endSequence: List<Sample>) : this(FnInitParameters().addDoubles("endSequence", endSequence))
 
-    override fun apply(argument: Window<Sample>): Managed<OutputSignal, Unit, SampleArray> {
+    override fun apply(argument: Window<Sample>): Managed<OutputSignal, Unit, SampleVector> {
         val es = initParams.doubles("endSequence")
         val ei = argument.elements.iterator()
         var ai = es.iterator()
@@ -215,9 +216,9 @@ class SequenceDetectFn(initParameters: FnInitParameters) : Fn<Window<Sample>, Ma
         if (ai.hasNext()) startedAt = -1
 
         return if (startedAt == -1) {
-            sampleArrayOf(argument).withOutputSignal(NoopOutputSignal)
+            sampleVectorOf(argument).withOutputSignal(NoopOutputSignal)
         } else {
-            sampleArrayOf(argument.elements.subList(0, startedAt)).withOutputSignal(CloseOutputSignal)
+            sampleVectorOf(argument.elements.subList(0, startedAt)).withOutputSignal(CloseOutputSignal)
         }
     }
 }
@@ -232,11 +233,11 @@ The code above will generate only one file that contains the `signal` value. One
 
 ## Performance boost
 
-For some cases it is possible to have a small buffer while processing the stream. In this case, using [SampleArray](../readme.md#samplearray) may help to reduce the overhead on the processing pipeline. Wav output support working with this type of sample out of the box, so you won't need to flatten it back. To use that approach, simply [window](../operations/window-operation.md) the stream with desired length, [remap](../operations/map-operation.md) it to [SampleArray](../readme.md#samplearray), and you may store it directly to the wav-file:
+For some cases it is possible to have a small buffer while processing the stream. In this case, using [SampleVector](../readme.md#samplevector) may help to reduce the overhead on the processing pipeline. Wav output support working with this type of sample out of the box, so you won't need to flatten it back. To use that approach, simply [window](../operations/window-operation.md) the stream with desired length, [remap](../operations/map-operation.md) it to [SampleVector](../readme.md#samplevector), and you may store it directly to the wav-file:
 
 ```kotlin
 stream
-    .window(128).map { sampleArrayOf(it) }
+    .window(128).map { sampleVectorOf(it) }
     .trim(20, TimeUnit.SECONDS)
     .toMono16bitWav("file:///home/user/sine.wav")
 ```

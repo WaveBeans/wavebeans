@@ -12,6 +12,7 @@
   - [Noop signal](#noop-signal)
   - [Flush signal](#flush-signal)
   - [Open and close gate signals](#open-and-close-gate-signals)
+  - [Close output signal](#close-output-signal)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 

@@ -20,7 +20,6 @@ import org.spekframework.spek2.Spek
 import org.spekframework.spek2.lifecycle.CachingMode.*
 import org.spekframework.spek2.style.specification.describe
 import java.io.InputStream
-import java.lang.UnsupportedOperationException
 
 private val sampleRate = 44100.0f
 
@@ -63,38 +62,38 @@ object AudioServiceSpec : Spek({
             }
         }
 
-        describe("SampleArray table") {
+        describe("SampleVector table") {
             val tableRegistry by memoized(TEST) { mock<TableRegistry>() }
             val tableDriver by memoized(TEST) {
-                val driver = mock<TimeseriesTableDriver<SampleArray>>()
-                whenever(driver.tableType).thenReturn(SampleArray::class)
+                val driver = mock<TimeseriesTableDriver<SampleVector>>()
+                whenever(driver.tableType).thenReturn(SampleVector::class)
                 whenever(driver.sampleRate).thenReturn(sampleRate)
                 driver
             }
             val service by memoized(TEST) {
                 whenever(tableRegistry.exists(eq("table"))).thenReturn(true)
-                whenever(tableRegistry.byName<SampleArray>("table")).thenReturn(tableDriver)
+                whenever(tableRegistry.byName<SampleVector>("table")).thenReturn(tableDriver)
                 AudioService(tableRegistry)
             }
 
             it("should start streaming 8 bit wav file") {
-                whenever(tableDriver.stream(any())).thenReturn(input8Bit().window(16).map { sampleArrayOf(it) })
-                assert8BitWavOutput<SampleArray>(service)
+                whenever(tableDriver.stream(any())).thenReturn(input8Bit().window(16).map { sampleVectorOf(it) })
+                assert8BitWavOutput<SampleVector>(service)
             }
             it("should start streaming 16 bit wav file") {
-                whenever(tableDriver.stream(any())).thenReturn(input16Bit().window(16).map { sampleArrayOf(it) })
-                assert16BitWavOutput<SampleArray>(service)
+                whenever(tableDriver.stream(any())).thenReturn(input16Bit().window(16).map { sampleVectorOf(it) })
+                assert16BitWavOutput<SampleVector>(service)
             }
             it("should start streaming 24 bit wav file") {
-                whenever(tableDriver.stream(any())).thenReturn(input24Bit().window(16).map { sampleArrayOf(it) })
-                assert24BitWavOutput<SampleArray>(service)
+                whenever(tableDriver.stream(any())).thenReturn(input24Bit().window(16).map { sampleVectorOf(it) })
+                assert24BitWavOutput<SampleVector>(service)
             }
             it("should start streaming 32 bit wav file") {
-                whenever(tableDriver.stream(any())).thenReturn(input32Bit().window(16).map { sampleArrayOf(it) })
-                assert32BitWavOutput<SampleArray>(service)
+                whenever(tableDriver.stream(any())).thenReturn(input32Bit().window(16).map { sampleVectorOf(it) })
+                assert32BitWavOutput<SampleVector>(service)
             }
             it("should start stream limited table") {
-                whenever(tableDriver.stream(any())).thenReturn(input8Bit().trim(1000).window(16).map { sampleArrayOf(it) })
+                whenever(tableDriver.stream(any())).thenReturn(input8Bit().trim(1000).window(16).map { sampleVectorOf(it) })
                 assert8BitLimitedWavOutput<Sample>(service, 1000)
             }
         }

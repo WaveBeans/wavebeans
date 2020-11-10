@@ -54,7 +54,7 @@ private fun serializeWav(element: Any, bitDepth: BitDepth, dataSizeInc: (Int) ->
             writeSampleAsLEBytes(buf, 0, element, bitDepth)
             buf
         }
-        is SampleArray -> {
+        is SampleVector -> {
             val buf = ByteArray(bitDepth.bytesPerSample * element.size)
             dataSizeInc(bitDepth.bytesPerSample * element.size)
             for (i in element.indices) {
