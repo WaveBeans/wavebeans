@@ -40,7 +40,7 @@ object FunctionMergedStreamSpec : Spek({
             }
 
 
-            it("should return valid after cummin up of 3 consequent streams") {
+            it("should return valid values after summing up of 3 streams consequently") {
                 val anotherMerging = (20..29).stream()
                 assertThat(source
                         .merge(with = merging) { (x, y) -> x + y }
