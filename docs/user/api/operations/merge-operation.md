@@ -53,9 +53,11 @@ Not all streams are the same length, some of them are infinite, some of them are
 infiniteStream1.merge(infiniteStream2) { (a, b) ->
     requireNotNull(a)
     requireNotNull(b)
-    a * b // no need for extra null-checks, as multiplication may not defined for nullable types  
+    a * b // no need for extra null-checks  
 }
 ``` 
+
+Also, the result of the function is nullable, which means whenever the merge operation decides to end the stream based on the operands or anything else, it can do it.
 
 Using with two different input types
 -----------
@@ -83,11 +85,11 @@ As mentioned above the signature of the merge function is input type `Pair<T1?,T
 The class operation looks like this:
 
 ```kotlin
-class SumSamplesSafeFn(initParameters: FnInitParameters) : Fn<Pair<Sample?, Sample?>, Sample>(initParameters) {
+class SumSamplesSafeFn(initParameters: FnInitParameters) : Fn<Pair<Sample?, Sample?>, Sample?>(initParameters) {
 
     constructor(maxValue: Sample) : this(FnInitParameters().add("maxValue", abs(maxValue.asDouble())))
 
-    override fun apply(argument: Pair<Sample?, Sample?>): Sample {
+    override fun apply(argument: Pair<Sample?, Sample?>): Sample? {
         val maxValue = sampleOf(initParams.double("maxValue"))
         val (a, b) = argument
         val sum = a + b
@@ -110,3 +112,8 @@ And this is how it's called:
 This class uses helper function `sampleOf()` which converts any numeric type to internal representation of sample, please read more about in [types section](../#types)
 
 *Note: when trying to run that examples do not forget to [trim](trim-operation.md) the stream and define the output.*
+
+Running in distributed or multi-threaded mode
+---------
+
+The merge operation is not parallelizable, which means it is always being evaluated on one thread regardless of how many partitions you define. So making it in CPU/memory consumption as light is possible is a good idea overall.
