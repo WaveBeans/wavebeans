@@ -23,7 +23,7 @@ data class FftSample(
          */
         val samplesCount: Int,
         /**
-         * The actual length of the sample it is built on. Calculated based on the underlying window.
+         * The actual length of the sample it is built on. Calculated based on the underlying window [io.wavebeans.lib.stream.window.Window.step].
          */
         val samplesLength: Int,
         /**
@@ -73,5 +73,5 @@ data class FftSample(
     /**
      * The time marker of this sample, in nano seconds.
      */
-    fun time(): Long = (index.toDouble() * samplesCount.toDouble() / (sampleRate.toDouble() / 1e+9)).toLong()
+    fun time(): Long = (index.toDouble() * samplesLength.toDouble() / (sampleRate.toDouble() / 1e+9)).toLong()
 }
