@@ -8,11 +8,11 @@ import io.grpc.ServerBuilder
 import io.wavebeans.metrics.MetricObject
 import io.wavebeans.metrics.MetricService
 import io.wavebeans.metrics.eachIndexed
+import io.wavebeans.tests.findFreePort
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.lifecycle.CachingMode.*
 import org.spekframework.spek2.style.specification.describe
 import java.lang.Thread.sleep
-import kotlin.random.Random
 
 object MetricCollectorSpec : Spek({
 
@@ -335,7 +335,7 @@ object MetricCollectorSpec : Spek({
     describe("Distributed mode") {
 
         describe("One downstream collector") {
-            val port by memoized(SCOPE) { Random.nextInt(10000, 50000) }
+            val port by memoized(SCOPE) { findFreePort() }
             val counter by memoized(SCOPE) { MetricObject.counter("component", "count", "") }
             val time by memoized(SCOPE) { MetricObject.time("component", "time", "") }
             val gauge by memoized(SCOPE) { MetricObject.gauge("component", "gauge", "") }
@@ -509,7 +509,7 @@ object MetricCollectorSpec : Spek({
         }
 
         describe("Collecting automatically") {
-            val port by memoized(SCOPE) { Random.nextInt(10000, 50000) }
+            val port by memoized(SCOPE) { findFreePort() }
             val counter by memoized(SCOPE) { MetricObject.counter("component1", "name1", "") }
 
             val remoteMetricCollector by memoized(SCOPE) {
@@ -555,8 +555,8 @@ object MetricCollectorSpec : Spek({
         }
 
         describe("Two downstream collectors") {
-            val port1 by memoized(EACH_GROUP) { Random.nextInt(10000, 50000) }
-            val port2 by memoized(EACH_GROUP) { Random.nextInt(10000, 50000) }
+            val port1 by memoized(EACH_GROUP) { findFreePort() }
+            val port2 by memoized(EACH_GROUP) { findFreePort() }
 
             val counter by memoized(EACH_GROUP) { MetricObject.counter("component1_TwoDownstreamCollectors", "name1_TwoDownstreamCollectors", "") }
 
@@ -585,8 +585,7 @@ object MetricCollectorSpec : Spek({
                 server1.start()
                 server2.start()
                 // attach to downstream collectors
-                remoteMetricCollector.collectFromDownstream()
-                assertThat(remoteMetricCollector.awaitAttached()).isTrue()
+                assertThat(remoteMetricCollector.attachCollector()).isTrue()
             }
 
             afterGroup {
@@ -603,12 +602,10 @@ object MetricCollectorSpec : Spek({
                 counter.increment(4.0)
                 remoteMetricCollector.increment(counter, 5.0)
 
-                val afterEventMoment = System.currentTimeMillis() + 100
+                remoteMetricCollector.mergeWithDownstreamCollectors(Long.MAX_VALUE)
 
-                remoteMetricCollector.mergeWithDownstreamCollectors(afterEventMoment)
-
-                assertThat(remoteMetricCollector.collectValues(afterEventMoment))
-                        .prop("values.toSet") { it.map { it.value }.sorted() }
+                assertThat(remoteMetricCollector.collectValues(Long.MAX_VALUE))
+                        .prop("values.toList().sorted()") { it.map { it.value }.sorted() }
                         .isEqualTo(listOf(1.0, 1.0, 2.0, 2.0, 3.0, 3.0, 4.0, 4.0, 5.0))
             }
         }
