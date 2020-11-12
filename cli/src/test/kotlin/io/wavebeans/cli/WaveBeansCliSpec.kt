@@ -13,6 +13,8 @@ import io.wavebeans.cli.script.RunMode
 import io.wavebeans.execution.PodDiscovery
 import io.wavebeans.execution.distributed.Facilitator
 import io.wavebeans.lib.WaveBeansClassLoader
+import io.wavebeans.tests.createPorts
+import io.wavebeans.tests.findFreePort
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import org.apache.commons.cli.DefaultParser
@@ -102,7 +104,7 @@ object WaveBeansCliSpec : Spek({
 
         describe("Short-living from executed on distributed environment") {
 
-            val portRange = 40002..40003
+            val portRange = createPorts(2)
             val gardeners = portRange.map {
                 Facilitator(
                         communicatorPort = it,
@@ -147,23 +149,26 @@ object WaveBeansCliSpec : Spek({
         }
 
         describe("HTTP API") {
+            val httpPort = findFreePort()
             val out = ByteArrayOutputStream()
             val cli = WaveBeansCli(
                     cli = DefaultParser().parse(options, arrayOf(
                             name,
                             "--execute", "440.sine().trim(1000).toTable(\"table1\").out()",
-                            "--http", "12349",
+                            "--http", "$httpPort",
                             "--http-wait", "1",
                             "--verbose"
                     )),
                     printer = PrintWriter(out)
             )
 
-            assertHttpHandling(cli, out, 12349)
+            assertHttpHandling(cli, out, httpPort)
         }
 
         describe("HTTP API in distributed mode") {
-            val portRange = 40004..40005
+            val portRange = createPorts(2)
+            val httpPort = findFreePort()
+            val httpCommunicatorPort = findFreePort()
             val gardeners = portRange.map {
                 Facilitator(
                         communicatorPort = it,
@@ -189,9 +194,9 @@ object WaveBeansCliSpec : Spek({
                     cli = DefaultParser().parse(options, arrayOf(
                             name,
                             "--execute", "440.sine().map { it }.trim(1000).toTable(\"table1\").out()",
-                            "--http", "12350",
+                            "--http", "$httpPort",
                             "--http-wait", "1",
-                            "--http-communicator-port", "12348",
+                            "--http-communicator-port", "$httpCommunicatorPort",
                             "--verbose",
                             "--run-mode", "distributed",
                             "--partitions", "2",
@@ -200,7 +205,7 @@ object WaveBeansCliSpec : Spek({
                     printer = PrintWriter(out)
             )
 
-            assertHttpHandling(cli, out, 12350)
+            assertHttpHandling(cli, out, httpPort)
         }
     }
 })
