@@ -2,8 +2,12 @@ package io.wavebeans.tests
 
 import io.wavebeans.execution.MultiThreadedOverseer
 import io.wavebeans.execution.distributed.DistributedOverseer
+import io.wavebeans.lib.BeanStream
 import io.wavebeans.lib.io.StreamOutput
 import java.lang.Thread.sleep
+
+fun <T : Any> BeanStream<T>.toList(sampleRate: Float, take: Int = Int.MAX_VALUE, drop: Int = 0): List<T> =
+        this.asSequence(sampleRate).drop(drop).take(take).toList()
 
 fun <T : Any> StreamOutput<T>.evaluate(sampleRate: Float) {
     this.writer(sampleRate).use {

@@ -31,4 +31,10 @@ interface BeanStream<T : Any> : Bean<T> {
      * **Caution: it reads the whole stream, do not expect execution to end on infinite streams**
      */
     fun length(sampleRate: Float, timeUnit: TimeUnit = TimeUnit.MILLISECONDS): Long = samplesCountToLength(samplesCount(sampleRate), sampleRate, timeUnit)
+
+    val outputSampleRate: Float?
+        get() = null
+
+    val inputSampleRate: Float?
+        get() = null
 }
