@@ -6,6 +6,7 @@ import io.wavebeans.metrics.samplesProcessedOnInputMetric
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
+import kotlinx.serialization.builtins.nullable
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
@@ -22,7 +23,7 @@ object InputParamsSerializer : KSerializer<InputParams<*>> {
 
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor(InputParams::class.jvmName) {
         element("generateFn", FnSerializer.descriptor)
-        element("sampleRate", Float.serializer().descriptor)
+        element("sampleRate", Float.serializer().nullable.descriptor)
     }
 
     override fun deserialize(decoder: Decoder): InputParams<*> {
@@ -34,17 +35,17 @@ object InputParamsSerializer : KSerializer<InputParams<*>> {
             when (val i = dec.decodeElementIndex(descriptor)) {
                 CompositeDecoder.DECODE_DONE -> break@loop
                 0 -> func = dec.decodeSerializableElement(descriptor, i, FnSerializer) as Fn<Pair<Long, Float>, Any?>
-                1 -> sampleRate = dec.decodeFloatElement(descriptor, i)
+                1 -> sampleRate = dec.decodeNullableSerializableElement(descriptor, i, Float.serializer().nullable)
                 else -> throw SerializationException("Unknown index $i")
             }
         }
-        return InputParams(func!!, sampleRate!!)
+        return InputParams(func!!, sampleRate)
     }
 
     override fun serialize(encoder: Encoder, value: InputParams<*>) {
         val structure = encoder.beginStructure(descriptor)
         structure.encodeSerializableElement(descriptor, 0, FnSerializer, value.generator)
-        structure.encodeFloatElement(descriptor, 1, value.sampleRate)
+        structure.encodeNullableSerializableElement(descriptor, 1, Float.serializer().nullable, value.sampleRate)
         structure.endStructure(descriptor)
     }
 
@@ -53,7 +54,7 @@ object InputParamsSerializer : KSerializer<InputParams<*>> {
 @Serializable(with = InputParamsSerializer::class)
 class InputParams<T : Any>(
         val generator: Fn<Pair<Long, Float>, T?>,
-        val sampleRate: Float = Float.NEGATIVE_INFINITY,
+        val sampleRate: Float? = null
 ) : BeanParams()
 
 class Input<T : Any>(
@@ -66,7 +67,7 @@ class Input<T : Any>(
         private set
 
     override fun asSequence(sampleRate: Float): Sequence<T> {
-        outputSampleRate = parameters.sampleRate.takeIf { it != Float.NEGATIVE_INFINITY } ?: sampleRate
+        outputSampleRate = parameters.sampleRate ?: sampleRate
         val ofs = checkNotNull(outputSampleRate)
         return (0..Long.MAX_VALUE).asSequence()
                 .map { parameters.generator.apply(Pair(it, ofs)) }
