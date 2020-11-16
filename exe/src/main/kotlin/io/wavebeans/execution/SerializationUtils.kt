@@ -30,7 +30,6 @@ fun SerializersModuleBuilder.tableQuery() {
 
 fun SerializersModuleBuilder.beanParams() {
     polymorphic(BeanParams::class) {
-        subclass(ChangeAmplitudeSampleStreamParams::class, ChangeAmplitudeSampleStreamParams.serializer())
         subclass(SineGeneratedInputParams::class, SineGeneratedInputParams.serializer())
         subclass(NoParams::class, NoParams.serializer())
         subclass(TrimmedFiniteSampleStreamParams::class, TrimmedFiniteSampleStreamParams.serializer())

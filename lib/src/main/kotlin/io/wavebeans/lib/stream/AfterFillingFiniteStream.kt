@@ -17,18 +17,16 @@ data class AfterFillingFiniteStreamParams<T>(
 ) : BeanParams()
 
 private class AfterFillingFiniteStream<T : Any>(
-        val finiteStream: FiniteStream<T>,
-        val params: AfterFillingFiniteStreamParams<T>
+        override val input: FiniteStream<T>,
+        override val parameters: AfterFillingFiniteStreamParams<T>
 ) : BeanStream<T>, SingleBean<T> {
 
-    override val parameters: BeanParams = params
-
-    override val input: Bean<T> = finiteStream
+    override val desiredSampleRate: Float? by lazy { input.desiredSampleRate }
 
     override fun asSequence(sampleRate: Float): Sequence<T> {
         return object : Iterator<T> {
 
-            val iterator = finiteStream
+            val iterator = input
                     .asSequence(sampleRate)
                     .iterator()
 
@@ -38,7 +36,7 @@ private class AfterFillingFiniteStream<T : Any>(
                 return if (iterator.hasNext()) { // there is something left to read
                     iterator.next()
                 } else {
-                    params.zeroFiller
+                    parameters.zeroFiller
                 }
             }
         }.asSequence()

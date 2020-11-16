@@ -3,11 +3,32 @@ package io.wavebeans.tests
 import io.wavebeans.execution.MultiThreadedOverseer
 import io.wavebeans.execution.distributed.DistributedOverseer
 import io.wavebeans.lib.BeanStream
+import io.wavebeans.lib.Fn
 import io.wavebeans.lib.io.StreamOutput
+import io.wavebeans.lib.io.WriteFunctionArgument
+import io.wavebeans.lib.io.WriteFunctionPhase
+import io.wavebeans.lib.io.out
 import java.lang.Thread.sleep
 
-fun <T : Any> BeanStream<T>.toList(sampleRate: Float, take: Int = Int.MAX_VALUE, drop: Int = 0): List<T> =
-        this.asSequence(sampleRate).drop(drop).take(take).toList()
+class StoreToMemoryFn<T : Any> : Fn<WriteFunctionArgument<T>, Boolean>() {
+
+    private val list = ArrayList<T>()
+
+    override fun apply(argument: WriteFunctionArgument<T>): Boolean {
+        if (argument.phase == WriteFunctionPhase.WRITE)
+            list += argument.sample!!
+        return true
+    }
+
+    fun list(): List<T> = list
+}
+
+
+inline fun <reified T : Any> BeanStream<T>.toList(sampleRate: Float, take: Int = Int.MAX_VALUE, drop: Int = 0): List<T> {
+    val writeFunction = StoreToMemoryFn<T>()
+    this.out(writeFunction).evaluate(sampleRate)
+    return writeFunction.list().drop(drop).take(take)
+}
 
 fun <T : Any> StreamOutput<T>.evaluate(sampleRate: Float) {
     this.writer(sampleRate).use {

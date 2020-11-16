@@ -59,18 +59,15 @@ class InputParams<T : Any>(
 
 class Input<T : Any>(
         override val parameters: InputParams<T>
-) : BeanStream<T>, SourceBean<T>, SinglePartitionBean {
+) : AbstractInputBeanStream<T>(), SourceBean<T>, SinglePartitionBean {
 
     private val samplesProcessed = samplesProcessedOnInputMetric.withTags(clazzTag to parameters.generator::class.jvmName)
 
-    override var outputSampleRate: Float? = null
-        private set
+    override val desiredSampleRate: Float? = parameters.sampleRate
 
-    override fun asSequence(sampleRate: Float): Sequence<T> {
-        outputSampleRate = parameters.sampleRate ?: sampleRate
-        val ofs = checkNotNull(outputSampleRate)
+    override fun inputSequence(sampleRate: Float): Sequence<T> {
         return (0..Long.MAX_VALUE).asSequence()
-                .map { parameters.generator.apply(Pair(it, ofs)) }
+                .map { parameters.generator.apply(Pair(it, sampleRate)) }
                 .takeWhile { it != null }
                 .map { samplesProcessed.increment(); it!! }
     }

@@ -1,9 +1,6 @@
 package io.wavebeans.lib.io
 
-import io.wavebeans.lib.BeanParams
-import io.wavebeans.lib.Sample
-import io.wavebeans.lib.SinglePartitionBean
-import io.wavebeans.lib.sampleOf
+import io.wavebeans.lib.*
 import io.wavebeans.metrics.clazzTag
 import io.wavebeans.metrics.samplesProcessedOnInputMetric
 import kotlin.math.abs
@@ -18,7 +15,7 @@ import kotlin.reflect.jvm.jvmName
  * @param timeOffset is [SineSweepGeneratedInputParams.timeOffset]
  * @param sweepDelta is [SineSweepGeneratedInputParams.sweepDelta]
  */
-fun ClosedRange<Int>.sineSweep(amplitude: Double, time: Double, timeOffset: Double = 0.0, sweepDelta: Double = 0.1): StreamInput =
+fun ClosedRange<Int>.sineSweep(amplitude: Double, time: Double, timeOffset: Double = 0.0, sweepDelta: Double = 0.1): BeanStream<Sample> =
         SineSweepGeneratedInput(SineSweepGeneratedInputParams(
                 this.start.toDouble(),
                 this.endInclusive.toDouble(),
@@ -48,7 +45,7 @@ data class SineSweepGeneratedInputParams(
  */
 class SineSweepGeneratedInput(
         val params: SineSweepGeneratedInputParams
-) : StreamInput, SinglePartitionBean {
+) : BeanStream<Sample>, SourceBean<Sample>, SinglePartitionBean {
 
     private val samplesProcessed = samplesProcessedOnInputMetric.withTags(clazzTag to SineSweepGeneratedInput::class.jvmName)
 
@@ -84,5 +81,7 @@ class SineSweepGeneratedInput(
 
     private fun sineOf(x: Double, frequency: Double): Double =
             params.amplitude * cos(x * 2 * Math.PI * frequency)
+
+    override val desiredSampleRate: Float? = null
 
 }

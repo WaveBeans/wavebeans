@@ -4,28 +4,21 @@ import io.wavebeans.lib.BeanStream
 import mu.KotlinLogging
 
 abstract class AbstractOperationBeanStream<I : Any, O : Any>(
-        val inputs: List<BeanStream<I>>
+        val inputBean: BeanStream<I>
 ) : BeanStream<O> {
 
     companion object {
         private val log = KotlinLogging.logger { }
     }
 
-    override var outputSampleRate: Float? = null
-        protected set
+    override val desiredSampleRate: Float? by lazy { inputBean.desiredSampleRate }
 
-    override var inputSampleRate: Float? = null
-        protected set
-
-    override fun asSequence(sampleRate: Float): Sequence<O> {
-        val sequences = inputs.map { it.asSequence(sampleRate) }
-        inputSampleRate = inputs.first().outputSampleRate
-        require(inputs.all { it.outputSampleRate == inputSampleRate }) { "All input must be resample beforehand to ${inputSampleRate}Hz" }
-        outputSampleRate = inputSampleRate
-        val ofs = inputSampleRate ?: sampleRate
-        log.trace { "Initialized operation sequence ${this::class} with output sample rate ${ofs}Hz" }
-        return operationSequence(sequences, ofs)
+    final override fun asSequence(sampleRate: Float): Sequence<O> {
+        val ofs = desiredSampleRate ?: sampleRate
+        val sequence = inputBean.asSequence(ofs)
+        log.trace { "[$this] Initialized operation sequence with sample rate ${ofs}Hz" }
+        return operationSequence(sequence, ofs)
     }
 
-    abstract fun operationSequence(inputs: List<Sequence<I>>, sampleRate: Float): Sequence<O>
+    abstract fun operationSequence(input: Sequence<I>, sampleRate: Float): Sequence<O>
 }

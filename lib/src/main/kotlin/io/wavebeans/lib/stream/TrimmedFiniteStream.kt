@@ -17,11 +17,15 @@ data class TrimmedFiniteSampleStreamParams(
 class TrimmedFiniteStream<T : Any>(
         override val input: BeanStream<T>,
         override val parameters: TrimmedFiniteSampleStreamParams
-) : FiniteStream<T>, SingleBean<T>, SinglePartitionBean {
+) : AbstractOperationBeanStream<T, T>(input), FiniteStream<T>, SingleBean<T>, SinglePartitionBean {
 
-    override fun asSequence(sampleRate: Float): Sequence<T> {
-        var samplesToTake = timeToSampleIndexFloor(TimeUnit.NANOSECONDS.convert(parameters.length, parameters.timeUnit), TimeUnit.NANOSECONDS, sampleRate)
-        val iterator = input.asSequence(sampleRate).iterator()
+    override fun operationSequence(input: Sequence<T>, sampleRate: Float): Sequence<T> {
+        var samplesToTake = timeToSampleIndexFloor(
+                TimeUnit.NANOSECONDS.convert(parameters.length, parameters.timeUnit),
+                TimeUnit.NANOSECONDS,
+                sampleRate
+        )
+        val iterator = input.iterator()
 
         return object : Iterator<T> {
 

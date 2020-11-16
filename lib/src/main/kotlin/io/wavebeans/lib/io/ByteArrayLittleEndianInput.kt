@@ -62,21 +62,31 @@ class ByteArrayLittleEndianDecoder(
     }
 }
 
-data class ByteArrayLittleEndianInputParams(val sampleRate: Float, val bitDepth: BitDepth, val buffer: ByteArray) : BeanParams()
+data class ByteArrayLittleEndianInputParams(
+        val sampleRate: Float,
+        val bitDepth: BitDepth,
+        val buffer: ByteArray
+) : BeanParams()
 
-class ByteArrayLittleEndianInput(val params: ByteArrayLittleEndianInputParams) : FiniteInput<Sample>, SinglePartitionBean {
+class ByteArrayLittleEndianInput(
+        val params: ByteArrayLittleEndianInputParams
+) : AbstractInputBeanStream<Sample>(), FiniteInput<Sample>, SinglePartitionBean {
 
     private val samplesProcessed = samplesProcessedOnInputMetric.withTags(clazzTag to ByteArrayLittleEndianInput::class.jvmName)
 
     override val parameters: BeanParams = params
 
+    override val desiredSampleRate: Float? = params.sampleRate
+
     override fun length(timeUnit: TimeUnit): Long = samplesCountToLength(samplesCount().toLong(), params.sampleRate, timeUnit)
 
     override fun samplesCount(): Int = params.buffer.size / params.bitDepth.bytesPerSample
 
-    override fun asSequence(sampleRate: Float): Sequence<Sample> =
-            ByteArrayLittleEndianDecoder(params.sampleRate, params.bitDepth)
-                    .sequence(sampleRate, params.buffer)
-                    .map { samplesProcessed.increment(); it }
+    override fun inputSequence(sampleRate: Float): Sequence<Sample> {
+        require(sampleRate == params.sampleRate) { "The stream should be resampled from ${params.sampleRate}Hz to ${sampleRate}Hz" }
+        return ByteArrayLittleEndianDecoder(params.sampleRate, params.bitDepth)
+                .sequence(params.sampleRate, params.buffer)
+                .map { samplesProcessed.increment(); it }
+    }
 
 }

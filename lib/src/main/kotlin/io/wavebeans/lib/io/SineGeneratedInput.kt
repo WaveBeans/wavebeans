@@ -29,23 +29,21 @@ data class SineGeneratedInputParams(
 ) : BeanParams()
 
 class SineGeneratedInput constructor(
-        val params: SineGeneratedInputParams
-) : StreamInput, SinglePartitionBean {
+        override val parameters: SineGeneratedInputParams
+) : AbstractInputBeanStream<Sample>(), SourceBean<Sample>, SinglePartitionBean {
 
     private val samplesProcessed = samplesProcessedOnInputMetric.withTags(clazzTag to SineGeneratedInput::class.jvmName)
 
-    override val parameters: BeanParams = params
-
-    override fun asSequence(sampleRate: Float): Sequence<Sample> {
+    override fun inputSequence(sampleRate: Float): Sequence<Sample> {
         return object : Iterator<Sample> {
 
-            private var x = params.timeOffset
+            private var x = parameters.timeOffset
             private val delta = 1.0 / sampleRate // sinusoid automatically resamples to output sample rate
 
             override fun hasNext(): Boolean = true
 
             override fun next(): Sample {
-                return if (params.time != null && x >= params.time + params.timeOffset) {
+                return if (parameters.time != null && x >= parameters.time + parameters.timeOffset) {
                     ZeroSample
                 } else {
                     val r = sampleOf(sineOf(x))
@@ -57,6 +55,8 @@ class SineGeneratedInput constructor(
     }
 
     private fun sineOf(x: Double): Double =
-            params.amplitude * cos(x * 2 * Math.PI * params.frequency)
+            parameters.amplitude * cos(x * 2 * Math.PI * parameters.frequency)
+
+    override val desiredSampleRate: Float? = null
 
 }

@@ -79,20 +79,12 @@ class ResampleStream<T : Any>(
         private val log = KotlinLogging.logger { }
     }
 
-    override var outputSampleRate: Float? = null
-        private set
-
-    override var inputSampleRate: Float? = null
-        private set
+    override val desiredSampleRate: Float? = parameters.to
 
     override fun asSequence(sampleRate: Float): Sequence<T> {
-        val sequence = input.asSequence(sampleRate)
-        this.inputSampleRate = input.outputSampleRate
-        this.outputSampleRate = parameters.to ?: sampleRate
-
-        val ifs = checkNotNull(inputSampleRate) { "Input doesn't provide the sample rate, resampling is not possible." }
-        val ofs = outputSampleRate!!
-
+        val ifs = input.desiredSampleRate ?: sampleRate
+        val ofs = parameters.to ?: sampleRate
+        val sequence = input.asSequence(ifs)
         val factor = ofs / ifs
         val argument = ResamplingArgument(ifs, ofs, factor, sequence, parameters.reduceFn)
         log.trace { "Initialized resampling from ${ifs}Hz to ${ofs}Hz [$argument]" }

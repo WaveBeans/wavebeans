@@ -13,7 +13,6 @@ import io.wavebeans.execution.pod.SplittingPod
 import io.wavebeans.execution.pod.StreamingPod
 import io.wavebeans.execution.podproxy.*
 import io.wavebeans.lib.*
-import io.wavebeans.lib.io.StreamInput
 import io.wavebeans.lib.io.sine
 import io.wavebeans.lib.stream.div
 import io.wavebeans.lib.stream.trim
@@ -246,24 +245,20 @@ private fun Assert<PodProxy>.forPartition() = prop("forPartition") { it.forParti
 
 internal class TestPartitionableStreamingInput(
         override val parameters: BeanParams
-) : StreamInput {
-    override fun asSequence(sampleRate: Float): Sequence<Sample> = throw UnsupportedOperationException()
+) :  SourceBean<Sample> {
 }
 
 internal class TestSinglePartitionStreamingInput(
         override val parameters: BeanParams
-) : StreamInput, SinglePartitionBean {
-    override fun asSequence(sampleRate: Float): Sequence<Sample> = throw UnsupportedOperationException()
+) : SourceBean<Sample>, SinglePartitionBean {
 }
 
 internal class TestMultiBean(
         val input1: BeanStream<Sample>,
         val input2: BeanStream<Sample>,
         override val parameters: BeanParams
-) : BeanStream<Sample>, MultiBean<Sample> {
+) : MultiBean<Sample> {
 
     override val inputs: List<Bean<Sample>>
         get() = listOf(input1, input2)
-
-    override fun asSequence(sampleRate: Float): Sequence<Sample> = throw UnsupportedOperationException()
 }

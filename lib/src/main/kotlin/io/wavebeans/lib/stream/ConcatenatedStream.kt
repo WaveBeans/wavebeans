@@ -13,13 +13,15 @@ class ConcatenatedFiniteStream<T : Any>(
         private val stream1: FiniteStream<T>,
         private val stream2: FiniteStream<T>,
         override val parameters: NoParams = NoParams()
-) : FiniteStream<T>, MultiBean<T>, SinglePartitionBean {
+) : AbstractMultiOperationBeanStream<T>(listOf(stream1, stream2)), FiniteStream<T>, MultiBean<T>, SinglePartitionBean {
 
-    override val inputs: List<Bean<T>>
-        get() = listOf(stream1, stream2)
+    override val inputs: List<Bean<T>> = listOf(stream1, stream2)
 
-    override fun asSequence(sampleRate: Float): Sequence<T> {
-        return stream1.asSequence(sampleRate) + stream2.asSequence(sampleRate)
+    @Suppress("UNCHECKED_CAST")
+    override fun operationSequence(inputs: List<Sequence<Any>>, sampleRate: Float): Sequence<T> {
+        val stream1 = inputs.first()
+        val stream2 = inputs.drop(1).first()
+        return (stream1 + stream2).map { it as T }
     }
 
     override fun length(timeUnit: TimeUnit): Long {
@@ -31,12 +33,14 @@ class ConcatenatedStream<T : Any>(
         private val stream1: FiniteStream<T>,
         private val stream2: BeanStream<T>,
         override val parameters: NoParams = NoParams()
-) : BeanStream<T>, MultiBean<T>, SinglePartitionBean {
+) : AbstractMultiOperationBeanStream<T>(listOf(stream1, stream2)), BeanStream<T>, MultiBean<T>, SinglePartitionBean {
 
-    override val inputs: List<Bean<T>>
-        get() = listOf(stream1, stream2)
+    override val inputs: List<Bean<T>> = listOf(stream1, stream2)
 
-    override fun asSequence(sampleRate: Float): Sequence<T> {
-        return stream1.asSequence(sampleRate) + stream2.asSequence(sampleRate)
+    @Suppress("UNCHECKED_CAST")
+    override fun operationSequence(inputs: List<Sequence<Any>>, sampleRate: Float): Sequence<T> {
+        val stream1 = inputs.first()
+        val stream2 = inputs.drop(1).first()
+        return (stream1 + stream2).map { it as T }
     }
 }

@@ -12,7 +12,6 @@ import assertk.assertions.support.show
 import io.wavebeans.lib.io.ByteArrayLittleEndianInput
 import io.wavebeans.lib.io.ByteArrayLittleEndianInputParams
 import io.wavebeans.lib.io.FiniteInput
-import io.wavebeans.lib.io.StreamInput
 import io.wavebeans.lib.math.ComplexNumber
 import io.wavebeans.lib.math.minus
 import io.wavebeans.lib.math.plus
@@ -111,6 +110,7 @@ class IntStream(
     override val parameters: BeanParams
         get() = throw UnsupportedOperationException()
 
+    override val desiredSampleRate: Float? = null
 }
 
 class DoubleStream(
@@ -133,6 +133,7 @@ class DoubleStream(
     override val parameters: BeanParams
         get() = throw UnsupportedOperationException()
 
+    override val desiredSampleRate: Float? = null
 }
 
 fun <T> Assert<List<T>>.at(idx: Int): Assert<T> = this.prop("[$idx]") { it[idx] }
@@ -141,7 +142,7 @@ fun seqStream() = SeqInput()
 
 class SeqInput constructor(
         val params: NoParams = NoParams()
-) : StreamInput, SinglePartitionBean {
+) : BeanStream<Sample>, SourceBean<Sample>, SinglePartitionBean {
 
     private val seq = (0..10_000_000_000).asSequence().map { 1e-10 * it }
 
@@ -149,5 +150,5 @@ class SeqInput constructor(
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> = seq
 
-
+    override val desiredSampleRate: Float? = null
 }

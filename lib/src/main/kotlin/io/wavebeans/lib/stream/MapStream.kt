@@ -49,15 +49,14 @@ data class MapStreamParams<T : Any, R : Any>(val transform: Fn<T, R>) : BeanPara
 class MapStream<T : Any, R : Any>(
         override val input: BeanStream<T>,
         override val parameters: MapStreamParams<T, R>
-) : AbstractOperationBeanStream<T, R>(listOf(input)), AlterBean<T, R> {
-
+) : AbstractOperationBeanStream<T, R>(input), AlterBean<T, R> {
     companion object {
         private val log = KotlinLogging.logger {}
     }
 
-    override fun operationSequence(inputs: List<Sequence<T>>, sampleRate: Float): Sequence<R> {
+    override fun operationSequence(input: Sequence<T>, sampleRate: Float): Sequence<R> {
         log.trace { "[$this] Initiating sequence Map(input = $input,parameters = $parameters)" }
-        return inputs.first().map { parameters.transform.apply(it) }
+        return input.map { parameters.transform.apply(it) }
     }
 
 }

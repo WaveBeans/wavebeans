@@ -1,6 +1,7 @@
 package io.wavebeans.lib.stream.window
 
 import io.wavebeans.lib.*
+import io.wavebeans.lib.stream.AbstractOperationBeanStream
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
@@ -126,18 +127,15 @@ class WindowStreamParams<T : Any>(
 class WindowStream<T : Any>(
         override val input: BeanStream<T>,
         override val parameters: WindowStreamParams<T>
-) : BeanStream<Window<T>>, AlterBean<T, Window<T>>, SinglePartitionBean {
+) : AbstractOperationBeanStream<T, Window<T>>(input), AlterBean<T, Window<T>>, SinglePartitionBean {
 
-    override fun asSequence(sampleRate: Float): Sequence<Window<T>> {
-        return input.asSequence(sampleRate)
+    override fun operationSequence(input: Sequence<T>, sampleRate: Float): Sequence<Window<T>> {
+        return input
                 .windowed(
                         size = parameters.windowSize,
                         step = parameters.step,
                         partialWindows = true
                 )
                 .map { Window(parameters.windowSize, parameters.step, it, parameters.zeroElFn) }
-
     }
-
-    override fun inputs(): List<AnyBean> = listOf(input)
 }

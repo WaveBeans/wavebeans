@@ -9,7 +9,6 @@ import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.execution.pod.SplittingPod
 import io.wavebeans.execution.pod.StreamingPod
 import io.wavebeans.lib.*
-import io.wavebeans.lib.io.StreamInput
 
 class IntStream(
         val seq: List<Int>
@@ -20,6 +19,8 @@ class IntStream(
 
     override val parameters: BeanParams
         get() = throw UnsupportedOperationException()
+
+    override val desiredSampleRate: Float? = null
 
 }
 
@@ -60,7 +61,7 @@ fun seqStream() = SeqInput()
 
 class SeqInput constructor(
         val params: NoParams = NoParams()
-) : StreamInput, SinglePartitionBean {
+) : BeanStream<Sample>, SourceBean<Sample>, SinglePartitionBean {
 
     private val seq = (0..10_000_000_000).asSequence().map { 1e-10 * it }
 
@@ -68,7 +69,7 @@ class SeqInput constructor(
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> = seq
 
-
+    override val desiredSampleRate: Float? = null
 }
 
 fun <T> Assert<Iterable<T>>.eachIndexed(expectedSize: Int? = null, f: (Assert<T>, Int) -> Unit) = given { actual ->
