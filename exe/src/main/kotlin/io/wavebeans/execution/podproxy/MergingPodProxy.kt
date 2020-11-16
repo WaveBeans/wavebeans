@@ -54,10 +54,11 @@ abstract class MergingPodProxy(
     }
 
     override val desiredSampleRate: Float? by lazy {
-        TODO()
-//        val bush = podDiscovery.bushFor(pointedTo)
-//        val caller = bushCallerRepository.create(bush, pointedTo)
-//        caller.call("desiredSampleRate").get(5000, TimeUnit.MILLISECONDS).obj as Float?
+        readsFrom.map { pod ->
+            val bush = podDiscovery.bushFor(pod)
+            val caller = bushCallerRepository.create(bush, pod)
+            caller.call("desiredSampleRate").get(5000, TimeUnit.MILLISECONDS).obj as Float?
+        }.distinct().let { if (it.size == 1) it.first() else null }
     }
 
     override fun inputs(): List<AnyBean> = throw UnsupportedOperationException("Not required")

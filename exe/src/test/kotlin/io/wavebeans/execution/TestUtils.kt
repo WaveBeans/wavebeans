@@ -57,21 +57,6 @@ fun <T> Assert<List<T>>.isListOf(vararg expected: Any?) = given { actual ->
     fail(expected, actual)
 }
 
-fun seqStream() = SeqInput()
-
-class SeqInput constructor(
-        val params: NoParams = NoParams()
-) : BeanStream<Sample>, SourceBean<Sample>, SinglePartitionBean {
-
-    private val seq = (0..10_000_000_000).asSequence().map { 1e-10 * it }
-
-    override val parameters: BeanParams = params
-
-    override fun asSequence(sampleRate: Float): Sequence<Sample> = seq
-
-    override val desiredSampleRate: Float? = null
-}
-
 fun <T> Assert<Iterable<T>>.eachIndexed(expectedSize: Int? = null, f: (Assert<T>, Int) -> Unit) = given { actual ->
     all {
         expectedSize?.let { assertThat(actual.count(), "elements count").isEqualTo(it) }

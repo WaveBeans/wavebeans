@@ -4,11 +4,14 @@ import io.wavebeans.execution.MultiThreadedOverseer
 import io.wavebeans.execution.distributed.DistributedOverseer
 import io.wavebeans.lib.BeanStream
 import io.wavebeans.lib.Fn
-import io.wavebeans.lib.io.StreamOutput
-import io.wavebeans.lib.io.WriteFunctionArgument
-import io.wavebeans.lib.io.WriteFunctionPhase
-import io.wavebeans.lib.io.out
+import io.wavebeans.lib.io.*
+import io.wavebeans.lib.sampleOf
 import java.lang.Thread.sleep
+
+/**
+ * Generates sequential stream of (index * 1e-10)
+ */
+fun seqStream() = input { sampleOf(it.first * 1e-10) }
 
 class StoreToMemoryFn<T : Any> : Fn<WriteFunctionArgument<T>, Boolean>() {
 

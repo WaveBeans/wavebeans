@@ -1,8 +1,10 @@
-package io.wavebeans.execution
+package io.wavebeans.tests
 
 import assertk.assertThat
 import assertk.assertions.*
 import assertk.catch
+import io.wavebeans.execution.MultiThreadedOverseer
+import io.wavebeans.execution.SingleThreadedOverseer
 import io.wavebeans.lib.*
 import io.wavebeans.lib.io.*
 import io.wavebeans.lib.stream.*
@@ -22,9 +24,9 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.system.measureTimeMillis
 
-val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger {}
 
-object OverseerIntegrationSpec : Spek({
+object MultiPartitionCorrectnessSpec : Spek({
 
     fun runInParallel(
             outputs: List<StreamOutput<out Any>>,

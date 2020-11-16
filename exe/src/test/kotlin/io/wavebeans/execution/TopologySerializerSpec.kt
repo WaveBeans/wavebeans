@@ -3,6 +3,7 @@ package io.wavebeans.execution
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
+import assertk.fail
 import io.wavebeans.lib.*
 import io.wavebeans.lib.io.*
 import io.wavebeans.lib.stream.*
@@ -11,6 +12,7 @@ import io.wavebeans.lib.stream.window.WindowStreamParams
 import io.wavebeans.lib.stream.window.plus
 import io.wavebeans.lib.stream.window.window
 import io.wavebeans.lib.table.*
+import io.wavebeans.tests.seqStream
 import kotlinx.serialization.Serializable
 import mu.KotlinLogging
 import org.spekframework.spek2.Spek
@@ -136,10 +138,10 @@ object TopologySerializerSpec : Spek({
 
         val factor = 2 // checking passing parameters from closure
         val o = listOf(
-                seqStream()
+                input<Sample> { fail("unreachable") } 
                         .map { it * 2 }
                         .toDevNull(),
-                seqStream()
+                input<Sample> { fail("unreachable") } 
                         .map(MapFn(FnInitParameters().add("factor", factor.toString())))
                         .toDevNull()
         )
@@ -157,15 +159,15 @@ object TopologySerializerSpec : Spek({
                 each { nodeRef ->
 
                     nodeRef.prop("type") { it.type }.isIn(*listOf(
-                            SeqInput::class,
+                            Input::class,
+                            MapStream::class,
                             DevNullStreamOutput::class,
-                            MapStream::class
                     ).map { it.qualifiedName }.toTypedArray())
 
                     nodeRef.prop("params") { it.params }.kClass().isIn(*listOf(
-                            SineGeneratedInputParams::class,
+                            InputParams::class,
+                            MapStreamParams::class,
                             NoParams::class,
-                            MapStreamParams::class
                     ).toTypedArray())
                 }
             }
@@ -193,28 +195,28 @@ object TopologySerializerSpec : Spek({
 
         val functions = mapOf(
                 "Sample merge with Lambda" to listOf(
-                        seqStream()
+                        input<Sample> { fail("unreachable") } 
                                 .merge(
-                                        with = seqStream()
+                                        with = input<Sample> { fail("unreachable") } 
                                 ) { (x, y) -> x ?: ZeroSample + y }
                                 .toDevNull()
                 ),
                 "Sample merge with Fn and using outside data" to listOf(
-                        seqStream()
+                        input<Sample> { fail("unreachable") } 
                                 .merge(
-                                        with = seqStream(),
+                                        with = input<Sample> { fail("unreachable") } ,
                                         merge = MergeFn(FnInitParameters().add("factor", factor.toString()))
                                 )
                                 .toDevNull()
                 ),
                 "Window<Sample>.plus()" to listOf(
-                        seqStream().window(2)
-                                .plus(seqStream().window(2))
+                        input<Sample> { fail("unreachable") } .window(2)
+                                .plus(input<Sample> { fail("unreachable") } .window(2))
                                 .toDevNull()
                 ),
                 "Sample.plus()" to listOf(
-                        seqStream()
-                                .plus(seqStream())
+                        input<Sample> { fail("unreachable") } 
+                                .plus(input<Sample> { fail("unreachable") } )
                                 .toDevNull()
                 )
         )
@@ -234,17 +236,17 @@ object TopologySerializerSpec : Spek({
                         each { nodeRef ->
 
                             nodeRef.prop("type") { it.type }.isIn(*listOf(
-                                    SeqInput::class,
+                                    Input::class,
                                     WindowStream::class,
-                                    DevNullStreamOutput::class,
-                                    FunctionMergedStream::class
+                                    FunctionMergedStream::class,
+                                    DevNullStreamOutput::class
                             ).map { it.qualifiedName }.toTypedArray())
 
                             nodeRef.prop("params") { it.params }.kClass().isIn(*listOf(
-                                    SineGeneratedInputParams::class,
+                                    InputParams::class,
                                     WindowStreamParams::class,
-                                    NoParams::class,
-                                    FunctionMergedStreamParams::class
+                                    FunctionMergedStreamParams::class,
+                                    NoParams::class
                             ).toTypedArray())
                         }
                     }
@@ -304,7 +306,7 @@ object TopologySerializerSpec : Spek({
     }
 
     describe("Table sink") {
-        val o = seqStream().toTable("table1")
+        val o = input<Sample> { fail("unreachable") } .toTable("table1")
         val q = TableRegistry.default.byName<Sample>("table1").last(2000.ms).toCsv("file:///path/to.csv")
 
         val topology = listOf(o, q).buildTopology()
@@ -319,14 +321,14 @@ object TopologySerializerSpec : Spek({
                 each { nodeRef ->
 
                     nodeRef.prop("type") { it.type }.isIn(*listOf(
-                            SeqInput::class,
+                            Input::class,
                             TableOutput::class,
                             TableDriverInput::class,
                             CsvStreamOutput::class
                     ).map { it.qualifiedName }.toTypedArray())
 
                     nodeRef.prop("params") { it.params }.kClass().isIn(*listOf(
-                            NoParams::class,
+                            InputParams::class,
                             TableOutputParams::class,
                             TableDriverStreamParams::class,
                             CsvStreamOutputParams::class
