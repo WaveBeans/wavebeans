@@ -179,6 +179,8 @@ abstract class AbstractPod<T : Any, B : BeanStream<T>>(
         }
     }
 
+    override fun desiredSampleRate(): Float? = bean.desiredSampleRate
+
     override fun close() {
         log.debug { "POD[$podKey] Closed" }
     }

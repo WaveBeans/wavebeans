@@ -10,6 +10,7 @@ import io.wavebeans.lib.io.*
 import io.wavebeans.lib.stream.*
 import io.wavebeans.lib.stream.fft.FftSample
 import io.wavebeans.lib.stream.fft.fft
+import io.wavebeans.lib.stream.fft.inverseFft
 import io.wavebeans.lib.stream.window.Window
 import io.wavebeans.lib.stream.window.hamming
 import io.wavebeans.lib.stream.window.window
@@ -446,6 +447,43 @@ object MultiPartitionCorrectnessSpec : Spek({
             assertThat(fileContent).size().isGreaterThan(1)
 
             runLocally(listOf(stream))
+            val fileContentLocal = file.readLines()
+            assertThat(fileContent).isEqualTo(fileContentLocal)
+        }
+    }
+
+    describe("Resample") {
+        it("should have the same output as local") {
+            val sampleRate = 44100.0f
+            val file = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
+            val wavFileStream by lazy {
+                val f = File.createTempFile("test", ".wav").also { it.deleteOnExit() }
+                1240.sine().trim(10000).toMono16bitWav("file://${f.absolutePath}").evaluate(sampleRate / 2.0f)
+                wave("file://${f.absolutePath}")
+            }
+            val input = (
+                    120.sine().trim(100)..440.sine() +
+                            (100..110).sineSweep(0.5, 20.0) +
+                            input { sampleOf((it.first % 10000L) * 10000L) } +
+                            listOf(0.5, 0.3, 0.5, 0.2).input() +
+                            wavFileStream
+                    ) * 0.2
+            val stream = input
+                    .trim(1000)
+                    .resample(to = sampleRate * 2.0f)
+                    .window(1001)
+                    .hamming()
+                    .fft(1024)
+                    .inverseFft()
+                    .flatten()
+                    .resample()
+                    .toCsv("file://${file.absolutePath}")
+
+            runInParallel(listOf(stream), partitions = 2, sampleRate = sampleRate)
+            val fileContent = file.readLines()
+            assertThat(fileContent).size().isGreaterThan(1)
+
+            runLocally(listOf(stream), sampleRate = sampleRate)
             val fileContentLocal = file.readLines()
             assertThat(fileContent).isEqualTo(fileContentLocal)
         }

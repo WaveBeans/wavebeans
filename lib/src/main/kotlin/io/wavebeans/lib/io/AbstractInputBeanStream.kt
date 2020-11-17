@@ -10,7 +10,9 @@ abstract class AbstractInputBeanStream<O : Any> : BeanStream<O> {
     }
 
     final override fun asSequence(sampleRate: Float): Sequence<O> {
-        require(desiredSampleRate == null || desiredSampleRate == sampleRate) { "The stream should be resampled from ${desiredSampleRate}Hz to ${sampleRate}Hz" }
+        require(desiredSampleRate == null || desiredSampleRate == sampleRate) {
+            "[$this] The stream should be resampled from ${desiredSampleRate}Hz to ${sampleRate}Hz"
+        }
         val fs = desiredSampleRate ?: sampleRate
         log.trace { "[$this] Initialized the input with sample rate ${fs}Hz while desired is $desiredSampleRate" }
         return inputSequence(fs)

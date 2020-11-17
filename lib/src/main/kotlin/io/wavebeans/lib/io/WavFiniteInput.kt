@@ -6,6 +6,7 @@ import io.wavebeans.lib.stream.FiniteToStream
 import io.wavebeans.lib.stream.stream
 import io.wavebeans.metrics.clazzTag
 import io.wavebeans.metrics.samplesProcessedOnInputMetric
+import kotlinx.serialization.Serializable
 import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 import java.io.InputStream
@@ -13,17 +14,17 @@ import java.net.URI
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.jvm.jvmName
 
-fun wave(uri: String): FiniteInput<Sample> = WavFiniteInput(WavFiniteInputParams(URI(uri)))
+fun wave(uri: String): FiniteInput<Sample> = WavFiniteInput(WavFiniteInputParams(uri))
 
 fun wave(uri: String, converter: FiniteToStream<Sample>): BeanStream<Sample> = wave(uri).stream(converter)
 
+@Serializable
 data class WavFiniteInputParams(
-        val uri: URI
+        val uri: String
 ) : BeanParams()
 
 class WavFiniteInput(
         val params: WavFiniteInputParams,
-        private val content: Content? = null
 ) : AbstractInputBeanStream<Sample>(), FiniteInput<Sample>, SinglePartitionBean {
 
     private val samplesProcessed = samplesProcessedOnInputMetric.withTags(clazzTag to WavFiniteInput::class.jvmName)
@@ -60,13 +61,9 @@ class WavFiniteInput(
     }
 
     private val cnt: Content by lazy {
-        if (content == null) {
-            val source = WbFileDriver.createFile(params.uri).createWbFileInputStream()
-            val (descriptor, buf) = WavFileReader(source).read()
-            Content(buf.size, descriptor.bitDepth, buf, descriptor.sampleRate)
-        } else {
-            content
-        }
+        val source = WbFileDriver.createFile(URI(params.uri)).createWbFileInputStream()
+        val (descriptor, buf) = WavFileReader(source).read()
+        Content(buf.size, descriptor.bitDepth, buf, descriptor.sampleRate)
     }
 
 

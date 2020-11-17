@@ -50,6 +50,7 @@ class MapStream<T : Any, R : Any>(
         override val input: BeanStream<T>,
         override val parameters: MapStreamParams<T, R>
 ) : AbstractOperationBeanStream<T, R>(input), AlterBean<T, R> {
+
     companion object {
         private val log = KotlinLogging.logger {}
     }
