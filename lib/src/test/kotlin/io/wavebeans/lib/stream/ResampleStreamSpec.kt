@@ -36,7 +36,7 @@ object ResampleStreamSpec : Spek({
             val resampled = input(1000.0f) { (i, fs) ->
                 require(fs == 1000.0f) { "Non 1000Hz sample rate is not supported" }
                 if (i < 5) i.toInt() else null
-            }.resample(reduceFn = { it.sum() })
+            }.resample(resampleFn = SimpleResampleFn { it.sum() })
 
             assertThat(resampled.toList(500.0f)).isListOf(1, 5, 4)
         }
@@ -73,9 +73,9 @@ object ResampleStreamSpec : Spek({
                 require(fs == 1000.0f) { "Non 1000Hz sample rate is not supported" }
                 if (i < 5) i.toInt() else null
             }
-                    .resample(to = 500.0f, reduceFn = { it.sum() })
+                    .resample(to = 500.0f, resampleFn = SimpleResampleFn { it.sum() })
                     .map { it * 2 }
-                    .resample(reduceFn = { it.sum() })
+                    .resample(resampleFn = SimpleResampleFn { it.sum() })
 
             assertThat(resampled.toList(250.0f)).isListOf(12, 8)
         }
