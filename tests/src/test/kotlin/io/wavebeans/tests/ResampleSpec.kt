@@ -90,22 +90,3 @@ object ResampleSpec : Spek({
         }
     }
 })
-
-private fun <T : Any> MetricCollector<T>.collect(): List<TimedValue<T>> {
-    this.collectFromDownstream(Long.MAX_VALUE)
-    val ret = this.collectValues(Long.MAX_VALUE)
-    this.close()
-    return ret
-}
-
-private fun <T : Any> MetricCollector<T>.attachAndRegister(): MetricCollector<T> {
-    if (this.downstreamCollectors.isNotEmpty()) {
-        val startAt = System.currentTimeMillis()
-        while (!this.attachCollector()) {
-            if (System.currentTimeMillis() - startAt > 5000) fail("Can't attach to downstream collector [$this]")
-            sleep(0)
-        }
-    }
-    MetricService.registerConnector(this)
-    return this
-}

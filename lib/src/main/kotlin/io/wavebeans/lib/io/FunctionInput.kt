@@ -15,10 +15,47 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlin.reflect.jvm.jvmName
 
-fun <T : Any> input(generator: (Pair<Long, Float>) -> T?): BeanStream<T> = Input(InputParams(Fn.wrap(generator)))
-fun <T : Any> input(generator: Fn<Pair<Long, Float>, T?>): BeanStream<T> = Input(InputParams(generator))
-fun <T : Any> input(sampleRate: Float, generator: (Pair<Long, Float>) -> T?): BeanStream<T> = Input(InputParams(Fn.wrap(generator), sampleRate))
+/**
+ * Creates an input from provided function. The function has two parameters: the 0-based index and sample rate the input
+ * expected to be evaluated.
+ *
+ * @param generator generator function of two parameters: the 0-based index and sample rate the input
+ *                  expected to be evaluated.
+ */
+fun <T : Any> input(generator: (Pair<Long, Float>) -> T?): BeanStream<T> = input(Fn.wrap(generator))
 
+/**
+ * Creates an input from provided function. The function has two parameters: the 0-based index and sample rate the input
+ * expected to be evaluated.
+ *
+ * @param generator generator function as [Fn] of two parameters: the 0-based index and sample rate the input
+ *                  expected to be evaluated.
+ */
+fun <T : Any> input(generator: Fn<Pair<Long, Float>, T?>): BeanStream<T> = Input(InputParams(generator))
+
+/**
+ * Creates an input from provided function. The function has two parameters: the 0-based index and sample rate the input
+ * expected to be evaluated.
+ *
+ * @param sampleRate the sample rate that input supports.
+ * @param generator generator function of two parameters: the 0-based index and sample rate the input
+ *                  expected to be evaluated.
+ */
+fun <T : Any> input(sampleRate: Float, generator: (Pair<Long, Float>) -> T?): BeanStream<T> = input(sampleRate, Fn.wrap(generator))
+
+/**
+ * Creates an input from provided function. The function has two parameters: the 0-based index and sample rate the input
+ * expected to be evaluated.
+ *
+ * @param sampleRate the sample rate that input supports.
+ * @param generator generator function as [Fn] of two parameters: the 0-based index and sample rate the input
+ *                  expected to be evaluated.
+ */
+fun <T : Any> input(sampleRate: Float, generator: Fn<Pair<Long, Float>, T?>): BeanStream<T> = Input(InputParams(generator, sampleRate))
+
+/**
+ * Serializer for [InputParams]
+ */
 object InputParamsSerializer : KSerializer<InputParams<*>> {
 
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor(InputParams::class.jvmName) {
@@ -51,12 +88,27 @@ object InputParamsSerializer : KSerializer<InputParams<*>> {
 
 }
 
+/**
+ * Tuning parameters for [Input].
+ *
+ * [generator] is a function as [Fn] of two parameters: the 0-based index and sample rate the input expected to be evaluated.
+ * [sampleRate] is the sample rate that input supports, or null if it'll automatically adapt.
+ */
 @Serializable(with = InputParamsSerializer::class)
 class InputParams<T : Any>(
         val generator: Fn<Pair<Long, Float>, T?>,
         val sampleRate: Float? = null
 ) : BeanParams()
 
+/**
+ * Creates an input from provided function. The function has two parameters: the 0-based index and sample rate the input
+ * expected to be evaluated.
+ *
+ * @param parameters the tuning parameters:
+ *  * [InputParams.sampleRate] -- the sample rate that input supports.
+ *  * [InputParams.generator] function as [Fn] of two parameters: the 0-based index and sample rate the input
+ *                  expected to be evaluated.
+*/
 class Input<T : Any>(
         override val parameters: InputParams<T>
 ) : AbstractInputBeanStream<T>(), SourceBean<T>, SinglePartitionBean {

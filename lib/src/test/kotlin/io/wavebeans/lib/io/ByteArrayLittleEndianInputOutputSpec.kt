@@ -36,7 +36,7 @@ private class ByteArrayFileOutputMock(
 
             override fun serialize(element: Sample): ByteArray {
                 val buf = ByteArray(bitDepth.bytesPerSample)
-                writeSampleAsLEBytes(buf, 0, element, bitDepth)
+                buf.encodeSampleLEBytes(0, element, bitDepth)
                 return buf
             }
         }

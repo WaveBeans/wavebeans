@@ -20,6 +20,7 @@ import mu.KotlinLogging
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.io.File
+import java.io.OutputStream
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -484,6 +485,45 @@ object MultiPartitionCorrectnessSpec : Spek({
             assertThat(fileContent).size().isGreaterThan(1)
 
             runLocally(listOf(stream), sampleRate = sampleRate)
+            val fileContentLocal = file.readLines()
+            assertThat(fileContent).isEqualTo(fileContentLocal)
+        }
+    }
+
+    describe("Output as a function") {
+        class NewLineDelimiterFile(
+                file: String,
+                duration: Double,
+        ) : Fn<WriteFunctionArgument<Sample>, Boolean>(
+                FnInitParameters().add("file", file).add("duration", duration)
+        ) {
+
+            private val duration by lazy { initParams.double("duration") }
+            private var file: OutputStream? = null
+
+            override fun apply(argument: WriteFunctionArgument<Sample>): Boolean {
+                if (file == null) {
+                    file = File(initParams.string("file")).outputStream().buffered()
+                }
+                if (argument.phase == WriteFunctionPhase.WRITE) {
+                    file!!.write(String.format("%.10f\n", argument.sample!!.asDouble()).toByteArray())
+                } else if (argument.phase == WriteFunctionPhase.CLOSE) {
+                    file!!.close()
+                    file = null
+                }
+                return argument.sampleIndex / argument.sampleRate < duration
+            }
+        }
+        it("should have the same output as local") {
+            val file = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
+            val stream = seqStream()
+                    .out(NewLineDelimiterFile(file.absolutePath, 0.1))
+
+            runInParallel(listOf(stream))
+            val fileContent = file.readLines()
+            assertThat(fileContent).size().isEqualTo(4411)
+
+            runLocally(listOf(stream))
             val fileContentLocal = file.readLines()
             assertThat(fileContent).isEqualTo(fileContentLocal)
         }

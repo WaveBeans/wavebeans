@@ -3,9 +3,16 @@ package io.wavebeans.lib.io
 import io.wavebeans.lib.BeanStream
 import mu.KotlinLogging
 
-abstract class AbstractStreamOutput<O : Any>(
-        override val input: BeanStream<O>
-) : StreamOutput<O> {
+/**
+ * The base implementation for the output beans. It requests correctly the desired sample rate and makes sure it
+ * corresponds to the sample rate it is asked to process the stream in. If that's succeeded, initializes the input
+ * sequence and creates the [Writer].
+ *
+ * @param I the type of the sample it digests
+ */
+abstract class AbstractStreamOutput<I : Any>(
+        override val input: BeanStream<I>
+) : StreamOutput<I> {
 
     companion object {
         private val log = KotlinLogging.logger { }
@@ -21,5 +28,11 @@ abstract class AbstractStreamOutput<O : Any>(
         return outputWriter(inputSequence, sampleRate)
     }
 
-    abstract fun outputWriter(inputSequence: Sequence<O>, sampleRate: Float): Writer
+    /**
+     * Creates the actual writer of the sequence.
+     *
+     * @param inputSequence the sequence to read from and write.
+     * @param sampleRate the sample rate the output is sampled in, it corresponds with input desired sample rate and as was requested.
+     */
+    abstract fun outputWriter(inputSequence: Sequence<I>, sampleRate: Float): Writer
 }

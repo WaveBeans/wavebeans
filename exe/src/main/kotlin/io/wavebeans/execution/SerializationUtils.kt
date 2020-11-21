@@ -50,5 +50,7 @@ fun SerializersModuleBuilder.beanParams() {
         subclass(FlattenStreamsParams::class, FlattenStreamsParamsSerializer)
         subclass(ResampleStreamParams::class, ResampleStreamParamsSerializer)
         subclass(WavFiniteInputParams::class, WavFiniteInputParams.serializer())
+        subclass(ByteArrayLittleEndianInputParams::class, ByteArrayLittleEndianInputParams.serializer())
+        subclass(FunctionStreamOutputParams::class, FunctionStreamOutputParamsSerializer)
     }
 }

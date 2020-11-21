@@ -75,8 +75,8 @@ class WavFiniteInput(
 
     override fun inputSequence(sampleRate: Float): Sequence<Sample> {
         require(sampleRate == cnt.sampleRate) { "The stream should be resampled from ${cnt.sampleRate}Hz to ${sampleRate}Hz" }
-        return ByteArrayLittleEndianDecoder(cnt.sampleRate, cnt.bitDepth)
-                .sequence(cnt.sampleRate, cnt.buffer)
+        return ByteArrayLittleEndianDecoder(cnt.bitDepth)
+                .sequence(cnt.buffer)
                 .map { samplesProcessed.increment(); it }
     }
 }

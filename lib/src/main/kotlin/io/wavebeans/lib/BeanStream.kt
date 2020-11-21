@@ -32,5 +32,17 @@ interface BeanStream<T : Any> : Bean<T> {
      */
     fun length(sampleRate: Float, timeUnit: TimeUnit = TimeUnit.MILLISECONDS): Long = samplesCountToLength(samplesCount(sampleRate), sampleRate, timeUnit)
 
+    /**
+     * Defines the sample rate the bean desires to stream in, or `null` if it doesn't matter, it can work with any.
+     *
+     *
+     * Most of the operations, like `map()` would just by pass the input value, whereas input operations would define
+     * it strictly, i.e. if samples are read from file and should be interpreted with the certain sample
+     * rate (i.e. wave input).
+     *
+     * Though there are operations like `resample()` which adopt their input and output beans sample rates, in this case
+     * it still reads the sample rate from the input, but returns desired sample rate as requested or as configured.
+     * Whilst doing the resample magic.
+     */
     val desiredSampleRate: Float?
 }
