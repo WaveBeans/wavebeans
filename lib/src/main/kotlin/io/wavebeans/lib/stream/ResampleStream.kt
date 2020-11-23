@@ -57,7 +57,7 @@ class SimpleResampleFn<T : Any>(initParameters: FnInitParameters) : Fn<Resamplin
 
     constructor(reduceFn: Fn<List<T>, T>) : this(FnInitParameters().add("reduceFn", reduceFn))
 
-    constructor(reduceFn: (List<T>) -> T) : this(FnInitParameters().add("reduceFn", wrap(reduceFn)))
+    constructor(reduceFn: (List<T>) -> T) : this(wrap(reduceFn))
 
     private val reduceFn: Fn<List<T>, T> by lazy { initParameters.fn<List<T>, T>("reduceFn") }
 
