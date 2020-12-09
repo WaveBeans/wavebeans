@@ -2,11 +2,10 @@ package io.wavebeans.tests
 
 import assertk.Assert
 import assertk.all
-import assertk.assertions.isEqualTo
-import assertk.assertions.isLessThanOrEqualTo
-import assertk.assertions.isTrue
-import assertk.assertions.size
+import assertk.assertions.*
 import assertk.assertions.support.show
+import io.wavebeans.lib.SampleVector
+import kotlin.math.abs
 
 fun <T> Assert<Iterable<T>>.eachIndexed(expectedSize: Int? = null, f: (Assert<T>, Int) -> Unit) = given { actual ->
     all {
@@ -37,4 +36,10 @@ fun <T> Assert<List<T>>.isContainedBy(expected: List<T>, isEqual: (T, T) -> Bool
         isContained = true
     }
     assertThat(isContained, "the array $actual (size=${actual.size}) to be contained in the $expected (size=${expected.size})").isTrue()
+}
+
+fun Assert<SampleVector>.isEqualTo(expected: SampleVector, precision: Double = 1e-12) = given { actual ->
+    actual.forEachIndexed { index, item ->
+        assertThat(item, name = "${name ?: ""}${show(index, "[]")}").isCloseTo(expected[index], precision)
+    }
 }

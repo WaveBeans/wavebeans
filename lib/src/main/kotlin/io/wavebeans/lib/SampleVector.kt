@@ -13,7 +13,7 @@ typealias SampleVector = DoubleArray
 val EmptySampleVector: SampleVector = SampleVector(0)
 
 /**
- * Creates a [SampleVector] of the list of elements. The elemets are copied into underlying array as a reference.
+ * Creates a [SampleVector] of the list of elements. The elements are copied into underlying array as a reference.
  *
  * @param list the list of sample to create from.
  *
@@ -92,9 +92,21 @@ inline fun SampleVector?.apply(other: SampleVector?, operation: (Sample, Sample)
 operator fun SampleVector?.plus(other: SampleVector?): SampleVector? = apply(other) { a, b -> a + b }
 
 /**
+ * Applies via [apply] the sum of [Sample]s operation.
+ */
+@JvmName("plusNonNullable")
+operator fun SampleVector.plus(other: SampleVector): SampleVector = (this as SampleVector? + other as SampleVector?)!!
+
+/**
  * Applies via [apply] the subtract of [Sample]s operation.
  */
 operator fun SampleVector?.minus(other: SampleVector?): SampleVector? = apply(other) { a, b -> a - b }
+
+/**
+ * Applies via [apply] the subtract of [Sample]s operation.
+ */
+@JvmName("minusNonNullable")
+operator fun SampleVector.minus(other: SampleVector): SampleVector = (this as SampleVector? - other as SampleVector?)!!
 
 /**
  * Applies via [apply] the multiply of [Sample]s operation.
@@ -102,9 +114,21 @@ operator fun SampleVector?.minus(other: SampleVector?): SampleVector? = apply(ot
 operator fun SampleVector?.times(other: SampleVector?): SampleVector? = apply(other) { a, b -> a * b }
 
 /**
+ * Applies via [apply] the multiply of [Sample]s operation.
+ */
+@JvmName("timesNonNullable")
+operator fun SampleVector.times(other: SampleVector): SampleVector = (this as SampleVector? * other as SampleVector?)!!
+
+/**
  * Applies via [apply] the division of [Sample]s operation.
  */
 operator fun SampleVector?.div(other: SampleVector?): SampleVector? = apply(other) { a, b -> a / b }
+
+/**
+ * Applies via [apply] the division of [Sample]s operation.
+ */
+@JvmName("divNonNullable")
+operator fun SampleVector.div(other: SampleVector): SampleVector = (this as SampleVector? / other as SampleVector?)!!
 
 /**
  * Creates a [Window] of [Sample]s out of the window. The [Window.size] is populated as per the [SampleVector] size,
@@ -115,4 +139,40 @@ operator fun SampleVector?.div(other: SampleVector?): SampleVector? = apply(othe
  * @return newly created [Window] of [Sample]s, where all elements are copied over by reference.
  */
 fun SampleVector.window(step: Int? = null): Window<Sample> =
-        Window(this.size, step ?: this.size, this.toList()) { ZeroSample }
+        Window.ofSamples(this.size, step ?: this.size, this.toList())
+
+/**
+ * Adds a scalar [this] to each element of the sample vector [vector].
+ *
+ * @return new instance of the [SampleVector] with operation performed.
+ */
+operator fun Sample.plus(vector: SampleVector): SampleVector = sampleVectorOf(vector.size) { i, _ -> vector[i] + this}
+/**
+ * Adds a scalar [scalar] to each element of the sample vector [this].
+ */
+operator fun SampleVector.plus(scalar: Sample): SampleVector = sampleVectorOf(this.size) { i, _ -> this[i] + scalar}
+/**
+ * Subtracts a scalar [this] from each element of the sample vector [vector].
+ */
+operator fun Sample.minus(vector: SampleVector): SampleVector = sampleVectorOf(vector.size) { i, _ -> this - vector[i]}
+/**
+ * Subtracts a scalar [scalar] from each element of the sample vector [this].
+ */
+operator fun SampleVector.minus(scalar: Sample): SampleVector = sampleVectorOf(this.size) { i, _ -> this[i] - scalar}
+/**
+ * Multiplies a scalar [this] to each element of the sample vector [vector].
+ */
+operator fun Sample.times(vector: SampleVector): SampleVector = sampleVectorOf(vector.size) { i, _ -> vector[i] * this}
+/**
+ * Multiplies a scalar [scalar] to each element of the sample vector [this].
+ */
+operator fun SampleVector.times(scalar: Sample): SampleVector = sampleVectorOf(this.size) { i, _ -> this[i] * scalar}
+/**
+ * Divides each element of sample vector [vector] by a scalar [this].
+ */
+operator fun Sample.div(vector: SampleVector): SampleVector = sampleVectorOf(vector.size) { i, _ -> this / vector[i]}
+/**
+ * Divides a scalar [scalar] by each element of the sample vector [this].
+ */
+operator fun SampleVector.div(scalar: Sample): SampleVector = sampleVectorOf(this.size) { i, _ -> this[i] / scalar}
+
