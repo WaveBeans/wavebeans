@@ -187,7 +187,7 @@ sampleVectorOf(32) { i, n -> sampleOf(i.toDouble() / n) }
 sampleVectorOf(n, ::hammingFunc)
 ```
 
-There are a few operations available on the whole vector, all allows to have both operands as `null`:
+There are a few operations available on the pair of vectors, all allows to have any operand as `null`:
 
 * Sum via `+` sign, or explicit `plus()` call.
 * Subtract via `-` sign or explicit `minus()` call.
@@ -198,7 +198,9 @@ Overall rules for all operations:
 
 * Applies the operation on two vectors, operation is consequently called on each corresponding pair.
 * The vectors might be different length, the result vector has the maximum length of both provided. The absent elements are substituted with `ZeroSample`.
-* Returns `null` only if both operands are `null`, otherwise at least zero-length vector is returned.
+* Returns `null` only if both operands are `null`, otherwise at least zero-length vector is returned. If both operands are of non-nullable type, the result is also of non-nullable type.
+
+Operations with scalar sample are also supported, it is virtually treated as a vector of the same length, but with the same value on each spot.
 
 To define an empty vector you may use constant `EmptySampleVector`.
 
