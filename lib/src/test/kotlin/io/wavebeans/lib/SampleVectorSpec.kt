@@ -6,6 +6,7 @@ import assertk.assertions.*
 import io.wavebeans.lib.stream.window.Window
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
+import io.wavebeans.tests.isEqualTo
 
 object SampleVectorSpec : Spek({
     describe("Creation") {
@@ -53,6 +54,35 @@ object SampleVectorSpec : Spek({
         it("should extract window with the step != size") {
             val a = sampleVectorOf(samples)
             assertThat(a.window(3)).isEqualTo(Window(5, 3, samples) { ZeroSample })
+        }
+    }
+
+    describe("Operations with scalar") {
+        val scalar = sampleOf(0.1)
+        val vector = sampleVectorOf(0.00, 0.01, 0.02, 0.03)
+        it("should add a scalar to each element of the vector") {
+            assertThat(scalar + vector).isEqualTo(sampleVectorOf(0.1, 0.11, 0.12, 0.13))
+        }
+        it("should add a scalar to each element of the vector") {
+            assertThat(vector + scalar).isEqualTo(sampleVectorOf(0.1, 0.11, 0.12, 0.13))
+        }
+        it("should subtract a scalar from each element of the vector") {
+            assertThat(vector - scalar).isEqualTo(sampleVectorOf(-0.1, -0.09, -0.08, -0.07))
+        }
+        it("should subtract a scalar from each element of the vector") {
+            assertThat(scalar - vector).isEqualTo(sampleVectorOf(0.1, 0.09, 0.08, 0.07))
+        }
+        it("should multiply a scalar to each element of the vector") {
+            assertThat(vector * scalar).isEqualTo(sampleVectorOf(0.0, 0.001, 0.002, 0.003))
+        }
+        it("should multiply a scalar to each element of the vector") {
+            assertThat(scalar * vector).isEqualTo(sampleVectorOf(0.0, 0.001, 0.002, 0.003))
+        }
+        it("should divide each element of the vector by a scalar") {
+            assertThat(vector / scalar).isEqualTo(sampleVectorOf(0.0, 0.1, 0.2, 0.3))
+        }
+        it("should get divided each element of the vector on a scalar") {
+            assertThat(scalar / vector).isEqualTo(sampleVectorOf(Double.POSITIVE_INFINITY, 10.0, 5.0, 3.3333333333333))
         }
     }
 
@@ -405,4 +435,24 @@ object SampleVectorSpec : Spek({
             assertThat(a1 / a2).isNull()
         }
     }
+
+    describe("Operations on non-nullable vectors") {
+        val v1 = sampleVectorOf(0.1, 0.2, 0.3)
+        val v2 = sampleVectorOf(0.4, 0.5, 0.6)
+
+        it("should calculate a total sum of vectors after sum") {
+            assertThat((v1 + v2).sum()).isCloseTo(0.1 + 0.4 + 0.2 + 0.5 + 0.3 + 0.6, 1e-12)
+        }
+        it("should calculate a total sum of vectors after subtraction") {
+            assertThat((v1 - v2).sum()).isCloseTo(0.1 - 0.4 + 0.2 - 0.5 + 0.3 - 0.6, 1e-12)
+        }
+        it("should calculate a total sum of vectors after multiplication") {
+            assertThat((v1 * v2).sum()).isCloseTo(0.1 * 0.4 + 0.2 * 0.5 + 0.3 * 0.6, 1e-12)
+        }
+        it("should calculate a total sum of vectors after division") {
+            assertThat((v1 / v2).sum()).isCloseTo(0.1 / 0.4 + 0.2 / 0.5 + 0.3 / 0.6, 1e-12)
+        }
+    }
+
+
 })
