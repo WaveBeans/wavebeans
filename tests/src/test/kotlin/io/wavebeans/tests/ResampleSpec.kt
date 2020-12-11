@@ -1,23 +1,15 @@
 package io.wavebeans.tests
 
+import assertk.all
 import assertk.assertThat
-import assertk.fail
-import io.wavebeans.lib.io.StreamOutput
-import io.wavebeans.lib.io.sine
-import io.wavebeans.lib.io.toMono16bitWav
-import io.wavebeans.lib.io.wave
-import io.wavebeans.lib.stream.map
-import io.wavebeans.lib.stream.resample
-import io.wavebeans.lib.stream.times
-import io.wavebeans.lib.stream.trim
+import assertk.assertions.isNotEmpty
+import io.wavebeans.lib.io.*
+import io.wavebeans.lib.stream.*
 import io.wavebeans.metrics.MetricService
-import io.wavebeans.metrics.collector.MetricCollector
-import io.wavebeans.metrics.collector.TimedValue
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.lifecycle.CachingMode.TEST
 import org.spekframework.spek2.style.specification.describe
 import java.io.File
-import java.lang.Thread.sleep
 import kotlin.math.abs
 
 object ResampleSpec : Spek({
@@ -62,7 +54,7 @@ object ResampleSpec : Spek({
     describe("resampling wav file") {
 
         val input by memoized {
-            (440.sine() * 0.2).trim(100)
+            (440.sine() * 0.2).trim(1000)
         }
 
         val wavFile by memoized {
@@ -72,20 +64,22 @@ object ResampleSpec : Spek({
         }
 
         val outputFile by memoized(TEST) { File.createTempFile("resample", ".wav") }
+        val targetSampleRate = 43210.0f
 
         modes.forEach { (mode, locateFacilitators, evaluate) ->
             it("should perform in $mode mode") {
                 val stream = wavFile.resample(to = 44100.0f)
-                        .map { it * 2.0 }
-                        .resample()
+                        .map { it } // add pointless map-operation to make sure the bean is partitioned
+                        .resample(resampleFn = sincResampleFunc(128))
                         .toMono16bitWav("file://${outputFile.absolutePath}")
 
-                evaluate(stream, 22050.0f, locateFacilitators())
+                evaluate(stream, targetSampleRate, locateFacilitators())
 
-                val samples = (input * 2).toList(22050.0f)
-                assertThat(wave("file://${outputFile.absolutePath}").toList(22050.0f))
-                        .isContainedBy(samples) {a, b -> abs(a - b) < 0.1}
-
+                val samples = input.toList(targetSampleRate)
+                assertThat(wave("file://${outputFile.absolutePath}").toList(targetSampleRate, take = 10000)).all {
+                    isNotEmpty()
+                    isContainedBy(samples) {a, b -> abs(a - b) < 1e-2}
+                }
             }
         }
     }

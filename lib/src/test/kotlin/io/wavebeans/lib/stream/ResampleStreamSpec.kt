@@ -1,13 +1,16 @@
 package io.wavebeans.lib.stream
 
+import assertk.all
 import assertk.assertThat
-import assertk.assertions.*
+import assertk.assertions.endsWith
+import assertk.assertions.isNotEmpty
+import assertk.assertions.isNotNull
+import assertk.assertions.message
 import assertk.catch
 import assertk.fail
 import io.wavebeans.lib.Sample
 import io.wavebeans.lib.io.*
 import io.wavebeans.lib.isListOf
-import io.wavebeans.lib.sampleOf
 import io.wavebeans.lib.stream.fft.fft
 import io.wavebeans.lib.stream.fft.inverseFft
 import io.wavebeans.lib.stream.window.window
@@ -15,7 +18,7 @@ import io.wavebeans.tests.evaluate
 import io.wavebeans.tests.isContainedBy
 import io.wavebeans.tests.toList
 import org.spekframework.spek2.Spek
-import org.spekframework.spek2.lifecycle.CachingMode.*
+import org.spekframework.spek2.lifecycle.CachingMode.SCOPE
 import org.spekframework.spek2.style.specification.describe
 import java.io.File
 import kotlin.math.abs
@@ -24,7 +27,7 @@ object ResampleStreamSpec : Spek({
     describe("Resampling the input to match the output") {
 
         it("should upsample") {
-            val resampled = input(1000.0f) { (i, fs) ->
+            val resampled = inputWithSampleRate(1000.0f) { (i, fs) ->
                 require(fs == 1000.0f) { "Non 1000Hz sample rate is not supported" }
                 if (i < 5) i.toInt() else null
             }.resample()
@@ -33,7 +36,7 @@ object ResampleStreamSpec : Spek({
         }
 
         it("should downsample") {
-            val resampled = input(1000.0f) { (i, fs) ->
+            val resampled = inputWithSampleRate(1000.0f) { (i, fs) ->
                 require(fs == 1000.0f) { "Non 1000Hz sample rate is not supported" }
                 if (i < 5) i.toInt() else null
             }.resample(resampleFn = SimpleResampleFn { it.sum() })
@@ -42,11 +45,11 @@ object ResampleStreamSpec : Spek({
         }
         it("should resample with custom function") {
             fun resample(a: ResamplingArgument<Int>): Sequence<Int> {
-                require(a.inputOutputFactor == 0.5f)
+                require(a.inputOutputScaleFactor == 0.5f)
                 return a.inputSequence.map { listOf(it, -1) }.flatten()
             }
 
-            val resampled = input(1000.0f) { (i, fs) ->
+            val resampled = inputWithSampleRate(1000.0f) { (i, fs) ->
                 require(fs == 1000.0f) { "Non 1000Hz sample rate is not supported" }
                 if (i < 5) i.toInt() else null
             }.resample(resampleFn = ::resample)
@@ -57,7 +60,7 @@ object ResampleStreamSpec : Spek({
 
     describe("Resampling the input to reprocess and then to match the output") {
         it("should upsample") {
-            val resampled = input(1000.0f) { (i, fs) ->
+            val resampled = inputWithSampleRate(1000.0f) { (i, fs) ->
                 require(fs == 1000.0f) { "Non 1000Hz sample rate is not supported" }
                 if (i < 5) i.toInt() else null
             }
@@ -69,7 +72,7 @@ object ResampleStreamSpec : Spek({
         }
 
         it("should downsample") {
-            val resampled = input(1000.0f) { (i, fs) ->
+            val resampled = inputWithSampleRate(1000.0f) { (i, fs) ->
                 require(fs == 1000.0f) { "Non 1000Hz sample rate is not supported" }
                 if (i < 5) i.toInt() else null
             }
@@ -82,14 +85,14 @@ object ResampleStreamSpec : Spek({
 
         it("should resample with custom function") {
             fun resample(a: ResamplingArgument<Int>): Sequence<Int> {
-                require(a.inputOutputFactor == 2.5f || a.inputOutputFactor == 0.1f)
-                return if (a.inputOutputFactor == 2.5f)
+                require(a.inputOutputScaleFactor == 2.5f || a.inputOutputScaleFactor == 0.1f)
+                return if (a.inputOutputScaleFactor == 2.5f)
                     a.inputSequence.map { listOf(it, -1) }.flatten()
                 else
                     a.inputSequence.map { listOf(it, -3) }.flatten()
             }
 
-            val resampled = input(1000.0f) { (i, fs) ->
+            val resampled = inputWithSampleRate(1000.0f) { (i, fs) ->
                 require(fs == 1000.0f) { "Non 1000Hz sample rate is not supported" }
                 if (i < 5) i.toInt() else null
             }
@@ -105,6 +108,30 @@ object ResampleStreamSpec : Spek({
                     8, -3, -2, -3,
             )
         }
+
+        it("should resample and then mix in another generator") {
+            val resampled = inputWithSampleRate(1000.0f) { (i, fs) ->
+                require(fs == 1000.0f) { "Non 1000Hz sample rate is not supported" }
+                if (i < 5) i.toInt() else null
+            }
+                    .resample(to = 2000.0f)
+                    .map { it * 2 }
+                    .resample(resampleFn = SimpleResampleFn { it.sum() })
+
+            val generator = input { (i, fs) ->
+                require(fs == 1000.0f) { "Non 1000Hz sample rate is not supported" }
+                if (i < 5) (i * 10).toInt() else null
+            }
+
+            val mix = resampled.merge(generator) { (a, b) -> requireNotNull(a); requireNotNull(b); a + b }
+            assertThat(mix.toList(1000.0f)).isListOf(
+                    0 * 2 + 0 * 2 + 0,
+                    1 * 2 + 1 * 2 + 10,
+                    2 * 2 + 2 * 2 + 20,
+                    3 * 2 + 3 * 2 + 30,
+                    4 * 2 + 4 * 2 + 40,
+            )
+        }
     }
 
     describe("Samples in wav-files") {
@@ -112,7 +139,7 @@ object ResampleStreamSpec : Spek({
         val outputFile by memoized(SCOPE) { File.createTempFile("temp", ".wav") }
         val streamFromProcessedWavfFile by memoized(SCOPE) {
             input
-                    .resample(to = 16000.0f)
+                    .resample(to = 44100.0f)
                     .resample()
                     .toMono16bitWav("file://${outputFile.absolutePath}")
                     .evaluate(8000.0f)
@@ -121,21 +148,31 @@ object ResampleStreamSpec : Spek({
 
         it("should resample 8000Hz sample rate to 4000Hz after reading from file") {
             val samples = streamFromProcessedWavfFile.resample().toList(4000.0f).take(1000)
-            assertThat(samples).isContainedBy(input.toList(4000.0f, take = 1000)) { a, b -> abs(a - b) < 0.1 }
+            assertThat(samples).all {
+                isNotEmpty()
+                isContainedBy(input.toList(4000.0f, take = 1500)) { a, b -> abs(a - b) < 1e-2 }
+            }
         }
-        it("should resample 8000Hz sample rate to 4000Hz after reading from file and mixing it with the generator") {
-            val generatorStream = (880.sine() * 0.2).trim(1000)
-            val samples = (streamFromProcessedWavfFile + generatorStream).resample().toList(4000.0f).take(1000)
-            assertThat(samples).isContainedBy((input + generatorStream).toList(4000.0f, take = 1100)) { a, b -> abs(a - b) < 0.1 }
+        it("should resample 8000Hz sample rate to 4321Hz after reading from file") {
+            val samples = streamFromProcessedWavfFile.resample().toList(4321.0f).take(1000)
+            assertThat(samples).all {
+                isNotEmpty()
+                isContainedBy(input.toList(4321.0f, take = 1500)) { a, b -> abs(a - b) < 1e-2 }
+            }
         }
         it("should resample 8000Hz sample rate to 16000Hz after reading from file") {
             val samples = streamFromProcessedWavfFile.resample().toList(16000.0f).take(1000)
-            assertThat(samples).isContainedBy(input.toList(16000.0f, take = 1000)) { a, b -> abs(a - b) < 0.1 }
+            assertThat(samples).all {
+                isNotEmpty()
+                isContainedBy(input.toList(16000.0f, take = 1500)) { a, b -> abs(a - b) < 1e-2 }
+            }
         }
-        it("should resample 8000Hz sample rate to 16000Hz after reading from file and mixing it with the generator") {
-            val generatorStream = (880.sine() * 0.2).trim(1000)
-            val samples = (streamFromProcessedWavfFile + generatorStream).resample().toList(16000.0f).take(1000)
-            assertThat(samples).isContainedBy((input + generatorStream).toList(16000.0f, take = 1000)) { a, b -> abs(a - b) < 0.1 }
+        it("should resample 8000Hz sample rate to 12345Hz after reading from file") {
+            val samples = streamFromProcessedWavfFile.resample().toList(12345.0f).take(1000)
+            assertThat(samples).all {
+                isNotEmpty()
+                isContainedBy(input.toList(12345.0f, take = 1500)) { a, b -> abs(a - b) < 1e-2 }
+            }
         }
         it("should resample 8000Hz sample rate to 16000Hz after reading from file and passing through FFT-Inverse FFT process") {
             val samples = streamFromProcessedWavfFile
@@ -145,8 +182,11 @@ object ResampleStreamSpec : Spek({
                     .flatten()
                     .resample()
                     .toList(16000.0f)
-                    .take(2000)
-            assertThat(samples).isContainedBy(input.toList(16000.0f, take = 2000)) { a, b -> abs(a - b) < 0.1 }
+                    .take(1000)
+            assertThat(samples).all {
+                isNotEmpty()
+                isContainedBy(input.toList(16000.0f, take = 2000)) { a, b -> abs(a - b) < 1e-2 }
+            }
         }
         it("should fail streaming without resample() via /dev/null writer") {
             val e = catch { streamFromProcessedWavfFile.toDevNull().evaluate(16000.0f) }

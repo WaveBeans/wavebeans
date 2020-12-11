@@ -105,6 +105,7 @@ class FileWriterDelegate<A : Any>(
     }
 
     private fun doFinalizeBuffer(headerFn: () -> ByteArray?, footerFn: () -> ByteArray?) {
+        if (isEmpty) throw IllegalStateException("[$this] Attempting to finalize uninitialized buffer")
         log.info { "[$this] Closing the buffer..." }
         try {
             buffer.close()

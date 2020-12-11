@@ -41,7 +41,7 @@ fun <T : Any> input(generator: Fn<Pair<Long, Float>, T?>): BeanStream<T> = Input
  * @param generator generator function of two parameters: the 0-based index and sample rate the input
  *                  expected to be evaluated.
  */
-fun <T : Any> input(sampleRate: Float, generator: (Pair<Long, Float>) -> T?): BeanStream<T> = input(sampleRate, Fn.wrap(generator))
+fun <T : Any> inputWithSampleRate(sampleRate: Float, generator: (Pair<Long, Float>) -> T?): BeanStream<T> = input(sampleRate, Fn.wrap(generator))
 
 /**
  * Creates an input from provided function. The function has two parameters: the 0-based index and sample rate the input
