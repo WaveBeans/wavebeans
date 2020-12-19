@@ -45,7 +45,7 @@ object ResampleStreamSpec : Spek({
         }
         it("should resample with custom function") {
             fun resample(a: ResamplingArgument<Int>): Sequence<Int> {
-                require(a.inputOutputScaleFactor == 0.5f)
+                require(a.resamplingFactor == 0.5f)
                 return a.inputSequence.map { listOf(it, -1) }.flatten()
             }
 
@@ -85,8 +85,8 @@ object ResampleStreamSpec : Spek({
 
         it("should resample with custom function") {
             fun resample(a: ResamplingArgument<Int>): Sequence<Int> {
-                require(a.inputOutputScaleFactor == 2.5f || a.inputOutputScaleFactor == 0.1f)
-                return if (a.inputOutputScaleFactor == 2.5f)
+                require(a.resamplingFactor == 2.5f || a.resamplingFactor == 0.1f)
+                return if (a.resamplingFactor == 2.5f)
                     a.inputSequence.map { listOf(it, -1) }.flatten()
                 else
                     a.inputSequence.map { listOf(it, -3) }.flatten()
