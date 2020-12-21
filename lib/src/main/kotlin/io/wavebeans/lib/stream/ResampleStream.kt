@@ -177,7 +177,7 @@ object ResampleStreamParamsSerializer : KSerializer<ResampleStreamParams<*>> {
  * Resamples the stream of type [T] to match the output stream sample rate unless the [ResampleStreamParams.to] argument is specified explicitly.
  * The resampling is performed with the [ResampleStreamParams.resampleFn].
  *
- * @param T
+ * @param T the type of the sample being processed.
  */
 class ResampleStream<T : Any>(
         override val input: BeanStream<T>,
