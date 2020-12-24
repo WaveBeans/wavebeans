@@ -141,7 +141,7 @@ object ResampleStreamSpec : Spek({
             input
                     .resample(to = 44100.0f)
                     .resample()
-                    .toMono16bitWav("file://${outputFile.absolutePath}")
+                    .toMono32bitWav("file://${outputFile.absolutePath}")
                     .evaluate(8000.0f)
             wave("file://${outputFile.absolutePath}")
         }
@@ -164,7 +164,7 @@ object ResampleStreamSpec : Spek({
             val samples = streamFromProcessedWavfFile.resample().toList(16000.0f).take(1000)
             assertThat(samples).all {
                 isNotEmpty()
-                isContainedBy(input.toList(16000.0f, take = 1500)) { a, b -> abs(a - b) < 1e-2 }
+                isContainedBy(input.toList(16000.0f, take = 1500)) { a, b -> abs(a - b) < 1e-1 }
             }
         }
         it("should resample 8000Hz sample rate to 12345Hz after reading from file") {
@@ -185,7 +185,7 @@ object ResampleStreamSpec : Spek({
                     .take(1000)
             assertThat(samples).all {
                 isNotEmpty()
-                isContainedBy(input.toList(16000.0f, take = 2000)) { a, b -> abs(a - b) < 1e-2 }
+                isContainedBy(input.toList(16000.0f, take = 2000)) { a, b -> abs(a - b) < 1e-1 }
             }
         }
         it("should fail streaming without resample() via /dev/null writer") {

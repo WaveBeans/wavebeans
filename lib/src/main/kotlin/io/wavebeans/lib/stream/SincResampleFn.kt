@@ -22,17 +22,20 @@ fun sincResampleFunc(windowSize: Int = 32): SincResampleFn<Sample, SampleVector>
             },
             extractNextVectorFn = { a ->
                 val (size, offset, window, iterator) = a
+                var hasData = false
                 sampleVectorOf(size) { i, n ->
                     if (i < n - offset) {
                         window[i + offset]
                     } else {
-                        if (iterator.hasNext()) iterator.next()
+                        if (iterator.hasNext()) {
+                            hasData = true
+                            iterator.next()
+                        }
                         else ZeroSample
                     }
-                }
-
+                }.let { if (!hasData) it[0] = Double.NaN; it }
             },
-            isNotEmptyFn = { vector -> vector.all { it != ZeroSample } },
+            isNotEmptyFn = { vector -> !vector[0].isNaN() },
             applyFn = { (x, h) -> (h * x).sum() }
     )
 }
@@ -193,13 +196,12 @@ class SincResampleFn<T : Any, L : Any>(initParameters: FnInitParameters) : Fn<Re
         }
 
         // resampling
+        val halfWindowSize = windowSize / 2
         fun h(t: Double, x: Double): DoubleArray {
             val p = t * fs - truncate(x * fs)
-            return sampleVectorOf(
-                    (-windowSize / 2 until windowSize / 2)
-                            .map { it - p }
-                            .map { sinc(it) }
-            )
+            return sampleVectorOf(windowSize) { i, _ ->
+                sinc(i - halfWindowSize - p)
+            }
         }
 
         var timeMarker = 0.0

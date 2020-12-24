@@ -17,6 +17,7 @@ import kotlin.reflect.jvm.jvmName
 /**
  * Resamples the stream of [Sample]s to match the output stream sample rate unless the [to] argument is specified explicitly.
  * The resampling is performed with the [resampleFn].
+ * If the sampling rate is not changed the resampling function is not called at all.
  *
  * @param to if specified used as a target sample rate, otherwise specified as a derivative from downstream output
  *           or another resample bean.
@@ -36,6 +37,7 @@ fun BeanStream<Sample>.resample(
 /**
  * Resamples the stream of [Sample]s to match the output stream sample rate unless the [to] argument is specified explicitly.
  * The resampling is performed with the [resampleFn], where default implementation is [sincResampleFunc].
+ * If the sampling rate is not changed the resampling function is not called at all.
  *
  * @param to if specified used as a target sample rate, otherwise specified as a derivative from downstream output
  *        or another resample bean.
@@ -56,6 +58,7 @@ fun BeanStream<Sample>.resample(
 /**
  * Resamples the stream of type [T] to match the output stream sample rate unless the [to] argument is specified explicitly.
  * The resampling is performed with the [resampleFn].
+ * If the sampling rate is not changed the resampling function is not called at all.
  *
  * @param to if specified used as a target sample rate, otherwise specified as a derivative from downstream output
  *        or another resample bean.
@@ -76,6 +79,7 @@ fun <T : Any> BeanStream<T>.resample(
  * Resamples the stream of type [T] to match the output stream sample rate unless the [to] argument is specified explicitly.
  * The resampling is performed with the [resampleFn], where default implementation is [SimpleResampleFn] without
  * [SimpleResampleFn.reduceFn].
+ * If the sampling rate is not changed the resampling function is not called at all.
  *
  * @param to if specified used as a target sample rate, otherwise specified as a derivative from downstream output
  *        or another resample bean.
@@ -174,8 +178,9 @@ object ResampleStreamParamsSerializer : KSerializer<ResampleStreamParams<*>> {
 }
 
 /**
- * Resamples the stream of type [T] to match the output stream sample rate unless the [ResampleStreamParams.to] argument is specified explicitly.
- * The resampling is performed with the [ResampleStreamParams.resampleFn].
+ * Resamples the stream of type [T] to match the output stream sample rate unless the [ResampleStreamParams.to]
+ * argument is specified explicitly. The resampling is performed with the [ResampleStreamParams.resampleFn].
+ * If the sampling rate is not changed the resampling function is not called at all.
  *
  * @param T the type of the sample being processed.
  */
@@ -194,9 +199,15 @@ class ResampleStream<T : Any>(
         val ifs = input.desiredSampleRate ?: sampleRate
         val ofs = parameters.to ?: sampleRate
         val sequence = input.asSequence(ifs)
-        val factor = ofs / ifs
-        val argument = ResamplingArgument(ifs, ofs, factor, sequence)
-        log.trace { "Initialized resampling from ${ifs}Hz to ${ofs}Hz [$argument]" }
-        return parameters.resampleFn.apply(argument)
+        return if (ifs == ofs) {
+            log.trace { "[$this] By-passing resampling as input sample rate (${ifs}Hz) == output sample rate (${ofs}Hz) [input=$input, parameters=$parameters]" }
+            sequence
+        } else {
+            val factor = ofs / ifs
+            val argument = ResamplingArgument(ifs, ofs, factor, sequence)
+            log.trace { "[$this] Initialized resampling from ${ifs}Hz to ${ofs}Hz ($argument) [input=$input, parameters=$parameters]" }
+            parameters.resampleFn.apply(argument)
+        }
+
     }
 }
