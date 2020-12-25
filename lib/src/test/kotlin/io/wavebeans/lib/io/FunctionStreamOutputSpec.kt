@@ -139,6 +139,9 @@ object FunctionStreamOutputSpec : Spek({
                         }
                     }
                     CLOSE -> file.close()
+                    END -> {
+                        /** nothing to do */
+                    }
                 }
                 return true
             }

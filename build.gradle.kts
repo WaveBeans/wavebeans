@@ -5,6 +5,7 @@ plugins {
 
     kotlin("jvm") version kotlinVersion
     id("com.jfrog.bintray") version "1.8.4"
+    id("org.gradle.test-retry") version "1.2.0"
 
     `java-library`
     `maven-publish`
@@ -13,6 +14,7 @@ plugins {
 allprojects {
     apply {
         plugin("kotlin")
+        plugin("org.gradle.test-retry")
     }
 
     repositories {
@@ -20,17 +22,8 @@ allprojects {
         mavenCentral()
     }
 
-    val compileKotlin: KotlinCompile by tasks
-    compileKotlin.kotlinOptions {
-        jvmTarget = "1.8"
-    }
-
-    val compileTestKotlin: KotlinCompile by tasks
-    compileTestKotlin.kotlinOptions {
-        jvmTarget = "1.8"
-    }
-
     tasks.withType<KotlinCompile>().all {
+        kotlinOptions.jvmTarget = "1.8"
         kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlin.ExperimentalStdlibApi"
         kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlinx.serialization.ExperimentalSerializationApi"
         kotlinOptions.freeCompilerArgs += "-Xopt-in=io.ktor.util.KtorExperimentalAPI"
@@ -67,6 +60,11 @@ subprojects {
             includeEngines("spek2")
         }
         maxHeapSize = "2g"
+        // that attempts to fix flaky tests once and for all
+        retry {
+            maxRetries.set(3)
+            maxFailures.set(10)
+        }
     }
 
     tasks.jar {
