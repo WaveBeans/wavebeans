@@ -1,1 +1,0 @@
-* Improvements on [SampleVector](/docs/user/api/readme.md#samplevector) type, i.e. arithmetic operation with scalars, an operation on two non-nullable vector gets non-nullable result. 

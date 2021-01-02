@@ -1,3 +1,19 @@
+Version 0.3.0 on 2021-01-02
+------
+
+* **[Breaking changes]** SampleArray renamed to [SampleVector](/docs/user/api/readme.md#samplevector) as well as it has wider API and usage overall.
+* **[Breaking changes]** Now based on Kotlin 1.4. Previous Kotlin versions are not guaranteed to work.
+    * Kotlin 1.4.21
+* [ [#31](https://github.com/WaveBeans/wavebeans/issues/31) ] [Flatten](/docs/user/api/operations/flatten.md) operation.
+* [ [#86](https://github.com/WaveBeans/wavebeans/issues/86) ] [Managing](/docs/user/api/readme.md#managed-type) and controlling [WAV](/docs/user/api/outputs/wav-output.md#controlling-output) and [CSV](/docs/user/api/outputs/csv-outputs.md#controlling-output) outputs
+* [Output as a function](/docs/user/api/outputs/output-as-a-function.md)
+* [Inverse FFT](/docs/user/api/operations/fft-operation.md#inverse-fft) implementation
+* [Window functions](/docs/user/api/operations/fft-operation.md#window-functions) are available as separate convenience functions 
+* [Resample](/docs/user/api/operations/resample-operation.md) operation
+    * An automatic resampling for [wav-file inputs](/docs/user/api/inputs/wav-file.md#resampling)
+* Monitoring: metrics system, internal collectors and Prometheus exporter. More in [docs](/docs/user/ops/monitoring.md). 
+* Improvements on [SampleVector](/docs/user/api/readme.md#samplevector) type, i.e. arithmetic operation with scalars, an operation on two non-nullable vector gets non-nullable result. 
+
 Version 0.2.0 on 2020-08-12
 ------
 

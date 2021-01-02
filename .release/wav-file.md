@@ -1,1 +1,0 @@
-* An automatic resampling for [wav-file inputs](/docs/user/api/inputs/wav-file.md#resampling)
