@@ -95,26 +95,12 @@ data class PodRef(
             val beanType = tailBean::class.createType(tailBean::class.typeParameters.map { KTypeProjection.STAR })
             return if (splitToPartitions == null) {
                 if (tailBean is SinkBean<*>) {
-                    PodRegistry.createPod(
-                            beanType,
-                            key,
-                            sampleRate,
-                            tailBean
-                    )
+                    PodRegistry.createPod(beanType, key, sampleRate, tailBean)
                 } else {
-                    PodRegistry.createPod(
-                            beanType,
-                            key,
-                            tailBean
-                    )
+                    PodRegistry.createPod(beanType, key, tailBean)
                 }
             } else {
-                PodRegistry.createSplittingPod(
-                        beanType,
-                        key,
-                        tailBean,
-                        splitToPartitions
-                )
+                PodRegistry.createSplittingPod(beanType, key, tailBean, splitToPartitions)
             }
         } catch (e: Exception) {
             throw IllegalStateException("Can't instantiate Pod=$this", e)
