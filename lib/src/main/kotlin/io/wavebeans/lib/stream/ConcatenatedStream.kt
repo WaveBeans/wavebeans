@@ -27,6 +27,8 @@ class ConcatenatedFiniteStream<T : Any>(
     override fun length(timeUnit: TimeUnit): Long {
         return stream1.length(timeUnit) + stream2.length(timeUnit)
     }
+
+    override fun samplesCount(): Long = stream1.samplesCount() + stream2.samplesCount()
 }
 
 class ConcatenatedStream<T : Any>(

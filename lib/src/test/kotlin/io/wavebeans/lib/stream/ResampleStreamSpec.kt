@@ -143,7 +143,7 @@ object ResampleStreamSpec : Spek({
                     .resample()
                     .toMono32bitWav("file://${outputFile.absolutePath}")
                     .evaluate(8000.0f)
-            wave("file://${outputFile.absolutePath}")
+            wave("file://${outputFile.absolutePath}", resampleFn = null)
         }
 
         it("should resample 8000Hz sample rate to 4000Hz after reading from file") {

@@ -23,6 +23,8 @@ object ZeroFillingFiniteSampleStreamSpec : Spek({
             get() = throw UnsupportedOperationException()
 
         override val desiredSampleRate: Float? = null
+
+        override fun samplesCount(): Long  = throw UnsupportedOperationException()
     }
 
 

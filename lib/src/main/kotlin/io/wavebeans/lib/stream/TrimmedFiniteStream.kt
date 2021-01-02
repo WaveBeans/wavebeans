@@ -3,6 +3,7 @@ package io.wavebeans.lib.stream
 import io.wavebeans.lib.*
 import kotlinx.serialization.Serializable
 import java.util.concurrent.TimeUnit
+import kotlin.properties.Delegates
 
 fun <T:Any> BeanStream<T>.trim(length: Long, timeUnit: TimeUnit = TimeUnit.MILLISECONDS): FiniteStream<T> =
         TrimmedFiniteStream(this, TrimmedFiniteSampleStreamParams(length, timeUnit))
@@ -19,12 +20,15 @@ class TrimmedFiniteStream<T : Any>(
         override val parameters: TrimmedFiniteSampleStreamParams
 ) : AbstractOperationBeanStream<T, T>(input), FiniteStream<T>, SingleBean<T>, SinglePartitionBean {
 
+    var outputSampleCount by Delegates.notNull<Long>()
+
     override fun operationSequence(input: Sequence<T>, sampleRate: Float): Sequence<T> {
-        var samplesToTake = timeToSampleIndexFloor(
+        outputSampleCount = timeToSampleIndexFloor(
                 TimeUnit.NANOSECONDS.convert(parameters.length, parameters.timeUnit),
                 TimeUnit.NANOSECONDS,
                 sampleRate
         )
+        var samplesToTake = outputSampleCount
         val iterator = input.iterator()
 
         return object : Iterator<T> {
@@ -42,5 +46,7 @@ class TrimmedFiniteStream<T : Any>(
     }
 
     override fun length(timeUnit: TimeUnit): Long = timeUnit.convert(parameters.length, parameters.timeUnit)
+
+    override fun samplesCount(): Long = outputSampleCount
 
 }

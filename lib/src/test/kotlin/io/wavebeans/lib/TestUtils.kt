@@ -1,22 +1,19 @@
 package io.wavebeans.lib
 
 import assertk.Assert
-import assertk.all
 import assertk.assertions.each
 import assertk.assertions.isCloseTo
-import assertk.assertions.isEqualTo
 import assertk.assertions.prop
 import assertk.assertions.support.expected
 import assertk.assertions.support.fail
 import assertk.assertions.support.show
 import io.wavebeans.lib.io.ByteArrayLittleEndianInput
 import io.wavebeans.lib.io.ByteArrayLittleEndianInputParams
-import io.wavebeans.lib.io.FiniteInput
 import io.wavebeans.lib.math.ComplexNumber
 import io.wavebeans.lib.math.minus
 import io.wavebeans.lib.math.plus
-import io.wavebeans.lib.stream.FiniteInputStream
 import io.wavebeans.lib.stream.AfterFilling
+import io.wavebeans.lib.stream.FiniteStream
 import io.wavebeans.lib.stream.stream
 import io.wavebeans.lib.stream.window.Window
 import org.spekframework.spek2.dsl.Skip
@@ -58,21 +55,18 @@ fun Assert<ComplexNumber>.isCloseTo(value: ComplexNumber, delta: ComplexNumber) 
 fun Suite.itShouldHave(what: String, body: TestBody.() -> Unit) = this.it("should have $what", skip = Skip.No, body = body)
 
 fun Iterable<Int>.stream(sampleRate: Float, bitDepth: BitDepth = BitDepth.BIT_8): BeanStream<Sample> {
-    return FiniteInputStream(
-            this.map {
-                when (bitDepth) {
-                    BitDepth.BIT_8 -> listOf(it.toByte())
-                    BitDepth.BIT_16 -> listOf((it shr 8) and 0xFF, it and 0xFF).map { i -> i.toByte() }.reversed()
-                    BitDepth.BIT_24 -> TODO()
-                    BitDepth.BIT_32 -> listOf((it shr 24) and 0xFF, (it shr 16) and 0xFF, (it shr 8) and 0xFF, it and 0xFF).map { i -> i.toByte() }.reversed()
-                    BitDepth.BIT_64 -> TODO()
-                }
-            }.flatten().toList().toByteArray().asInput(sampleRate, bitDepth),
-            NoParams()
-    ).stream(AfterFilling(ZeroSample))
+    return this.map {
+        when (bitDepth) {
+            BitDepth.BIT_8 -> listOf(it.toByte())
+            BitDepth.BIT_16 -> listOf((it shr 8) and 0xFF, it and 0xFF).map { i -> i.toByte() }.reversed()
+            BitDepth.BIT_24 -> TODO()
+            BitDepth.BIT_32 -> listOf((it shr 24) and 0xFF, (it shr 16) and 0xFF, (it shr 8) and 0xFF, it and 0xFF).map { i -> i.toByte() }.reversed()
+            BitDepth.BIT_64 -> TODO()
+        }
+    }.flatten().toList().toByteArray().asInput(sampleRate, bitDepth).stream(AfterFilling(ZeroSample))
 }
 
-fun ByteArray.asInput(sampleRate: Float, bitDepth: BitDepth = BitDepth.BIT_8): FiniteInput<Sample> =
+fun ByteArray.asInput(sampleRate: Float, bitDepth: BitDepth = BitDepth.BIT_8): FiniteStream<Sample> =
         ByteArrayLittleEndianInput(ByteArrayLittleEndianInputParams(sampleRate, bitDepth, this))
 
 fun <T> Int.repeat(f: (Int) -> T): List<T> = (0 until this).map { f(it) }
@@ -94,7 +88,7 @@ class IntStream(
         val seq: List<Int>,
         val start: Long = 0,
         val end: Long? = null,
-        val timeUnit: TimeUnit = TimeUnit.MILLISECONDS
+        val timeUnit: TimeUnit = TimeUnit.MILLISECONDS,
 ) : BeanStream<Sample> {
     override fun asSequence(sampleRate: Float): Sequence<Sample> {
         val startIdx = timeToSampleIndexFloor(start, timeUnit, sampleRate).toInt()
@@ -117,7 +111,7 @@ class DoubleStream(
         val seq: List<Double>,
         val start: Long = 0,
         val end: Long? = null,
-        val timeUnit: TimeUnit = TimeUnit.MILLISECONDS
+        val timeUnit: TimeUnit = TimeUnit.MILLISECONDS,
 ) : BeanStream<Sample> {
     override fun asSequence(sampleRate: Float): Sequence<Sample> {
         val startIdx = timeToSampleIndexFloor(start, timeUnit, sampleRate).toInt()
@@ -141,7 +135,7 @@ fun <T> Assert<List<T>>.at(idx: Int): Assert<T> = this.prop("[$idx]") { it[idx] 
 fun seqStream() = SeqInput()
 
 class SeqInput constructor(
-        val params: NoParams = NoParams()
+        val params: NoParams = NoParams(),
 ) : BeanStream<Sample>, SourceBean<Sample>, SinglePartitionBean {
 
     private val seq = (0..10_000_000_000).asSequence().map { 1e-10 * it }

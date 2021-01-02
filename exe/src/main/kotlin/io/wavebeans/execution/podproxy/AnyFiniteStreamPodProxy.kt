@@ -19,4 +19,12 @@ class AnyFiniteStreamPodProxy(
                 .get(5000, TimeUnit.MILLISECONDS)
                 .value()
     }
+
+    override fun samplesCount(): Long {
+        val bush = podDiscovery.bushFor(pointedTo)
+        val caller = bushCallerRepository.create(bush, pointedTo)
+        return caller.call("samplesCount")
+                .get(5000, TimeUnit.MILLISECONDS)
+                .value()
+    }
 }

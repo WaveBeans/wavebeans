@@ -80,7 +80,7 @@ The [function](../functions.md) takes `List<T>` as an argument and expects to re
 
 ### A sinc interpolation
 
-The sinc interpolation algorithm is based on ideas of [Whittaker–Shannon interpolation formula](https://en.wikipedia.org/wiki/Whittaker%E2%80%93Shannon_interpolation_formula). For samples there is a built in implementation which is used by default. It has the only parameter `windowSize` that is used to calculate the certain sample sinc values, the higher value the better results, but it also means the signal will be delayed by that amount of samples, as well as more CPU cycles will be used for the specific sample, as usual it is a trade off between the quality, performance and signal delay.
+The sinc interpolation algorithm is based on ideas of [Whittaker–Shannon interpolation formula](https://en.wikipedia.org/wiki/Whittaker%E2%80%93Shannon_interpolation_formula). For samples there is a built in implementation which is used by default, it can be created with a function call `io.wavebeans.lib.stream.SincResampleFnKt.sincResampleFunc`. It has the only parameter `windowSize` that is used to calculate the certain sample sinc values, the higher value the better results, but it also means the signal will be delayed by that amount of samples, as well as more CPU cycles will be used for the specific sample, as usual it is a trade off between the quality, performance and signal delay.
 
 For other type you would need to implement a few simple functions, and provide `windowSize`. On high level the functions are called this way:
 

@@ -1,6 +1,7 @@
 package io.wavebeans.lib.io
 
 import io.wavebeans.lib.BeanStream
+import io.wavebeans.lib.SourceBean
 import mu.KotlinLogging
 
 /**
@@ -9,7 +10,7 @@ import mu.KotlinLogging
  *
  * @param O the type of the sample it outputs.
  */
-abstract class AbstractInputBeanStream<O : Any> : BeanStream<O> {
+abstract class AbstractInputBeanStream<O : Any> : BeanStream<O>, SourceBean<O> {
 
     companion object {
         private val log = KotlinLogging.logger { }

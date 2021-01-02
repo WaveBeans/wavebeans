@@ -92,4 +92,6 @@ class ListAsInput<T : Any>(
     override fun length(timeUnit: TimeUnit): Long = 0
 
     override val desiredSampleRate: Float? = null
+
+    override fun samplesCount(): Long = parameters.list.size.toLong()
 }

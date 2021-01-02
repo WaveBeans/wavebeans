@@ -76,4 +76,8 @@ abstract class MergingPodProxy(
     override fun length(timeUnit: TimeUnit): Long {
         throw UnsupportedOperationException("Not a finite pod proxy")
     }
+
+    override fun samplesCount(): Long {
+        throw UnsupportedOperationException("Not a finite pod proxy")
+    }
 }

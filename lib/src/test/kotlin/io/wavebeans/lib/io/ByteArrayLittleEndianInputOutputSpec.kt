@@ -3,7 +3,6 @@ package io.wavebeans.lib.io
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import io.wavebeans.lib.*
-import io.wavebeans.lib.stream.FiniteInputStream
 import io.wavebeans.lib.stream.FiniteStream
 import io.wavebeans.lib.stream.rangeProjection
 import io.wavebeans.lib.stream.trim
@@ -67,7 +66,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
 
         describe("output based on that input") {
             val output = ByteArrayFileOutputMock(
-                    FiniteInputStream(input, NoParams()),
+                    input,
                     BitDepth.BIT_8
             )
 
@@ -141,7 +140,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
         val buffer16 = ByteArray(200) { (it and 0xFF).toByte() }
         val input = buffer16.asInput(sampleRate, BitDepth.BIT_16)
 
-        itShouldHave("number of samples 100") { assertThat(input.samplesCount()).isEqualTo(100) }
+        itShouldHave("number of samples 100") { assertThat(input.samplesCount()).isEqualTo(100L) }
         itShouldHave("length 2000ms") { assertThat(input.length(MILLISECONDS)).isEqualTo(2000L) }
 
         describe("samples with samples made of byte range [0,200)") {
@@ -154,7 +153,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
 
         describe("output based on that input") {
             val output = ByteArrayFileOutputMock(
-                    FiniteInputStream(input, NoParams()),
+                    input,
                     BitDepth.BIT_16
             )
 
@@ -187,22 +186,22 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
 
     describe("Output of ByteArray LE, sequence of -100:100, encoding to 16 bit ") {
         val signal = (-100 until 100).toList()
-        val output = ByteArrayFileOutputMock(FiniteInputStream<Sample>(
-                object : FiniteInput<Sample> {
+        val output = ByteArrayFileOutputMock(
+                object : FiniteStream<Sample> {
                     override val parameters: BeanParams
                         get() = throw UnsupportedOperationException()
 
                     override fun length(timeUnit: TimeUnit): Long = Long.MAX_VALUE
 
-                    override fun samplesCount(): Int = throw UnsupportedOperationException()
+                    override fun samplesCount(): Long = throw UnsupportedOperationException()
 
                     override fun asSequence(sampleRate: Float): Sequence<Sample> =
                             signal.asSequence().map { el -> sampleOf(el.toShort()) }
 
                     override val desiredSampleRate: Float? = null
-                },
-                NoParams()
-        ), BitDepth.BIT_16)
+
+                    override fun inputs(): List<AnyBean>  = throw UnsupportedOperationException()
+                }, BitDepth.BIT_16)
 
         it("output should be equal to 16 byte array 0-0x0F") {
             assertThat(output.readBytes(sampleRate).map { it.toInt() and 0xFF })
@@ -212,14 +211,14 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
 
     describe("Output of ByteArray LE, sequence of -100:100, encoding to 24 bit ") {
         val signal = (-100 until 100).toList()
-        val output = ByteArrayFileOutputMock(FiniteInputStream<Sample>(
-                object : FiniteInput<Sample> {
+        val output = ByteArrayFileOutputMock(
+                object : FiniteStream<Sample> {
                     override val parameters: BeanParams
                         get() = throw UnsupportedOperationException()
 
                     override fun length(timeUnit: TimeUnit): Long = Long.MAX_VALUE
 
-                    override fun samplesCount(): Int = throw UnsupportedOperationException()
+                    override fun samplesCount(): Long = throw UnsupportedOperationException()
 
                     override fun asSequence(sampleRate: Float): Sequence<Sample> =
                             signal.asSequence()
@@ -227,9 +226,8 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
 
                     override val desiredSampleRate: Float? = null
 
-                },
-                NoParams()
-        ), BitDepth.BIT_24)
+                    override fun inputs(): List<AnyBean>  = throw UnsupportedOperationException()
+                }, BitDepth.BIT_24)
 
         it("output should correspond to input signal") {
             assertThat(output.readBytes(sampleRate).map { it.toInt() and 0xFF })

@@ -33,6 +33,11 @@ Using that API we can convert the file to infinite stream by defining the strate
 wave("file:///path/to/file.wav", ZeroFilling())
 ```
 
+Resampling
+-------
+
+The wav-file can be sampled at any sample rate, you may not know beforehand what exactly it might be. For convenience that output is automatically [resampled with sinc interpolation method](../operations/resample-operation.md#a-sinc-interpolation). You can define your own by specifying the resampling function as a `resampleFn` parameters. To disable the implicit resampling specify `resampleFn` parameter as `null`.  
+
 Low-level API
 -------
 
@@ -41,9 +46,9 @@ As any other stream in the system, API mentioned above is just a wrapper around 
 ```kotlin
 import java.net.URI
 
-WavFiniteInput(WavFiniteInputParams(
+WavInput(WavFiniteInputParams(
     uri = URI("file:///path/to/file.wav")
 ))
 ```
 
-That input implements `io.wavebeans.lib.io.FiniteInput` interface, so it should be converted for most use cases using [finite-converters](finite-converters.md).
+That input implements `io.wavebeans.lib.io.FiniteStream<Sample>` interface, it can be converted into infinite stream with [finite-converter](finite-converters.md).
