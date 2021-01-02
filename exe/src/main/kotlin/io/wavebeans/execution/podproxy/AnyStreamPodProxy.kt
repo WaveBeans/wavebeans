@@ -37,4 +37,16 @@ class AnyFiniteStreamMergingPodProxy(
 
         }.maxOrNull()!!
     }
+
+    override fun samplesCount(): Long {
+        return readsFrom.map { pointedTo ->
+            val bush = podDiscovery.bushFor(pointedTo)
+            val caller = bushCallerRepository.create(bush, pointedTo)
+            caller.call("samplesCount")
+                    .get(5000, TimeUnit.MILLISECONDS)
+                    .value<Long>()
+
+        }.maxOrNull()!!
+    }
+
 }

@@ -1,6 +1,7 @@
 package io.wavebeans.lib.io
 
 import io.wavebeans.lib.*
+import io.wavebeans.lib.stream.FiniteStream
 import io.wavebeans.metrics.clazzTag
 import io.wavebeans.metrics.samplesProcessedOnInputMetric
 import kotlinx.serialization.Serializable
@@ -16,7 +17,7 @@ data class ByteArrayLittleEndianInputParams(
 
 class ByteArrayLittleEndianInput(
         val params: ByteArrayLittleEndianInputParams
-) : AbstractInputBeanStream<Sample>(), FiniteInput<Sample>, SinglePartitionBean {
+) : AbstractInputBeanStream<Sample>(), FiniteStream<Sample>, SinglePartitionBean {
 
     private val samplesProcessed = samplesProcessedOnInputMetric.withTags(clazzTag to ByteArrayLittleEndianInput::class.jvmName)
 
@@ -26,7 +27,7 @@ class ByteArrayLittleEndianInput(
 
     override fun length(timeUnit: TimeUnit): Long = samplesCountToLength(samplesCount().toLong(), params.sampleRate, timeUnit)
 
-    override fun samplesCount(): Int = params.buffer.size / params.bitDepth.bytesPerSample
+    override fun samplesCount(): Long = (params.buffer.size / params.bitDepth.bytesPerSample).toLong()
 
     override fun inputSequence(sampleRate: Float): Sequence<Sample> {
         require(sampleRate == params.sampleRate) { "The stream should be resampled from ${params.sampleRate}Hz to ${sampleRate}Hz" }

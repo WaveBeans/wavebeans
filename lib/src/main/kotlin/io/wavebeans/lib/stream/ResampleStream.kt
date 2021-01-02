@@ -12,7 +12,11 @@ import kotlinx.serialization.encoding.CompositeDecoder
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import mu.KotlinLogging
+import java.util.concurrent.TimeUnit
+import kotlin.properties.Delegates
+import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.jvm.jvmName
+import kotlin.reflect.typeOf
 
 /**
  * Resamples the stream of [Sample]s to match the output stream sample rate unless the [to] argument is specified explicitly.
@@ -27,10 +31,10 @@ import kotlin.reflect.jvm.jvmName
  * @return the stream that will be resampled to desired sample rate.
  */
 @JvmName("resampleSampleStream")
-fun BeanStream<Sample>.resample(
+inline fun <reified S : BeanStream<Sample>> S.resample(
         to: Float? = null,
-        resampleFn: (ResamplingArgument<Sample>) -> Sequence<Sample>
-): BeanStream<Sample> {
+        noinline resampleFn: (ResamplingArgument<Sample>) -> Sequence<Sample>,
+): S {
     return this.resample(to, Fn.wrap(resampleFn))
 }
 
@@ -47,12 +51,20 @@ fun BeanStream<Sample>.resample(
  *
  * @return the stream that will be resampled to desired sample rate.
  */
+@Suppress("UNCHECKED_CAST")
 @JvmName("resampleSampleStream")
-fun BeanStream<Sample>.resample(
+inline fun <reified S : BeanStream<Sample>> S.resample(
         to: Float? = null,
-        resampleFn: Fn<ResamplingArgument<Sample>, Sequence<Sample>> = sincResampleFunc()
-): BeanStream<Sample> {
-    return ResampleStream(this, ResampleStreamParams(to, resampleFn))
+        resampleFn: Fn<ResamplingArgument<Sample>, Sequence<Sample>> = sincResampleFunc(),
+): S {
+    return when (val streamType = typeOf<S>()) {
+        typeOf<BeanStream<Sample>>() ->
+            ResampleBeanStream(this, ResampleStreamParams(to, resampleFn)) as S
+        typeOf<FiniteStream<Sample>>() ->
+            ResampleFiniteStream(this as FiniteStream<Sample>, ResampleStreamParams(to, resampleFn)) as S
+        else -> throw UnsupportedOperationException("Type $streamType is not supported for resampling")
+    }
+
 }
 
 /**
@@ -68,10 +80,10 @@ fun BeanStream<Sample>.resample(
  *
  * @return the stream that will be resampled to desired sample rate.
  */
-fun <T : Any> BeanStream<T>.resample(
+inline fun <reified S: BeanStream<T>, T : Any> S.resample(
         to: Float? = null,
-        resampleFn: (ResamplingArgument<T>) -> Sequence<T>
-): BeanStream<T> {
+        noinline resampleFn: (ResamplingArgument<T>) -> Sequence<T>,
+): S {
     return this.resample(to, Fn.wrap(resampleFn))
 }
 
@@ -90,11 +102,19 @@ fun <T : Any> BeanStream<T>.resample(
  *
  * @return the stream that will be resampled to desired sample rate.
  */
-fun <T : Any> BeanStream<T>.resample(
+@Suppress("UNCHECKED_CAST")
+inline fun <reified S: BeanStream<T>, T : Any> S.resample(
         to: Float? = null,
-        resampleFn: Fn<ResamplingArgument<T>, Sequence<T>> = SimpleResampleFn()
-): BeanStream<T> {
-    return ResampleStream(this, ResampleStreamParams(to, resampleFn))
+        resampleFn: Fn<ResamplingArgument<T>, Sequence<T>> = SimpleResampleFn(),
+): S {
+    val streamType = typeOf<S>()
+    return when {
+        streamType.isSubtypeOf(typeOf<BeanStream<*>>()) ->
+            ResampleBeanStream(this, ResampleStreamParams(to, resampleFn)) as S
+        streamType.isSubtypeOf(typeOf<FiniteStream<*>>()) ->
+            ResampleFiniteStream(this as FiniteStream<T>, ResampleStreamParams(to, resampleFn)) as S
+        else -> throw UnsupportedOperationException("Type $streamType is not supported for resampling")
+    }
 }
 
 /**
@@ -115,7 +135,7 @@ data class ResamplingArgument<T>(
         /** The sample rate scale factor defined as input sample rate value divided by output sample rate value. */
         val resamplingFactor: Float,
         /** the input stream as a sequence of elements of type [T]. */
-        val inputSequence: Sequence<T>
+        val inputSequence: Sequence<T>,
 )
 
 /**
@@ -140,7 +160,7 @@ class ResampleStreamParams<T>(
          * returns [Sequence] of samples that are expected to be resampled to desired sample rate, and are treated
          * accordingly.
          */
-        val resampleFn: Fn<ResamplingArgument<T>, Sequence<T>>
+        val resampleFn: Fn<ResamplingArgument<T>, Sequence<T>>,
 ) : BeanParams()
 
 /**
@@ -178,24 +198,66 @@ object ResampleStreamParamsSerializer : KSerializer<ResampleStreamParams<*>> {
 }
 
 /**
- * Resamples the stream of type [T] to match the output stream sample rate unless the [ResampleStreamParams.to]
+ * Resamples the infinite stream of type [T] to match the output stream sample rate unless the [ResampleStreamParams.to]
  * argument is specified explicitly. The resampling is performed with the [ResampleStreamParams.resampleFn].
  * If the sampling rate is not changed the resampling function is not called at all.
  *
  * @param T the type of the sample being processed.
  */
-class ResampleStream<T : Any>(
+class ResampleBeanStream<T : Any>(
+        input: BeanStream<T>,
+        parameters: ResampleStreamParams<T>,
+) : AbstractResampleStream<T>(input, parameters), BeanStream<T> {
+
+    override val desiredSampleRate: Float?
+        get() = beanDesiredSampleRate
+
+    override fun asSequence(sampleRate: Float): Sequence<T> = generateSequence(sampleRate)
+}
+
+/**
+ * Resamples the finite stream of type [T] to match the output stream sample rate unless the [ResampleStreamParams.to]
+ * argument is specified explicitly. The resampling is performed with the [ResampleStreamParams.resampleFn].
+ * If the sampling rate is not changed the resampling function is not called at all.
+ *
+ * @param T the type of the sample being processed.
+ */
+class ResampleFiniteStream<T : Any>(
+        override val input: FiniteStream<T>,
+        parameters: ResampleStreamParams<T>,
+) : AbstractResampleStream<T>(input, parameters), FiniteStream<T> {
+
+    private var sampleRate by Delegates.notNull<Float>()
+
+    override val desiredSampleRate: Float?
+        get() = beanDesiredSampleRate
+
+    override fun asSequence(sampleRate: Float): Sequence<T> {
+        this.sampleRate = sampleRate
+        return generateSequence(sampleRate)
+    }
+
+    override fun length(timeUnit: TimeUnit): Long = input.length()
+
+    override fun samplesCount(): Long = (
+            input.samplesCount() *
+                    (input.desiredSampleRate ?: sampleRate) /
+                    (parameters.to ?: sampleRate)
+            ).toLong()
+}
+
+abstract class AbstractResampleStream<T : Any>(
         override val input: BeanStream<T>,
-        override val parameters: ResampleStreamParams<T>,
-) : BeanStream<T>, SingleBean<T>, SinglePartitionBean {
+        final override val parameters: ResampleStreamParams<T>,
+) : SingleBean<T>, SinglePartitionBean {
 
     companion object {
         private val log = KotlinLogging.logger { }
     }
 
-    override val desiredSampleRate: Float? = parameters.to
+    protected val beanDesiredSampleRate: Float? = parameters.to
 
-    override fun asSequence(sampleRate: Float): Sequence<T> {
+    protected fun generateSequence(sampleRate: Float): Sequence<T> {
         val ifs = input.desiredSampleRate ?: sampleRate
         val ofs = parameters.to ?: sampleRate
         val sequence = input.asSequence(ifs)

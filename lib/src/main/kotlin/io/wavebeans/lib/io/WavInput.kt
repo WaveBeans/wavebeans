@@ -2,8 +2,7 @@ package io.wavebeans.lib.io
 
 import io.wavebeans.fs.core.WbFileDriver
 import io.wavebeans.lib.*
-import io.wavebeans.lib.stream.FiniteToStream
-import io.wavebeans.lib.stream.stream
+import io.wavebeans.lib.stream.*
 import io.wavebeans.metrics.clazzTag
 import io.wavebeans.metrics.samplesProcessedOnInputMetric
 import kotlinx.serialization.Serializable
@@ -14,20 +13,65 @@ import java.net.URI
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.jvm.jvmName
 
-fun wave(uri: String): FiniteInput<Sample> = WavFiniteInput(WavFiniteInputParams(uri))
+const val sincResampleFuncDefaultWindowSize = 64
 
-fun wave(uri: String, converter: FiniteToStream<Sample>): BeanStream<Sample> = wave(uri).stream(converter)
+/**
+ * Reads the mono-wave file from [uri] resampling with [resampleFn] if required to match the output sample rate.
+ *
+ * @param uri the URI of the file of any [WbFileDriver], i.e. `file:///my/file.wav` for UNIX-like file systems,
+ *            or `file://c:/my/file.wav` for Windows-like file systems.
+ * @param resampleFn if the wav file sampled at a different sample rate, it'll be converted using that function, by
+ *                   default [SincResampleFn] is used with [sincResampleFuncDefaultWindowSize]. Specify `null` to
+ *                   avoid calling the resampling implicitly.
+ * @return finite stream with the contents of the wave-file.
+ */
+fun wave(
+        uri: String,
+        resampleFn: Fn<ResamplingArgument<Sample>, Sequence<Sample>>? = sincResampleFunc(sincResampleFuncDefaultWindowSize),
+): FiniteStream<Sample> = WavInput(WavInputParams(uri)).let { input ->
+    resampleFn?.let { input.resample<FiniteStream<Sample>>(resampleFn = resampleFn) } ?: input
+}
 
+/**
+ * Reads the mono-wave file from [uri] resampling with [resampleFn] if required to match the output sample rate.
+ * The stream is converted to infinite one with the help of [converter].
+ *
+ * @param uri the URI of the file of any [WbFileDriver], i.e. `file:///my/file.wav` for UNIX-like file systems,
+ *            or `file://c:/my/file.wav` for Windows-like file systems.
+ * @param converter the function that converts finite stream to an infinite one.
+ * @param resampleFn if the wav file sampled at a different sample rate, it'll be converted using that function, by
+ *                   default [SincResampleFn] is used with [sincResampleFuncDefaultWindowSize]. Specify `null` to
+ *                   avoid calling the resampling implicitly.
+ * @return infinite stream with the contents of the wave-file.
+ */
+fun wave(
+        uri: String,
+        converter: FiniteToStream<Sample>,
+        resampleFn: Fn<ResamplingArgument<Sample>, Sequence<Sample>> = sincResampleFunc(sincResampleFuncDefaultWindowSize),
+): BeanStream<Sample> = wave(uri, resampleFn).stream(converter)
+
+/**
+ * Parameters for [WavInput]:
+ * * [uri] - the URI of the file of any [WbFileDriver], i.e. `file:///my/file.wav` for UNIX-like file systems,
+ *            or `file://c:/my/file.wav` for Windows-like file systems.
+ */
 @Serializable
-data class WavFiniteInputParams(
+data class WavInputParams(
+        /**
+         * The URI of the file of any [WbFileDriver], i.e. `file:///my/file.wav` for UNIX-like file systems,
+         * or `file://c:/my/file.wav` for Windows-like file systems.
+         */
         val uri: String
 ) : BeanParams()
 
-class WavFiniteInput(
-        val params: WavFiniteInputParams,
-) : AbstractInputBeanStream<Sample>(), FiniteInput<Sample>, SinglePartitionBean {
+/**
+ * Reads the mono-wave file from [WavInputParams.uri].
+ */
+class WavInput(
+        val params: WavInputParams,
+) : AbstractInputBeanStream<Sample>(), FiniteStream<Sample>, SinglePartitionBean {
 
-    private val samplesProcessed = samplesProcessedOnInputMetric.withTags(clazzTag to WavFiniteInput::class.jvmName)
+    private val samplesProcessed = samplesProcessedOnInputMetric.withTags(clazzTag to WavInput::class.jvmName)
 
     override val parameters: BeanParams = params
 
@@ -69,9 +113,9 @@ class WavFiniteInput(
 
     override val desiredSampleRate: Float? by lazy { cnt.sampleRate }
 
-    override fun length(timeUnit: TimeUnit): Long = samplesCountToLength(samplesCount().toLong(), cnt.sampleRate, timeUnit)
+    override fun length(timeUnit: TimeUnit): Long = samplesCountToLength(samplesCount(), cnt.sampleRate, timeUnit)
 
-    override fun samplesCount(): Int = cnt.size / cnt.bitDepth.bytesPerSample
+    override fun samplesCount(): Long = (cnt.size / cnt.bitDepth.bytesPerSample).toLong()
 
     override fun inputSequence(sampleRate: Float): Sequence<Sample> {
         require(sampleRate == cnt.sampleRate) { "The stream should be resampled from ${cnt.sampleRate}Hz to ${sampleRate}Hz" }
@@ -118,7 +162,7 @@ class WavFileReader(
                         .map { it.toInt() and 0xFF }
                         .foldIndexed(0x00) { i, a, v -> a or (v shl (i * 8)) }
             } catch (e: Exception) {
-                throw WavFileReaderException("Can't $target. Expected Short.", e)
+                throw WavFileReaderException("Can't read $target. Expected Short.", e)
             }
         }
 

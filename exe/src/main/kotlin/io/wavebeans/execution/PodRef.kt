@@ -5,6 +5,8 @@ import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.lib.*
 import kotlinx.serialization.*
 import kotlin.reflect.KType
+import kotlin.reflect.KTypeProjection
+import kotlin.reflect.full.createType
 import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.typeOf
 
@@ -90,25 +92,25 @@ data class PodRef(
             }
 
             val tailBean = createBean(proxies, internalBeans.reversed())
-
+            val beanType = tailBean::class.createType(tailBean::class.typeParameters.map { KTypeProjection.STAR })
             return if (splitToPartitions == null) {
                 if (tailBean is SinkBean<*>) {
                     PodRegistry.createPod(
-                            tailBean::class.supertypes.first { it.isSubtypeOf(typeOf<AnyBean>()) },
+                            beanType,
                             key,
                             sampleRate,
                             tailBean
                     )
                 } else {
                     PodRegistry.createPod(
-                            tailBean::class.supertypes.first { it.isSubtypeOf(typeOf<AnyBean>()) },
+                            beanType,
                             key,
                             tailBean
                     )
                 }
             } else {
                 PodRegistry.createSplittingPod(
-                        tailBean::class.supertypes.first { it.isSubtypeOf(typeOf<AnyBean>()) },
+                        beanType,
                         key,
                         tailBean,
                         splitToPartitions
