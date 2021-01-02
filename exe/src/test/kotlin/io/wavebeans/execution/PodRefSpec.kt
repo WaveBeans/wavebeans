@@ -13,14 +13,17 @@ import io.wavebeans.execution.pod.SplittingPod
 import io.wavebeans.execution.pod.StreamingPod
 import io.wavebeans.execution.podproxy.*
 import io.wavebeans.lib.*
-import io.wavebeans.lib.io.StreamInput
 import io.wavebeans.lib.io.sine
 import io.wavebeans.lib.stream.div
 import io.wavebeans.lib.stream.trim
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.util.concurrent.TimeUnit
+import kotlin.reflect.KTypeProjection
+import kotlin.reflect.KTypeProjection.Companion.STAR
+import kotlin.reflect.KTypeProjection.Companion.covariant
 import kotlin.reflect.full.createType
+import kotlin.reflect.typeOf
 
 class PodRefSpec : Spek({
 
@@ -227,7 +230,11 @@ class PodRefSpec : Spek({
     }
 })
 
-private fun input1Type(bean: AnyBean) = bean.inputs().first()::class.createType()
+private fun input1Type(bean: AnyBean) = bean.inputs().first()::class.let {
+    val parameters = it.typeParameters.map { STAR }
+    it.createType(parameters)
+}
+
 private fun input2Type(bean: AnyBean) = bean.inputs().drop(1).first()::class.createType()
 
 private fun Assert<Pod>.proxies() = prop("proxies") {
@@ -246,14 +253,22 @@ private fun Assert<PodProxy>.forPartition() = prop("forPartition") { it.forParti
 
 internal class TestPartitionableStreamingInput(
         override val parameters: BeanParams
-) : StreamInput {
+) : BeanStream<Sample>, SourceBean<Sample> {
+
     override fun asSequence(sampleRate: Float): Sequence<Sample> = throw UnsupportedOperationException()
+
+    override val desiredSampleRate: Float?
+        get() = throw UnsupportedOperationException()
 }
 
 internal class TestSinglePartitionStreamingInput(
         override val parameters: BeanParams
-) : StreamInput, SinglePartitionBean {
+) : BeanStream<Sample>, SourceBean<Sample>, SinglePartitionBean {
+
     override fun asSequence(sampleRate: Float): Sequence<Sample> = throw UnsupportedOperationException()
+
+    override val desiredSampleRate: Float?
+        get() = throw UnsupportedOperationException()
 }
 
 internal class TestMultiBean(
@@ -266,4 +281,7 @@ internal class TestMultiBean(
         get() = listOf(input1, input2)
 
     override fun asSequence(sampleRate: Float): Sequence<Sample> = throw UnsupportedOperationException()
+
+    override val desiredSampleRate: Float?
+        get() = throw UnsupportedOperationException()
 }

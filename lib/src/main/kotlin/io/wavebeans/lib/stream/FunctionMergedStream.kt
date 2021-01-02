@@ -51,18 +51,18 @@ class FunctionMergedStreamParams<T1 : Any, T2 : Any, R : Any>(
         val merge: Fn<Pair<T1?, T2?>, R?>
 ) : BeanParams()
 
+@Suppress("UNCHECKED_CAST")
 class FunctionMergedStream<T1 : Any, T2 : Any, R : Any>(
-        val sourceStream: BeanStream<T1>,
-        val mergeStream: BeanStream<T2>,
+        sourceStream: BeanStream<T1>,
+        mergeStream: BeanStream<T2>,
         override val parameters: FunctionMergedStreamParams<T1, T2, R>
-) : BeanStream<R>, MultiAlterBean<R>, SinglePartitionBean {
+) : AbstractMultiOperationBeanStream<R>(listOf(sourceStream, mergeStream) as List<BeanStream<Any>>), MultiAlterBean<R>, SinglePartitionBean {
 
-    override val inputs: List<AnyBean>
-        get() = listOf(sourceStream, mergeStream)
+    override val inputs: List<AnyBean> by lazy { listOf(sourceStream, mergeStream) }
 
-    override fun asSequence(sampleRate: Float): Sequence<R> {
-        val sourceIterator = sourceStream.asSequence(sampleRate).iterator()
-        val mergeIterator = mergeStream.asSequence(sampleRate).iterator()
+    override fun operationSequence(inputs: List<Sequence<Any>>, sampleRate: Float): Sequence<R> {
+        val sourceIterator = inputs.first().iterator()
+        val mergeIterator = inputs.drop(1).first().iterator()
         return object : Iterator<R> {
 
             var nextEl: R? = null
@@ -90,12 +90,10 @@ class FunctionMergedStream<T1 : Any, T2 : Any, R : Any>(
                 if (nextEl == null) {
                     val s = if (sourceIterator.hasNext()) sourceIterator.next() else null
                     val m = if (mergeIterator.hasNext()) mergeIterator.next() else null
-                    nextEl = parameters.merge.apply(Pair(s, m))
+                    nextEl = parameters.merge.apply(Pair(s as T1?, m as T2?))
                 }
             }
         }.asSequence()
-
-
     }
 }
 

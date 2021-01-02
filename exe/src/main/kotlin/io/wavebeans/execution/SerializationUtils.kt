@@ -30,7 +30,6 @@ fun SerializersModuleBuilder.tableQuery() {
 
 fun SerializersModuleBuilder.beanParams() {
     polymorphic(BeanParams::class) {
-        subclass(ChangeAmplitudeSampleStreamParams::class, ChangeAmplitudeSampleStreamParams.serializer())
         subclass(SineGeneratedInputParams::class, SineGeneratedInputParams.serializer())
         subclass(NoParams::class, NoParams.serializer())
         subclass(TrimmedFiniteSampleStreamParams::class, TrimmedFiniteSampleStreamParams.serializer())
@@ -49,5 +48,9 @@ fun SerializersModuleBuilder.beanParams() {
         subclass(WavFileOutputParams::class, WavFileOutputParamsSerializer)
         subclass(FlattenWindowStreamsParams::class, FlattenWindowStreamsParamsSerializer)
         subclass(FlattenStreamsParams::class, FlattenStreamsParamsSerializer)
+        subclass(ResampleStreamParams::class, ResampleStreamParamsSerializer)
+        subclass(WavFiniteInputParams::class, WavFiniteInputParams.serializer())
+        subclass(ByteArrayLittleEndianInputParams::class, ByteArrayLittleEndianInputParams.serializer())
+        subclass(FunctionStreamOutputParams::class, FunctionStreamOutputParamsSerializer)
     }
 }

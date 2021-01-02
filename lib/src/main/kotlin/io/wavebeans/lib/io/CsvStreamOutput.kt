@@ -250,9 +250,9 @@ class CsvStreamOutput<T : Any>(
          * Parameters to tune the stream output.
          */
         override val parameters: CsvStreamOutputParams<Unit, T>
-) : StreamOutput<T>, SinkBean<T>, SinglePartitionBean {
+) : AbstractStreamOutput<T>(input), SinkBean<T>, SinglePartitionBean {
 
-    override fun writer(sampleRate: Float): Writer {
+    override fun outputWriter(inputSequence: Sequence<T>, sampleRate: Float): Writer {
         var offset = 0L
         val charset = Charset.forName(parameters.encoding)
         val writer = plainFileWriterDelegate<Unit>(parameters.uri)
@@ -281,9 +281,9 @@ class CsvPartialStreamOutput<A : Any, T : Any>(
          * Parameters to tune the stream output.
          */
         override val parameters: CsvStreamOutputParams<A, T>
-) : StreamOutput<Managed<OutputSignal, A, T>>, SinkBean<Managed<OutputSignal, A, T>>, SinglePartitionBean {
+) : AbstractStreamOutput<Managed<OutputSignal, A, T>>(input), SinkBean<Managed<OutputSignal, A, T>>, SinglePartitionBean {
 
-    override fun writer(sampleRate: Float): Writer {
+    override fun outputWriter(inputSequence: Sequence<Managed<OutputSignal, A, T>>, sampleRate: Float): Writer {
         var offset = 0L
         val charset = Charset.forName(parameters.encoding)
         val writer = suffixedFileWriterDelegate<A>(parameters.uri) { parameters.suffix.apply(it) }

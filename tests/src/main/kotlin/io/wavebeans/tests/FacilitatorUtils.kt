@@ -5,7 +5,6 @@ import io.grpc.StatusRuntimeException
 import io.wavebeans.communicator.FacilitatorApiClient
 import mu.KotlinLogging
 import java.io.File
-import java.util.concurrent.ExecutionException
 
 private val log = KotlinLogging.logger { }
 
@@ -91,9 +90,13 @@ fun terminateFacilitator(location: String, timeoutMs: Int = 30000) {
                 // continue trying
                 Thread.sleep(1)
             }
-        } catch (e: ExecutionException) {
-            val cause = e.cause
-            if (cause !is StatusRuntimeException || cause.status != Status.UNAVAILABLE) {
+        } catch (e: Exception) {
+            fun isUnavailable(e: Throwable?) = e != null && e is StatusRuntimeException && e.status == Status.UNAVAILABLE
+            if (!isUnavailable(e)
+                    && !isUnavailable(e.cause)
+                    && !isUnavailable(e.cause?.cause)
+                    && !isUnavailable(e.cause?.cause?.cause)
+            ) {
                 throw e
             }
         }

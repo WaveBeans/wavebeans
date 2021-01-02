@@ -5,11 +5,11 @@ import assertk.assertions.*
 import assertk.catch
 import com.nhaarman.mockitokotlin2.*
 import io.wavebeans.execution.eachIndexed
-import io.wavebeans.execution.seqStream
 import io.wavebeans.lib.Sample
 import io.wavebeans.lib.s
 import io.wavebeans.lib.sampleOf
 import io.wavebeans.lib.table.*
+import io.wavebeans.tests.seqStream
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.lifecycle.CachingMode.SCOPE
 import org.spekframework.spek2.lifecycle.CachingMode.TEST

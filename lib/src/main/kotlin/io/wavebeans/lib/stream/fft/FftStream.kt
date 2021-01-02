@@ -3,6 +3,7 @@ package io.wavebeans.lib.stream.fft
 import io.wavebeans.lib.*
 import io.wavebeans.lib.io.input
 import io.wavebeans.lib.math.r
+import io.wavebeans.lib.stream.AbstractOperationBeanStream
 import io.wavebeans.lib.stream.merge
 import io.wavebeans.lib.stream.window.Window
 import kotlinx.serialization.Serializable
@@ -47,10 +48,10 @@ data class FftStreamParams(
 class FftStream(
         override val input: BeanStream<Pair<Long, Window<Sample>>>,
         override val parameters: FftStreamParams
-) : BeanStream<FftSample>, AlterBean<Pair<Long, Window<Sample>>, FftSample> {
+) : AbstractOperationBeanStream<Pair<Long, Window<Sample>>, FftSample>(input), AlterBean<Pair<Long, Window<Sample>>, FftSample> {
 
-    override fun asSequence(sampleRate: Float): Sequence<FftSample> {
-        return input.asSequence(sampleRate)
+    override fun operationSequence(input: Sequence<Pair<Long, Window<Sample>>>, sampleRate: Float): Sequence<FftSample> {
+        return input
                 .map { (index, window) ->
                     require(window.elements.size <= parameters.binCount) {
                         "The window size (${window.elements.size}) " +

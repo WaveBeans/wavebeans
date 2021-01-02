@@ -48,6 +48,8 @@ abstract class AbstractStreamOutputPod<T: Any> : StreamOutput<T>, TickPod {
 
     override fun writer(sampleRate: Float): Writer = throw UnsupportedOperationException("Not required by pod")
 
+    override fun desiredSampleRate(): Float? = throw UnsupportedOperationException("Not required by pod")
+
     override val parameters: BeanParams
         get() = NoParams()
 

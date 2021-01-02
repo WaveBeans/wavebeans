@@ -11,7 +11,7 @@ data class Call(
         @ProtoNumber(1)
         val method: String,
         @ProtoNumber(2)
-        val params: Map<String, String>
+        val params: Map<String, String> = emptyMap()
 ) {
     companion object {
 

@@ -6,6 +6,7 @@ import assertk.catch
 import io.wavebeans.execution.PodDiscovery
 import io.wavebeans.execution.distributed.Facilitator
 import io.wavebeans.lib.WaveBeansClassLoader
+import io.wavebeans.tests.createPorts
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.io.File
@@ -14,7 +15,7 @@ import java.util.concurrent.CancellationException
 
 object ScriptRunnerSpec : Spek({
 
-    val portRange = 40000..40001
+    val portRange = createPorts(2)
     val gardeners = portRange.map {
         Facilitator(
                 communicatorPort = it,

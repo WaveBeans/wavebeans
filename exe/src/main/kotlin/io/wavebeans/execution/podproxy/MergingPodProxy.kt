@@ -53,6 +53,17 @@ abstract class MergingPodProxy(
         }.asSequence()
     }
 
+    override val desiredSampleRate: Float? by lazy {
+        readsFrom.map { pod ->
+            val bush = podDiscovery.bushFor(pod)
+            val caller = bushCallerRepository.create(bush, pod)
+            caller.call("desiredSampleRate").get(5000, TimeUnit.MILLISECONDS).obj as Float?
+        }.distinct().let {
+            require(it.size == 1) { "Desired sample rate from pods $readsFrom is ambiguous: $it. Something requires resampling first." }
+            it.first()
+        }
+    }
+
     override fun inputs(): List<AnyBean> = throw UnsupportedOperationException("Not required")
 
     override val parameters: BeanParams

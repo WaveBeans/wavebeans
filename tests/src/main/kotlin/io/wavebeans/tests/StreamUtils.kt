@@ -2,13 +2,50 @@ package io.wavebeans.tests
 
 import io.wavebeans.execution.MultiThreadedOverseer
 import io.wavebeans.execution.distributed.DistributedOverseer
-import io.wavebeans.lib.io.StreamOutput
+import io.wavebeans.lib.BeanStream
+import io.wavebeans.lib.Fn
+import io.wavebeans.lib.io.*
+import io.wavebeans.lib.sampleOf
+import mu.KotlinLogging
 import java.lang.Thread.sleep
+
+/**
+ * Generates sequential stream of (index * 1e-10)
+ */
+fun seqStream() = input { sampleOf(it.first * 1e-10) }
+
+private val log = KotlinLogging.logger { }
+
+class StoreToMemoryFn<T : Any> : Fn<WriteFunctionArgument<T>, Boolean>() {
+
+    private val list = ArrayList<T>()
+
+    override fun apply(argument: WriteFunctionArgument<T>): Boolean {
+        if (argument.phase == WriteFunctionPhase.WRITE)
+            list += argument.sample!!
+        return true
+    }
+
+    fun list(): List<T> = list
+}
+
+
+inline fun <reified T : Any> BeanStream<T>.toList(sampleRate: Float, take: Int = Int.MAX_VALUE, drop: Int = 0): List<T> {
+    val writeFunction = StoreToMemoryFn<T>()
+    this.out(writeFunction).evaluate(sampleRate)
+    return writeFunction.list().drop(drop).take(take)
+}
 
 fun <T : Any> StreamOutput<T>.evaluate(sampleRate: Float) {
     this.writer(sampleRate).use {
-        while (it.write()) {
-            sleep(0)
+        try {
+            while (it.write()) {
+                sleep(0)
+            }
+        } catch (e: Exception) {
+            // log it as the close may fail an swallow the exception.
+            log.error(e) { "Error evaluating $this with sampleRate=$sampleRate" }
+            throw e
         }
     }
 }

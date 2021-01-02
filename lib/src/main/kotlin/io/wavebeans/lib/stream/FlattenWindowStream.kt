@@ -113,7 +113,7 @@ object FlattenWindowStreamsParamsSerializer : KSerializer<FlattenWindowStreamsPa
 class FlattenWindowStream<T : Any>(
         override val input: BeanStream<Window<T>>,
         override val parameters: FlattenWindowStreamsParams<T>
-) : BeanStream<T>, AlterBean<Window<T>, T>, SinglePartitionBean {
+) : AbstractOperationBeanStream<Window<T>, T>(input), BeanStream<T>, AlterBean<Window<T>, T>, SinglePartitionBean {
 
     private class WindowEl<T : Any>(
             val window: Window<T>,
@@ -129,8 +129,8 @@ class FlattenWindowStream<T : Any>(
         }
     }
 
-    override fun asSequence(sampleRate: Float): Sequence<T> {
-        val iterator: Iterator<Window<T>> = input.asSequence(sampleRate).iterator()
+    override fun operationSequence(input: Sequence<Window<T>>, sampleRate: Float): Sequence<T> {
+        val iterator: Iterator<Window<T>> = input.iterator()
         return object : Iterator<T> {
 
             private var current: WindowEl<T>? = null
@@ -222,8 +222,6 @@ class FlattenWindowStream<T : Any>(
                 return overlapEl?.let { parameters.overlapResolve.apply(it to el) } ?: el
 
             }
-
         }.asSequence()
     }
-
 }

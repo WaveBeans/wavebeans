@@ -35,6 +35,8 @@ object LocalBushSpec : Spek({
 
                     override fun isFinished(): Boolean = throw UnsupportedOperationException()
 
+                    override fun desiredSampleRate(): Float?  = throw UnsupportedOperationException()
+
                     override fun close() {}
 
                     override fun inputs(): List<AnyBean> = throw UnsupportedOperationException()

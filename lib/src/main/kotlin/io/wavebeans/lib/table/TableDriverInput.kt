@@ -16,6 +16,8 @@ class TableDriverInput<T : Any>(
         override val parameters: TableDriverStreamParams
 ) : BeanStream<T>, SourceBean<T>, SinglePartitionBean {
 
+    override val desiredSampleRate: Float? = null
+
     override fun asSequence(sampleRate: Float): Sequence<T> {
         return TableRegistry.default.query<T>(parameters.tableName, parameters.query)
     }

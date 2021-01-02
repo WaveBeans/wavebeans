@@ -90,4 +90,6 @@ class ListAsInput<T : Any>(
     override fun asSequence(sampleRate: Float): Sequence<T> = parameters.list.asSequence().map { samplesProcessed.increment(); it as T }
 
     override fun length(timeUnit: TimeUnit): Long = 0
+
+    override val desiredSampleRate: Float? = null
 }

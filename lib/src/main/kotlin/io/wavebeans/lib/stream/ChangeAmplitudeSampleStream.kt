@@ -6,24 +6,13 @@ import kotlinx.serialization.Serializable
 operator fun BeanStream<Sample>.times(multiplier: Number): BeanStream<Sample> = this.changeAmplitude(multiplier.toDouble())
 operator fun BeanStream<Sample>.div(divisor: Number): BeanStream<Sample> = this.changeAmplitude(1.0 / divisor.toDouble())
 
-fun BeanStream<Sample>.changeAmplitude(multiplier: Number): BeanStream<Sample> =
-        ChangeAmplitudeSampleStream(this, ChangeAmplitudeSampleStreamParams(multiplier.toDouble()))
+class ChangeAmplitudeFn(initParameters: FnInitParameters) : Fn<Sample, Sample>(initParameters) {
 
-@Serializable
-data class ChangeAmplitudeSampleStreamParams(
-        val multiplier: Double
-) : BeanParams()
+    constructor(multiplier: Number) : this(FnInitParameters().add("multiplier", multiplier.toDouble()))
 
-class ChangeAmplitudeSampleStream(
-        val source: BeanStream<Sample>,
-        val params: ChangeAmplitudeSampleStreamParams
-) : BeanStream<Sample>, SingleBean<Sample> {
+    private val multiplier by lazy { initParameters.double("multiplier") }
 
-    override val parameters: BeanParams = params
-
-    override val input: Bean<Sample> = source
-
-    override fun asSequence(sampleRate: Float): Sequence<Sample> {
-        return source.asSequence(sampleRate).map { it * params.multiplier }
-    }
+    override fun apply(argument: Sample): Sample = argument * multiplier
 }
+
+fun BeanStream<Sample>.changeAmplitude(multiplier: Number): BeanStream<Sample> = this.map(ChangeAmplitudeFn(multiplier))

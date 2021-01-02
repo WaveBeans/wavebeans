@@ -44,20 +44,20 @@ object MapStreamParamsSerializer : KSerializer<MapStreamParams<*, *>> {
 }
 
 @Serializable(with = MapStreamParamsSerializer::class)
-class MapStreamParams<T : Any, R : Any>(val transform: Fn<T, R>) : BeanParams()
+data class MapStreamParams<T : Any, R : Any>(val transform: Fn<T, R>) : BeanParams()
 
 class MapStream<T : Any, R : Any>(
         override val input: BeanStream<T>,
         override val parameters: MapStreamParams<T, R>
-) : BeanStream<R>, AlterBean<T, R> {
+) : AbstractOperationBeanStream<T, R>(input), AlterBean<T, R> {
 
     companion object {
         private val log = KotlinLogging.logger {}
     }
 
-    override fun asSequence(sampleRate: Float): Sequence<R> {
+    override fun operationSequence(input: Sequence<T>, sampleRate: Float): Sequence<R> {
         log.trace { "[$this] Initiating sequence Map(input = $input,parameters = $parameters)" }
-        return input.asSequence(sampleRate).map { parameters.transform.apply(it) }
+        return input.map { parameters.transform.apply(it) }
     }
 
 }

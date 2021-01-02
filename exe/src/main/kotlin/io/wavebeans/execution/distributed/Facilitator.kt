@@ -106,9 +106,10 @@ class Facilitator(
                 }
                 break
             } catch (e: IOException) {
-                log.debug(e) { "Can't start communicator on port $communicatorPort" }
+                log.warn(e) { "[Attempt #$i] Can't start communicator on port $communicatorPort" }
             }
             if (++i >= 10) throw IllegalStateException("Can't start communicator on port $communicatorPort within $i attempts")
+            Thread.sleep(500)
         }
     }
 

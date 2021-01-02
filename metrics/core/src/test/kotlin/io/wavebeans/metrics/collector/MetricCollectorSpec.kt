@@ -335,12 +335,12 @@ object MetricCollectorSpec : Spek({
     describe("Distributed mode") {
 
         describe("One downstream collector") {
-            val port by memoized(SCOPE) { findFreePort() }
-            val counter by memoized(SCOPE) { MetricObject.counter("component", "count", "") }
-            val time by memoized(SCOPE) { MetricObject.time("component", "time", "") }
-            val gauge by memoized(SCOPE) { MetricObject.gauge("component", "gauge", "") }
+            val port by memoized(EACH_GROUP) { findFreePort() }
+            val counter by memoized(EACH_GROUP) { MetricObject.counter("component", "count", "") }
+            val time by memoized(EACH_GROUP) { MetricObject.time("component", "time", "") }
+            val gauge by memoized(EACH_GROUP) { MetricObject.gauge("component", "gauge", "") }
 
-            val counterUpstream by memoized(SCOPE) {
+            val counterUpstream by memoized(EACH_GROUP) {
                 counter.collector(
                         downstreamCollectors = listOf("localhost:$port"),
                         granularValueInMs = 0,
@@ -348,7 +348,7 @@ object MetricCollectorSpec : Spek({
                 )
             }
 
-            val counterUpstreamWithTag by memoized(SCOPE) {
+            val counterUpstreamWithTag by memoized(EACH_GROUP) {
                 counter.withTags("tag" to "value").collector(
                         downstreamCollectors = listOf("localhost:$port"),
                         granularValueInMs = 0,
@@ -356,7 +356,7 @@ object MetricCollectorSpec : Spek({
                 )
             }
 
-            val timeUpstream by memoized(SCOPE) {
+            val timeUpstream by memoized(EACH_GROUP) {
                 time.collector(
                         downstreamCollectors = listOf("localhost:$port"),
                         granularValueInMs = 0,
@@ -364,7 +364,7 @@ object MetricCollectorSpec : Spek({
                 )
             }
 
-            val timeUpstreamWithTag by memoized(SCOPE) {
+            val timeUpstreamWithTag by memoized(EACH_GROUP) {
                 time.withTags("tag" to "value").collector(
                         downstreamCollectors = listOf("localhost:$port"),
                         granularValueInMs = 0,
@@ -372,7 +372,7 @@ object MetricCollectorSpec : Spek({
                 )
             }
 
-            val gaugeUpstream by memoized(SCOPE) {
+            val gaugeUpstream by memoized(EACH_GROUP) {
                 gauge.collector(
                         downstreamCollectors = listOf("localhost:$port"),
                         granularValueInMs = 0,
@@ -380,7 +380,7 @@ object MetricCollectorSpec : Spek({
                 )
             }
 
-            val gaugeUpstreamWithTag by memoized(SCOPE) {
+            val gaugeUpstreamWithTag by memoized(EACH_GROUP) {
                 gauge.withTags("tag" to "value").collector(
                         downstreamCollectors = listOf("localhost:$port"),
                         granularValueInMs = 0,
@@ -388,7 +388,7 @@ object MetricCollectorSpec : Spek({
                 )
             }
 
-            val server by memoized(SCOPE) {
+            val server by memoized(EACH_GROUP) {
                 ServerBuilder.forPort(port)
                         .addService(MetricGrpcService.instance())
                         .build()
@@ -509,10 +509,10 @@ object MetricCollectorSpec : Spek({
         }
 
         describe("Collecting automatically") {
-            val port by memoized(SCOPE) { findFreePort() }
-            val counter by memoized(SCOPE) { MetricObject.counter("component1", "name1", "") }
+            val port by memoized(EACH_GROUP) { findFreePort() }
+            val counter by memoized(EACH_GROUP) { MetricObject.counter("component1", "name1", "") }
 
-            val remoteMetricCollector by memoized(SCOPE) {
+            val remoteMetricCollector by memoized(EACH_GROUP) {
                 counter.collector(
                         downstreamCollectors = listOf("localhost:$port"),
                         granularValueInMs = 0,
@@ -520,7 +520,7 @@ object MetricCollectorSpec : Spek({
                 )
             }
 
-            val server by memoized(SCOPE) {
+            val server by memoized(EACH_GROUP) {
                 ServerBuilder.forPort(port)
                         .addService(MetricGrpcService.instance())
                         .build()

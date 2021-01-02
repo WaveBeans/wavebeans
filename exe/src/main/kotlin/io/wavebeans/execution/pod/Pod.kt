@@ -63,5 +63,7 @@ interface Pod : Closeable {
     fun iteratorNext(iteratorKey: Long, buckets: Int): List<Any>?
 
     fun isFinished(): Boolean
+
+    fun desiredSampleRate(): Float?
 }
 

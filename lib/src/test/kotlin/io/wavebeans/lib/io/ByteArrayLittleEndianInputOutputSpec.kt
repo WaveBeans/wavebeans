@@ -36,7 +36,7 @@ private class ByteArrayFileOutputMock(
 
             override fun serialize(element: Sample): ByteArray {
                 val buf = ByteArray(bitDepth.bytesPerSample)
-                writeSampleAsLEBytes(buf, 0, element, bitDepth)
+                buf.encodeSampleLEBytes(0, element, bitDepth)
                 return buf
             }
         }
@@ -199,6 +199,7 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
                     override fun asSequence(sampleRate: Float): Sequence<Sample> =
                             signal.asSequence().map { el -> sampleOf(el.toShort()) }
 
+                    override val desiredSampleRate: Float? = null
                 },
                 NoParams()
         ), BitDepth.BIT_16)
@@ -223,6 +224,8 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
                     override fun asSequence(sampleRate: Float): Sequence<Sample> =
                             signal.asSequence()
                                     .map { el -> sampleOf(el, true) }
+
+                    override val desiredSampleRate: Float? = null
 
                 },
                 NoParams()

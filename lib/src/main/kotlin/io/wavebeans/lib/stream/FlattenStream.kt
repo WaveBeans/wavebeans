@@ -118,10 +118,10 @@ object FlattenStreamsParamsSerializer: KSerializer<FlattenStreamsParams<*, *>> {
 class FlattenStream<I : Any, T : Any>(
         override val input: BeanStream<I>,
         override val parameters: FlattenStreamsParams<I, T>
-) : BeanStream<T>, AlterBean<I, T>, SinglePartitionBean {
+) : AbstractOperationBeanStream<I, T>(input), BeanStream<T>, AlterBean<I, T>, SinglePartitionBean {
 
-    override fun asSequence(sampleRate: Float): Sequence<T> {
-        val iterator = input.asSequence(sampleRate).iterator()
+    override fun operationSequence(input: Sequence<I>, sampleRate: Float): Sequence<T> {
+        val iterator = input.iterator()
         return object : Iterator<T> {
 
             var current: Iterator<T>? = null

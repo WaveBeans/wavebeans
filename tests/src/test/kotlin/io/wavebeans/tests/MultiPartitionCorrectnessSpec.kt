@@ -1,13 +1,16 @@
-package io.wavebeans.execution
+package io.wavebeans.tests
 
 import assertk.assertThat
 import assertk.assertions.*
 import assertk.catch
+import io.wavebeans.execution.MultiThreadedOverseer
+import io.wavebeans.execution.SingleThreadedOverseer
 import io.wavebeans.lib.*
 import io.wavebeans.lib.io.*
 import io.wavebeans.lib.stream.*
 import io.wavebeans.lib.stream.fft.FftSample
 import io.wavebeans.lib.stream.fft.fft
+import io.wavebeans.lib.stream.fft.inverseFft
 import io.wavebeans.lib.stream.window.Window
 import io.wavebeans.lib.stream.window.hamming
 import io.wavebeans.lib.stream.window.window
@@ -17,14 +20,15 @@ import mu.KotlinLogging
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.io.File
+import java.io.OutputStream
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.system.measureTimeMillis
 
-val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger {}
 
-object OverseerIntegrationSpec : Spek({
+object MultiPartitionCorrectnessSpec : Spek({
 
     fun runInParallel(
             outputs: List<StreamOutput<out Any>>,
@@ -442,6 +446,82 @@ object OverseerIntegrationSpec : Spek({
             runInParallel(listOf(stream), partitions = 2)
             val fileContent = file.readLines()
             assertThat(fileContent).size().isGreaterThan(1)
+
+            runLocally(listOf(stream))
+            val fileContentLocal = file.readLines()
+            assertThat(fileContent).isEqualTo(fileContentLocal)
+        }
+    }
+
+    describe("Resample") {
+        it("should have the same output as local") {
+            val sampleRate = 44100.0f
+            val file = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
+            val wavFileStream by lazy {
+                val f = File.createTempFile("test", ".wav").also { it.deleteOnExit() }
+                1240.sine().trim(10000).toMono16bitWav("file://${f.absolutePath}").evaluate(sampleRate / 2.0f)
+                wave("file://${f.absolutePath}")
+            }
+            val input = (
+                    120.sine().trim(100)..440.sine() +
+                            (100..110).sineSweep(0.5, 20.0) +
+                            input { sampleOf((it.first % 10000L) * 10000L) } +
+                            listOf(0.5, 0.3, 0.5, 0.2).input() +
+                            wavFileStream
+                    ) * 0.2
+            val stream = input
+                    .trim(1000)
+                    .resample(to = sampleRate * 2.0f)
+                    .window(1001)
+                    .hamming()
+                    .fft(1024)
+                    .inverseFft()
+                    .flatten()
+                    .resample()
+                    .toCsv("file://${file.absolutePath}")
+
+            runInParallel(listOf(stream), partitions = 2, sampleRate = sampleRate)
+            val fileContent = file.readLines()
+            assertThat(fileContent).size().isGreaterThan(1)
+
+            runLocally(listOf(stream), sampleRate = sampleRate)
+            val fileContentLocal = file.readLines()
+            assertThat(fileContent).isEqualTo(fileContentLocal)
+        }
+    }
+
+    describe("Output as a function") {
+        class NewLineDelimiterFile(
+                file: String,
+                duration: Double,
+        ) : Fn<WriteFunctionArgument<Sample>, Boolean>(
+                FnInitParameters().add("file", file).add("duration", duration)
+        ) {
+
+            private val duration by lazy { initParams.double("duration") }
+            private var file: OutputStream? = null
+
+            override fun apply(argument: WriteFunctionArgument<Sample>): Boolean {
+                if (file == null) {
+                    file = File(initParams.string("file")).outputStream().buffered()
+                }
+                if (argument.phase == WriteFunctionPhase.WRITE) {
+                    file!!.write(String.format("%.10f\n", argument.sample!!.asDouble()).toByteArray())
+                } else if (argument.phase == WriteFunctionPhase.CLOSE) {
+                    file!!.close()
+                    file = null
+                }
+                return argument.sampleIndex / argument.sampleRate < duration
+            }
+        }
+        it("should have the same output as local") {
+            val file = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
+            val stream = seqStream()
+                    .out(NewLineDelimiterFile(file.absolutePath, 0.1))
+
+            runInParallel(listOf(stream))
+            val fileContent = file.readLines()
+            assertThat(fileContent).size().isEqualTo(4411)
 
             runLocally(listOf(stream))
             val fileContentLocal = file.readLines()

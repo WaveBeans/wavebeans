@@ -22,6 +22,7 @@ object ZeroFillingFiniteSampleStreamSpec : Spek({
         override val parameters: BeanParams
             get() = throw UnsupportedOperationException()
 
+        override val desiredSampleRate: Float? = null
     }
 
 

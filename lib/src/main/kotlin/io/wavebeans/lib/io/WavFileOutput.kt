@@ -279,27 +279,22 @@ class WavFileOutput(
         /**
          * The stream to store into a wav-file. Can be of type [Sample] or [SampleVector].
          */
-        val stream: BeanStream<Any>,
+        override val input: BeanStream<Any>,
         /**
          * Parameters to tune the stream output.
          */
-        val params: WavFileOutputParams<Unit>
-) : StreamOutput<Any>, SinglePartitionBean {
+        override val parameters: WavFileOutputParams<Unit>
+) : AbstractStreamOutput<Any>(input), SinglePartitionBean {
 
-    override val input: Bean<Any> = stream
-
-    override val parameters: BeanParams = params
-
-    override fun writer(sampleRate: Float): Writer =
+    override fun outputWriter(inputSequence: Sequence<Any>, sampleRate: Float): Writer =
             WavWriter(
-                    stream,
-                    params.bitDepth,
+                    input,
+                    parameters.bitDepth,
                     sampleRate,
-                    params.numberOfChannels,
-                    plainFileWriterDelegate<Unit>(params.uri),
+                    parameters.numberOfChannels,
+                    plainFileWriterDelegate<Unit>(parameters.uri),
                     WavFileOutput::class
             )
-
 }
 
 /**
@@ -311,26 +306,21 @@ class WavPartialFileOutput<A : Any>(
         /**
          * The [Managed] stream to store into a wav-file. Sample type can be one of [Sample] or [SampleVector].
          */
-        val stream: BeanStream<Managed<OutputSignal, A, Any>>,
+        override val input: BeanStream<Managed<OutputSignal, A, Any>>,
         /**
          * Parameters to tune the stream output.
          */
-        val params: WavFileOutputParams<A>
-) : StreamOutput<Managed<OutputSignal, A, Any>>, SinglePartitionBean {
+        override val parameters: WavFileOutputParams<A>
+) : AbstractStreamOutput<Managed<OutputSignal, A, Any>>(input), SinglePartitionBean {
 
-    override val input: Bean<Managed<OutputSignal, A, Any>> = stream
-
-    override val parameters: BeanParams = params
-
-    override fun writer(sampleRate: Float): Writer =
+    override fun outputWriter(inputSequence: Sequence<Managed<OutputSignal, A, Any>>, sampleRate: Float): Writer =
             WavPartialWriter(
-                    stream,
-                    params.bitDepth,
+                    input,
+                    parameters.bitDepth,
                     sampleRate,
-                    params.numberOfChannels,
-                    suffixedFileWriterDelegate(params.uri) { params.suffix.apply(it) },
+                    parameters.numberOfChannels,
+                    suffixedFileWriterDelegate(parameters.uri) { parameters.suffix.apply(it) },
                     WavPartialFileOutput::class
             )
-
 }
 

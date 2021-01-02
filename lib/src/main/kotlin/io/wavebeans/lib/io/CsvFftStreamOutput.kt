@@ -32,15 +32,15 @@ data class CsvFftStreamOutputParams(
 ) : BeanParams()
 
 class CsvFftStreamOutput(
-        val stream: BeanStream<FftSample>,
-        val params: CsvFftStreamOutputParams
-) : StreamOutput<FftSample>, SinkBean<FftSample>, SinglePartitionBean {
+        override val input: BeanStream<FftSample>,
+        override val parameters: CsvFftStreamOutputParams
+) : AbstractStreamOutput<FftSample>(input), SinkBean<FftSample>, SinglePartitionBean {
 
-    override fun writer(sampleRate: Float): Writer {
+    override fun outputWriter(inputSequence: Sequence<FftSample>, sampleRate: Float): Writer {
         var offset = 0L
-        val writer = FileWriterDelegate<Unit>({ URI(params.uri) })
+        val writer = FileWriterDelegate<Unit>({ URI(parameters.uri) })
         return object : AbstractWriter<FftSample>(
-                stream,
+                input,
                 sampleRate,
                 writer,
                 CsvFftStreamOutput::class
@@ -53,12 +53,12 @@ class CsvFftStreamOutput(
             override fun serialize(element: FftSample): ByteArray {
                 fun format5(v: Double): String = String.format("%.5f", v)
                 fun format10(v: Double): String = String.format("%.10f", v)
-                val seq = if (params.isMagnitude)
+                val seq = if (parameters.isMagnitude)
                     element.magnitude().map(::format10)
                 else
                     element.phase().map(::format10)
 
-                val timeMarker = params.timeUnit.convert(element.time(), TimeUnit.NANOSECONDS)
+                val timeMarker = parameters.timeUnit.convert(element.time(), TimeUnit.NANOSECONDS)
                 var b = (sequenceOf(timeMarker) + seq)
                         .joinToString(",")
 
@@ -67,14 +67,9 @@ class CsvFftStreamOutput(
                             .joinToString(",") + "\n$b"
                 }
 
-                return (b + "\n").toByteArray(Charset.forName(params.encoding))
+                return (b + "\n").toByteArray(Charset.forName(parameters.encoding))
             }
 
         }
     }
-
-    override val input: Bean<FftSample>
-        get() = stream
-
-    override val parameters: BeanParams = params
 }

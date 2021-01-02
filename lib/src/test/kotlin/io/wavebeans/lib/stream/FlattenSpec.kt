@@ -305,15 +305,15 @@ object FlattenSpec : Spek({
                     size().isEqualTo(7)
                     prop("0") { it[0] }.isEqualTo(sampleVectorOf(sampleOf(1 * 1e-9), sampleOf(2 * 1e-9)))
                     prop("1") { it[1] }.isEqualTo(sampleVectorOf(sampleOf(3 * 1e-9), sampleOf(4 * 1e-9)))
-                    prop("2") { it[2] }.isEqualTo((
+                    prop("2") { it[2] }.isEqualTo(
                             sampleVectorOf(sampleOf(5 * 1e-9), sampleOf(6 * 1e-9)) +
                                     sampleVectorOf(sampleOf(5 * 1e-9), sampleOf(6 * 1e-9))
-                            ) as SampleVector)
+                    )
                     prop("3") { it[3] }.isEqualTo(sampleVectorOf(sampleOf(7 * 1e-9), sampleOf(8 * 1e-9)))
-                    prop("4") { it[4] }.isEqualTo((
+                    prop("4") { it[4] }.isEqualTo(
                             sampleVectorOf(sampleOf(9 * 1e-9), sampleOf(10 * 1e-9)) +
                                     sampleVectorOf(sampleOf(9 * 1e-9), sampleOf(10 * 1e-9))
-                            ) as SampleVector)
+                    )
                     prop("5") { it[5] }.isEqualTo(sampleVectorOf(sampleOf(11 * 1e-9), sampleOf(12 * 1e-9)))
                     prop("6") { it[6] }.isEqualTo(sampleVectorOf())
                 }

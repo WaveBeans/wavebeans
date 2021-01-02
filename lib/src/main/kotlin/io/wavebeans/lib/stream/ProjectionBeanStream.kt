@@ -17,9 +17,9 @@ data class ProjectionBeanStreamParams(
 class ProjectionBeanStream<T : Any>(
         override val input: BeanStream<T>,
         override val parameters: ProjectionBeanStreamParams
-) : BeanStream<T>, SingleBean<T> {
+) : AbstractOperationBeanStream<T, T>(input), BeanStream<T>, SingleBean<T> {
 
-    override fun asSequence(sampleRate: Float): Sequence<T> {
+    override fun operationSequence(input: Sequence<T>, sampleRate: Float): Sequence<T> {
         val start = timeToSampleIndexFloor(parameters.start, parameters.timeUnit, sampleRate)
                 .let { if (it < 0) 0 else it }
         val end = parameters.end
@@ -27,7 +27,7 @@ class ProjectionBeanStream<T : Any>(
                 ?: Long.MAX_VALUE
         var leftToRead = end - start
         var toSkip = start
-        val iterator = input.asSequence(sampleRate).iterator()
+        val iterator = input.iterator()
         while (toSkip > 0 && iterator.hasNext()) {
             val obj = iterator.next()
             toSkip -= SampleCountMeasurement.samplesInObject(obj)

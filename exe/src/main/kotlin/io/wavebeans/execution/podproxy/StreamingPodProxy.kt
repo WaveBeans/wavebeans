@@ -6,6 +6,7 @@ import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.lib.AnyBean
 import io.wavebeans.lib.BeanParams
 import io.wavebeans.lib.BeanStream
+import java.util.concurrent.TimeUnit
 
 abstract class StreamingPodProxy(
         val pointedTo: PodKey,
@@ -29,6 +30,12 @@ abstract class StreamingPodProxy(
     }
 
     override fun inputs(): List<AnyBean> = throw UnsupportedOperationException("That's not required for PodProxy")
+
+    override val desiredSampleRate: Float? by lazy {
+        val bush = podDiscovery.bushFor(pointedTo)
+        val caller = bushCallerRepository.create(bush, pointedTo)
+        caller.call("desiredSampleRate").get(5000, TimeUnit.MILLISECONDS).obj as Float?
+    }
 
     override val parameters: BeanParams
         get() = throw UnsupportedOperationException("That's not required for PodProxy")
