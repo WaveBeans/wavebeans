@@ -56,6 +56,7 @@ This document describe the process of making releases. Some of this position may
         * Update links from `/docs/user/http` to `/docs/http`
         * Update links from `/docs/user/cli` to `/docs/cli`
         * Update links from `/docs/user/exe` to `/docs/exe`
+        * Update links from `/docs/user/ops` to `/docs/ops`
         * Update links from `/docs/dev` to `/devzone`
         * `readme.md` to `index.html`
         * `.md` to `.html`
