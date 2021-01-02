@@ -18,7 +18,8 @@ const val DATA = 0x64617461
 class WavLEAudioFileDescriptor(
         sampleRate: Float,
         bitDepth: BitDepth,
-        val numberOfChannels: Int
+        val numberOfChannels: Int,
+        val dataSize: Int,
 ) : AudioFileDescriptor(
         sampleRate,
         bitDepth
@@ -29,7 +30,7 @@ class WavLEAudioFileDescriptor(
     private val bigEndian: Boolean = false
 
     override fun copy(sampleRate: Float, bitDepth: BitDepth): AudioFileDescriptor =
-            WavLEAudioFileDescriptor(sampleRate, bitDepth, numberOfChannels)
+            WavLEAudioFileDescriptor(sampleRate, bitDepth, numberOfChannels, dataSize)
 
     override fun toAudioFormat(): AudioFormat {
         return AudioFormat(

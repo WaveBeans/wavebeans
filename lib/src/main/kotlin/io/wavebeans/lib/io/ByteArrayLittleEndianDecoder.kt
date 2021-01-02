@@ -4,8 +4,34 @@ import io.wavebeans.lib.BitDepth
 import io.wavebeans.lib.Sample
 import io.wavebeans.lib.asUnsignedByte
 import io.wavebeans.lib.sampleOf
+import java.io.BufferedInputStream
+import java.io.InputStream
 
 class ByteArrayLittleEndianDecoder(val bitDepth: BitDepth) {
+
+    fun sequence(stream: InputStream): Sequence<Sample> {
+        val inputStream = BufferedInputStream(stream)
+        val buffer = ByteArray(bitDepth.bytesPerSample)
+        var readButNotReturned = 0
+        return object : Iterator<Sample> {
+            override fun hasNext(): Boolean {
+                if (readButNotReturned == buffer.size) return true
+                readButNotReturned = inputStream.read(buffer, 0, buffer.size)
+                if (readButNotReturned == buffer.size) return true
+                return false
+            }
+
+            override fun next(): Sample {
+                if (readButNotReturned > 0) {
+                    readButNotReturned = 0
+                } else {
+                    inputStream.read(buffer, 0, buffer.size)
+                }
+                return buffer.decodeSampleLEBytes(0, bitDepth)
+            }
+
+        }.asSequence()
+    }
 
     fun sequence(buffer: ByteArray): Sequence<Sample> {
         var bufferPos = 0
