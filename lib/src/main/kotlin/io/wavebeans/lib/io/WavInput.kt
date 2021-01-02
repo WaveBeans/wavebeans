@@ -61,7 +61,7 @@ data class WavInputParams(
          * The URI of the file of any [WbFileDriver], i.e. `file:///my/file.wav` for UNIX-like file systems,
          * or `file://c:/my/file.wav` for Windows-like file systems.
          */
-        val uri: String
+        val uri: String,
 ) : BeanParams()
 
 /**
@@ -78,49 +78,43 @@ class WavInput(
     data class Content(
             val size: Int,
             val bitDepth: BitDepth,
-            val buffer: ByteArray,
-            val sampleRate: Float
-    ) {
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (javaClass != other?.javaClass) return false
+            val byteStream: InputStream,
+            val sampleRate: Float,
+    )
 
-            other as Content
+    private var cnt: Content? = null
 
-            if (size != other.size) return false
-            if (bitDepth != other.bitDepth) return false
-            if (!buffer.contentEquals(other.buffer)) return false
-            if (sampleRate != other.sampleRate) return false
-
-            return true
-        }
-
-        override fun hashCode(): Int {
-            var result = size
-            result = 31 * result + bitDepth.hashCode()
-            result = 31 * result + buffer.contentHashCode()
-            result = 31 * result + sampleRate.hashCode()
-            return result
-        }
-    }
-
-    private val cnt: Content by lazy {
+    private fun readContent(): Content {
         val source = WbFileDriver.createFile(URI(params.uri)).createWbFileInputStream()
         val (descriptor, buf) = WavFileReader(source).read()
-        Content(buf.size, descriptor.bitDepth, buf, descriptor.sampleRate)
+        val content = Content(descriptor.dataSize, descriptor.bitDepth, buf, descriptor.sampleRate)
+        cnt = content
+        return content
     }
 
+    override val desiredSampleRate: Float? by lazy {
+        val content = cnt ?: readContent()
+        content.sampleRate
+    }
 
-    override val desiredSampleRate: Float? by lazy { cnt.sampleRate }
+    override fun length(timeUnit: TimeUnit): Long {
+        val content = cnt ?: readContent()
+        return samplesCountToLength(samplesCount(), content.sampleRate, timeUnit)
+    }
 
-    override fun length(timeUnit: TimeUnit): Long = samplesCountToLength(samplesCount(), cnt.sampleRate, timeUnit)
-
-    override fun samplesCount(): Long = (cnt.size / cnt.bitDepth.bytesPerSample).toLong()
+    override fun samplesCount(): Long {
+        val content = cnt ?: readContent()
+        return (content.size / content.bitDepth.bytesPerSample).toLong()
+    }
 
     override fun inputSequence(sampleRate: Float): Sequence<Sample> {
-        require(sampleRate == cnt.sampleRate) { "The stream should be resampled from ${cnt.sampleRate}Hz to ${sampleRate}Hz" }
-        return ByteArrayLittleEndianDecoder(cnt.bitDepth)
-                .sequence(cnt.buffer)
+        val content = cnt ?: readContent()
+        require(sampleRate == content.sampleRate) {
+            "The stream should be resampled from ${content.sampleRate}Hz to ${sampleRate}Hz"
+        }
+        cnt = null
+        return ByteArrayLittleEndianDecoder(content.bitDepth)
+                .sequence(content.byteStream)
                 .map { samplesProcessed.increment(); it }
     }
 }
@@ -130,10 +124,10 @@ class WavFileReaderException(message: String, cause: Exception?) : Exception(mes
 }
 
 class WavFileReader(
-        private val source: InputStream
+        private val source: InputStream,
 ) {
 
-    fun read(): Pair<WavLEAudioFileDescriptor, ByteArray> {
+    fun read(): Pair<WavLEAudioFileDescriptor, InputStream> {
 
         fun readByteArray(target: String, s: InputStream, amount: Int): ByteArray {
             val bb = ByteArray(amount)
@@ -213,13 +207,10 @@ class WavFileReader(
 
         val bitDepthAsEnum = BitDepth.of(bitDepth)
         val sampleRateAsFloat = sampleRate.toFloat()
-        val descriptor = WavLEAudioFileDescriptor(sampleRateAsFloat, bitDepthAsEnum, numberOfChannels)
+        val descriptor = WavLEAudioFileDescriptor(sampleRateAsFloat, bitDepthAsEnum, numberOfChannels, dataSize)
 
         if (descriptor.numberOfChannels == 1) {
-            val bb = ByteArray(dataSize)
-            val c = source.read(bb)
-            if (c != dataSize) throw IllegalStateException("Read $c bytes but expected $dataSize")
-            return Pair(descriptor, bb)
+            return Pair(descriptor, source)
         } else {
             throw UnsupportedOperationException("Mono wav-files are supported only.")
         }
