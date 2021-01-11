@@ -116,6 +116,7 @@ object WbHttpServiceIntegrationSpec : Spek({
 
             val overseer = SingleThreadedOverseer(listOf(o))
             overseer.eval(44100.0f)
+            waitForData<Sample>(tableName)
             val result = client(Request(Method.GET, "http://localhost:$port/audio/$tableName/stream/wav?limit=1ms"))
                 .body.stream.readBytes()
 
