@@ -61,11 +61,8 @@ object WbHttpServiceIntegrationSpec : Spek({
                 client(Request(Method.GET, "http://localhost:$port/table/$tableName/last?interval=1.ms"))
                     .bodyString()
 
-            assertThat(
-                result.split(Regex("[\\r\\n]+"))
-                    .filterNot { it.isEmpty() }
-            ).all {
-                size().isGreaterThan(1)
+            assertThat(result.split(Regex("[\\r\\n]+")).filterNot { it.isEmpty() }).all {
+                size().isGreaterThanOrEqualTo(1)
                 each { it.matches(elementRegex) }
             }
         }
@@ -90,11 +87,8 @@ object WbHttpServiceIntegrationSpec : Spek({
                 client(Request(Method.GET, "http://localhost:$port/table/$tableName/last?interval=1.ms"))
                     .bodyString()
 
-            assertThat(
-                result.split(Regex("[\\r\\n]+"))
-                    .filterNot { it.isEmpty() }
-            ).all {
-                size().isGreaterThan(1)
+            assertThat(result.split(Regex("[\\r\\n]+")).filterNot { it.isEmpty() }).all {
+                size().isGreaterThanOrEqualTo(1)
                 each { it.matches(elementRegex) }
             }
 
@@ -191,7 +185,7 @@ object WbHttpServiceIntegrationSpec : Spek({
             val result = client(Request(Method.GET, "http://localhost:$httpPort/table/$tableName/last?interval=100ms"))
                 .bodyString()
             assertThat(result.split(Regex("[\\r\\n]+")).filterNot { it.isEmpty() }).all {
-                size().isGreaterThan(1)
+                size().isGreaterThanOrEqualTo(1)
                 each { it.matches(elementRegex) }
             }
         }
