@@ -12,13 +12,12 @@ dependencies {
     implementation(project(":metrics:core"))
 
     val kotlinxSerializationRuntimeVersion: String by System.getProperties()
-    val ktorVersion: String by System.getProperties()
 
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationRuntimeVersion")
 
-    implementation("io.ktor:ktor-server-core:$ktorVersion")
-    implementation("io.ktor:ktor-server-netty:$ktorVersion")
-    implementation("io.ktor:ktor-serialization:$ktorVersion")
+    implementation("io.netty:netty-all:4.1.56.Final")
+    implementation("io.javalin:javalin:3.12.0")
 
-    testImplementation("io.ktor:ktor-server-test-host:$ktorVersion")
+    testImplementation("org.http4k:http4k-core:4.0.0.0")
+    testImplementation("org.http4k:http4k-client-okhttp:4.0.0.0")
 }
