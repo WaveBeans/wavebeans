@@ -25,14 +25,16 @@ class WbHttpService(
         private val log = KotlinLogging.logger { }
     }
 
-    private val handlers: List<WbNettyHandler> = listOf(
-        JavalinServletHandler(DefaultJavalinApp(
-            listOf(
-                { it.tableService(tableRegistry) },
-                { it.audioService(tableRegistry) }
-            )
-        ))
-    )
+    private val handlers: List<WbNettyHandler> by lazy {
+        listOf(
+            JavalinServletHandler(DefaultJavalinApp(
+                listOf(
+                    { it.tableService(tableRegistry) },
+                    { it.audioService(tableRegistry) }
+                )
+            ))
+        )
+    }
     private val bossGroup: EventLoopGroup = NioEventLoopGroup()
     private val workerGroup: EventLoopGroup = NioEventLoopGroup()
     private var server: ChannelFuture? = null
@@ -66,8 +68,8 @@ class WbHttpService(
 
                 override fun initChannel(ch: SocketChannel) {
                     handlers.forEach {
-                        log.debug { "Attaching $it to pipeline ${ch.pipeline()}" }
-                        it.attachTo(ch.pipeline())
+                        log.debug { "Initiating channel $ch $it" }
+                        it.initChannel(ch)
                     }
                     ch.pipeline().addFirst(LoggingHandler(WbHttpService::class.java, LogLevel.TRACE))
                 }

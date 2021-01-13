@@ -4,7 +4,7 @@ import io.javalin.Javalin
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelInboundHandlerAdapter
-import io.netty.channel.ChannelPipeline
+import io.netty.channel.socket.SocketChannel
 import io.netty.handler.codec.http.*
 import mu.KotlinLogging
 import javax.servlet.http.HttpServlet
@@ -19,20 +19,16 @@ class JavalinServletHandler(
         private val log = KotlinLogging.logger { }
     }
 
-    private val javalin by lazy {
-        Javalin.createStandalone()
-    }
-    private val javalinServlet by lazy {
-        javalin.servlet() as HttpServlet
-    }
+    private val javalin by lazy { Javalin.createStandalone() }
+    private val javalinServlet by lazy { javalin.servlet() as HttpServlet }
 
     override fun init() {
         javalinApp.setUp(javalin)
         javalinServlet.init()
     }
 
-    override fun attachTo(pipeline: ChannelPipeline) {
-        pipeline
+    override fun initChannel(channel: SocketChannel) {
+        channel.pipeline()
             .addLast("HTTP decompressor", HttpContentDecompressor())
             .addLast("HTTP request decoder", HttpRequestDecoder())
             .addLast("HTTP object aggregator", HttpObjectAggregator(requestBufferSize))

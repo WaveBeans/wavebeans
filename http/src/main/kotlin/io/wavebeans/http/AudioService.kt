@@ -22,7 +22,7 @@ enum class AudioStreamOutputFormat(val id: String, val contentType: String) {
 
     companion object {
         fun byId(id: String): AudioStreamOutputFormat? =
-            values().firstOrNull { it.id.toLowerCase() == id.toLowerCase() }
+            values().firstOrNull { it.id.equals(id, ignoreCase = true) }
     }
 }
 
