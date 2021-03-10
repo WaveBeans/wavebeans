@@ -38,10 +38,13 @@ object WbHttpServiceIntegrationSpec : Spek({
         OkHttp(c)
     }
 
+    val tableRegistry = TableRegistry.default
+
     describe("Table service") {
 
         val port = findFreePort()
-        val httpService = WbHttpService(serverPort = port, gracePeriodMillis = 100)
+        val httpService = WbHttpService(serverPort = port, gracePeriodMillis = 100, tableRegistry = tableRegistry)
+            .addHandler(JavalinServletHandler.newInstance(tableRegistry))
 
         beforeGroup { httpService.start() }
         afterGroup { httpService.close() }
@@ -98,7 +101,8 @@ object WbHttpServiceIntegrationSpec : Spek({
 
     describe("Audio service") {
         val port = findFreePort()
-        val httpService = WbHttpService(serverPort = port, gracePeriodMillis = 100)
+        val httpService = WbHttpService(serverPort = port, gracePeriodMillis = 100, tableRegistry = tableRegistry)
+            .addHandler(JavalinServletHandler.newInstance(tableRegistry))
 
         beforeGroup { httpService.start() }
 
@@ -129,12 +133,14 @@ object WbHttpServiceIntegrationSpec : Spek({
         val communicatorPort = findFreePort()
         val facilitatorPort1 = findFreePort()
         val facilitatorPort2 = findFreePort()
+        val tableRegistryInner = TableRegistryImpl()
         val httpService = WbHttpService(
             serverPort = httpPort,
             gracePeriodMillis = 100,
             communicatorPort = communicatorPort,
-            tableRegistry = TableRegistryImpl() //just isolated instance
-        )
+            tableRegistry = tableRegistryInner //just isolated instance
+        ).addHandler(JavalinServletHandler.newInstance(tableRegistryInner))
+
 
         val tableName = "tableDistributed"
 

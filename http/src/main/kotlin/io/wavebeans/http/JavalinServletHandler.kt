@@ -6,6 +6,7 @@ import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelInboundHandlerAdapter
 import io.netty.channel.socket.SocketChannel
 import io.netty.handler.codec.http.*
+import io.wavebeans.lib.table.TableRegistry
 import mu.KotlinLogging
 import javax.servlet.http.HttpServlet
 
@@ -17,6 +18,15 @@ class JavalinServletHandler(
 
     companion object {
         private val log = KotlinLogging.logger { }
+
+        fun newInstance(tableRegistry: TableRegistry): JavalinServletHandler {
+            return JavalinServletHandler(DefaultJavalinApp(
+                listOf(
+                    { it.tableService(tableRegistry) },
+                    { it.audioService(tableRegistry) }
+                )
+            ))
+        }
     }
 
     private val javalin by lazy { Javalin.createStandalone() }
