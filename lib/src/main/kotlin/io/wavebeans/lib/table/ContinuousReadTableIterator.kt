@@ -21,8 +21,8 @@ import kotlin.NoSuchElementException
  * gracefully as well returning everything to the end of the table respecting the offset.
  */
 internal class ContinuousReadTableIterator<T : Any>(
-        val tableDriver: InMemoryTimeseriesTableDriver<T>,
-        offset: TimeMeasure
+    val tableDriver: InMemoryTimeseriesTableDriver<T>,
+    offset: TimeMeasure
 ) : Iterator<T> {
 
     companion object {
@@ -47,16 +47,17 @@ internal class ContinuousReadTableIterator<T : Any>(
         }
     }
 
-    override fun hasNext(): Boolean = !streamIsOver || nextElement != null || advance(waitForNextElement = false) != null
+    override fun hasNext(): Boolean = advance(waitForNextElement = !streamIsOver) != null
 
     override fun next(): T {
-        if (nextElement == null && advance(waitForNextElement = !streamIsOver) == null) throw NoSuchElementException("No more elements to read")
+        if (!hasNext()) throw NoSuchElementException("No more elements to read")
         val element = nextElement!!
         nextElement = null
         return element
     }
 
     private fun advance(waitForNextElement: Boolean): T? {
+        if (nextElement != null) return nextElement
         var e: Item<T>?
 
         do {
