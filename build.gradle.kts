@@ -98,24 +98,24 @@ publishing {
             artifactId = "http"
         }
         create<MavenPublication>("filesystems.core") {
-            from(subprojects.first { it.name == "core" && it.parent?.name == "filesystems" }.components["java"])
+            from(subprojects.first { it.name == "filesystems-core" }.components["java"])
             groupId = "io.wavebeans.filesystems"
-            artifactId = "core"
+            artifactId = "filesystems-core"
         }
         create<MavenPublication>("filesystems.dropbox") {
-            from(subprojects.first { it.name == "dropbox" && it.parent?.name == "filesystems" }.components["java"])
+            from(subprojects.first { it.name == "filesystems-dropbox" }.components["java"])
             groupId = "io.wavebeans.filesystems"
-            artifactId = "dropbox"
+            artifactId = "filesystems-dropbox"
         }
         create<MavenPublication>("metrics.core") {
-            from(subprojects.first { it.name == "core" && it.parent?.name == "metrics" }.components["java"])
+            from(subprojects.first { it.name == "metrics-core" }.components["java"])
             groupId = "io.wavebeans.metrics"
-            artifactId = "core"
+            artifactId = "metrics-core"
         }
         create<MavenPublication>("metrics.prometheus") {
-            from(subprojects.first { it.name == "prometheus" && it.parent?.name == "metrics" }.components["java"])
+            from(subprojects.first { it.name == "metrics-prometheus" }.components["java"])
             groupId = "io.wavebeans.metrics"
-            artifactId = "prometheus"
+            artifactId = "metrics-prometheus"
         }
     }
 }

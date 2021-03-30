@@ -1,3 +1,3 @@
 tasks.jar {
-    archiveFileName.set("filesystems-core-${project.version}.jar")
+    archiveBaseName.set("filesystems-core")
 }

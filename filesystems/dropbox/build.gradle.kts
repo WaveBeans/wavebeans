@@ -1,8 +1,8 @@
 tasks.jar {
-    archiveFileName.set("filesystems-dropbox-${project.version}.jar")
+    archiveBaseName.set("filesystems-dropbox")
 }
 
 dependencies {
-    implementation(project(":filesystems:core"))
+    implementation(project(":filesystems:filesystems-core"))
     implementation("com.dropbox.core:dropbox-core-sdk:3.1.4")
 }
