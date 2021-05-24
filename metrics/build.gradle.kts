@@ -1,3 +1,3 @@
 subprojects {
-    group = "io.wavebeans.metrics"
+    group = "io.wavebeans"
 }

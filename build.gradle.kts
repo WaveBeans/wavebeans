@@ -4,7 +4,6 @@ plugins {
     val kotlinVersion: String by System.getProperties()
 
     kotlin("jvm") version kotlinVersion
-    id("com.jfrog.bintray") version "1.8.4"
     id("org.gradle.test-retry") version "1.2.0"
 
     `java-library`
@@ -98,42 +97,53 @@ publishing {
             groupId = "io.wavebeans"
             artifactId = "http"
         }
-        create<MavenPublication>("filesystems.core") {
-            from(subprojects.first { it.name == "core" && it.parent?.name == "filesystems" }.components["java"])
-            groupId = "io.wavebeans.filesystems"
-            artifactId = "core"
+        create<MavenPublication>("filesystems-core") {
+            from(subprojects.first { it.name == "filesystems-core" }.components["java"])
+            groupId = "io.wavebeans"
+            artifactId = "filesystems-core"
         }
-        create<MavenPublication>("filesystems.dropbox") {
-            from(subprojects.first { it.name == "dropbox" && it.parent?.name == "filesystems" }.components["java"])
-            groupId = "io.wavebeans.filesystems"
-            artifactId = "dropbox"
+        create<MavenPublication>("filesystems-dropbox") {
+            from(subprojects.first { it.name == "filesystems-dropbox" }.components["java"])
+            groupId = "io.wavebeans"
+            artifactId = "filesystems-dropbox"
         }
-        create<MavenPublication>("metrics.core") {
-            from(subprojects.first { it.name == "core" && it.parent?.name == "metrics" }.components["java"])
-            groupId = "io.wavebeans.metrics"
-            artifactId = "core"
+        create<MavenPublication>("metrics-core") {
+            from(subprojects.first { it.name == "metrics-core" }.components["java"])
+            groupId = "io.wavebeans"
+            artifactId = "metrics-core"
         }
-        create<MavenPublication>("metrics.prometheus") {
-            from(subprojects.first { it.name == "prometheus" && it.parent?.name == "metrics" }.components["java"])
-            groupId = "io.wavebeans.metrics"
-            artifactId = "prometheus"
+        create<MavenPublication>("metrics-prometheus") {
+            from(subprojects.first { it.name == "metrics-prometheus" }.components["java"])
+            groupId = "io.wavebeans"
+            artifactId = "metrics-prometheus"
+        }
+    }
+    repositories {
+        maven {
+            name = "WaveBeansMavenCentral"
+            url = uri("https://s01.oss.sonatype.org")
+            credentials {
+                username = findProperty("gpr.user")?.toString() ?: System.getenv("GPR_USER") ?: ""
+                password = findProperty("gpr.key")?.toString() ?: System.getenv("GPR_TOKEN") ?: ""
+            }
         }
     }
 }
 
-bintray {
-    user = findProperty("bintray.user")?.toString() ?: ""
-    key = findProperty("bintray.key")?.toString() ?: ""
-    setPublications("lib", "exe", "proto", "http", "filesystems.core", "filesystems.dropbox", "metrics.core", "metrics.prometheus")
-    pkg(delegateClosureOf<com.jfrog.bintray.gradle.BintrayExtension.PackageConfig> {
-        repo = "wavebeans"
-        name = "wavebeans"
-        userOrg = "wavebeans"
-        vcsUrl = "https://github.com/WaveBeans/wavebeans"
-        publish = true
-        setLicenses("Apache-2.0")
-        version(delegateClosureOf<com.jfrog.bintray.gradle.BintrayExtension.VersionConfig> {
-            name = project.version.toString()
-        })
-    })
-}
+
+//bintray {
+//    user = findProperty("jfrog.user")?.toString() ?: ""
+//    key = findProperty("jfrog.key")?.toString() ?: ""
+//    setPublications("lib", "exe", "proto", "http", "filesystems.core", "filesystems.dropbox", "metrics.core", "metrics.prometheus")
+//    pkg(delegateClosureOf<com.jfrog.bintray.gradle.BintrayExtension.PackageConfig> {
+//        repo = "wavebeans"
+//        name = "wavebeans"
+//        userOrg = "wavebeans"
+//        vcsUrl = "https://github.com/WaveBeans/wavebeans"
+//        publish = true
+//        setLicenses("Apache-2.0")
+//        version(delegateClosureOf<com.jfrog.bintray.gradle.BintrayExtension.VersionConfig> {
+//            name = project.version.toString()
+//        })
+//    })
+//}

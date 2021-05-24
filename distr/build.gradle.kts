@@ -74,11 +74,11 @@ val makeExeScripts by tasks.registering(CreateStartScripts::class) {
 }
 
 val copyMetricsPrometheus by tasks.registering(Copy::class) {
-    dependsOn(":metrics:prometheus:jar")
+    dependsOn(":metrics-prometheus:jar")
     val builtExtra = file("$buildDir/builtExtra/prometheus")
-    from(project(":metrics:prometheus").buildDir.absolutePath + "/libs")
+    from(project(":metrics-prometheus").buildDir.absolutePath + "/libs")
     from(
-            project(":metrics:prometheus").configurations
+            project(":metrics-prometheus").configurations
                     .compileClasspath.get()
                     .copyRecursive { it.group?.indexOf("io.prometheus") ?: -1 >= 0 }
     )

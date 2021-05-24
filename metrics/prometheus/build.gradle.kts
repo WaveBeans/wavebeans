@@ -3,7 +3,7 @@ tasks.jar {
 }
 
 dependencies{
-    implementation(project(":metrics:core"))
+    implementation(project(":metrics-core"))
 
     api("io.prometheus:simpleclient:0.9.0")
     api("io.prometheus:simpleclient_hotspot:0.9.0")
