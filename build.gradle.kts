@@ -93,7 +93,7 @@ publishing {
             artifactId = "exe"
             populatePom(
                 "WaveBeans Exe",
-                "WaveBeans Execution environment. Provides the way to execute streams in different modes."
+                "WaveBeans Execution environment. Provides the way to execute bean streams in different modes."
             )
         }
         create<MavenPublication>("proto") {
