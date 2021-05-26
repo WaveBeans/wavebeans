@@ -174,7 +174,7 @@ fun MavenPublication.populatePom(
     pom {
         name.set(nameValue)
         description.set(descriptionValue)
-        url.set("https//wavebeans.io")
+        url.set("https://wavebeans.io")
         licenses {
             license {
                 name.set("The Apache License, Version 2.0")
