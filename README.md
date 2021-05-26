@@ -1,6 +1,6 @@
 # WaveBeans
 [ ![Build And Test](https://github.com/wavebeans/wavebeans/workflows/Build%20And%20Test/badge.svg) ](https://github.com/WaveBeans/wavebeans/actions?query=workflow%3A%22Build+And+Test%22)
-[ ![Download](https://api.bintray.com/packages/wavebeans/wavebeans/wavebeans/images/download.svg?version=0.3.0) ](https://bintray.com/wavebeans/wavebeans/wavebeans/0.3.0/link)
+![Maven Central](https://img.shields.io/maven-central/v/io.wavebeans/lib)
 
 A set of tools to process audio signals using Kotlin/Java/Scala/etc. You can either use it via command line or develop your own program which can be run as a part of you application:
 
@@ -34,27 +34,32 @@ WaveBeans is written on Kotlin, but it is compatible with all other JVM language
 
 If you want to use WaveBeans in your application just add it as a maven dependency. Here is what you would need to add into your `build.gradle` file:
 
-* Register the new maven repository the WaveBeans is hosted in:
+* *(optionally)* The artifacts are published to Maven Central, usually it is available by default, but if it's not for some reason you may add it manually:
 
 ```groovy
 repositories {
-    maven {
-        name = "Bintray WaveBeans"
-        url = uri("https://dl.bintray.com/wavebeans/wavebeans")
-    }
+    mavenCentral()
 }
 ```
 
-* Register WaveBeans `exe` and `lib` main libraries, you may not need `exe` if you won't be using execution capabilities:
+* Add main API artifact to the dependecies:
 
 ```groovy
 dependencies {
-    implementation "io.wavebeans:exe:$wavebeans_version"
     implementation "io.wavebeans:lib:$wavebeans_version"
 }
 ```
 
-* Optionally you may be required to add regular kotlin runtime dependency if you don't have it:
+* *(optionally)* you may need `exe` if you are going to use extended execution capabilities:
+
+```groovy
+dependencies {
+    implementation "io.wavebeans:exe:$wavebeans_version"
+}
+```
+
+* *(optionally)* You may be required to add regular kotlin runtime dependency if you don't have it:
+
 ```groovy
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
@@ -108,14 +113,7 @@ For more information [usage documentation](docs/user/cli/readme.md) and follow [
 
 You need to have JRE 8 installed and configured. Also familiarity with Kotlin really helps.
 
-In order to start using WaveBeans via command line you just need to download the binaries, unzip it and you're ready to go:
-
-```bash
-curl -LO https://dl.bintray.com/wavebeans/wavebeans/cli/wavebeans.zip
-unzip wavebeans.zip
-```
-
-Please follow more [precise instructions](/docs/user/cli/readme.md#installation-instructions) 
+In order to start using WaveBeans via command line you just need to [download the binaries](/docs/user/cli/readme.md#installation-instructions). 
 
 ## Building from source
 

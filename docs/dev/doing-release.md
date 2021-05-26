@@ -25,10 +25,9 @@ This document describe the process of making releases. Some of this position may
     2. Update changelog using script `.release/updateChangelog.sh` specifying the version as a parameter. You need to be in `.release` directory to do that.
         * Also update the release log with extra information coming not from branches.
         * Change the order of the entries if necessary. 
-    3. Update the root `README.md` file with the link to new version on Bintray.
-    4. Update `version` in `gradle.properties`.
-    5. Commit with message `Release $VERSION`.
-    6. Tag the current commit and push it.
+    3. Update `version` in `gradle.properties`.
+    4. Commit with message `Release $VERSION`.
+    5. Tag the current commit and push it.
 
 2. Push to remote:
     
@@ -64,13 +63,12 @@ This document describe the process of making releases. Some of this position may
                     ```bash
                     gpg --list-keys
                     ```
-    3. Upload new version of the tool:
-        * build locally via `./gradlew :distr:distTar :distr:distZip`
-        * on Bintray, select version, then `Actions > Upload Files`. Upload `distr/build/distributions/*.*`
 
 3. GitHub:
     * Create the release with changes from changelog based on the pushed tag.
-    * Add the link to the version on BinTray.
+    * Upload new version of the tool:
+        * build locally via `./gradlew :distr:distTar :distr:distZip`
+        * In release of the current version upload `distr/build/distributions/*.*`
 
 4. Merge tag to master.
 

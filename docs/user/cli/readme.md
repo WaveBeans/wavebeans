@@ -26,29 +26,24 @@ The tool requires to have JRE 8+ installed and be configured properly. Please fo
 
 ## Installation instructions
 
-* Choose the appropriate version
-* Download the binaries from `https://dl.bintray.com/wavebeans/wavebeans/wavebeans-$VERSION.zip`
-
-```bash
- curl -LO https://dl.bintray.com/wavebeans/wavebeans/wavebeans-$VERSION.zip
-```
-
+* Choose the appropriate version (will be referred as `$VERSION` in that guide)
+* Download the binaries from the latest release on the GitHub `https://github.com/WaveBeans/wavebeans/releases/tag/$VERSION`
 * Unpack them
 
 ```bash
-unzip wavebeans.zip
+unzip wavebeans-$VERSION.zip
 ```
 
-* To avoid providing a full path every time make an alias to WaveBeans CLI
+* To avoid providing a full path every time make an alias to WaveBeans CLI, i.e. for if you use `zsh`:
 
 ```bash
-echo "alias wavebeans=$(pwd)/wavebeans/bin/wavebeans" >> ~/.zshrc
+echo "alias wavebeans=$(pwd)/wavebeans-$VERSION/bin/wavebeans" >> ~/.zshrc
 ```
 
-* or add it to PATH variable to be located automatically:
+* or add it to PATH variable to be located automatically, i.e. for if you use `zsh`:
 
 ```bash
-echo "PATH=\$PATH:$(pwd)/wavebeans/bin/" >> ~/.zshrc
+echo "PATH=\$PATH:$(pwd)/wavebeans-$VERSION/bin/" >> ~/.zshrc
 ```
 
 * Restart the shell and try running the tool, you should see the help output:
