@@ -50,7 +50,7 @@ dependencies {
 }
 ```
 
-* *(optionally)* you may need `exe` if you are going to use extended execution capabilities:
+* *(optionally)* You may need to add dependency on`exe` project if you are going to use extended [execution capabilities](/docs/user/exe/readme.md):
 
 ```groovy
 dependencies {
