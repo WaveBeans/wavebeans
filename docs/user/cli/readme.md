@@ -40,7 +40,7 @@ unzip wavebeans-$VERSION.zip
 echo "alias wavebeans=$(pwd)/wavebeans-$VERSION/bin/wavebeans" >> ~/.zshrc
 ```
 
-* or add it to PATH variable to be located automatically, i.e. for if you use `zsh`:
+* or add it to PATH variable to be located automatically, i.e. if you use `zsh`:
 
 ```bash
 echo "PATH=\$PATH:$(pwd)/wavebeans-$VERSION/bin/" >> ~/.zshrc
