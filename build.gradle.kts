@@ -147,7 +147,7 @@ publishing {
             artifactId = "metrics-prometheus"
             populatePom(
                 "WaveBeans Prometheus Metrics",
-                "WaveBeans monitoring subsystem Implementation to emit metrics to Prometheus."
+                "WaveBeans monitoring subsystem implementation to emit metrics into Prometheus."
             )
         }
     }
