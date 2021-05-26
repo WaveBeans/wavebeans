@@ -34,7 +34,7 @@ The tool requires to have JRE 8+ installed and be configured properly. Please fo
 unzip wavebeans-$VERSION.zip
 ```
 
-* To avoid providing a full path every time make an alias to WaveBeans CLI, i.e. for if you use `zsh`:
+* To avoid providing a full path every time make an alias to WaveBeans CLI, i.e. if you use `zsh`:
 
 ```bash
 echo "alias wavebeans=$(pwd)/wavebeans-$VERSION/bin/wavebeans" >> ~/.zshrc
