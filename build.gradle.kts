@@ -129,7 +129,7 @@ publishing {
             artifactId = "filesystems-dropbox"
             populatePom(
                 "WaveBeans DropBox FileSystem",
-                "FileSystem implementation to access file in DropBox account."
+                "FileSystem implementation to access files in DropBox account."
             )
         }
         create<MavenPublication>("metrics-core") {
