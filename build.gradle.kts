@@ -84,7 +84,7 @@ publishing {
             artifactId = "lib"
             populatePom(
                 "WaveBeans Lib",
-                "WaveBeans API library. Provides the way to define streams and basic execution functionality."
+                "WaveBeans API library. Provides the way to define bean streams and basic execution functionality."
             )
         }
         create<MavenPublication>("exe") {
