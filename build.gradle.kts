@@ -8,6 +8,7 @@ plugins {
 
     `java-library`
     `maven-publish`
+    signing
 }
 
 allprojects {
@@ -69,7 +70,7 @@ subprojects {
     tasks.jar {
         manifest {
             attributes(
-                    "WaveBeans-Version" to properties["version"]
+                "WaveBeans-Version" to properties["version"]
             )
         }
     }
@@ -81,69 +82,115 @@ publishing {
             from(subprojects.first { it.name == "lib" }.components["java"])
             groupId = "io.wavebeans"
             artifactId = "lib"
+            populatePom(
+                "WaveBeans Lib",
+                "WaveBeans API library. Provides the way to define streams and basic execution functionality."
+            )
         }
         create<MavenPublication>("exe") {
             from(subprojects.first { it.name == "exe" }.components["java"])
             groupId = "io.wavebeans"
             artifactId = "exe"
+            populatePom(
+                "WaveBeans Exe",
+                "WaveBeans Execution environment. Provides the way to execute streams in different modes."
+            )
         }
         create<MavenPublication>("proto") {
             from(subprojects.first { it.name == "proto" }.components["java"])
             groupId = "io.wavebeans"
             artifactId = "proto"
+            populatePom(
+                "WaveBeans Proto",
+                "WaveBeans Protobuf files and clients. For internal use only."
+            )
         }
         create<MavenPublication>("http") {
             from(subprojects.first { it.name == "http" }.components["java"])
             groupId = "io.wavebeans"
             artifactId = "http"
+            populatePom(
+                "WaveBeans HTTP",
+                "WaveBeans HTTP server. Provides the way to access functionality over HTTP Restful API."
+            )
         }
         create<MavenPublication>("filesystems-core") {
             from(subprojects.first { it.name == "filesystems-core" }.components["java"])
             groupId = "io.wavebeans"
             artifactId = "filesystems-core"
+            populatePom(
+                "WaveBeans FileSystems Core",
+                "WaveBeans subsystem to provide file specific operations."
+            )
         }
         create<MavenPublication>("filesystems-dropbox") {
             from(subprojects.first { it.name == "filesystems-dropbox" }.components["java"])
             groupId = "io.wavebeans"
             artifactId = "filesystems-dropbox"
+            populatePom(
+                "WaveBeans DropBox FileSystem",
+                "FileSystem implementation to access file in DropBox account."
+            )
         }
         create<MavenPublication>("metrics-core") {
             from(subprojects.first { it.name == "metrics-core" }.components["java"])
             groupId = "io.wavebeans"
             artifactId = "metrics-core"
+            populatePom(
+                "WaveBeans Metrics Core",
+                "WaveBeans monitoring subsystem to emit and collect metrics during execution."
+            )
         }
         create<MavenPublication>("metrics-prometheus") {
             from(subprojects.first { it.name == "metrics-prometheus" }.components["java"])
             groupId = "io.wavebeans"
             artifactId = "metrics-prometheus"
+            populatePom(
+                "WaveBeans Prometheus Metrics",
+                "WaveBeans monitoring subsystem Implementation to emit metrics to Prometheus."
+            )
         }
     }
     repositories {
         maven {
             name = "WaveBeansMavenCentral"
-            url = uri("https://s01.oss.sonatype.org")
+            url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
             credentials {
-                username = findProperty("gpr.user")?.toString() ?: System.getenv("GPR_USER") ?: ""
-                password = findProperty("gpr.key")?.toString() ?: System.getenv("GPR_TOKEN") ?: ""
+                username = findProperty("maven.user")?.toString() ?: ""
+                password = findProperty("maven.key")?.toString() ?: ""
             }
         }
     }
 }
 
+signing {
+    sign(publishing.publications)
+}
 
-//bintray {
-//    user = findProperty("jfrog.user")?.toString() ?: ""
-//    key = findProperty("jfrog.key")?.toString() ?: ""
-//    setPublications("lib", "exe", "proto", "http", "filesystems.core", "filesystems.dropbox", "metrics.core", "metrics.prometheus")
-//    pkg(delegateClosureOf<com.jfrog.bintray.gradle.BintrayExtension.PackageConfig> {
-//        repo = "wavebeans"
-//        name = "wavebeans"
-//        userOrg = "wavebeans"
-//        vcsUrl = "https://github.com/WaveBeans/wavebeans"
-//        publish = true
-//        setLicenses("Apache-2.0")
-//        version(delegateClosureOf<com.jfrog.bintray.gradle.BintrayExtension.VersionConfig> {
-//            name = project.version.toString()
-//        })
-//    })
-//}
+fun MavenPublication.populatePom(
+    nameValue: String,
+    descriptionValue: String
+) {
+    pom {
+        name.set(nameValue)
+        description.set(descriptionValue)
+        url.set("https//wavebeans.io")
+        licenses {
+            license {
+                name.set("The Apache License, Version 2.0")
+                url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
+            }
+        }
+        scm {
+            url.set("https://github.com/WaveBeans/wavebeans")
+            connection.set("scm:git:git://github.com:WaveBeans/wavebeans.git")
+            developerConnection.set("scm:git:ssh://github.com:WaveBeans/wavebeans.git")
+        }
+        developers {
+            developer {
+                name.set("Alexey Subbotin")
+                url.set("https://github.com/asubb")
+            }
+        }
+    }
+}

@@ -30,11 +30,40 @@ This document describe the process of making releases. Some of this position may
     5. Commit with message `Release $VERSION`.
     6. Tag the current commit and push it.
 
-2. Bintray:
-    1. Upload new version:
-    ```bash
-     ./gradlew bintrayUpload -Pbintray.user=$USER -Pbintray.key=$KEY
-    ```
+2. Push to remote:
+    
+    1. Upload new version to Maven Central:
+       * Build with gradle:
+            ```bash
+             ./gradlew publish -Psigning.keyId=<LAST_8_SYMBOLS_OF_KEY_ID> -Psigning.password=<KEY_PASSWORD> -Psigning.secretKeyRingFile=<PATH_TO_SECRET_KEY_RING_FILE> -Pmaven.user=<OSSRH_USER> -Pmaven.key=<OSSRH_PASSWORD>
+            ```
+       * [Commit the release](https://central.sonatype.org/publish/release/):
+            * Go to [Staging Repositories on Sonatype](https://s01.oss.sonatype.org/#stagingRepositories), use your OSSRH credentials to log in
+            * Select the `iowavebeans-XXXX` repository and click close.
+            * Verify if everything is correct on `Activity` tab, correct if required.
+            * Press `Release` to commit changes.
+       * If doing it for the first time, you need to set up a few things:
+            * Publishing
+                *  You need to create a JIRA account with [OSSRH](https://central.sonatype.org/publish/publish-guide/#initial-setup)
+            * Signing
+                * [install `gpg` utility](https://central.sonatype.org/publish/requirements/gpg/)
+                * Generate a key pair:
+                    ```bash
+                     gpg --full-generate-key
+                    ```
+                    *Select the RSA algorithm with 3072 key length*
+                * Export secret key ring file:
+                    ```shell
+                    gpg --keyring secring.gpg --export-secret-keys > ~/.gnupg/secring.gpg
+                    ```
+                *  Upload a public key:
+                    ```bash
+                   gpg --keyserver hkp://pool.sks-keyservers.net --send-keys <KEY_ID_HERE>
+                    ```
+                   To get the key ID you can list all the keys via:
+                    ```bash
+                    gpg --list-keys
+                    ```
     3. Upload new version of the tool:
         * build locally via `./gradlew :distr:distTar :distr:distZip`
         * on Bintray, select version, then `Actions > Upload Files`. Upload `distr/build/distributions/*.*`
