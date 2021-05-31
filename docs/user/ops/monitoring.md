@@ -30,7 +30,7 @@ In order to add it just update the gradle file with the new dependecny. I.e. `bu
 
 ```kotlin
 dependencies {
-    implementation("io.wavebeans.metrics:prometheus:$wavebeansVersion")
+    implementation("io.wavebeans:metrics-prometheus:$wavebeansVersion")
 }
 ```
 

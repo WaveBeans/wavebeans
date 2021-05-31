@@ -1,0 +1,1 @@
+* **[Breaking changes]** Maven repository migrated from BinTray to Maven Central. Updated the guides and related documentation. Also, the `filesystems` and `metrics` projects naming has changed to fit under the maven groupId `io.wavebeans`

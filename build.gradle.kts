@@ -83,7 +83,7 @@ publishing {
             artifactId = "lib"
             populatePom(
                 "WaveBeans Lib",
-                "WaveBeans API library. Provides the way to define streams and basic execution functionality."
+                "WaveBeans API library. Provides the way to define bean streams and basic execution functionality."
             )
         }
         create<MavenPublication>("exe") {
@@ -92,7 +92,7 @@ publishing {
             artifactId = "exe"
             populatePom(
                 "WaveBeans Exe",
-                "WaveBeans Execution environment. Provides the way to execute streams in different modes."
+                "WaveBeans Execution environment. Provides the way to execute bean streams in different modes."
             )
         }
         create<MavenPublication>("proto") {
@@ -128,7 +128,7 @@ publishing {
             artifactId = "filesystems-dropbox"
             populatePom(
                 "WaveBeans DropBox FileSystem",
-                "FileSystem implementation to access file in DropBox account."
+                "FileSystem implementation to access files in DropBox account."
             )
         }
         create<MavenPublication>("metrics-core") {
@@ -146,7 +146,7 @@ publishing {
             artifactId = "metrics-prometheus"
             populatePom(
                 "WaveBeans Prometheus Metrics",
-                "WaveBeans monitoring subsystem Implementation to emit metrics to Prometheus."
+                "WaveBeans monitoring subsystem implementation to emit metrics into Prometheus."
             )
         }
     }
@@ -173,7 +173,7 @@ fun MavenPublication.populatePom(
     pom {
         name.set(nameValue)
         description.set(descriptionValue)
-        url.set("https//wavebeans.io")
+        url.set("https://wavebeans.io")
         licenses {
             license {
                 name.set("The Apache License, Version 2.0")
