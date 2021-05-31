@@ -30,39 +30,41 @@ Overall all you need is to have JRE/JDK 8+ installed and configured properly, so
 
 ### Developing an audio application
 
-WaveBeans is written on Kotlin, but it is compatible with all other JVM languages -- Java, Scala, etc.
+WaveBeans is written on Kotlin, but might be compatible with all other JVM languages -- Java, Scala, etc (not tested at the moment).
 
-If you want to use WaveBeans in your application just add it as a maven dependency. Here is what you would need to add into your `build.gradle` file:
+If you want to use WaveBeans in your application just add it as a maven dependency. Here is what you would need to add into your `build.gradle.kts` file (the example uses Kotlin DSL for gradle with Kotlin):
 
 * *(optionally)* The artifacts are published to Maven Central, usually it is available by default, but if it's not for some reason you may add it manually:
 
-```groovy
+```kotlin
 repositories {
     mavenCentral()
 }
 ```
 
-* Add main API artifact to the dependecies:
+* Add main API artifact to the dependencies:
 
-```groovy
+```kotlin
 dependencies {
-    implementation "io.wavebeans:lib:$wavebeans_version"
+    implementation("io.wavebeans:lib:$wavebeans_version")
 }
 ```
 
 * *(optionally)* you may need `exe` if you are going to use extended execution capabilities:
 
-```groovy
+```kotlin
 dependencies {
-    implementation "io.wavebeans:exe:$wavebeans_version"
+    implementation("io.wavebeans:exe:$wavebeans_version")
 }
 ```
 
-* *(optionally)* You may be required to add regular kotlin runtime dependency if you don't have it:
+* Make sure the JVM target version is 1.8:
 
-```groovy
-dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+```kotlin
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
+tasks.withType<KotlinCompile>().all {
+    kotlinOptions.jvmTarget = "1.8"
 }
 ```
 
@@ -83,7 +85,7 @@ fun main() {
     // this code launches it in single threaded mode,
     // follow execution documentation for details
     SingleThreadedOverseer(listOf(out)).use { overseer ->
-        if (!overseer.eval(44100.0f).all { it.get() }) {
+        if (!overseer.eval(44100.0f).all { it.get().finished }) {
             println("Execution failed. Check logs")
         }
     }
