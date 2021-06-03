@@ -25,20 +25,17 @@ class WbHttpService(
         private val log = KotlinLogging.logger { }
     }
 
-    private val handlers: List<WbNettyHandler> by lazy {
-        listOf(
-            JavalinServletHandler(DefaultJavalinApp(
-                listOf(
-                    { it.tableService(tableRegistry) },
-                    { it.audioService(tableRegistry) }
-                )
-            ))
-        )
-    }
+    private val handlers: MutableList<WbNettyHandler> = ArrayList()
+
     private val bossGroup: EventLoopGroup = NioEventLoopGroup()
     private val workerGroup: EventLoopGroup = NioEventLoopGroup()
     private var server: ChannelFuture? = null
     private var communicatorServer: Server? = null
+
+    fun addHandler(handler: WbNettyHandler): WbHttpService {
+        handlers += handler
+        return this
+    }
 
     fun start(andWait: Boolean = false): WbHttpService {
         startCommunicator()
