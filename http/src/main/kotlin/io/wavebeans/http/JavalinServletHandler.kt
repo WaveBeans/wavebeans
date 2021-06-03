@@ -51,8 +51,8 @@ class JavalinServletHandler(
                 }
                 msg.release()
                 ctx.fireChannelReadComplete()
-            } catch (e: Exception) {
-                log.error(e) { "exception thrown ctx=$ctx, msg=$msg" }
+            } catch (e: Throwable) {
+                ctx.fireExceptionCaught(e)
             }
         }
     }
