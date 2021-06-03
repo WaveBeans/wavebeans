@@ -2,11 +2,6 @@ package io.wavebeans.cli
 
 import assertk.assertThat
 import assertk.assertions.*
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.cio.CIO
-import io.ktor.client.features.ClientRequestException
-import io.ktor.client.features.ServerResponseException
-import io.ktor.client.request.get
 import io.wavebeans.cli.WaveBeansCli.Companion.name
 import io.wavebeans.cli.WaveBeansCli.Companion.options
 import io.wavebeans.cli.script.RunMode
@@ -15,9 +10,13 @@ import io.wavebeans.execution.distributed.Facilitator
 import io.wavebeans.lib.WaveBeansClassLoader
 import io.wavebeans.tests.createPorts
 import io.wavebeans.tests.findFreePort
-import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import org.apache.commons.cli.DefaultParser
+import org.http4k.client.OkHttp
+import org.http4k.core.Method
+import org.http4k.core.Request
+import org.http4k.core.Response
+import org.http4k.core.Status
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.Suite
 import org.spekframework.spek2.style.specification.describe
@@ -26,7 +25,7 @@ import java.io.File
 import java.io.PrintWriter
 import java.lang.Thread.sleep
 import java.net.ConnectException
-import java.net.URL
+import java.net.SocketException
 import java.util.concurrent.Callable
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
@@ -44,12 +43,14 @@ object WaveBeansCliSpec : Spek({
             val file = File.createTempFile("test", "csv").also { it.deleteOnExit() }
             val out = ByteArrayOutputStream()
             val cli = WaveBeansCli(
-                    cli = DefaultParser().parse(options, arrayOf(
-                            name,
-                            "--execute", "440.sine().trim(1).toCsv(\"file://${file.absolutePath}\").out()",
-                            "--verbose"
-                    )),
-                    printer = PrintWriter(out)
+                cli = DefaultParser().parse(
+                    options, arrayOf(
+                        name,
+                        "--execute", "440.sine().trim(1).toCsv(\"file://${file.absolutePath}\").out()",
+                        "--verbose"
+                    )
+                ),
+                printer = PrintWriter(out)
             )
 
             it("should execute") { assertThat(cli.tryScriptExecution()).isTrue() }
@@ -63,12 +64,14 @@ object WaveBeansCliSpec : Spek({
             scriptFile.writeBytes("440.sine().trim(1).toCsv(\"file://${file.absolutePath}\").out()".toByteArray())
             val out = ByteArrayOutputStream()
             val cli = WaveBeansCli(
-                    cli = DefaultParser().parse(options, arrayOf(
-                            name,
-                            "--execute-file", scriptFile.absolutePath,
-                            "--time"
-                    )),
-                    printer = PrintWriter(out)
+                cli = DefaultParser().parse(
+                    options, arrayOf(
+                        name,
+                        "--execute-file", scriptFile.absolutePath,
+                        "--time"
+                    )
+                ),
+                printer = PrintWriter(out)
             )
 
             it("should execute") { assertThat(cli.tryScriptExecution()).isTrue() }
@@ -84,15 +87,17 @@ object WaveBeansCliSpec : Spek({
             scriptFile.writeBytes("440.sine().trim(1).toCsv(\"file://${file.absolutePath}\").out()".toByteArray())
             val out = ByteArrayOutputStream()
             val cli = WaveBeansCli(
-                    cli = DefaultParser().parse(options, arrayOf(
-                            name,
-                            "--execute-file", scriptFile.absolutePath,
-                            "--time",
-                            "--run-mode", RunMode.MULTI_THREADED.id,
-                            "--threads", "1",
-                            "--partitions", "1"
-                    )),
-                    printer = PrintWriter(out)
+                cli = DefaultParser().parse(
+                    options, arrayOf(
+                        name,
+                        "--execute-file", scriptFile.absolutePath,
+                        "--time",
+                        "--run-mode", RunMode.MULTI_THREADED.id,
+                        "--threads", "1",
+                        "--partitions", "1"
+                    )
+                ),
+                printer = PrintWriter(out)
             )
 
             it("should execute") { assertThat(cli.tryScriptExecution()).isTrue() }
@@ -107,10 +112,10 @@ object WaveBeansCliSpec : Spek({
             val portRange = createPorts(2)
             val gardeners = portRange.map {
                 Facilitator(
-                        communicatorPort = it,
-                        threadsNumber = 2,
-                        onServerShutdownTimeoutMillis = 100,
-                        podDiscovery = object : PodDiscovery() {}
+                    communicatorPort = it,
+                    threadsNumber = 2,
+                    onServerShutdownTimeoutMillis = 100,
+                    podDiscovery = object : PodDiscovery() {}
                 )
             }
 
@@ -130,15 +135,17 @@ object WaveBeansCliSpec : Spek({
             scriptFile.writeBytes("440.sine().map{ it }.trim(1).toCsv(\"file://${file.absolutePath}\").out()".toByteArray())
             val out = ByteArrayOutputStream()
             val cli = WaveBeansCli(
-                    cli = DefaultParser().parse(options, arrayOf(
-                            name,
-                            "--execute-file", scriptFile.absolutePath,
-                            "--time",
-                            "--run-mode", RunMode.DISTRIBUTED.id,
-                            "--partitions", "2",
-                            "--facilitators", portRange.map { "127.0.0.1:$it" }.joinToString(",")
-                    )),
-                    printer = PrintWriter(out)
+                cli = DefaultParser().parse(
+                    options, arrayOf(
+                        name,
+                        "--execute-file", scriptFile.absolutePath,
+                        "--time",
+                        "--run-mode", RunMode.DISTRIBUTED.id,
+                        "--partitions", "2",
+                        "--facilitators", portRange.map { "127.0.0.1:$it" }.joinToString(",")
+                    )
+                ),
+                printer = PrintWriter(out)
             )
 
             it("should execute") { assertThat(cli.tryScriptExecution()).isTrue() }
@@ -152,14 +159,16 @@ object WaveBeansCliSpec : Spek({
             val httpPort = findFreePort()
             val out = ByteArrayOutputStream()
             val cli = WaveBeansCli(
-                    cli = DefaultParser().parse(options, arrayOf(
-                            name,
-                            "--execute", "440.sine().trim(1000).toTable(\"table1\").out()",
-                            "--http", "$httpPort",
-                            "--http-wait", "1",
-                            "--verbose"
-                    )),
-                    printer = PrintWriter(out)
+                cli = DefaultParser().parse(
+                    options, arrayOf(
+                        name,
+                        "--execute", "440.sine().trim(1000).toTable(\"table1\").out()",
+                        "--http", "$httpPort",
+                        "--http-wait", "1",
+                        "--verbose"
+                    )
+                ),
+                printer = PrintWriter(out)
             )
 
             assertHttpHandling(cli, out, httpPort)
@@ -171,10 +180,10 @@ object WaveBeansCliSpec : Spek({
             val httpCommunicatorPort = findFreePort()
             val gardeners = portRange.map {
                 Facilitator(
-                        communicatorPort = it,
-                        threadsNumber = 2,
-                        onServerShutdownTimeoutMillis = 100,
-                        podDiscovery = object : PodDiscovery() {}
+                    communicatorPort = it,
+                    threadsNumber = 2,
+                    onServerShutdownTimeoutMillis = 100,
+                    podDiscovery = object : PodDiscovery() {}
                 )
             }
 
@@ -191,18 +200,18 @@ object WaveBeansCliSpec : Spek({
 
             val out = ByteArrayOutputStream()
             val cli = WaveBeansCli(
-                    cli = DefaultParser().parse(options, arrayOf(
-                            name,
-                            "--execute", "440.sine().map { it }.trim(1000).toTable(\"table1\").out()",
-                            "--http", "$httpPort",
-                            "--http-wait", "1",
-                            "--http-communicator-port", "$httpCommunicatorPort",
-                            "--verbose",
-                            "--run-mode", "distributed",
-                            "--partitions", "2",
-                            "--facilitators", portRange.joinToString(",") { "127.0.0.1:$it" }
-                    )),
-                    printer = PrintWriter(out)
+                cli = DefaultParser().parse(options, arrayOf(
+                    name,
+                    "--execute", "440.sine().map { it }.trim(1000).toTable(\"table1\").out()",
+                    "--http", "$httpPort",
+                    "--http-wait", "1",
+                    "--http-communicator-port", "$httpCommunicatorPort",
+                    "--verbose",
+                    "--run-mode", "distributed",
+                    "--partitions", "2",
+                    "--facilitators", portRange.joinToString(",") { "127.0.0.1:$it" }
+                )),
+                printer = PrintWriter(out)
             )
 
             assertHttpHandling(cli, out, httpPort)
@@ -211,39 +220,34 @@ object WaveBeansCliSpec : Spek({
 })
 
 private fun Suite.assertHttpHandling(cli: WaveBeansCli, out: ByteArrayOutputStream, port: Int) {
-    val log = KotlinLogging.logger {  }
+    val log = KotlinLogging.logger { }
     val pool = Executors.newSingleThreadExecutor()
 
     afterGroup { pool.shutdownNow() }
 
     val taskStarted = CountDownLatch(1)
-    val result = pool.submit(Callable<List<String>> {
-        fun result(): List<String> {
-            return runBlocking {
-                HttpClient(CIO).use { client ->
-                    val response = client.get<String>(URL("http://localhost:$port/table/table1/last?interval=1.ms"))
-                    response
-                }
-            }.split("[\\r\\n]+".toRegex()).filterNot { it.isEmpty() }
+    val result = pool.submit(Callable {
+        fun result(): Response {
+            val client = OkHttp()
+            return client(Request(Method.GET, "http://localhost:$port/table/table1/last?interval=1.ms"))
         }
 
         taskStarted.countDown()
         var ret: List<String>
         while (true) {
+            sleep(500)
             try {
-                ret = result()
-                if (ret.isNotEmpty()) { // if nothing returned keep trying
+                val r = result()
+                if (r.status == Status.OK) { // if nothing returned keep trying
+                    ret = r
+                        .bodyString()
+                        .split("[\\r\\n]+".toRegex())
+                        .filterNot { it.isEmpty() }
+                    log.debug { "The API finally returned $ret" }
                     break
                 }
-            } catch (e: ServerResponseException) {
-                // the table is not created yet, keep trying
-                sleep(1)
-            } catch (e: ClientRequestException) {
-                // the table is not created yet, keep trying
-                sleep(1)
-            } catch (e: ConnectException) {
-                // the server is not started yet, keep trying
-                sleep(1)
+            } catch (e: Exception) {
+                if (e !is ConnectException && e !is SocketException) throw e
             }
         }
         ret

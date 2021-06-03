@@ -1,5 +1,5 @@
 tasks.jar {
-    archiveFileName.set("metrics-core-${project.version}.jar")
+    archiveBaseName.set("metrics-core")
 }
 
 dependencies {

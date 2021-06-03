@@ -1,5 +1,5 @@
 tasks.jar {
-    archiveFileName.set("filesystems-dropbox-${project.version}.jar")
+    archiveBaseName.set("filesystems-dropbox")
 }
 
 dependencies {

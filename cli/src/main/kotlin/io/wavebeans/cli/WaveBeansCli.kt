@@ -4,7 +4,7 @@ import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.LoggerContext
 import io.wavebeans.cli.script.RunMode
 import io.wavebeans.cli.script.ScriptRunner
-import io.wavebeans.http.HttpService
+import io.wavebeans.http.WbHttpService
 import io.wavebeans.lib.table.TableRegistry
 import io.wavebeans.lib.table.TableRegistryImpl
 import org.apache.commons.cli.CommandLine
@@ -91,7 +91,7 @@ class WaveBeansCli(
 
             val httpWait = cli.get(httpWait) { it.toLong() } ?: 0
             val httpService = cli.get(http) {
-                HttpService(
+                WbHttpService(
                         serverPort = it.toInt(),
                         communicatorPort = cli.get(httpCommunicator) { it.toInt() },
                         tableRegistry = if (runMode == RunMode.DISTRIBUTED) TableRegistryImpl() else TableRegistry.default

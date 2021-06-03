@@ -8,7 +8,6 @@ application {
 }
 
 dependencies {
-    val ktorVersion: String by System.getProperties()
     val kotlinVersion: String by System.getProperties()
 
     implementation(project(":lib"))
@@ -28,6 +27,6 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-compiler-embeddable:$kotlinVersion")
     implementation("org.jetbrains.kotlin:kotlin-main-kts:$kotlinVersion")
 
-    testImplementation("io.ktor:ktor-client-cio:$ktorVersion")
-    testImplementation("io.ktor:ktor-server-test-host:$ktorVersion")
+    testImplementation("org.http4k:http4k-core:4.0.0.0")
+    testImplementation("org.http4k:http4k-client-okhttp:4.0.0.0")
 }

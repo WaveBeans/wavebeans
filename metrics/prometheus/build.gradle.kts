@@ -1,5 +1,5 @@
 tasks.jar {
-    archiveFileName.set("metrics-prometheus-${project.version}.jar")
+    archiveBaseName.set("metrics-prometheus")
 }
 
 dependencies{
