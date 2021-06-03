@@ -3,6 +3,6 @@ tasks.jar {
 }
 
 dependencies {
-    implementation(project(":filesystems:filesystems-core"))
+    implementation(project(":filesystems-core"))
     implementation("com.dropbox.core:dropbox-core-sdk:3.1.4")
 }

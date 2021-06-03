@@ -1,3 +1,3 @@
 subprojects {
-    group = "io.wavebeans.filesystems"
+    group = "io.wavebeans"
 }

@@ -1,3 +1,8 @@
+Version 0.3.1 on 2021-06-01
+------
+
+* **[Breaking changes]** Maven repository migrated from BinTray to Maven Central. Updated the guides and related documentation. Also, the `filesystems` and `metrics` projects naming has changed to fit under the maven group ID `io.wavebeans`
+
 Version 0.3.0 on 2021-01-02
 ------
 
