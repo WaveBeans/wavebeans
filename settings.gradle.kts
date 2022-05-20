@@ -13,3 +13,5 @@ project(":metrics-core").projectDir = file("metrics/core")
 project(":metrics-prometheus").projectDir = file("metrics/prometheus")
 project(":filesystems-core").projectDir = file("filesystems/core")
 project(":filesystems-dropbox").projectDir = file("filesystems/dropbox")
+
+include(":ffmpeg")
