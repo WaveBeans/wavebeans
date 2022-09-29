@@ -1,0 +1,1 @@
+* [ [#58](https://github.com/WaveBeans/wavebeans/issues/58) ] [HTTP] Switch to Javalin
