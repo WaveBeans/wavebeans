@@ -15,7 +15,7 @@ dependencies {
 
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationRuntimeVersion")
 
-    implementation("io.netty:netty-all:4.1.65.Final")
+    implementation("io.netty:netty-all:4.1.82.Final")
     implementation("io.javalin:javalin:3.13.7")
 
     testImplementation("org.http4k:http4k-core:4.0.0.0")
