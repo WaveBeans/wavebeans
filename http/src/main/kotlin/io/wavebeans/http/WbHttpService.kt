@@ -18,7 +18,8 @@ class WbHttpService(
     private val serverPort: Int = 8080,
     private val communicatorPort: Int? = null,
     private val gracePeriodMillis: Long = 5000,
-    private val tableRegistry: TableRegistry = TableRegistry.default
+    private val tableRegistry: TableRegistry = TableRegistry.default,
+    private val customHandlers: List<WbNettyHandler> = emptyList()
 ) : Closeable {
 
     companion object {
@@ -27,13 +28,15 @@ class WbHttpService(
 
     private val handlers: List<WbNettyHandler> by lazy {
         listOf(
-            JavalinServletHandler(DefaultJavalinApp(
-                listOf(
-                    { it.tableService(tableRegistry) },
-                    { it.audioService(tableRegistry) }
+            JavalinServletHandler(
+                DefaultJavalinApp(
+                    listOf(
+                        { it.tableService(tableRegistry) },
+                        { it.audioService(tableRegistry) }
+                    )
                 )
-            ))
-        )
+            )
+        ) + customHandlers
     }
     private val bossGroup: EventLoopGroup = NioEventLoopGroup()
     private val workerGroup: EventLoopGroup = NioEventLoopGroup()
@@ -47,9 +50,9 @@ class WbHttpService(
     }
 
     private fun startCommunicator() {
-        communicatorServer = communicatorPort?.let {
-            log.info { "Starting HTTP Communicator on port $it" }
-            ServerBuilder.forPort(it)
+        communicatorServer = communicatorPort?.let { port ->
+            log.info { "Starting HTTP Communicator on port $port" }
+            ServerBuilder.forPort(port)
                 .addService(HttpCommunicatorService.instance(tableRegistry))
                 .build()
                 .start()
@@ -61,45 +64,48 @@ class WbHttpService(
             log.debug { "Initializing $it" }
             it.init()
         }
-        val b = ServerBootstrap()
-        b.group(bossGroup, workerGroup)
-            .channel(NioServerSocketChannel::class.java)
-            .childHandler(object : ChannelInitializer<SocketChannel>() {
 
-                override fun initChannel(ch: SocketChannel) {
-                    handlers.forEach {
-                        log.debug { "Initiating channel $ch $it" }
-                        it.initChannel(ch)
+        ServerBootstrap().apply {
+            group(bossGroup, workerGroup)
+                .channel(NioServerSocketChannel::class.java)
+                .childHandler(object : ChannelInitializer<SocketChannel>() {
+
+                    override fun initChannel(ch: SocketChannel) {
+                        handlers.forEach {
+                            log.debug { "Initiating channel $ch $it" }
+                            it.initChannel(ch)
+                        }
+                        ch.pipeline().addFirst(LoggingHandler(WbHttpService::class.java, LogLevel.TRACE))
                     }
-                    ch.pipeline().addFirst(LoggingHandler(WbHttpService::class.java, LogLevel.TRACE))
+                })
+                .option(ChannelOption.SO_BACKLOG, 128)
+                .childOption(ChannelOption.SO_KEEPALIVE, true)
+
+            server = bind(serverPort).apply {
+                if (andWait) {
+                    channel().closeFuture().sync()
                 }
-            })
-            .option(ChannelOption.SO_BACKLOG, 128)
-            .childOption(ChannelOption.SO_KEEPALIVE, true)
+            }
 
-        server = b.bind(serverPort)
-        if (andWait) {
-            server!!.channel().closeFuture().sync()
         }
-    }
 
+    }
 
     override fun close() {
         log.info { "Closing..." }
         handlers.forEach { it.close() }
         workerGroup.shutdownGracefully()
         bossGroup.shutdownGracefully()
-        server?.let {
+        server?.apply {
             log.info { "Stopping HTTP Service on port $serverPort..." }
-            val channel = it.channel()
-            if (!channel.closeFuture().await(gracePeriodMillis)) {
-                channel.close()
-            }
+            channel()
+                .takeIf { !it.closeFuture().await(gracePeriodMillis) }
+                ?.apply { close() }
         }
-        communicatorServer?.let {
+        communicatorServer?.apply {
             log.info { "Stopping HTTP Communicator Service on port $communicatorPort..." }
-            if (!it.shutdown().awaitTermination(gracePeriodMillis, TimeUnit.MILLISECONDS)) {
-                it.shutdownNow()
+            if (!shutdown().awaitTermination(gracePeriodMillis, TimeUnit.MILLISECONDS)) {
+                shutdownNow()
             }
         }
         log.info { "Closed" }
