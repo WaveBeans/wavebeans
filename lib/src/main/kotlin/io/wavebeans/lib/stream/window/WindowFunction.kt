@@ -138,7 +138,7 @@ fun BeanStream<Window<Sample>>.windowFunction(func: (Pair<Int, Int>) -> Sample):
  * as a window function over the stream of windowed samples.
  */
 fun BeanStream<Window<Sample>>.rectangle(): BeanStream<Window<Sample>> {
-    return this.windowFunction { sampleOf(rectangleFunc(0, 0)) }
+    return this.windowFunction { sampleOf(rectangleFunc()) }
 }
 
 /**
@@ -149,7 +149,7 @@ fun BeanStream<Window<Sample>>.rectangle(): BeanStream<Window<Sample>> {
  *
  * @return the sequence of n consequent calculated values of the function.
  */
-fun rectangleFunc(n: Int): Sequence<Double> = (0 until n).asSequence().map { rectangleFunc(it, n) }
+fun rectangleFunc(n: Int): Sequence<Double> = (0 until n).asSequence().map { rectangleFunc() }
 
 /**
  * Calculates the [i]-th element out of [n] of [rectangle](https://en.wikipedia.org/wiki/Window_function#Rectangular_window)
@@ -160,7 +160,7 @@ fun rectangleFunc(n: Int): Sequence<Double> = (0 until n).asSequence().map { rec
  *
  * @return the function value.
  */
-fun rectangleFunc(i: Int, n: Int): Double = 1.0
+fun rectangleFunc(): Double = 1.0
 
 /**
  * Applies [MapWindowFn] with [triangular](https://en.wikipedia.org/wiki/Window_function#Triangular_window)

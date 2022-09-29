@@ -1,6 +1,9 @@
 rootProject.name = "wavebeans"
 
 include(":lib", ":cli", ":exe", ":http", ":distr", ":proto")
+include(":tests")
+
+
 include(":filesystems")
 include(":filesystems-core")
 include(":filesystems-dropbox")

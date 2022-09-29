@@ -26,7 +26,6 @@ class DistributedScriptEvaluator(
                 additionalClasses = additionalClasses ?: emptyMap(),
                 ignoreLocations = listOf(
                         ".*kotlin.+[.]jar".toRegex(),
-                        ".*ktor.+[.]jar".toRegex(),
                         ".*netty.+[.]jar".toRegex(),
                         ".*trove4j-[\\d.]+[.]jar".toRegex(),
                         ".*wavebeans.+[.]jar".toRegex()

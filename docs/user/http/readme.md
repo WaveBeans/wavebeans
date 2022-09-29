@@ -41,10 +41,10 @@ dependecies {
 }
 ```
 
-And on your application launch (or when you actually need it) start the HttpService providing the port you want to run it on, by default it'll start on port 8080. `HttpSerrice` implements `Closeable` interface, and calling `close()` when you finish is essential.
+And on your application launch (or when you actually need it) start the WbHttpService providing the port you want to run it on, by default it'll start on port 8080. `WbHttpSerrice` implements `Closeable` interface, and calling `close()` when you finish is essential.
 
 ```kotlin
-HttpService(serverPort = 12345).use {server ->
+WbHttpService(serverPort = 12345).use {server ->
     server.start()
 
     // can do something here while the server is running
@@ -53,10 +53,12 @@ HttpService(serverPort = 12345).use {server ->
 // or in more manual mode
 
 // start the server
-val server = HttpService().start()
+val server = WbHttpService().start()
 //run queries over HTTP using any HTTP client
 server.close()
 ```
+
+`start()` method also has parameter `andWait` that allows to control whether the current thread will be freed up for further actions.
 
 ## Table Service
 
@@ -85,7 +87,7 @@ Both endpoints return stream as new-line separated JSON objects like this:
 {"offset":368162834461,"value":0.2599568846828487}
 ```
 
-The `offset` is the time marker of the sample in nanoseconds, the value is serialized as JSON the sample value. For the type `Sample` it is simply `double` value. If you store the custom value in the table before returning it as a part of HTTP API you need to make it serializable. 
+The `offset` is the time marker of the sample in nanoseconds, the value is serialized as JSON for the sample value. For the type `Sample` it is simply `double` value. If you store the custom value in the table before returning it as a part of HTTP API you need to make it serializable. 
 
 ### Builtin type support
 
@@ -124,7 +126,7 @@ The FFT Sample returned as full object with every single value calculated (e.g. 
 
 #### `Window<T>` schema
 
-If the stream is some windowed serializable type T, it'll return the following schema:
+If the stream is some windowed serializable type `T`, it'll return the following schema:
 
 ```json
 {
@@ -179,7 +181,7 @@ The serialization routine is defined as per [`kotlinx.serialization documentatio
 ```kotlin
 class BSerializer : KSerializer<B> {
 
-    override val descriptor: SerialDescriptor = SerialDescriptor("B") {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("B") {
         element("v", String.serializer().descriptor)
     }
 
@@ -216,8 +218,8 @@ The full signature is:
 /audio/{tableName}/stream/{format}?bitDepth={bitDepth}&limit={limit}
 ```
 
-Additional useful parameters:SampleCountMeasurementSpec
-* `bitDepth` -- either 8, 16, 24, 32 or 64. The number oif bits per sample to stream. FYI, wav-format support up to 32 bits per sample. By default it is 16 bit.
+Additional useful parameters:
+* `bitDepth` -- either 8, 16, 24, 32 or 64. The number of bits per sample to stream. FYI, wav-format support up to 32 bits per sample. By default, it is 16 bit.
 * `limit` -- interval to limit by, follow [Time Measure](#time-measure) rules. By default, it is unlimited as not specified. 
 
 Current considerations:
@@ -225,20 +227,28 @@ Current considerations:
 
 ## Distributed mode
 
-While running in distributed mode, all data is being fetched from Facilitators, so the HTTP service needs to know how where these services are, and where specific resources (i.e. tables) are located. To be able to do that you should enable Communicator on the service, and tell the location (address and port) of itself to the Distributed Overseer. When the topology is planned and distributed (and even replanned) Overseer will tell where to find what and HTTP service will be able to call specific API in order to fetch needed data.
+While running in distributed mode, all data is being fetched from Facilitators, so the HTTP service needs to know where these services are, and where specific resources (i.e. tables) are located. To be able to do that you should enable `HttpCommunicator` on the service, and tell the location (address and port) of itself to the Distributed Overseer. When the topology is planned and distributed (and even re-planned) Overseer will tell where to find what and HTTP service will be able to call specific API in order to fetch needed data.
 
-To start the HTTP service with Communicator enabled just specifiy its port among other parameters:
+To start the HTTP service with Communicator enabled just specify its port among other parameters:
 
 ```kotlin
-HttpService(
+WbHttpService(
     serverPort = 12345, 
     communicatorPort = 4000
+).start()
+```
+
+Then while launching the `DistributedOverseer` specify it as a `httpLocation` parameter, it'll do the rest:
+
+```kotlin
+DistributedOverseer(
+  outputs = listOf(output1, output2),
+  facilitatorLocations = listOf("facilitator1", "facilitator2"),
+  httpLocations = listOf("httServiceNode:communicatorPort")
 )
 ```
 
-and while launching
-
-The port should be accessible only for Overseer and Facilitators, and shouldn't be shared outside. The public port is still `serverPort` where it is accessible over HTTP protocol.
+The port should be accessible only for Overseer and Facilitators, and shouldn't be shared outside, gRPC protocol is used for communication. The public port is still `serverPort` where it is accessible over HTTP protocol.
 
 ## Helper Types
 

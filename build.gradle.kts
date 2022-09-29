@@ -25,7 +25,6 @@ allprojects {
         kotlinOptions.jvmTarget = "1.8"
         kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlin.ExperimentalStdlibApi"
         kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlinx.serialization.ExperimentalSerializationApi"
-        kotlinOptions.freeCompilerArgs += "-Xopt-in=io.ktor.util.KtorExperimentalAPI"
     }
 }
 
@@ -153,7 +152,12 @@ publishing {
     repositories {
         maven {
             name = "WaveBeansMavenCentral"
-            url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+            url = uri(
+                if (version.toString().endsWith("SNAPSHOT"))
+                    "https://s01.oss.sonatype.org/content/repositories/snapshots/"
+                else
+                    "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
+            )
             credentials {
                 username = findProperty("maven.user")?.toString() ?: ""
                 password = findProperty("maven.key")?.toString() ?: ""
