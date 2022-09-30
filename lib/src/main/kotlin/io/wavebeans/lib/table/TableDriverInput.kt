@@ -10,7 +10,7 @@ import kotlinx.serialization.Serializable
 class TableDriverStreamParams(
         val tableName: String,
         val query: TableQuery
-) : BeanParams()
+) : BeanParams
 
 class TableDriverInput<T : Any>(
         override val parameters: TableDriverStreamParams

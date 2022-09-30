@@ -98,7 +98,7 @@ object InputParamsSerializer : KSerializer<InputParams<*>> {
 class InputParams<T : Any>(
         val generator: Fn<Pair<Long, Float>, T?>,
         val sampleRate: Float? = null
-) : BeanParams()
+) : BeanParams
 
 /**
  * Creates an input from provided function. The function has two parameters: the 0-based index and sample rate the input

@@ -73,7 +73,7 @@ class FlattenStreamsParams<I : Any, T : Any>(
          * stream on the iteration, the result is expected to be empty or non-empty iterable of [T].
          */
         val map: Fn<I, Iterable<T>>
-) : BeanParams()
+) : BeanParams
 
 /**
  * The serializer for [FlattenStreamsParams].

@@ -29,7 +29,7 @@ data class CsvFftStreamOutputParams(
         val timeUnit: TimeUnit,
         val isMagnitude: Boolean,
         val encoding: String = "UTF-8"
-) : BeanParams()
+) : BeanParams
 
 class CsvFftStreamOutput(
         override val input: BeanStream<FftSample>,

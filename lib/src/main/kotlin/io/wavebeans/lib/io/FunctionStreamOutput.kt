@@ -109,7 +109,7 @@ data class FunctionStreamOutputParams<T : Any>(
          *  * It doesn't affect anything in other phases.
          */
         val writeFunction: Fn<WriteFunctionArgument<T>, Boolean>
-) : BeanParams()
+) : BeanParams
 
 /**
  * Serializer for [FunctionStreamOutputParams].

@@ -16,6 +16,8 @@ import io.wavebeans.tests.seqStream
 import kotlinx.serialization.Serializable
 import mu.KotlinLogging
 import org.spekframework.spek2.Spek
+import org.spekframework.spek2.lifecycle.CachingMode
+import org.spekframework.spek2.lifecycle.CachingMode.SCOPE
 import org.spekframework.spek2.style.specification.describe
 
 object TopologySerializerSpec : Spek({
@@ -28,36 +30,39 @@ object TopologySerializerSpec : Spek({
         val i2 = 800.sine(0.2)
 
         val o1 = i1
-                .trim(5000)
-                .toCsv("file:///some1.csv")
+            .trim(5000)
+            .toCsv("file:///some1.csv")
         val o2 = i2
-                .trim(3000)
-                .toCsv("file:///some2.csv")
+            .trim(3000)
+            .toCsv("file:///some2.csv")
 
-        val topology = listOf(o1, o2).buildTopology()
+        val topology by memoized(SCOPE) { listOf(o1, o2).buildTopology() }
 
-        val deserializedTopology = with(TopologySerializer) {
-            val topologySerialized = serialize(topology)
-            deserialize(topologySerialized)
+        val deserializedTopology by memoized(SCOPE) {
+            with(TopologySerializer) {
+                val topologySerialized = serialize(topology)
+                deserialize(topologySerialized)
+            }
         }
 
         it("has same refs") {
             assertThat(deserializedTopology.refs).all {
                 size().isEqualTo(topology.refs.size)
-                each { nodeRef ->
+                each { beanRef ->
 
-                    nodeRef.prop("type") { it.type }.isIn(*listOf(
-                            SineGeneratedInput::class,
-                            CsvStreamOutput::class,
-                            TrimmedFiniteStream::class
-                    ).map { it.qualifiedName }.toTypedArray())
+                    beanRef.prop(BeanRef::type).isIn(*listOf(
+                        SineGeneratedInput::class,
+                        CsvStreamOutput::class,
+                        TrimmedFiniteStream::class
+                    ).map { it.qualifiedName }.toTypedArray()
+                    )
 
-                    nodeRef.prop("params") { it.params }.kClass().isIn(*listOf(
-                            SineGeneratedInputParams::class,
-                            CsvStreamOutputParams::class,
-                            TrimmedFiniteSampleStreamParams::class,
-                            NoParams::class
-                    ).toTypedArray())
+                    beanRef.prop(BeanRef::params).kClass().isIn(
+                        SineGeneratedInputParams::class,
+                        CsvStreamOutputParams::class,
+                        TrimmedFiniteSampleStreamParams::class,
+                        NoParams::class
+                    )
                 }
             }
         }
@@ -85,11 +90,11 @@ object TopologySerializerSpec : Spek({
         val i2 = input(InputFn(FnInitParameters().add("factor", inputParameter)))
 
         val o1 = i1
-                .trim(5000)
-                .toCsv("file:///some1.csv")
+            .trim(5000)
+            .toCsv("file:///some1.csv")
         val o2 = i2
-                .trim(3000)
-                .toCsv("file:///some2.csv")
+            .trim(3000)
+            .toCsv("file:///some2.csv")
 
         val topology = listOf(o1, o2).buildTopology()
 
@@ -104,17 +109,20 @@ object TopologySerializerSpec : Spek({
                 each { nodeRef ->
 
                     nodeRef.prop("type") { it.type }.isIn(*listOf(
-                            Input::class,
-                            CsvStreamOutput::class,
-                            TrimmedFiniteStream::class
-                    ).map { it.qualifiedName }.toTypedArray())
+                        Input::class,
+                        CsvStreamOutput::class,
+                        TrimmedFiniteStream::class
+                    ).map { it.qualifiedName }.toTypedArray()
+                    )
 
-                    nodeRef.prop("params") { it.params }.kClass().isIn(*listOf(
+                    nodeRef.prop("params") { it.params }.kClass().isIn(
+                        *listOf(
                             InputParams::class,
                             CsvStreamOutputParams::class,
                             TrimmedFiniteSampleStreamParams::class,
                             NoParams::class
-                    ).toTypedArray())
+                        ).toTypedArray()
+                    )
                 }
             }
         }
@@ -138,12 +146,12 @@ object TopologySerializerSpec : Spek({
 
         val factor = 2 // checking passing parameters from closure
         val o = listOf(
-                input<Sample> { fail("unreachable") } 
-                        .map { it * 2 }
-                        .toDevNull(),
-                input<Sample> { fail("unreachable") } 
-                        .map(MapFn(FnInitParameters().add("factor", factor.toString())))
-                        .toDevNull()
+            input<Sample> { fail("unreachable") }
+                .map { it * 2 }
+                .toDevNull(),
+            input<Sample> { fail("unreachable") }
+                .map(MapFn(FnInitParameters().add("factor", factor.toString())))
+                .toDevNull()
         )
 
         val topology = o.buildTopology()
@@ -159,16 +167,19 @@ object TopologySerializerSpec : Spek({
                 each { nodeRef ->
 
                     nodeRef.prop("type") { it.type }.isIn(*listOf(
-                            Input::class,
-                            MapStream::class,
-                            DevNullStreamOutput::class,
-                    ).map { it.qualifiedName }.toTypedArray())
+                        Input::class,
+                        MapStream::class,
+                        DevNullStreamOutput::class,
+                    ).map { it.qualifiedName }.toTypedArray()
+                    )
 
-                    nodeRef.prop("params") { it.params }.kClass().isIn(*listOf(
+                    nodeRef.prop("params") { it.params }.kClass().isIn(
+                        *listOf(
                             InputParams::class,
                             MapStreamParams::class,
                             NoParams::class,
-                    ).toTypedArray())
+                        ).toTypedArray()
+                    )
                 }
             }
         }
@@ -194,31 +205,31 @@ object TopologySerializerSpec : Spek({
         }
 
         val functions = mapOf(
-                "Sample merge with Lambda" to listOf(
-                        input<Sample> { fail("unreachable") } 
-                                .merge(
-                                        with = input<Sample> { fail("unreachable") } 
-                                ) { (x, y) -> x ?: ZeroSample + y }
-                                .toDevNull()
-                ),
-                "Sample merge with Fn and using outside data" to listOf(
-                        input<Sample> { fail("unreachable") } 
-                                .merge(
-                                        with = input<Sample> { fail("unreachable") } ,
-                                        merge = MergeFn(FnInitParameters().add("factor", factor.toString()))
-                                )
-                                .toDevNull()
-                ),
-                "Window<Sample>.plus()" to listOf(
-                        input<Sample> { fail("unreachable") } .window(2)
-                                .plus(input<Sample> { fail("unreachable") } .window(2))
-                                .toDevNull()
-                ),
-                "Sample.plus()" to listOf(
-                        input<Sample> { fail("unreachable") } 
-                                .plus(input<Sample> { fail("unreachable") } )
-                                .toDevNull()
-                )
+            "Sample merge with Lambda" to listOf(
+                input<Sample> { fail("unreachable") }
+                    .merge(
+                        with = input<Sample> { fail("unreachable") }
+                    ) { (x, y) -> x ?: ZeroSample + y }
+                    .toDevNull()
+            ),
+            "Sample merge with Fn and using outside data" to listOf(
+                input<Sample> { fail("unreachable") }
+                    .merge(
+                        with = input<Sample> { fail("unreachable") },
+                        merge = MergeFn(FnInitParameters().add("factor", factor.toString()))
+                    )
+                    .toDevNull()
+            ),
+            "Window<Sample>.plus()" to listOf(
+                input<Sample> { fail("unreachable") }.window(2)
+                    .plus(input<Sample> { fail("unreachable") }.window(2))
+                    .toDevNull()
+            ),
+            "Sample.plus()" to listOf(
+                input<Sample> { fail("unreachable") }
+                    .plus(input<Sample> { fail("unreachable") })
+                    .toDevNull()
+            )
         )
 
         functions.forEach { (desc, o) ->
@@ -236,18 +247,21 @@ object TopologySerializerSpec : Spek({
                         each { nodeRef ->
 
                             nodeRef.prop("type") { it.type }.isIn(*listOf(
-                                    Input::class,
-                                    WindowStream::class,
-                                    FunctionMergedStream::class,
-                                    DevNullStreamOutput::class
-                            ).map { it.qualifiedName }.toTypedArray())
+                                Input::class,
+                                WindowStream::class,
+                                FunctionMergedStream::class,
+                                DevNullStreamOutput::class
+                            ).map { it.qualifiedName }.toTypedArray()
+                            )
 
-                            nodeRef.prop("params") { it.params }.kClass().isIn(*listOf(
+                            nodeRef.prop("params") { it.params }.kClass().isIn(
+                                *listOf(
                                     InputParams::class,
                                     WindowStreamParams::class,
                                     FunctionMergedStreamParams::class,
                                     NoParams::class
-                            ).toTypedArray())
+                                ).toTypedArray()
+                            )
                         }
                     }
                 }
@@ -283,14 +297,17 @@ object TopologySerializerSpec : Spek({
                 each { nodeRef ->
 
                     nodeRef.prop("type") { it.type }.isIn(*listOf(
-                            ListAsInput::class,
-                            DevNullStreamOutput::class
-                    ).map { it.qualifiedName }.toTypedArray())
+                        ListAsInput::class,
+                        DevNullStreamOutput::class
+                    ).map { it.qualifiedName }.toTypedArray()
+                    )
 
-                    nodeRef.prop("params") { it.params }.kClass().isIn(*listOf(
+                    nodeRef.prop("params") { it.params }.kClass().isIn(
+                        *listOf(
                             ListAsInputParams::class,
                             NoParams::class
-                    ).toTypedArray())
+                        ).toTypedArray()
+                    )
                 }
             }
         }
@@ -306,7 +323,7 @@ object TopologySerializerSpec : Spek({
     }
 
     describe("Table sink") {
-        val o = input<Sample> { fail("unreachable") } .toTable("table1")
+        val o = input<Sample> { fail("unreachable") }.toTable("table1")
         val q = TableRegistry.default.byName<Sample>("table1").last(2000.ms).toCsv("file:///path/to.csv")
 
         val topology = listOf(o, q).buildTopology()
@@ -321,18 +338,21 @@ object TopologySerializerSpec : Spek({
                 each { nodeRef ->
 
                     nodeRef.prop("type") { it.type }.isIn(*listOf(
-                            Input::class,
-                            TableOutput::class,
-                            TableDriverInput::class,
-                            CsvStreamOutput::class
-                    ).map { it.qualifiedName }.toTypedArray())
+                        Input::class,
+                        TableOutput::class,
+                        TableDriverInput::class,
+                        CsvStreamOutput::class
+                    ).map { it.qualifiedName }.toTypedArray()
+                    )
 
-                    nodeRef.prop("params") { it.params }.kClass().isIn(*listOf(
+                    nodeRef.prop("params") { it.params }.kClass().isIn(
+                        *listOf(
                             InputParams::class,
                             TableOutputParams::class,
                             TableDriverStreamParams::class,
                             CsvStreamOutputParams::class
-                    ).toTypedArray())
+                        ).toTypedArray()
+                    )
                 }
             }
         }

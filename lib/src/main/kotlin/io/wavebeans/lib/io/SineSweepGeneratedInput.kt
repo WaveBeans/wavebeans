@@ -38,7 +38,7 @@ data class SineSweepGeneratedInputParams(
         val timeOffset: Double = 0.0,
         /** Frequency will be changed by this value evenly. Make sure sample rate allows this. It shouldn't be less than (1 / sample rate) */
         val sweepDelta: Double = 0.1
-) : BeanParams()
+) : BeanParams
 
 /**
  * Generates the sine that changes the frequency from start to end within specified perion of time

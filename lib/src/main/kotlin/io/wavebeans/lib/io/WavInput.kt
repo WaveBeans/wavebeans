@@ -62,7 +62,7 @@ data class WavInputParams(
          * or `file://c:/my/file.wav` for Windows-like file systems.
          */
         val uri: String,
-) : BeanParams()
+) : BeanParams
 
 /**
  * Reads the mono-wave file from [WavInputParams.uri].

@@ -14,7 +14,7 @@ class AfterFilling<T : Any>(
 @Serializable
 data class AfterFillingFiniteStreamParams<T>(
         val zeroFiller: T
-) : BeanParams()
+) : BeanParams
 
 private class AfterFillingFiniteStream<T : Any>(
         override val input: FiniteStream<T>,

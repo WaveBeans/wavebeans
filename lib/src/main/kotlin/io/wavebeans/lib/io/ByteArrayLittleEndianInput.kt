@@ -13,7 +13,7 @@ data class ByteArrayLittleEndianInputParams(
         val sampleRate: Float,
         val bitDepth: BitDepth,
         val buffer: ByteArray
-) : BeanParams()
+) : BeanParams
 
 class ByteArrayLittleEndianInput(
         val params: ByteArrayLittleEndianInputParams

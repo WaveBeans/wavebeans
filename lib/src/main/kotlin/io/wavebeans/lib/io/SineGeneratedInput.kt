@@ -26,7 +26,7 @@ data class SineGeneratedInputParams(
         val timeOffset: Double = 0.0,
         /** Length of the sinusoid, when you read after that moment stream will just return zeros, in seconds */
         val time: Double? = null
-) : BeanParams()
+) : BeanParams
 
 class SineGeneratedInput constructor(
         override val parameters: SineGeneratedInputParams

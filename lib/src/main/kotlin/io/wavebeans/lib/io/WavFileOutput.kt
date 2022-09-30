@@ -224,7 +224,7 @@ data class WavFileOutputParams<A : Any>(
          * [Fn] function to generate suffix is applicable for the stream.
          */
         val suffix: Fn<A?, String> = Fn.wrap { "" },
-) : BeanParams()
+) : BeanParams
 
 object WavFileOutputParamsSerializer: KSerializer<WavFileOutputParams<*>> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor(WavFileOutputParams::class.jvmName) {

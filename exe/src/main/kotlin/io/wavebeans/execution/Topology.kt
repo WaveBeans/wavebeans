@@ -12,7 +12,7 @@ import kotlin.reflect.KClass
 data class BeanRef(
         val id: Long,
         val type: String,
-        @Serializable(with = PolymorphicSerializer::class) val params: BeanParams,
+        val params: BeanParams,
         val partition: Int = 0
 ) {
     companion object {

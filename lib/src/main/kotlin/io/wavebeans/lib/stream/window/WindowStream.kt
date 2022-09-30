@@ -104,7 +104,7 @@ class WindowStreamParams<T : Any>(
         val windowSize: Int,
         val step: Int,
         val zeroElFn: () -> T
-) : BeanParams() {
+) : BeanParams {
     init {
         require(step >= 1) { "Step should be more or equal to 1" }
         require(windowSize > 1) { "Window size should be more than 1" }

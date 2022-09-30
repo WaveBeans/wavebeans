@@ -13,19 +13,22 @@ import kotlin.math.log10
 import kotlin.reflect.jvm.jvmName
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.ScriptEvaluationConfiguration
+import kotlin.script.experimental.api.compilerOptions
 import kotlin.script.experimental.api.dependencies
 import kotlin.script.experimental.jvm.JvmDependency
 import kotlin.script.experimental.jvm.impl.KJvmCompiledScript
+import kotlin.script.experimental.jvm.jvm
 import kotlin.script.experimental.jvmhost.repl.JvmReplCompiler
 import kotlin.script.experimental.jvmhost.repl.JvmReplEvaluator
 import kotlin.script.experimental.util.LinkedSnippet
+import kotlin.script.experimental.util.PropertiesCollection
 
 class ScriptRunner(
-        private val content: String,
-        private val sampleRate: Float = 44100.0f,
-        private val closeTimeout: Long = 10000L,
-        private val runMode: RunMode = RunMode.LOCAL,
-        private val runOptions: Map<String, Any> = emptyMap()
+    private val content: String,
+    private val sampleRate: Float = 44100.0f,
+    private val closeTimeout: Long = 10000L,
+    private val runMode: RunMode = RunMode.LOCAL,
+    private val runOptions: Map<String, Any> = emptyMap()
 ) : Closeable {
 
     companion object {
@@ -33,10 +36,12 @@ class ScriptRunner(
         private var scriptGeneration = 0
     }
 
-    private val executor = Executors.newSingleThreadExecutor { Thread(it, "script-runner-${it.hashCode().absoluteValue.toString(16)}") }
+    private val executor =
+        Executors.newSingleThreadExecutor { Thread(it, "script-runner-${it.hashCode().absoluteValue.toString(16)}") }
     private var task: Future<Throwable?>? = null
 
-    private val imports: List<String> = listOf( // TODO replace with compile time generation, reflection will slow everything down here, not reasonable
+    private val imports: List<String> =
+        listOf( // TODO replace with compile time generation, reflection will slow everything down here, not reasonable
             "io.wavebeans.lib.*",
             "io.wavebeans.lib.io.*",
             "io.wavebeans.lib.math.*",
@@ -49,7 +54,7 @@ class ScriptRunner(
             "java.io.File",
             "mu.KLogger",
             "mu.KotlinLogging"
-    ).map { "import $it" }
+        ).map { "import $it" }
 
     private fun Any.parameter(): String = when (this) {
         is String -> "\"${this}\""
@@ -58,10 +63,12 @@ class ScriptRunner(
             null -> "emptyList()"
             else -> this.joinToString(",", prefix = "listOf(", postfix = ")")
         }
+
         else -> "$this"
     }
 
-    private val evaluator = runMode.clazz.simpleName + "(" + runOptions.map { "${it.key} = ${it.value.parameter()}" }.joinToString(", ") + ")"
+    private val evaluator = runMode.clazz.simpleName + "(" + runOptions.map { "${it.key} = ${it.value.parameter()}" }
+        .joinToString(", ") + ")"
 
     private val startCountDown = CountDownLatch(1)
 
@@ -71,8 +78,8 @@ class ScriptRunner(
         // extract imports from content
         val importsRegex = Regex("import\\s+[\\w.* ]+;?")
         val customImports = importsRegex.findAll(content)
-                .map { it.groupValues.first().removeSuffix(";") }
-                .toList()
+            .map { it.groupValues.first().removeSuffix(";") }
+            .toList()
         val cleanedContent = content.replace(importsRegex, "")
 
         val additionalClassesDir = createTempDir("wavebeans-cli", "").also { it.deleteOnExit() }
@@ -140,11 +147,11 @@ Unit
         }
 
         (((compileResult.data as LinkedSnippet<*>).get() as KJvmCompiledScript).getCompiledModule() as KJvmCompiledModuleInMemoryImpl)
-                .compilerOutputFiles.forEach { (className, byteArray) ->
-                    val outputFile = File(additionalClassesDir, className)
-                    outputFile.parentFile.mkdirs()
-                    outputFile.writeBytes(byteArray)
-                }
+            .compilerOutputFiles.forEach { (className, byteArray) ->
+                val outputFile = File(additionalClassesDir, className)
+                outputFile.parentFile.mkdirs()
+                outputFile.writeBytes(byteArray)
+            }
 
 
         task = executor.submit(Callable {
@@ -166,8 +173,13 @@ Unit
 
     private fun compile(script: String): ReplCompileResult.CompiledClasses {
         val scriptCompilationConfiguration = ScriptCompilationConfiguration {
+            jvm {
+                compilerOptions.append(
+                    "-jvm-target", "11"
+                )
+            }
             dependencies.append(JvmDependency(
-                    System.getProperty("java.class.path").split(":").map { File(it) }
+                System.getProperty("java.class.path").split(":").map { File(it) }
             ))
         }
         val compiler = JvmReplCompiler(scriptCompilationConfiguration)
@@ -189,9 +201,11 @@ Unit
             is ReplEvalResult.Error.Runtime -> {
                 throw java.lang.IllegalStateException("message: ${result.message} cause:${result.cause}")
             }
+
             is ReplEvalResult.UnitResult -> {
                 // nothing to do
             }
+
             else -> throw UnsupportedOperationException("EvalResult $result is not supported")
 
         }
@@ -212,12 +226,12 @@ Unit
     fun interrupt(waitToFinish: Boolean = false): Boolean {
         log.debug { "Attempting to interrupt the execution [waitToFinish=$waitToFinish]" }
         return (task?.cancel(true) ?: false)
-                .also {
-                    executor.shutdown()
-                    if (waitToFinish)
-                        executor.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
-                    log.debug { "Interrupted the execution" }
-                }
+            .also {
+                executor.shutdown()
+                if (waitToFinish)
+                    executor.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
+                log.debug { "Interrupted the execution" }
+            }
     }
 
     override fun close() {
