@@ -30,7 +30,7 @@ object DistributedOverseerSpec : Spek({
 
     val log = KotlinLogging.logger {}
     val ports = createPorts(2)
-    val facilitatorsLocations = listOf("127.0.0.1:${ports[0]}", "127.0.0.1:${ports[1]}")
+    val facilitatorsLocations by memoized(SCOPE) { listOf("127.0.0.1:${ports[0]}", "127.0.0.1:${ports[1]}") }
 
     val pool by memoized(SCOPE) { Executors.newCachedThreadPool() }
 
@@ -56,10 +56,10 @@ object DistributedOverseerSpec : Spek({
             val outputsDistributed by memoized(SCOPE) { outputs() }
             val distributed by memoized(SCOPE) {
                 DistributedOverseer(
-                        outputsDistributed.map { it.first },
-                        facilitatorsLocations,
-                        emptyList(),
-                        2
+                    outputsDistributed.map { it.first },
+                    facilitatorsLocations,
+                    emptyList(),
+                    2
                 )
             }
 
@@ -70,14 +70,14 @@ object DistributedOverseerSpec : Spek({
 
             it("shouldn't throw any exceptions") {
                 val exceptions = distributed.eval(44100.0f)
-                        .mapNotNull { it.get().exception }
+                    .mapNotNull { it.get().exception }
 
                 distributed.close()
                 assertThat(exceptions).isEmpty()
             }
             it("shouldn't throw any exceptions") {
                 val exceptions = single.eval(44100.0f)
-                        .mapNotNull { it.get().exception }
+                    .mapNotNull { it.get().exception }
                 single.close()
                 assertThat(exceptions).isEmpty()
             }
@@ -97,14 +97,14 @@ object DistributedOverseerSpec : Spek({
                 val file2 = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
                 val input = 440.sine().map { abs(it) } + 880.sine()
                 val output1 = input
-                        .trim(500)
-                        .toCsv("file:///${file1.absolutePath}")
+                    .trim(500)
+                    .toCsv("file:///${file1.absolutePath}")
                 val output2 = input.trim(1000)
-                        .window(101, 25)
-                        .hamming()
-                        .fft(128)
-                        .trim(500)
-                        .magnitudeToCsv("file:///${file2.absolutePath}")
+                    .window(101, 25)
+                    .hamming()
+                    .fft(128)
+                    .trim(500)
+                    .magnitudeToCsv("file:///${file2.absolutePath}")
                 listOf(output1 to file1, output2 to file2)
             }
 
@@ -127,16 +127,18 @@ object DistributedOverseerSpec : Spek({
 
                 val file1 = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
                 val input = 440.sine().map { MySample(InnerSample(abs(it))) }
-                        .merge(with = 880.sine().map { MySample(InnerSample(it)) }) { (a, b) -> MySample(InnerSample(a?.v?.v + b?.v?.v)) }
+                    .merge(
+                        with = 880.sine()
+                            .map { MySample(InnerSample(it)) }) { (a, b) -> MySample(InnerSample(a?.v?.v + b?.v?.v)) }
                 val output1 = input
-                        .trim(500)
-                        .toCsv(
-                                uri = "file:///${file1.absolutePath}",
-                                header = listOf("index", "value"),
-                                elementSerializer = { (i, _, v) ->
-                                    listOf(i.toString(), v.v.v.toString())
-                                }
-                        )
+                    .trim(500)
+                    .toCsv(
+                        uri = "file:///${file1.absolutePath}",
+                        header = listOf("index", "value"),
+                        elementSerializer = { (i, _, v) ->
+                            listOf(i.toString(), v.v.v.toString())
+                        }
+                    )
                 listOf(output1 to file1)
             }
 
@@ -146,20 +148,23 @@ object DistributedOverseerSpec : Spek({
 
     describe("Failing on error") {
 
-        fun Suite.assertExecutionExceptions(outputs: () -> List<StreamOutput<out Any>>, assertBlock: Assert<List<Throwable>>.() -> Unit) {
+        fun Suite.assertExecutionExceptions(
+            outputs: () -> List<StreamOutput<out Any>>,
+            assertBlock: Assert<List<Throwable>>.() -> Unit
+        ) {
             val outputsDistributed by memoized(SCOPE) { outputs() }
             val distributed by memoized(SCOPE) {
                 DistributedOverseer(
-                        outputsDistributed,
-                        facilitatorsLocations,
-                        emptyList(),
-                        2
+                    outputsDistributed,
+                    facilitatorsLocations,
+                    emptyList(),
+                    2
                 )
             }
 
             it("should throw exceptions") {
                 val exceptions = distributed.eval(44100.0f)
-                        .mapNotNull { it.get().exception }
+                    .mapNotNull { it.get().exception }
                 distributed.close()
                 assertBlock(assertThat(exceptions))
             }
@@ -172,8 +177,8 @@ object DistributedOverseerSpec : Spek({
             val outputs = {
                 val input = 440.sine().map { NonSerializable(it) }
                 val output1 = input
-                        .trim(500)
-                        .toDevNull()
+                    .trim(500)
+                    .toDevNull()
                 listOf(output1)
             }
 
@@ -188,8 +193,8 @@ object DistributedOverseerSpec : Spek({
             val outputs = {
                 val input = 440.sine().map { check(false) { "Doesn't work" }; it }
                 val output1 = input
-                        .trim(500)
-                        .toDevNull()
+                    .trim(500)
+                    .toDevNull()
                 listOf(output1)
             }
 
@@ -197,8 +202,8 @@ object DistributedOverseerSpec : Spek({
                 isNotEmpty()
                 size().isEqualTo(1)
                 prop("first") { it.first() }
-                        .cause().isNotNull()
-                        .message().isNotNull().contains("Doesn't work")
+                    .cause().isNotNull()
+                    .message().isNotNull().contains("Doesn't work")
             }
         }
     }
@@ -208,43 +213,45 @@ object DistributedOverseerSpec : Spek({
 
         fun codeFile(name: String): Pair<String, String> {
             return name to this::class.java.getResourceAsStream("/testApp/$name").reader().readText()
-                    .replace(
-                            "/[*]FILE[*]/.*/[*]FILE[*]/".toRegex(),
-                            "File(\"${file.absolutePath}\")"
-                    )
-                    .replace(
-                            "/[*]FACILITATOR_LIST[*]/.*/[*]FACILITATOR_LIST[*]/".toRegex(),
-                            "listOf(\"127.0.0.1:${ports[0]}\", \"127.0.0.1:${ports[1]}\")"
-                    )
-                    .also { log.info { "$name:\n$it" } }
+                .replace(
+                    "/[*]FILE[*]/.*/[*]FILE[*]/".toRegex(),
+                    "File(\"${file.absolutePath}\")"
+                )
+                .replace(
+                    "/[*]FACILITATOR_LIST[*]/.*/[*]FACILITATOR_LIST[*]/".toRegex(),
+                    "listOf(\"127.0.0.1:${ports[0]}\", \"127.0.0.1:${ports[1]}\")"
+                )
+                .also { log.info { "$name:\n$it" } }
         }
 
         fun extractExceptions(runCall: CommandResult): List<String> {
             return String(runCall.output)
-                    .replace(
-                            ".*>>>> EXCEPTIONS(.*)<<<< EXCEPTIONS.*".toRegex(RegexOption.DOT_MATCHES_ALL),
-                            "$1"
-                    )
-                    .trim()
-                    .split("----SPLITTER----")
-                    .filter { it.isNotEmpty() }
+                .replace(
+                    ".*>>>> EXCEPTIONS(.*)<<<< EXCEPTIONS.*".toRegex(RegexOption.DOT_MATCHES_ALL),
+                    "$1"
+                )
+                .trim()
+                .split("----SPLITTER----")
+                .filter { it.isNotEmpty() }
         }
 
         val jarFile by memoized(SCOPE) {
-            compileCode(mapOf(
+            compileCode(
+                mapOf(
                     codeFile("Runner.kt"),
                     codeFile("Success.kt"),
                     codeFile("Error.kt"),
                     codeFile("CustomType.kt")
-            ))
+                )
+            )
         }
 
         describe("Successful runner") {
             val runner by memoized(SCOPE) {
                 CommandRunner(
-                        javaCmd(),
-                        "-cp", System.getProperty("java.class.path") + ":" + jarFile.absolutePath,
-                        "io.wavebeans.test.app.SuccessKt"
+                    javaCmd(),
+                    "-cp", System.getProperty("java.class.path") + ":" + jarFile.absolutePath,
+                    "io.wavebeans.test.app.SuccessKt"
                 )
             }
 
@@ -273,15 +280,14 @@ object DistributedOverseerSpec : Spek({
         describe("Custom type runner") {
             val runner by memoized(SCOPE) {
                 CommandRunner(
-                        javaCmd(),
-                        "-cp", System.getProperty("java.class.path") + ":" + jarFile.absolutePath,
-                        "io.wavebeans.test.app.CustomTypeKt"
+                    javaCmd(),
+                    "-cp", System.getProperty("java.class.path") + ":" + jarFile.absolutePath,
+                    "io.wavebeans.test.app.CustomTypeKt"
                 )
             }
 
-            lateinit var runCall: CommandResult
+            val runCall by memoized(SCOPE) { runner.run(inheritIO = false) }
             it("should execute") {
-                runCall = runner.run(inheritIO = false)
                 assertThat(runCall.exitCode).isEqualTo(0)
             }
             it("shouldn't throw any exceptions to output") {
@@ -304,9 +310,9 @@ object DistributedOverseerSpec : Spek({
         describe("Error runner") {
             val runner by memoized(SCOPE) {
                 CommandRunner(
-                        javaCmd(),
-                        "-cp", System.getProperty("java.class.path") + ":" + jarFile.absolutePath,
-                        "io.wavebeans.test.app.ErrorKt"
+                    javaCmd(),
+                    "-cp", System.getProperty("java.class.path") + ":" + jarFile.absolutePath,
+                    "io.wavebeans.test.app.ErrorKt"
                 )
             }
 

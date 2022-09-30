@@ -49,7 +49,7 @@ object FunctionMergedStreamParamsSerializer : KSerializer<FunctionMergedStreamPa
 @Serializable(with = FunctionMergedStreamParamsSerializer::class)
 class FunctionMergedStreamParams<T1 : Any, T2 : Any, R : Any>(
         val merge: Fn<Pair<T1?, T2?>, R?>
-) : BeanParams()
+) : BeanParams
 
 @Suppress("UNCHECKED_CAST")
 class FunctionMergedStream<T1 : Any, T2 : Any, R : Any>(

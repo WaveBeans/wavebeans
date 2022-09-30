@@ -66,7 +66,7 @@ class FlattenWindowStreamsParams<T : Any>(
          * The function as [Fn] that resolves the conflict of overlapping elements while flattening the windows with step < size.
          */
         val overlapResolve: Fn<Pair<T, T>, T>
-) : BeanParams()
+) : BeanParams
 
 /**
  * Serializer for [FlattenWindowStreamsParams].

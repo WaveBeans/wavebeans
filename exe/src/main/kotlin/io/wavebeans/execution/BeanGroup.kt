@@ -13,7 +13,7 @@ interface BeanGroup
 data class BeanGroupParams(
         val beanRefs: List<BeanRef>,
         val links: List<BeanLink>
-) : BeanParams()
+) : BeanParams
 
 interface GroupIdResolver {
     fun id(): Long

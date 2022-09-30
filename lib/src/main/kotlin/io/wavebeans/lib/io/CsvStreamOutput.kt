@@ -159,7 +159,7 @@ object CsvStreamOutputParamsSerializer : KSerializer<CsvStreamOutputParams<*, *>
 
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor(CsvStreamOutputParams::class.jvmName) {
         element("uri", String.serializer().descriptor)
-        element("header", String.serializer().descriptor)
+        element("header", ListSerializer(String.serializer()).descriptor)
         element("elementSerializer", FnSerializer.descriptor)
         element("encoding", String.serializer().descriptor)
         element("suffix", FnSerializer.descriptor)
@@ -172,14 +172,14 @@ object CsvStreamOutputParamsSerializer : KSerializer<CsvStreamOutputParams<*, *>
         var fn: Fn<*, *>? = null
         var encoding: String? = null
         var suffix: Fn<*, *>? = null
-        loop@ while (true) {
+        while (true) {
             when (val i = dec.decodeElementIndex(descriptor)) {
-                CompositeDecoder.DECODE_DONE -> break@loop
                 0 -> uri = dec.decodeStringElement(descriptor, i)
                 1 -> header = dec.decodeSerializableElement(descriptor, i, ListSerializer(String.serializer()))
                 2 -> fn = dec.decodeSerializableElement(descriptor, i, FnSerializer)
                 3 -> encoding = dec.decodeStringElement(descriptor, i)
                 4 -> suffix = dec.decodeSerializableElement(descriptor, i, FnSerializer)
+                CompositeDecoder.DECODE_DONE -> break
                 else -> throw SerializationException("Unknown index $i")
             }
         }
@@ -236,7 +236,7 @@ data class CsvStreamOutputParams<A : Any, T : Any>(
          * before the extension: `file:///home/user/my${suffix}.csv`
          */
         val suffix: Fn<A?, String> = Fn.wrap { "" },
-) : BeanParams()
+) : BeanParams
 
 /**
  * Streams the sample of any type into a CSV file.

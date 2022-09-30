@@ -19,13 +19,17 @@ The project is developed using Intelliji Idea. Community Edition should work fin
 Preliminary steps
 ----
 
-* Make sure you have Java 8 installed (the JDK version is as an example, Oracle JDK will do either):
+* Make sure you have Java 11 installed (the JDK version is as an example, Oracle JDK will do either), for some of the tests [`kotlinc`](https://kotlinlang.org/docs/command-line.html) should be also available:
 
 ```bash
 > java -version
-openjdk version "1.8.0_252"
-OpenJDK Runtime Environment (AdoptOpenJDK)(build 1.8.0_252-b09)
-OpenJDK 64-Bit Server VM (AdoptOpenJDK)(build 25.252-b09, mixed mode)
+openjdk version "11.0.16.1" 2022-08-12
+OpenJDK Runtime Environment Homebrew (build 11.0.16.1+0)
+OpenJDK 64-Bit Server VM Homebrew (build 11.0.16.1+0, mixed mode)
+
+> kotlinc -version
+info: kotlinc-jvm 1.7.10 (JRE 19)
+
 ```
 
 * Clone repository

@@ -161,7 +161,7 @@ class ResampleStreamParams<T>(
          * accordingly.
          */
         val resampleFn: Fn<ResamplingArgument<T>, Sequence<T>>,
-) : BeanParams()
+) : BeanParams
 
 /**
  * Serializer for [ResampleStreamParams].

@@ -91,7 +91,10 @@ fun terminateFacilitator(location: String, timeoutMs: Int = 30000) {
                 Thread.sleep(1)
             }
         } catch (e: Exception) {
-            fun isUnavailable(e: Throwable?) = e != null && e is StatusRuntimeException && e.status == Status.UNAVAILABLE
+            fun isUnavailable(e: Throwable?) =
+                e != null &&
+                        e is StatusRuntimeException &&
+                        e.status.code == Status.UNAVAILABLE.code
             if (!isUnavailable(e)
                     && !isUnavailable(e.cause)
                     && !isUnavailable(e.cause?.cause)

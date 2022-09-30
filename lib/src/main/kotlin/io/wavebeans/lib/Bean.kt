@@ -54,11 +54,11 @@ interface SinkBean<T : Any> : SingleBean<T>
 
 interface SinglePartitionBean
 
-@Serializable
-open class BeanParams
+interface BeanParams {
+}
 
 @Serializable
-class NoParams : BeanParams() {
+class NoParams : BeanParams {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

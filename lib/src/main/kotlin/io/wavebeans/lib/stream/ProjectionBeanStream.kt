@@ -9,7 +9,7 @@ data class ProjectionBeanStreamParams(
         val start: Long,
         val end: Long?,
         val timeUnit: TimeUnit = TimeUnit.MILLISECONDS
-) : BeanParams()
+) : BeanParams
 
 /**
  * Allows to read only specific time projection of the [BeanStream] with type of [Sample].

@@ -84,7 +84,7 @@ class TableOutputParams<T : Any>(
                     it.automaticCleanupEnabled
             )
         }
-) : BeanParams()
+) : BeanParams
 
 object TableOutputParamsSerializer : KSerializer<TableOutputParams<*>> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor(TableOutputParams::class.jvmName) {

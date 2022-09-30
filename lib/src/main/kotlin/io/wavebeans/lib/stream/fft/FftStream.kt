@@ -34,7 +34,7 @@ data class FftStreamParams(
          * Number of bins in the FFT calculation, should be of power of 2 and greater or equal to underlying [Window.size]
          */
         val binCount: Int
-) : BeanParams()
+) : BeanParams
 
 /**
  * Calculates the FFT of the specified windowed [Sample] stream. The [FftStreamParams.binCount] should be a power of 2, though the

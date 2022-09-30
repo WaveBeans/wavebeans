@@ -12,7 +12,7 @@ fun <T:Any> BeanStream<T>.trim(length: Long, timeUnit: TimeUnit = TimeUnit.MILLI
 data class TrimmedFiniteSampleStreamParams(
         val length: Long,
         val timeUnit: TimeUnit
-) : BeanParams()
+) : BeanParams
 
 // TODO move this functionality to output and perhaps get rid of FiniteSampleStream. This functionality looks fishy overall
 class TrimmedFiniteStream<T : Any>(

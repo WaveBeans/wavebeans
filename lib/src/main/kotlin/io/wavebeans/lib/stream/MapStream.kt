@@ -44,7 +44,7 @@ object MapStreamParamsSerializer : KSerializer<MapStreamParams<*, *>> {
 }
 
 @Serializable(with = MapStreamParamsSerializer::class)
-data class MapStreamParams<T : Any, R : Any>(val transform: Fn<T, R>) : BeanParams()
+data class MapStreamParams<T : Any, R : Any>(val transform: Fn<T, R>) : BeanParams
 
 class MapStream<T : Any, R : Any>(
         override val input: BeanStream<T>,

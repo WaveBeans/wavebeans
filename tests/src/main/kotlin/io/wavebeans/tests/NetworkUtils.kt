@@ -28,6 +28,7 @@ fun findFreePort(range: IntRange = 2000..65000): Int {
             break
         } catch (e: IOException) {
             log.debug(e) { "[Attempt #$i] Port $port is busy" }
+            acquiredPorts[port] = Unit
         }
         if (i >= 10) {
             throw IllegalStateException("Can't find free port in range $range within $i attempts")

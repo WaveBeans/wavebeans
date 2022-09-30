@@ -7,6 +7,7 @@ import io.wavebeans.lib.stream.FiniteStream
 import io.wavebeans.metrics.clazzTag
 import io.wavebeans.metrics.samplesProcessedOnInputMetric
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
@@ -24,9 +25,10 @@ fun <T : Any> List<T>.input(): FiniteStream<T> {
     return ListAsInput(ListAsInputParams(this))
 }
 
+// TODO serializable
 class ListAsInputParams(
         val list: List<Any>
-) : BeanParams() {
+) : BeanParams {
     override fun toString(): String {
         return "ListAsInputParams(list=$list)"
     }
