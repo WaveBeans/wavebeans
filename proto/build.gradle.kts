@@ -21,6 +21,7 @@ repositories {
 
 plugins {
     idea
+    id("com.google.osdetector") version "1.7.1"
 }
 
 apply {
@@ -43,10 +44,20 @@ dependencies {
 }
 
 protobuf {
-    protoc { artifact = "com.google.protobuf:protoc:$protobufVersion" }
     plugins {
         id("grpc") {
-            artifact = "io.grpc:protoc-gen-grpc-java:$grpcVersion"
+            artifact = if (osdetector.os == "osx") {
+                "io.grpc:protoc-gen-grpc-java:$grpcVersion:osx-x86_64"
+            } else {
+                "io.grpc:protoc-gen-grpc-java:$grpcVersion"
+            }
+        }
+    }
+    protoc {
+        artifact = if (osdetector.os == "osx") {
+            "com.google.protobuf:protoc:$protobufVersion:osx-x86_64"
+        } else {
+            "com.google.protobuf:protoc:$protobufVersion"
         }
     }
     generateProtoTasks {
