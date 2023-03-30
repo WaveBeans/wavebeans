@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     val kotlinVersion: String by System.getProperties()
 
-    kotlin("jvm") version kotlinVersion
+    kotlin("multiplatform") version kotlinVersion
     id("org.gradle.test-retry") version "1.2.0"
 
     `java-library`
@@ -12,10 +12,6 @@ plugins {
 }
 
 allprojects {
-    apply {
-        plugin("kotlin")
-        plugin("org.gradle.test-retry")
-    }
 
     repositories {
         mavenCentral()
@@ -28,7 +24,21 @@ allprojects {
     }
 }
 
+kotlin {
+    jvm { }
+    js { browser { } }
+}
+
 subprojects {
+
+    if (name == "lib") {
+        return@subprojects
+    }
+
+    apply {
+        plugin("kotlin")
+        plugin("org.gradle.test-retry")
+    }
 
     group = "io.wavebeans"
 
@@ -37,7 +47,7 @@ subprojects {
     dependencies {
         implementation(kotlin("stdlib-jdk8"))
         implementation(kotlin("reflect"))
-        implementation("io.github.microutils:kotlin-logging:1.7.7")
+        implementation("io.github.microutils:kotlin-logging-jvm:3.0.0")
 
         testImplementation(project(":tests"))
         testImplementation("org.spekframework.spek2:spek-dsl-jvm:$spekVersion")
@@ -76,15 +86,15 @@ subprojects {
 
 publishing {
     publications {
-        create<MavenPublication>("lib") {
-            from(subprojects.first { it.name == "lib" }.components["java"])
-            groupId = "io.wavebeans"
-            artifactId = "lib"
-            populatePom(
-                "WaveBeans Lib",
-                "WaveBeans API library. Provides the way to define bean streams and basic execution functionality."
-            )
-        }
+//        create<MavenPublication>("lib") {
+//            from(subprojects.first { it.name == "lib" }.components["java"])
+//            groupId = "io.wavebeans"
+//            artifactId = "lib"
+//            populatePom(
+//                "WaveBeans Lib",
+//                "WaveBeans API library. Provides the way to define bean streams and basic execution functionality."
+//            )
+//        }
         create<MavenPublication>("exe") {
             from(subprojects.first { it.name == "exe" }.components["java"])
             groupId = "io.wavebeans"

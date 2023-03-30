@@ -5,7 +5,7 @@ import com.dropbox.core.v2.fileproperties.PropertyGroup
 import com.dropbox.core.v2.files.CommitInfo
 import com.dropbox.core.v2.files.UploadSessionCursor
 import com.dropbox.core.v2.files.WriteMode
-import io.wavebeans.fs.core.WbFileOutputStream
+import io.wavebeans.lib.io.OutputStream
 import java.io.ByteArrayInputStream
 import java.util.*
 
@@ -13,7 +13,7 @@ class DropboxWbFileOutputStream(
         val client: DbxClientV2,
         val file: DropboxWbFile,
         private val dropboxDriverConfig: DropboxDriverConfig
-) : WbFileOutputStream() {
+) : OutputStream {
 
     private val session = client.files().uploadSessionStart(false).finish()
     private val buffer = ByteArray(dropboxDriverConfig.bufferSize)
@@ -25,6 +25,14 @@ class DropboxWbFileOutputStream(
         if (++count == buffer.size) {
             flush()
         }
+    }
+
+    override fun write(buffer: ByteArray) {
+        TODO("Not yet implemented")
+    }
+
+    override fun write(buffer: ByteArray, offset: Int, length: Int) {
+        TODO("Not yet implemented")
     }
 
     override fun flush() {

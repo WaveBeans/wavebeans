@@ -4,6 +4,7 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
 import assertk.catch
+import io.wavebeans.lib.TimeUnit
 import io.wavebeans.lib.io.input
 import io.wavebeans.lib.sampleOf
 import io.wavebeans.lib.stream.SampleCountMeasurement
@@ -12,7 +13,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
-import java.util.concurrent.TimeUnit
 
 object JsonBeanStreamReaderSpec : Spek({
 

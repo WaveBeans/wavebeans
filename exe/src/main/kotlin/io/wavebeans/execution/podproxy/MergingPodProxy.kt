@@ -5,8 +5,8 @@ import io.wavebeans.execution.config.ExecutionConfig
 import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.lib.AnyBean
 import io.wavebeans.lib.BeanParams
+import io.wavebeans.lib.TimeUnit
 import io.wavebeans.lib.stream.FiniteStream
-import java.util.concurrent.TimeUnit
 
 abstract class MergingPodProxy(
         override val forPartition: Int,
@@ -57,7 +57,7 @@ abstract class MergingPodProxy(
         readsFrom.map { pod ->
             val bush = podDiscovery.bushFor(pod)
             val caller = bushCallerRepository.create(bush, pod)
-            caller.call("desiredSampleRate").get(5000, TimeUnit.MILLISECONDS).obj as Float?
+            caller.call("desiredSampleRate").get(5000, java.util.concurrent.TimeUnit.MILLISECONDS).obj as Float?
         }.distinct().let {
             require(it.size == 1) { "Desired sample rate from pods $readsFrom is ambiguous: $it. Something requires resampling first." }
             it.first()

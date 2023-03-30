@@ -1,11 +1,12 @@
 package io.wavebeans.fs.local
 
-import io.wavebeans.fs.core.WbFileOutputStream
+import io.wavebeans.lib.io.OutputStream
+import io.wavebeans.lib.io.OutputStreamProvider
 import java.io.FileOutputStream
 
-class LocalWbFileOutputStream(wbFile: LocalWbFile) : WbFileOutputStream() {
+class LocalWbFileOutputStream(wbFile: LocalWbFile) : OutputStream, OutputStreamProvider {
 
-    private val stream = FileOutputStream(wbFile.file)
+    override val stream = FileOutputStream(wbFile.file)
 
     override fun write(b: Int) = stream.write(b)
 

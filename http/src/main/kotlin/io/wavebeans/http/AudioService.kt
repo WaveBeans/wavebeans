@@ -14,7 +14,6 @@ import mu.KotlinLogging
 import java.io.InputStream
 import java.util.*
 import java.util.concurrent.LinkedTransferQueue
-import java.util.concurrent.TimeUnit
 
 enum class AudioStreamOutputFormat(val id: String, val contentType: String) {
     WAV("wav", "audio/wav")
@@ -124,6 +123,7 @@ class AudioService(internal val tableRegistry: TableRegistry) {
                     writerDelegate,
                     AudioService::class
                 )
+
                 SampleVector::class -> WavWriter(
                     (table as TimeseriesTableDriver<SampleVector>).stream(offset ?: 0.s)
                         .let {
@@ -138,6 +138,7 @@ class AudioService(internal val tableRegistry: TableRegistry) {
                     writerDelegate,
                     AudioService::class
                 )
+
                 else -> throw UnsupportedOperationException("Table type $tableType is not supported for audio streaming")
             }
 

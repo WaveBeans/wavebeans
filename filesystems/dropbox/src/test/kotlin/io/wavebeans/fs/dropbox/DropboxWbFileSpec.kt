@@ -4,9 +4,11 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import io.wavebeans.fs.core.WbFileDriver
+import io.wavebeans.lib.URI
+import io.wavebeans.lib.io.bufferedReader
+import io.wavebeans.lib.io.use
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
-import java.net.URI
 
 object DropboxWbFileSpec : Spek({
 

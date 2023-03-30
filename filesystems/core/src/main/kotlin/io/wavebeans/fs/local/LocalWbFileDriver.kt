@@ -2,8 +2,8 @@ package io.wavebeans.fs.local
 
 import io.wavebeans.fs.core.WbFile
 import io.wavebeans.fs.core.WbFileDriver
+import io.wavebeans.lib.URI
 import java.io.File
-import java.net.URI
 
 object LocalWbFileDriver : WbFileDriver {
 
@@ -17,6 +17,6 @@ object LocalWbFileDriver : WbFileDriver {
     }
 
 
-    override fun createWbFile(uri: URI): WbFile = LocalWbFile(File(uri))
+    override fun createWbFile(uri: URI): WbFile = LocalWbFile(File(uri.path))
 
 }

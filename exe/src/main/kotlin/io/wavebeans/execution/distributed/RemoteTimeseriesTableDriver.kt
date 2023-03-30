@@ -4,6 +4,7 @@ import io.wavebeans.communicator.TableApiClient
 import io.wavebeans.execution.TableQuerySerializer
 import io.wavebeans.execution.distributed.proto.ProtoObj
 import io.wavebeans.lib.TimeMeasure
+import io.wavebeans.lib.TimeUnit
 import io.wavebeans.lib.WaveBeansClassLoader
 import io.wavebeans.lib.table.TableQuery
 import io.wavebeans.lib.table.TimeseriesTableDriver
@@ -38,15 +39,15 @@ class RemoteTimeseriesTableDriver<T : Any>(
     override fun put(time: TimeMeasure, value: T) {
         val protoObj = ProtoObj.wrapIfNeeded(value)
         val kSerializer = SerializableRegistry.find(protoObj::class)
-        client.put(time.time, time.timeUnit, protoObj::class.jvmName, protoObj.asByteArray(kSerializer))
+        client.put(time.time, java.util.concurrent.TimeUnit.valueOf(time.timeUnit.toString()), protoObj::class.jvmName, protoObj.asByteArray(kSerializer))
     }
 
     override fun firstMarker(): TimeMeasure? {
-        return client.firstMarker { time, timeUnit -> TimeMeasure(time, timeUnit) }
+        return client.firstMarker { time, timeUnit -> TimeMeasure(time, TimeUnit.valueOf(timeUnit.toString())) }
     }
 
     override fun lastMarker(): TimeMeasure? {
-        return client.lastMarker { time, timeUnit -> TimeMeasure(time, timeUnit) }
+        return client.lastMarker { time, timeUnit -> TimeMeasure(time, TimeUnit.valueOf(timeUnit.toString())) }
     }
 
     @Suppress("UNCHECKED_CAST")

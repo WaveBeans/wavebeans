@@ -113,7 +113,7 @@ class TableApiGrpcService(
         responseObserver.single("TableApiGrpcService.put", request) {
             tableGrpcService.put(
                     request.tableName,
-                    io.wavebeans.lib.TimeMeasure(request.time.time, TimeUnit.valueOf(request.time.timeUnit)),
+                    io.wavebeans.lib.TimeMeasure(request.time.time, io.wavebeans.lib.TimeUnit.valueOf(request.time.timeUnit)),
                     request.valueType,
                     request.valueSerialized.toByteArray()
             )

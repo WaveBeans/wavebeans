@@ -4,13 +4,15 @@ import com.dropbox.core.v2.DbxClientV2
 import com.dropbox.core.v2.files.DeleteErrorException
 import com.dropbox.core.v2.files.GetMetadataErrorException
 import io.wavebeans.fs.core.*
+import io.wavebeans.lib.URI
+import io.wavebeans.lib.io.InputStream
+import io.wavebeans.lib.io.OutputStream
 import mu.KotlinLogging
-import java.net.URI
 
 data class DropboxWbFile(
-        private val client: DbxClientV2,
-        override val uri: URI,
-        private val dropboxDriverConfig: DropboxDriverConfig
+    private val client: DbxClientV2,
+    override val uri: URI,
+    private val dropboxDriverConfig: DropboxDriverConfig
 ) : WbFile {
     companion object {
         private val log = KotlinLogging.logger { }
@@ -39,10 +41,10 @@ data class DropboxWbFile(
         }
     }
 
-    override fun createWbFileOutputStream(): WbFileOutputStream = DropboxWbFileOutputStream(client, this, dropboxDriverConfig)
+    override fun createWbFileOutputStream(): OutputStream = DropboxWbFileOutputStream(client, this, dropboxDriverConfig)
             .also { log.trace { "Initialize output stream to $uri" } }
 
-    override fun createWbFileInputStream(): WbFileInputStream = DropboxWbFileInputStream(client, this, dropboxDriverConfig)
+    override fun createWbFileInputStream(): InputStream = DropboxWbFileInputStream(client, this, dropboxDriverConfig)
             .also { log.trace { "Initialize input stream from $uri" } }
 
     override fun toString(): String {
