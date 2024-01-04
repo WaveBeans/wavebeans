@@ -50,7 +50,6 @@ subprojects {
         testImplementation("io.kotest:kotest-runner-junit5:$kotestVersion")
         testImplementation("com.willowtreeapps.assertk:assertk-jvm:0.25")
         testImplementation("org.mockito.kotlin:mockito-kotlin:4.1.0")
-
     }
 
     java {
