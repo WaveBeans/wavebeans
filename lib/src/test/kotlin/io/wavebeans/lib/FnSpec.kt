@@ -2,9 +2,9 @@ package io.wavebeans.lib
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import assertk.assertions.isFailure
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
-import assertk.catch
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 
@@ -22,15 +22,16 @@ object FnSpec : Spek({
             val dependentValue = 1L
 
             it("should throw an exception during wrapping") {
-                assertThat(catch { Fn.wrap<Int, Long> { it.toLong() * dependentValue } })
-                        .isNotNull().isInstanceOf(IllegalArgumentException::class)
+                assertThat { Fn.wrap<Int, Long> { it.toLong() * dependentValue } }
+                    .isFailure()
+                    .isNotNull().isInstanceOf(IllegalArgumentException::class)
             }
         }
 
         describe("Lambda function wrapped and defined as Class") {
             val lambda: (Int) -> Long = { it.toLong() }
             val fn = Fn.wrap(lambda)
-
+//
             val fnInstantiated = Fn.instantiate(fn::class.java, fn.initParams)
 
             it("should return result") { assertThat(fnInstantiated.apply(1)).isEqualTo(1L) }
@@ -82,9 +83,10 @@ object FnSpec : Spek({
             }
 
             it("should throw an exception during indirect instantiation") {
-                assertThat(catch { Fn.instantiate(AFn::class.java) })
-                        .isNotNull()
-                        .isInstanceOf(IllegalStateException::class)
+                assertThat { Fn.instantiate(AFn::class.java) }
+                    .isFailure()
+                    .isNotNull()
+                    .isInstanceOf(IllegalStateException::class)
             }
         }
 

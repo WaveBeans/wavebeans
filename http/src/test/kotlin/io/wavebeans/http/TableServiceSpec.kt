@@ -5,9 +5,7 @@ import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isTrue
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.whenever
+import org.mockito.kotlin.*
 import io.wavebeans.lib.io.input
 import io.wavebeans.lib.ms
 import io.wavebeans.lib.stream.SampleCountMeasurement

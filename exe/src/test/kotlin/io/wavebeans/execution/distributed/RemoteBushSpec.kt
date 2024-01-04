@@ -2,11 +2,7 @@ package io.wavebeans.execution.distributed
 
 import assertk.assertThat
 import assertk.assertions.*
-import assertk.catch
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.whenever
+import org.mockito.kotlin.*
 import io.wavebeans.execution.Gardener
 import io.wavebeans.execution.LocalBush
 import io.wavebeans.execution.PodDiscovery
@@ -94,11 +90,12 @@ class RemoteBushSpec : Spek({
             }
 
             it("should fail on call") {
-                assertThat(catch { remoteBush.call(PodKey(0, 0), "/answer").get() })
-                        .isNotNull().isInstanceOf(ExecutionException::class)
-                        .cause()
-                        .isNotNull().isInstanceOf(IllegalStateException::class)
-                        .message().isNotNull().contains("Unexpected error during request")
+                assertThat { remoteBush.call(PodKey(0, 0), "/answer").get() }
+                    .isFailure()
+                    .isNotNull().isInstanceOf(ExecutionException::class)
+                    .cause()
+                    .isNotNull().isInstanceOf(IllegalStateException::class)
+                    .message().isNotNull().contains("Unexpected error during request")
 
             }
         }

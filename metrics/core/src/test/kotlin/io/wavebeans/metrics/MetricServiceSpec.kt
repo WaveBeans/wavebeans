@@ -2,8 +2,8 @@ package io.wavebeans.metrics
 
 import assertk.assertThat
 import assertk.assertions.isNull
-import assertk.catch
-import com.nhaarman.mockitokotlin2.*
+import assertk.assertions.isSuccess
+import org.mockito.kotlin.*
 import org.mockito.ArgumentMatchers
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.lifecycle.CachingMode
@@ -45,13 +45,13 @@ object MetricServiceSpec : Spek({
 
             it("shouldn't fail if exception is thrown by one of the connectors during increment") {
                 whenever(myMetricConnector.increment(any(), any())).thenThrow(IllegalStateException("shouldn't throw it"))
-                assertThat(catch { myMetricObject.increment() }).isNull()
+                assertThat { myMetricObject.increment() }.isSuccess()
                 verify(myMetricConnector).increment(eq(myMetricObject), eq(1.0))
             }
 
             it("shouldn't fail if exception is thrown by one of the connectors during decrement") {
                 whenever(myMetricConnector.decrement(any(), any())).thenThrow(IllegalStateException("shouldn't throw it"))
-                assertThat(catch { myMetricObject.decrement() }).isNull()
+                assertThat { myMetricObject.decrement() }.isSuccess()
                 verify(myMetricConnector).decrement(eq(myMetricObject), eq(1.0))
             }
         }
@@ -78,13 +78,13 @@ object MetricServiceSpec : Spek({
 
             it("shouldn't fail if exception is thrown by one of the connectors during gauge record") {
                 whenever(myMetricConnector.gauge(any(), ArgumentMatchers.anyDouble())).thenThrow(IllegalStateException("shouldn't throw it"))
-                assertThat(catch { myMetricObject.set(1.0) }).isNull()
+                assertThat { myMetricObject.set(1.0) }.isSuccess()
                 verify(myMetricConnector).gauge(eq(myMetricObject), eq(1.0))
             }
 
             it("shouldn't fail if exception is thrown by one of the connectors during gauge delta record") {
                 whenever(myMetricConnector.gaugeDelta(any(), ArgumentMatchers.anyDouble())).thenThrow(IllegalStateException("shouldn't throw it"))
-                assertThat(catch { myMetricObject.increment(1.0) }).isNull()
+                assertThat { myMetricObject.increment(1.0) }.isSuccess()
                 verify(myMetricConnector).gaugeDelta(eq(myMetricObject), eq(1.0))
             }
         }
@@ -106,7 +106,7 @@ object MetricServiceSpec : Spek({
 
             it("shouldn't fail if exception is thrown by one of the connectors during time record") {
                 whenever(myMetricConnector.time(any(), any())).thenThrow(IllegalStateException("shouldn't throw it"))
-                assertThat(catch { myMetricObject.time(1L) }).isNull()
+                assertThat { myMetricObject.time(1L) }.isSuccess()
                 verify(myMetricConnector).time(eq(myMetricObject), eq(1L))
             }
         }

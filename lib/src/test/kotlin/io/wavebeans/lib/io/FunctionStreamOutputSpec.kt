@@ -3,7 +3,6 @@ package io.wavebeans.lib.io
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
-import assertk.catch
 import assertk.fail
 import io.wavebeans.lib.*
 import io.wavebeans.lib.io.WriteFunctionPhase.*
@@ -90,7 +89,7 @@ object FunctionStreamOutputSpec : Spek({
             assertThat(IntStorage.list()).isEqualTo(listOf(0, -2))
         }
         it("should throw an exception properly and the output processing should end") {
-            val e = catch {
+            assertThat {
                 input.out {
                     if (it.sampleIndex == 5L) throw IllegalStateException("some exception")
                     when (it.phase) {
@@ -101,8 +100,8 @@ object FunctionStreamOutputSpec : Spek({
                     true
                 }.evaluate(1000.0f)
             }
-
-            assertThat(e).isNotNull().message().isEqualTo("some exception")
+                .isFailure()
+                .isNotNull().message().isEqualTo("some exception")
             assertThat(IntStorage.list()).isEqualTo((0..4).toList())
         }
     }

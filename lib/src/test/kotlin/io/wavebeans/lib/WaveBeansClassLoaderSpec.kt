@@ -2,7 +2,6 @@ package io.wavebeans.lib
 
 import assertk.assertThat
 import assertk.assertions.*
-import assertk.catch
 import io.wavebeans.lib.WaveBeansClassLoader.classForName
 import io.wavebeans.lib.stream.fft.FftSample
 import io.wavebeans.lib.stream.window.Window
@@ -54,29 +53,32 @@ object WaveBeansClassLoaderSpec : Spek({
             }
         }
         it("should throw exception for non-existing class") {
-            assertThat(catch { classForName(className) })
-                    .isNotNull()
-                    .isInstanceOf(ClassNotFoundException::class)
-                    .message().isNotNull().contains(className)
+            assertThat { classForName(className) }
+                .isFailure()
+                .isNotNull()
+                .isInstanceOf(ClassNotFoundException::class)
+                .message().isNotNull().contains(className)
         }
 
         it("should load class provided by registered classloader") {
 
             WaveBeansClassLoader.addClassLoader(classLoader)
 
-            assertThat(catch { classForName(className) })
-                    .isNotNull()
-                    .message().isNotNull().isEqualTo(className)
+            assertThat { classForName(className) }
+                .isFailure()
+                .isNotNull()
+                .message().isNotNull().isEqualTo(className)
         }
 
         it("should not load class if class loader unregistered") {
 
             WaveBeansClassLoader.removeClassLoader(classLoader)
 
-            assertThat(catch { classForName(className) })
-                    .isNotNull()
-                    .isInstanceOf(ClassNotFoundException::class)
-                    .message().isNotNull().contains(className)
+            assertThat { classForName(className) }
+                .isFailure()
+                .isNotNull()
+                .isInstanceOf(ClassNotFoundException::class)
+                .message().isNotNull().contains(className)
         }
     }
 })

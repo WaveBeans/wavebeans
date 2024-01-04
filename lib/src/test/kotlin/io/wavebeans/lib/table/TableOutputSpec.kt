@@ -3,11 +3,11 @@ package io.wavebeans.lib.table
 import assertk.assertThat
 import assertk.assertions.isFalse
 import assertk.assertions.isTrue
-import com.nhaarman.mockitokotlin2.*
 import io.wavebeans.lib.*
 import io.wavebeans.lib.io.input
 import io.wavebeans.lib.stream.map
 import io.wavebeans.lib.stream.window.window
+import org.mockito.kotlin.*
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 
