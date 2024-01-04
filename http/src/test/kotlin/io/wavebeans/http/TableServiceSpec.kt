@@ -21,7 +21,7 @@ class TableServiceSpec : DescribeSpec({
 
     describe("Existence") {
         val tableRegistry = mock<TableRegistry>()
-        whenever(tableRegistry.exists(eq("table"))).thenReturn(false)
+        whenever(tableRegistry.exists(eq("table"))).thenReturn(true)
 
         val service = TableService(tableRegistry)
 
