@@ -2,14 +2,13 @@ package io.wavebeans.execution.distributed
 
 import assertk.assertThat
 import assertk.assertions.*
-import assertk.catch
-import com.nhaarman.mockitokotlin2.*
 import io.wavebeans.execution.eachIndexed
 import io.wavebeans.lib.Sample
 import io.wavebeans.lib.s
 import io.wavebeans.lib.sampleOf
 import io.wavebeans.lib.table.*
 import io.wavebeans.tests.seqStream
+import org.mockito.kotlin.*
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.lifecycle.CachingMode.SCOPE
 import org.spekframework.spek2.lifecycle.CachingMode.TEST
@@ -47,9 +46,9 @@ object RemoteTimeseriesTableDriverSpec : Spek({
         val remoteTableDriver by memoized(SCOPE) { RemoteTimeseriesTableDriver<Sample>(tableName, "127.0.0.1:50001", Sample::class) }
 
         it("should not return sample rate if not initialized") {
-            assertThat(catch { remoteTableDriver.sampleRate })
-                    .isNotNull()
-                    .isInstanceOf(IllegalStateException::class)
+            assertThat { remoteTableDriver.sampleRate }
+                .isFailure()
+                .isInstanceOf(IllegalStateException::class)
         }
 
         it("should init") {

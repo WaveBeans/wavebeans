@@ -2,7 +2,6 @@ package io.wavebeans.cli.script
 
 import assertk.assertThat
 import assertk.assertions.*
-import assertk.catch
 import io.wavebeans.execution.PodDiscovery
 import io.wavebeans.execution.distributed.Facilitator
 import io.wavebeans.lib.WaveBeansClassLoader
@@ -107,9 +106,8 @@ object ScriptRunnerSpec : Spek({
                         assertThat(runner.interrupt(true), "there was something to interrupt")
                                 .isTrue()
 
-                        val e = catch { runner.awaitForResult(timeout = 100) }
-                        assertThat(e)
-                                .isNotNull()
+                        assertThat{ runner.awaitForResult(timeout = 100) }
+                                .isFailure()
                                 .isInstanceOf(CancellationException::class)
 
                         runner.close()
@@ -126,8 +124,8 @@ object ScriptRunnerSpec : Spek({
                 """.trimIndent()
 
                 it("should run with exception explaining the reason") {
-                    assertThat(catch { eval(script) })
-                            .isNotNull()
+                    assertThat { eval(script) }
+                            .isFailure()
                             .message().isNotNull().contains("noSuchMethod")
                 }
             }

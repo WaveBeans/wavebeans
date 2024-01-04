@@ -3,8 +3,7 @@ package io.wavebeans.execution.distributed
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
-import assertk.catch
-import com.nhaarman.mockitokotlin2.*
+import org.mockito.kotlin.*
 import io.wavebeans.communicator.FacilitatorApiClient
 import io.wavebeans.communicator.JobStatusResponse.JobStatus.FutureStatus.*
 import io.wavebeans.communicator.RegisterBushEndpointsRequest
@@ -71,12 +70,12 @@ class FacilitatorGrpcServiceSpec : Spek({
         }
 
         it("should plant one bush") {
-            assertThat(catch { plant(bushKey1, pods1) }).isNull()
+            assertThat { plant(bushKey1, pods1) }.isSuccess()
             verify(gardener).plantBush(eq(jobKey), eq(bushKey1), any(), eq(44100.0f))
         }
 
         it("should plant second bush") {
-            assertThat(catch { plant(bushKey2, pods2) }).isNull()
+            assertThat { plant(bushKey2, pods2) }.isSuccess()
             verify(gardener).plantBush(eq(jobKey), eq(bushKey2), any(), eq(44100.0f))
         }
     }
@@ -135,7 +134,7 @@ class FacilitatorGrpcServiceSpec : Spek({
         val jobKey = newJobKey()
 
         it("should cancel the job") {
-            assertThat(catch { facilitatorApiClient.stopJob(jobKey) }).isNull()
+            assertThat { facilitatorApiClient.stopJob(jobKey) }.isSuccess()
             verify(gardener).stop(eq(jobKey))
         }
     }
@@ -144,7 +143,7 @@ class FacilitatorGrpcServiceSpec : Spek({
         val jobKey = newJobKey()
 
         it("should cancel the job") {
-            assertThat(catch { facilitatorApiClient.startJob(jobKey) }).isNull()
+            assertThat { facilitatorApiClient.startJob(jobKey) }.isSuccess()
             verify(gardener).start(eq(jobKey))
         }
     }
@@ -190,7 +189,7 @@ class FacilitatorGrpcServiceSpec : Spek({
         }
 
         it("should upload the file") {
-            assertThat(catch { upload(jarFile) }).isNull()
+            assertThat { upload(jarFile) }.isSuccess()
         }
 
         lateinit var myClass: Class<*>
@@ -202,7 +201,7 @@ class FacilitatorGrpcServiceSpec : Spek({
         }
 
         it("should upload the second file") {
-            assertThat(catch { upload(jarFile2) }).isNull()
+            assertThat { upload(jarFile2) }.isSuccess()
         }
 
         it("should be able to create class instance and class loader should be the same") {
@@ -260,7 +259,7 @@ class FacilitatorGrpcServiceSpec : Spek({
                                     .build()
                     )
                     .build()
-            assertThat(catch { facilitatorApiClient.registerBushEndpoints(req) }).isNull()
+            assertThat { facilitatorApiClient.registerBushEndpoints(req) }.isSuccess()
         }
         it("should discover remote bush 1") {
             assertThat(podDiscovery.bush(bushKey1))
@@ -373,7 +372,7 @@ class FacilitatorGrpcServiceSpec : Spek({
     describe("Terminating") {
         /* Though don't actually terminate as in real app. */
         it("should terminate") {
-            assertThat(catch { facilitatorApiClient.terminate() }).isNull()
+            assertThat { facilitatorApiClient.terminate() }.isSuccess()
             verify(gardener).stopAll()
         }
     }

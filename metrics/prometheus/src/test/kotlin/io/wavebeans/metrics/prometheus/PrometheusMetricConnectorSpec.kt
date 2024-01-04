@@ -5,7 +5,7 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.prop
-import com.nhaarman.mockitokotlin2.*
+import org.mockito.kotlin.*
 import io.prometheus.client.Collector
 import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.Gauge

@@ -2,7 +2,6 @@ package io.wavebeans.tests
 
 import assertk.assertThat
 import assertk.assertions.*
-import assertk.catch
 import io.wavebeans.execution.MultiThreadedOverseer
 import io.wavebeans.execution.SingleThreadedOverseer
 import io.wavebeans.lib.*
@@ -340,10 +339,10 @@ object MultiPartitionCorrectnessSpec : Spek({
         val run1 = seqStream().map { SomeUnknownClass(1) }.trim(100).toDevNull()
 
         it("should throw exception when run in parallel") {
-            assertThat(catch { runInParallel(listOf(run1)) }).isNotNull()
+            assertThat { runInParallel(listOf(run1)) }.isFailure()
         }
         it("should  throw exception when run in single thread") {
-            assertThat(catch { runLocally(listOf(run1)) }).isNotNull()
+            assertThat { runLocally(listOf(run1)) }.isFailure()
         }
     }
 

@@ -4,9 +4,6 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isTrue
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.whenever
 import io.wavebeans.execution.*
 import io.wavebeans.execution.config.ExecutionConfig
 import io.wavebeans.execution.medium.PlainMediumBuilder
@@ -15,6 +12,9 @@ import io.wavebeans.execution.medium.PodCallResult
 import io.wavebeans.execution.pod.Pod
 import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.lib.sampleOf
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.util.concurrent.CompletableFuture

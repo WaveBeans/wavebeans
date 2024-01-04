@@ -2,7 +2,6 @@ package io.wavebeans.lib
 
 import assertk.assertThat
 import assertk.assertions.*
-import assertk.catch
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.util.concurrent.TimeUnit.*
@@ -51,16 +50,16 @@ object TimeMeasureSpec : Spek({
         it("should be 2 days") { assertThat(TimeMeasure.parse("2.2fd")).isEqualTo(2.d) }
         it("should be 2 days") { assertThat(TimeMeasure.parse("2.2D")).isEqualTo(2.d) }
         it("should not be parsed") {
-            assertThat(catch { TimeMeasure.parse("2.2") })
-                    .isNotNull().message().isNotNull().startsWith("Format invalid, should be:")
-            assertThat(catch { TimeMeasure.parse("2") })
-                    .isNotNull().message().isNotNull().startsWith("Format invalid, should be:")
-            assertThat(catch { TimeMeasure.parse("") })
-                    .isNotNull().message().isNotNull().startsWith("Format invalid, should be:")
-            assertThat(catch { TimeMeasure.parse("-1f") })
-                    .isNotNull().message().isNotNull().startsWith("Format invalid, should be:")
-            assertThat(catch { TimeMeasure.parse("1megasecond") })
-                    .isNotNull().message().isNotNull().startsWith("Format invalid, should be:")
+            assertThat { TimeMeasure.parse("2.2") }.isFailure()
+                .isNotNull().message().isNotNull().startsWith("Format invalid, should be:")
+            assertThat { TimeMeasure.parse("2") }.isFailure()
+                .isNotNull().message().isNotNull().startsWith("Format invalid, should be:")
+            assertThat { TimeMeasure.parse("") }.isFailure()
+                .isNotNull().message().isNotNull().startsWith("Format invalid, should be:")
+            assertThat { TimeMeasure.parse("-1f") }.isFailure()
+                .isNotNull().message().isNotNull().startsWith("Format invalid, should be:")
+            assertThat { TimeMeasure.parse("1megasecond") }.isFailure()
+                .isNotNull().message().isNotNull().startsWith("Format invalid, should be:")
         }
     }
 

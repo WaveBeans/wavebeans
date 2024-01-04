@@ -33,6 +33,7 @@ subprojects {
     group = "io.wavebeans"
 
     val spekVersion: String by System.getProperties()
+    val kotestVersion: String by System.getProperties()
 
     dependencies {
         implementation(kotlin("stdlib-jdk8"))
@@ -40,11 +41,15 @@ subprojects {
         implementation("io.github.microutils:kotlin-logging:1.7.7")
 
         testImplementation(project(":tests"))
+        testImplementation("ch.qos.logback:logback-classic:1.2.3")
+
+        // spek usage is deprecated in favor of kotest
         testImplementation("org.spekframework.spek2:spek-dsl-jvm:$spekVersion")
         testRuntimeOnly("org.spekframework.spek2:spek-runner-junit5:$spekVersion")
-        testImplementation("com.willowtreeapps.assertk:assertk-jvm:0.13")
-        testImplementation("com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0")
-        testImplementation("ch.qos.logback:logback-classic:1.2.3")
+
+        testImplementation("io.kotest:kotest-runner-junit5:$kotestVersion")
+        testImplementation("com.willowtreeapps.assertk:assertk-jvm:0.25")
+        testImplementation("org.mockito.kotlin:mockito-kotlin:4.1.0")
     }
 
     java {
@@ -56,6 +61,7 @@ subprojects {
         systemProperty("SPEK_TIMEOUT", 0)
         useJUnitPlatform {
             includeEngines("spek2")
+            includeEngines("kotest")
         }
         maxHeapSize = "2g"
         // that attempts to fix flaky tests once and for all

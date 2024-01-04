@@ -14,8 +14,6 @@ import kotlinx.serialization.protobuf.ProtoNumber
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.lifecycle.CachingMode.SCOPE
 import org.spekframework.spek2.style.specification.describe
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
 
 object SerializablePodCallResultSpec : Spek({
 
@@ -72,7 +70,7 @@ object SerializablePodCallResultSpec : Spek({
 
                 it("should have non empty obj") { assertThat(result.obj).isNotNull() }
                 it("should have empty exception") { assertThat(result.exception).isNull() }
-                it("should return valid value") { assertThat(result.value<Long>()).isEqualTo(123) }
+                it("should return valid value") { assertThat(result.value<Int>()).isEqualTo(123) }
             }
             describe("Double") {
                 val result by memoized(SCOPE) { result(123.0) }

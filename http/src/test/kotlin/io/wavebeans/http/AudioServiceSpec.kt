@@ -3,11 +3,9 @@ package io.wavebeans.http
 import assertk.Assert
 import assertk.all
 import assertk.assertThat
-import assertk.assertions.*
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.whenever
+import assertk.assertions.isEqualTo
+import assertk.assertions.isNotEmpty
+import assertk.assertions.prop
 import io.wavebeans.lib.*
 import io.wavebeans.lib.io.WavHeader
 import io.wavebeans.lib.io.input
@@ -16,8 +14,12 @@ import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.stream.window.window
 import io.wavebeans.lib.table.TableRegistry
 import io.wavebeans.lib.table.TimeseriesTableDriver
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import org.spekframework.spek2.Spek
-import org.spekframework.spek2.lifecycle.CachingMode.*
+import org.spekframework.spek2.lifecycle.CachingMode.TEST
 import org.spekframework.spek2.style.specification.describe
 import java.io.InputStream
 
