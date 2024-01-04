@@ -61,6 +61,7 @@ subprojects {
         systemProperty("SPEK_TIMEOUT", 0)
         useJUnitPlatform {
             includeEngines("spek2")
+            includeEngines("kotest")
         }
         maxHeapSize = "2g"
         // that attempts to fix flaky tests once and for all

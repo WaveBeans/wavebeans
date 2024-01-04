@@ -5,24 +5,23 @@ import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isTrue
+import io.kotest.core.spec.style.DescribeSpec
 import org.mockito.kotlin.*
 import io.wavebeans.lib.io.input
 import io.wavebeans.lib.ms
 import io.wavebeans.lib.stream.SampleCountMeasurement
 import io.wavebeans.lib.table.TableRegistry
 import io.wavebeans.lib.table.TimeseriesTableDriver
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
 
-object TableServiceSpec : Spek({
+class TableServiceSpec : DescribeSpec({
 
-    beforeGroup {
+    beforeSpec {
         SampleCountMeasurement.registerType(Int::class) { 1 }
     }
 
     describe("Existence") {
         val tableRegistry = mock<TableRegistry>()
-        whenever(tableRegistry.exists(eq("table"))).thenReturn(true)
+        whenever(tableRegistry.exists(eq("table"))).thenReturn(false)
 
         val service = TableService(tableRegistry)
 

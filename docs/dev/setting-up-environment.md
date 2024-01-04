@@ -49,7 +49,8 @@ Install plugins
 
 A few extra plugins you need to make sure you have installed.
 
-* To run tests using IDE: [Spek Framework plugin](https://plugins.jetbrains.com/plugin/10915-spek-framework).
+* To run tests using IDE: [Kotest plugin](https://plugins.jetbrains.com/plugin/14080-kotest)
+  * For older non-migrated tests: [Spek Framework plugin](https://plugins.jetbrains.com/plugin/10915-spek-framework).
 * For protobuf support: [Protobuf support plugin](https://plugins.jetbrains.com/plugin/8277-protobuf-support)
 
 Import project
