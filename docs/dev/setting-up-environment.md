@@ -32,6 +32,12 @@ info: kotlinc-jvm 1.7.10 (JRE 19)
 
 ```
 
+You can use [sdkman](https://sdkman.io/install/) to install it, from project root:
+
+```bash
+sdk env install
+```
+
 * Clone repository
 
 ```bash
