@@ -4,18 +4,17 @@ import assertk.assertThat
 import assertk.assertions.each
 import assertk.assertions.isEqualTo
 import assertk.assertions.prop
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.lib.io.input
 import io.wavebeans.lib.isListOf
 import io.wavebeans.lib.sampleOf
 import io.wavebeans.lib.sampleVectorOf
 import io.wavebeans.lib.seqStream
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
 
-object WindowFunctionSpec : Spek({
+class WindowFunctionSpec : DescribeSpec({
     describe("Rectangle window function") {
 
         it("should remain signal the same over the window with step = size") {

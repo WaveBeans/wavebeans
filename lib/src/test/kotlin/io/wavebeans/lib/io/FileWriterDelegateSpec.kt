@@ -3,26 +3,21 @@ package io.wavebeans.lib.io
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.prop
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.tests.eachIndexed
 import mu.KotlinLogging
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.lifecycle.CachingMode.TEST
-import org.spekframework.spek2.style.specification.describe
 import java.io.File
 import java.net.URI
 import java.nio.file.Files
 
-object FileWriterDelegateSpec : Spek({
-
+class FileWriterDelegateSpec : DescribeSpec({
 
     describe("Single file") {
-        val outputFile by memoized(TEST) { File.createTempFile("test", ".out").also { it.deleteOnExit() } }
-        val delegate by memoized(TEST) {
-            FileWriterDelegate<Unit>({ URI("file://${outputFile.absolutePath}") }, bufferSize = 128)
-                    .also { it.initBuffer(null) }
-        }
-
         it("should store short buffer without headers") {
+            val outputFile = File.createTempFile("test", ".out").also { it.deleteOnExit() }
+            val delegate = FileWriterDelegate<Unit>({ outputFile.toURI() }, bufferSize = 128)
+                .also { it.initBuffer(null) }
+
             val input = "1234567890"
             delegate.write(input.toByteArray())
             delegate.close()
@@ -30,6 +25,10 @@ object FileWriterDelegateSpec : Spek({
             assertThat(outputFile.readText()).isEqualTo(input)
         }
         it("should store buffer longer than internal buffer without headers") {
+            val outputFile = File.createTempFile("test", ".out").also { it.deleteOnExit() }
+            val delegate = FileWriterDelegate<Unit>({ outputFile.toURI() }, bufferSize = 128)
+                .also { it.initBuffer(null) }
+
             val input = (0..100).joinToString("") { "1234567890" }
             delegate.write(input.toByteArray())
             delegate.close()
@@ -38,6 +37,10 @@ object FileWriterDelegateSpec : Spek({
         }
 
         it("should store buffer longer than internal buffer with header and footer") {
+            val outputFile = File.createTempFile("test", ".out").also { it.deleteOnExit() }
+            val delegate = FileWriterDelegate<Unit>({ outputFile.toURI() }, bufferSize = 128)
+                .also { it.initBuffer(null) }
+
             val input = (0..100).joinToString("") { "1234567890" }
             val header = "header1234567890"
             val footer = "footer1234567890"
@@ -49,17 +52,15 @@ object FileWriterDelegateSpec : Spek({
     }
 
     describe("Multiple files with flush") {
-        val outputFiles by memoized(TEST) { ArrayList<File>() }
-        val delegate by memoized(TEST) {
-            FileWriterDelegate<Unit>({
+        it("should store a few short files without headers and footers") {
+            val outputFiles = ArrayList<File>()
+            val delegate = FileWriterDelegate<Unit>({
                 val outputFile = File.createTempFile("test", ".out").also { it.deleteOnExit() }
                 outputFiles += outputFile
-                URI("file://${outputFile.absolutePath}")
+                outputFile.toURI()
             }, bufferSize = 128).also { it.initBuffer(null) }
-        }
-        val contents = listOf("1234567890", "qwertyuiop", "asdfghjkl", "zxcvbnm")
 
-        it("should store a few short files without headers and footers") {
+            val contents = listOf("1234567890", "qwertyuiop", "asdfghjkl", "zxcvbnm")
 
             delegate.performWritesWithFlush(contents)
 
@@ -69,6 +70,14 @@ object FileWriterDelegateSpec : Spek({
         }
 
         it("should store a few short files with headers and footers") {
+            val outputFiles = ArrayList<File>()
+            val delegate = FileWriterDelegate<Unit>({
+                val outputFile = File.createTempFile("test", ".out").also { it.deleteOnExit() }
+                outputFiles += outputFile
+                outputFile.toURI()
+            }, bufferSize = 128).also { it.initBuffer(null) }
+
+            val contents = listOf("1234567890", "qwertyuiop", "asdfghjkl", "zxcvbnm")
             val header = "header1234567890"
             val footer = "footer1234567890"
 
@@ -81,18 +90,16 @@ object FileWriterDelegateSpec : Spek({
     }
 
     describe("Multiple files with manual buffer manipulation") {
-        val outputFiles by memoized(TEST) { ArrayList<File>() }
-        val delegate by memoized(TEST) {
-            FileWriterDelegate<Unit>({
+        it("should store a few short files without headers and footers") {
+            val outputFiles = ArrayList<File>()
+            val delegate = FileWriterDelegate<Unit>({
                 val outputFile = File.createTempFile("test", ".out").also { it.deleteOnExit() }
                 outputFiles += outputFile
-                URI("file://${outputFile.absolutePath}")
+                outputFile.toURI()
             }, bufferSize = 128).also { it.initBuffer(null) }
-        }
 
-        val contents = listOf("1234567890", "qwertyuiop", "asdfghjkl", "zxcvbnm")
+            val contents = listOf("1234567890", "qwertyuiop", "asdfghjkl", "zxcvbnm")
 
-        it("should store a few short files without headers and footers") {
             delegate.performWritesWithManualBufferManagement(contents)
 
             assertThat(outputFiles).eachIndexed(contents.size) { file, index ->
@@ -101,6 +108,14 @@ object FileWriterDelegateSpec : Spek({
         }
 
         it("should store a few short files with headers and footers") {
+            val outputFiles = ArrayList<File>()
+            val delegate = FileWriterDelegate<Unit>({
+                val outputFile = File.createTempFile("test", ".out").also { it.deleteOnExit() }
+                outputFiles += outputFile
+                outputFile.toURI()
+            }, bufferSize = 128).also { it.initBuffer(null) }
+
+            val contents = listOf("1234567890", "qwertyuiop", "asdfghjkl", "zxcvbnm")
             val header = "header1234567890"
             val footer = "footer1234567890"
 
@@ -113,24 +128,19 @@ object FileWriterDelegateSpec : Spek({
     }
 
     describe("Suffixed file writer") {
-        val directory by memoized(TEST) { Files.createTempDirectory("tmp").toFile() }
-        val delegate by memoized(TEST) {
-            var i = 0
-            suffixedFileWriterDelegate<Unit>("file://${directory.absolutePath}/test.out") {
-                (i++).toString(16)
-            }.also { it.initBuffer(null) }
-        }
-        val outputFiles by memoized(TEST) {
-            directory.listFiles()
-                    ?.map { it!! }
-                    ?.sortedBy { it.name }
-                    ?: emptyList()
-        }
-        val contents = listOf("1234567890", "qwertyuiop", "asdfghjkl", "zxcvbnm")
-
         it("should store a few short files without headers and footers") {
+            val directory = Files.createTempDirectory("tmp").toFile()
+            val delegate = run {
+                var i = 0
+                suffixedFileWriterDelegate<Unit>("file://${directory.absolutePath}/test.out") {
+                    (i++).toString(16)
+                }.also { it.initBuffer(null) }
+            }
+            val contents = listOf("1234567890", "qwertyuiop", "asdfghjkl", "zxcvbnm")
 
             delegate.performWritesWithFlush(contents)
+
+            val outputFiles = directory.listFiles()?.map { it!! }?.sortedBy { it.name } ?: emptyList()
 
             assertThat(outputFiles).eachIndexed(contents.size) { file, index ->
                 file.prop("content") { it.readText() }.isEqualTo(contents[index])
@@ -140,10 +150,20 @@ object FileWriterDelegateSpec : Spek({
         }
 
         it("should store a few short files with headers and footers") {
+            val directory = Files.createTempDirectory("tmp").toFile()
+            val delegate = run {
+                var i = 0
+                suffixedFileWriterDelegate<Unit>("file://${directory.absolutePath}/test.out") {
+                    (i++).toString(16)
+                }.also { it.initBuffer(null) }
+            }
+            val contents = listOf("1234567890", "qwertyuiop", "asdfghjkl", "zxcvbnm")
             val header = "header1234567890"
             val footer = "footer1234567890"
 
             delegate.performWritesWithFlush(contents, header, footer)
+
+            val outputFiles = directory.listFiles()?.map { it!! }?.sortedBy { it.name } ?: emptyList()
 
             assertThat(outputFiles).eachIndexed(contents.size) { file, index ->
                 file.prop("content") { it.readText() }.isEqualTo(header + contents[index] + footer)
@@ -164,7 +184,6 @@ private fun WriterDelegate<Unit>.performWritesWithFlush(contents: List<String>, 
     }
     this.close({ header?.toByteArray() }, { footer?.toByteArray() })
 }
-
 
 private fun WriterDelegate<Unit>.performWritesWithManualBufferManagement(contents: List<String>, header: String? = null, footer: String? = null) {
     contents.forEachIndexed { index, value ->

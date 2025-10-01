@@ -4,11 +4,12 @@ import assertk.Assert
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.support.fail
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.lib.*
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 
-object SampleScalarWindowStreamSpec : Spek({
+class SampleScalarWindowStreamSpec : DescribeSpec ({
     describe("Fixed window size=2") {
         val stream = DoubleStream(listOf(0.1, 0.2, 0.3, 0.4)).window(2)
 

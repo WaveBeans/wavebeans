@@ -2,13 +2,14 @@ package io.wavebeans.lib.io
 
 import assertk.assertThat
 import assertk.assertions.isCloseTo
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.tests.eachIndexed
 import io.wavebeans.lib.stream.rangeProjection
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.util.concurrent.TimeUnit.MILLISECONDS
 
-object SineSweepGeneratedInputSpec : Spek({
+object SineSweepGeneratedInputSpec : DescribeSpec({
     describe("Constant sine sweep of A=1.0, f1=10.0, f2=10.0, phi=1.0, fs=50.0 and t=0.1") {
         val generator = (10..10).sineSweep(
                 1.0,

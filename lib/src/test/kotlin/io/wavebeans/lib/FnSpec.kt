@@ -5,10 +5,9 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isFailure
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
+import io.kotest.core.spec.style.DescribeSpec
 
-object FnSpec : Spek({
+class FnSpec : DescribeSpec({
 
     describe("Define Fn without parameters using Lambda function") {
 

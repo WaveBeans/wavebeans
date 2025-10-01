@@ -2,6 +2,7 @@ package io.wavebeans.lib.stream
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.lib.stream
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
@@ -11,7 +12,7 @@ import io.wavebeans.lib.io.inputWithSampleRate
 import io.wavebeans.lib.stream.window.Window
 import io.wavebeans.lib.stream.window.window
 
-object FunctionMergedStreamSpec : Spek({
+object FunctionMergedStreamSpec : DescribeSpec({
     describe("10 items int stream") {
 
         val source = (0..9).stream()

@@ -2,13 +2,14 @@ package io.wavebeans.lib.stream
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.lib.asInt
 import io.wavebeans.lib.stream
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.util.concurrent.TimeUnit
 
-object ProjectionBeanStreamSpec : Spek({
+object ProjectionBeanStreamSpec : DescribeSpec({
     describe("Range with open end") {
 
         describe("Taking everything after 1s from 0..9") {

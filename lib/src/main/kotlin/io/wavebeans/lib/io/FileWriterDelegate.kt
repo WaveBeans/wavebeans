@@ -165,5 +165,9 @@ fun <A : Any> suffixedFileWriterDelegate(uri: String, suffix: (A?) -> String): F
             val u = URI(uri)
             val f = File(u.path)
             val newFilePath = f.parent + File.separatorChar + f.nameWithoutExtension + suffix(argument) + "." + f.extension
-            URI(u.scheme + "://" + newFilePath)
+            if (u.scheme == "file") {
+                File(newFilePath).toURI()
+            } else {
+                URI(u.scheme, u.authority, newFilePath, null, null)
+            }
         })

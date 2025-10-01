@@ -4,6 +4,7 @@ import assertk.Assert
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.lib.*
 import io.wavebeans.lib.io.Writer
 import io.wavebeans.lib.stream.fft.FftSample
@@ -13,20 +14,16 @@ import io.wavebeans.lib.stream.window.Window
 import io.wavebeans.lib.stream.window.window
 import io.wavebeans.tests.eachIndexed
 import mu.KotlinLogging
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.lifecycle.CachingMode.*
-import org.spekframework.spek2.style.specification.describe
-import java.lang.Thread.sleep
-import java.util.concurrent.*
-import java.util.concurrent.TimeUnit.*
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.atomic.AtomicReference
 
-object InMemoryTableOutputSpec : Spek({
+class InMemoryTableOutputSpec : DescribeSpec({
+//    isolationMode = IsolationMode.InstancePerTest
 
     describe("Operations on closed table") {
-        val tableName = "table1"
 
-        beforeGroup {
+        fun table(tableName: String): TimeseriesTableDriver<Sample> {
             seqStream()
                 .trim(1000)
                 .toTable(tableName)
@@ -35,12 +32,11 @@ object InMemoryTableOutputSpec : Spek({
                         writer.writeSome(1000)
                     }
                 }
+            return TableRegistry.default.byName(tableName)
         }
 
-        val table by memoized(SCOPE) { TableRegistry.default.byName<Sample>(tableName) }
-
         it("should return last 100ms") {
-            val samples = table
+            val samples = table(newTableName())
                 .last(100.ms)
                 .asSequence(1.0f)
                 .toList()
@@ -50,7 +46,7 @@ object InMemoryTableOutputSpec : Spek({
         }
 
         it("should return pre-last 100ms") {
-            val samples = table
+            val samples = table(newTableName())
                 .timeRange(800.ms, 0.9e9.ns)
                 .asSequence(1.0f)
                 .toList()
@@ -60,8 +56,8 @@ object InMemoryTableOutputSpec : Spek({
         }
 
         it("should return nothing for out of range request") {
-            val samples = table
-                .timeRange(1000.ms, 1100.ms)
+            val samples = table(newTableName())
+                .timeRange(1100.ms, 1200.ms)
                 .asSequence(1.0f)
                 .toList()
             assertThat(samples).isEmpty()
@@ -71,16 +67,16 @@ object InMemoryTableOutputSpec : Spek({
     describe("Operations between table filling in") {
         val tableName = "table2"
 
-        val output by memoized(SCOPE) { seqStream().toTable(tableName) }
-        val writer by memoized(SCOPE) { output.writer(1000.0f) }
-        val table by memoized { TableRegistry.default.byName<Sample>(tableName) }
+        val output by lazy { seqStream().toTable(tableName) }
+        val writer by lazy { output.writer(1000.0f) }
+        val table by lazy { TableRegistry.default.byName<Sample>(tableName) }
 
-        beforeEachTest {
+        beforeTest {
             // read a new chunk before each test
             writer.writeSome(500)
         }
 
-        afterGroup {
+        afterTest {
             writer.close()
         }
 
@@ -110,21 +106,21 @@ object InMemoryTableOutputSpec : Spek({
         describe("Simple object") {
             val tableName = "table3"
 
-            val output by memoized(SCOPE) {
+            val output by lazy {
                 seqStream()
                     .trim(100)
                     .toTable(tableName, 25.ms, automaticCleanupEnabled = false)
             }
-            val writer by memoized(SCOPE) { output.writer(1000.0f) }
-            val table by memoized(SCOPE) { TableRegistry.default.byName<Sample>(tableName) as InMemoryTimeseriesTableDriver }
+            val writer by lazy { output.writer(1000.0f) }
+            val table by lazy { TableRegistry.default.byName<Sample>(tableName) as InMemoryTimeseriesTableDriver }
 
-            beforeEachTest {
+            beforeTest {
                 // read a new chunk before each test
                 writer.writeSome(50)
                 table.performCleanup()
             }
 
-            afterGroup {
+            afterTest {
                 writer.close()
             }
 
@@ -166,13 +162,13 @@ object InMemoryTableOutputSpec : Spek({
 
                 val writer = output.writer(1000.0f)
 
-                beforeEachTest {
+                beforeTest {
                     // read a new chunk before each test
                     writer.writeSome(5)
                     (TableRegistry.default.byName<Sample>(tableName) as InMemoryTimeseriesTableDriver).performCleanup()
                 }
 
-                afterGroup {
+                afterTest {
                     writer.close()
                 }
 
@@ -220,15 +216,15 @@ object InMemoryTableOutputSpec : Spek({
                     .trim(100)
                     .toTable(tableName, 25.ms, automaticCleanupEnabled = false)
 
-                val writer by memoized(SCOPE) { output.writer(1000.0f) }
+                val writer by lazy { output.writer(1000.0f) }
 
-                beforeEachTest {
+                beforeTest {
                     // read a new chunk before each test
                     writer.writeSome(5)
                     (TableRegistry.default.byName<Sample>(tableName) as InMemoryTimeseriesTableDriver).performCleanup()
                 }
 
-                afterGroup {
+                afterTest {
                     writer.close()
                 }
 
@@ -272,18 +268,18 @@ object InMemoryTableOutputSpec : Spek({
         describe("No initial offset") {
             val tableName = "tableStream1"
 
-            val writer by memoized(SCOPE) {
+            val writer by lazy {
                 seqStream().toTable(tableName, 25.ms, automaticCleanupEnabled = false).writer(1000.0f)
             }
-            val table by memoized(SCOPE) {
+            val table by lazy {
                 TableRegistry.default.byName<Sample>(tableName) as InMemoryTimeseriesTableDriver
             }
-            val iterator by memoized(SCOPE) {
+            val iterator by lazy {
                 (table.stream(0.s).asSequence(1000.0f).iterator() as ContinuousReadTableIterator<Sample>)
                     .also { it.perElementLog = true }
             }
 
-            beforeGroup {
+            beforeTest {
                 writer.writeSome(0) // initialize writer
             }
 
@@ -353,20 +349,20 @@ object InMemoryTableOutputSpec : Spek({
 
         describe("With some initial offset") {
             val tableName = "tableStream2"
-            val writer by memoized(SCOPE) {
+            val writer by lazy {
                 seqStream().toTable(tableName, 25.ms).writer(1000.0f)
                     // generate some initial data
                     .also { w -> repeat(10) { if (!w.write()) throw IllegalStateException() } }
             }
-            val table by memoized(SCOPE) {
+            val table by lazy {
                 TableRegistry.default.byName<Sample>(tableName) as InMemoryTimeseriesTableDriver
             }
-            val iterator by memoized(SCOPE) {
+            val iterator by lazy {
                 (table.stream(5.ms).asSequence(1000.0f).iterator() as ContinuousReadTableIterator<Sample>)
                     .also { it.perElementLog = true }
             }
 
-            beforeGroup {
+            beforeTest {
                 writer.writeSome(0) // initialize writer
             }
 
@@ -396,19 +392,19 @@ object InMemoryTableOutputSpec : Spek({
             .trim(100)
             .toTable(tableName)
 
-        val writer by memoized(SCOPE) {
+        val writer by lazy {
             output.writer(1000.0f)
         }
 
-        beforeGroup {
+        beforeTest {
             // write the whole stream
             while (writer.write()) {
             }
         }
 
-        afterGroup { writer.close() }
+        afterTest { writer.close() }
 
-        val table by memoized(SCOPE) { TableRegistry.default.byName<Sample>(tableName) }
+        val table by lazy { TableRegistry.default.byName<Sample>(tableName) }
 
         it("should be finished") { assertThat(table.isStreamFinished()).isTrue() }
         it("should have first marker pointed to 0ms") { assertThat(table.firstMarker()).isEqualTo(0.ms) }
@@ -433,6 +429,8 @@ object InMemoryTableOutputSpec : Spek({
         }
     }
 })
+
+private fun newTableName() = "table_" + (0..8).map { ('a'..'z').random() }.joinToString("")
 
 internal fun Writer.writeSome(count: Int) {
     repeat(count) { if (!this.write()) throw IllegalStateException("Can't write with $this") }

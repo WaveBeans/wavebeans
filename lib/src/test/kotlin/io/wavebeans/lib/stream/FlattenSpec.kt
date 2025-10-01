@@ -10,10 +10,9 @@ import io.wavebeans.lib.*
 import io.wavebeans.lib.io.input
 import io.wavebeans.lib.stream.window.Window
 import io.wavebeans.lib.stream.window.window
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
+import io.kotest.core.spec.style.DescribeSpec
 
-object FlattenSpec : Spek({
+class FlattenSpec : DescribeSpec({
     describe("Flatten list of integers") {
         it("should flatten the stream of lists") {
             val l = input { (i, _) ->

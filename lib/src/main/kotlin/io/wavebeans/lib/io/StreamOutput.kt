@@ -2,6 +2,8 @@ package io.wavebeans.lib.io
 
 import io.wavebeans.lib.SinkBean
 import java.io.Closeable
+import java.lang.Thread.sleep
+import java.lang.Thread.yield
 
 /**
  * The type of [SinkBean] that outputs the stream somewhere.
@@ -26,4 +28,10 @@ interface Writer : Closeable {
      */
     fun write(): Boolean
 
+}
+
+fun Writer.writeAll() {
+    while (write()) {
+        yield()
+    }
 }

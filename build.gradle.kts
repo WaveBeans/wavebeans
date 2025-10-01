@@ -4,7 +4,7 @@ plugins {
     val kotlinVersion: String by System.getProperties()
 
     kotlin("jvm") version kotlinVersion
-    id("org.gradle.test-retry") version "1.2.0"
+    id("org.gradle.test-retry") version "1.6.2"
 
     `java-library`
     `maven-publish`
@@ -67,7 +67,8 @@ subprojects {
         // that attempts to fix flaky tests once and for all
         retry {
             maxRetries.set(3)
-            maxFailures.set(10)
+            maxFailures.set(20)
+            failOnPassedAfterRetry.set(true)
         }
     }
 

@@ -3,12 +3,11 @@ package io.wavebeans.lib.stream
 import assertk.assertThat
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.lib.*
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
 import java.util.concurrent.TimeUnit
 
-object ZeroFillingFiniteSampleStreamSpec : Spek({
+class ZeroFillingFiniteSampleStreamSpec : DescribeSpec({
 
     fun stream(seq: List<Int>): FiniteStream<Sample> = object : FiniteStream<Sample> {
         override fun length(timeUnit: TimeUnit): Long = throw UnsupportedOperationException()
@@ -55,7 +54,7 @@ object ZeroFillingFiniteSampleStreamSpec : Spek({
         val seq = elCount.repeat { it }
         val zeroFilling = stream(seq).stream(AfterFilling(ZeroSample))
 
-        it("should return first $elCount elements") {
+        it("should return first ${'$'}elCount elements") {
             assertThat(
                     getZeroFillSeq(zeroFilling)
                             .take(elCount)
@@ -63,7 +62,7 @@ object ZeroFillingFiniteSampleStreamSpec : Spek({
             ).isEqualTo(seq)
         }
 
-        it("should return 0 after first $elCount elements") {
+        it("should return 0 after first ${'$'}elCount elements") {
             assertThat(getZeroFillSeq(zeroFilling)
                     .drop(elCount)
                     .take(10)

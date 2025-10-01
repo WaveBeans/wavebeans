@@ -2,6 +2,7 @@ package io.wavebeans.lib.stream.fft
 
 import assertk.assertThat
 import assertk.assertions.*
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.tests.eachIndexed
 import io.wavebeans.lib.io.sine
 import io.wavebeans.lib.io.sineSweep
@@ -15,17 +16,17 @@ import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import kotlin.math.PI
 
-class FftStreamSpec : Spek({
+class FftStreamSpec : DescribeSpec({
     describe("Given sinusoid 32Hz, sample rate 128Hz, 2seconds, amplitude=0.5") {
         val sine = 32.sine(0.5)
 
         describe("Calculating FFT") {
             val fft = sine.trim(2000)
-                    .window(256)
-                    .fft(256)
-                    .asSequence(128.0f)
-                    .take(1)
-                    .toList()
+                .window(256)
+                .fft(256)
+                .asSequence(128.0f)
+                .take(1)
+                .toList()
 
 
             it("fft stream length should be 1") { assertThat(fft.size).isEqualTo(1) }
@@ -56,16 +57,16 @@ class FftStreamSpec : Spek({
     describe("Given sinusoid 440Hz, sample rate 44100Hz, 0.5 seconds, amplitude=0.5") {
         val sine = 440.sine(0.5)
 
+        fun fft(window: Int, step: Int = window) = sine.trim(500)
+            .window(window, step)
+            .fft(1024)
+            .asSequence(44100.0f)
+
         describe("Calculating FFT based on fixed window, FFT.binCount == window.size") {
-            val fft by memoized {
-                sine.trim(500)
-                        .window(1024)
-                        .fft(1024)
-                        .asSequence(44100.0f)
-            }
+            fun fft() = fft(1024)
 
             it("should have magnitude with spike at 10th bin") {
-                assertThat(fft.drop(5).first().magnitude().toList()).eachIndexed { it, idx ->
+                assertThat(fft().drop(5).first().magnitude().toList()).eachIndexed { it, idx ->
                     when (idx) {
                         9 -> it.isCloseTo(32.0, 1.0)
                         10 -> it.isCloseTo(47.0, 1.0)
@@ -76,33 +77,28 @@ class FftStreamSpec : Spek({
             }
 
             it("should have around 440hz on 10th bin") {
-                assertThat(fft.drop(5).first().bin(440.0)).isEqualTo(10)
+                assertThat(fft().drop(5).first().bin(440.0)).isEqualTo(10)
             }
 
             it("should have phase always less than 2*PI") {
-                assertThat(fft.drop(5).first().phase().toList()).each {
+                assertThat(fft().drop(5).first().phase().toList()).each {
                     it.isLessThan(2 * PI)
                     it.isGreaterThan(-2 * PI)
                 }
             }
 
             it("should have the appropriate time markers") {
-                assertThat(fft.drop(5).take(10).toList()).eachIndexed(10) { fftSample, index ->
+                assertThat(fft().drop(5).take(10).toList()).eachIndexed(10) { fftSample, index ->
                     fftSample.prop("time") { it.time().ns }.isEqualTo((1e9 / 44100.0 * 1024.0 * (index + 5)).ns)
                 }
             }
         }
 
         describe("Calculating FFT based on fixed window, FFT.binCount < window.size") {
-            val fft by memoized {
-                sine.trim(500)
-                        .window(1001)
-                        .fft(1024)
-                        .asSequence(44100.0f)
-            }
+            fun fft() = fft(1001)
 
             it("should have magnitude with spike at 10th bin") {
-                assertThat(fft.drop(5).first().magnitude().toList()).eachIndexed { it, idx ->
+                assertThat(fft().drop(5).first().magnitude().toList()).eachIndexed { it, idx ->
                     when (idx) {
                         9 -> it.isCloseTo(32.0, 1.0)
                         10 -> it.isCloseTo(47.0, 1.0)
@@ -113,33 +109,28 @@ class FftStreamSpec : Spek({
             }
 
             it("should have around 440hz on 10th bin") {
-                assertThat(fft.drop(5).first().bin(440.0)).isEqualTo(10)
+                assertThat(fft().drop(5).first().bin(440.0)).isEqualTo(10)
             }
 
             it("should have phase always less than 2*PI") {
-                assertThat(fft.drop(5).first().phase().toList()).each {
+                assertThat(fft().drop(5).first().phase().toList()).each {
                     it.isLessThan(2 * PI)
                     it.isGreaterThan(-2 * PI)
                 }
             }
 
             it("should have the appropriate time markers") {
-                assertThat(fft.drop(5).take(10).toList()).eachIndexed(10) { fftSample, index ->
+                assertThat(fft().drop(5).take(10).toList()).eachIndexed(10) { fftSample, index ->
                     fftSample.prop("time") { it.time().ns }.isEqualTo((1e9 / 44100.0 * 1001.0 * (index + 5)).ns)
                 }
             }
         }
 
         describe("Calculating FFT based on sliding window") {
-            val fft by memoized {
-                sine.trim(500)
-                        .window(1001, 501)
-                        .fft(1024)
-                        .asSequence(44100.0f)
-            }
+            fun fft() = fft(1001, 501)
 
             it("should have magnitude with spike at 10th bin") {
-                assertThat(fft.drop(5).first().magnitude().toList()).eachIndexed { it, idx ->
+                assertThat(fft().drop(5).first().magnitude().toList()).eachIndexed { it, idx ->
                     when (idx) {
                         10 -> it.isCloseTo(47.0, 1.0)
                         11 -> it.isCloseTo(37.0, 1.0)
@@ -149,18 +140,18 @@ class FftStreamSpec : Spek({
             }
 
             it("should have around 440hz on 10th bin") {
-                assertThat(fft.drop(5).first().bin(440.0)).isEqualTo(10)
+                assertThat(fft().drop(5).first().bin(440.0)).isEqualTo(10)
             }
 
             it("should have phase always less than 2*PI") {
-                assertThat(fft.drop(5).first().phase().toList()).each {
+                assertThat(fft().drop(5).first().phase().toList()).each {
                     it.isLessThan(2 * PI)
                     it.isGreaterThan(-2 * PI)
                 }
             }
 
             it("should have the appropriate time markers") {
-                assertThat(fft.drop(5).take(10).toList()).eachIndexed(10) { fftSample, index ->
+                assertThat(fft().drop(5).take(10).toList()).eachIndexed(10) { fftSample, index ->
                     fftSample.prop("time") { it.time().ns }.isEqualTo((1e9 / 44100.0 * 501.0 * (index + 5)).ns)
                 }
             }
@@ -169,23 +160,23 @@ class FftStreamSpec : Spek({
 
     describe("Inverse FFT") {
         val signals = listOf(
-                "440Hz sine" to 440.sine(),
-                "440Hz+1230Hz sine" to (440.sine() + 1230.sine()),
-                "440Hz..1230Hz sine sweep" to ((440..1230).sineSweep(0.5, 0.1, sweepDelta = 0.01)),
-                "312Hz,440Hz,1230Hz concatenated sines" to (312.sine().trim(30)..440.sine().trim(30)..1230.sine()),
+            "440Hz sine" to 440.sine(),
+            "440Hz+1230Hz sine" to (440.sine() + 1230.sine()),
+            "440Hz..1230Hz sine sweep" to ((440..1230).sineSweep(0.5, 0.1, sweepDelta = 0.01)),
+            "312Hz,440Hz,1230Hz concatenated sines" to (312.sine().trim(30)..440.sine().trim(30)..1230.sine()),
         )
 
         signals.forEach { (name, signal) ->
             it("should return the same signal after inverse transformation: $name") {
                 val n = 4096
                 val l = signal
-                        .window(501)
-                        .fft(512)
-                        .inverseFft()
-                        .asSequence(44100.0f)
-                        .flatMap { it.elements }
-                        .take(n)
-                        .toList()
+                    .window(501)
+                    .fft(512)
+                    .inverseFft()
+                    .asSequence(44100.0f)
+                    .flatMap { it.elements }
+                    .take(n)
+                    .toList()
 
                 val e = signal.asSequence(44100.0f).take(n).toList().toTypedArray()
                 assertThat(l).eachIndexed(n) { sample, index ->
