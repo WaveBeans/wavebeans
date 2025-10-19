@@ -6,6 +6,7 @@ import assertk.assertions.isCloseTo
 import assertk.assertions.isEqualTo
 import assertk.assertions.prop
 import assertk.fail
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.lib.*
 import io.wavebeans.lib.io.*
 import io.wavebeans.lib.stream.map
@@ -18,9 +19,6 @@ import io.wavebeans.metrics.*
 import io.wavebeans.metrics.collector.MetricCollector
 import io.wavebeans.metrics.collector.TimedValue
 import io.wavebeans.metrics.collector.collector
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.lifecycle.CachingMode.TEST
-import org.spekframework.spek2.style.specification.describe
 import java.io.File
 import java.lang.Thread.sleep
 import java.nio.file.Files
@@ -28,112 +26,120 @@ import java.util.concurrent.TimeUnit
 import kotlin.math.abs
 import kotlin.random.Random
 
-object PartialFlushSpec : Spek({
+class PartialFlushSpec : DescribeSpec({
 
-    val outputDir by memoized(TEST) { Files.createTempDirectory("tmp").toFile() }
+    lateinit var outputDir: File
     fun outputFiles() = outputDir.listFiles()?.toList()?.sorted() ?: emptyList<File>()
     val ports = createPorts(2)
     val facilitatorLocations = listOf("localhost:${ports[0]}", "localhost:${ports[1]}")
 
-    beforeEachTest {
+    beforeTest {
         MetricService.reset()
+        outputDir = Files.createTempDirectory("tmp").toFile()
     }
 
-    beforeGroup {
+    beforeSpec {
         Thread { startFacilitator(ports[0]) }.start()
         Thread { startFacilitator(ports[1]) }.start()
         waitForFacilitatorToStart("localhost:${ports[0]}")
         waitForFacilitatorToStart("localhost:${ports[1]}")
     }
 
-    afterGroup {
+    afterSpec {
         terminateFacilitator("localhost:${ports[0]}")
         terminateFacilitator("localhost:${ports[1]}")
     }
 
     data class Param(
-            val mode: String,
-            val locateFacilitators: () -> List<String>,
-            val evaluate: (StreamOutput<*>, Float, List<String>) -> Unit
+        val mode: String,
+        val locateFacilitators: () -> List<String>,
+        val evaluate: (StreamOutput<*>, Float, List<String>) -> Unit
     )
 
     val modes: List<Param> = listOf(
-            Param("local", { emptyList() }) { o, sampleRate, _ ->
-                o.evaluate(sampleRate)
-            },
-            Param("multi-threaded", { emptyList() }) { o, sampleRate, _ ->
-                o.evaluateInMultiThreadedMode(sampleRate)
-            },
-            Param("distributed", { facilitatorLocations }) { o, sampleRate, facilitatorLocations ->
-                o.evaluateInDistributedMode(sampleRate, facilitatorLocations)
-            },
+        Param("local", { emptyList() }) { o, sampleRate, _ ->
+            o.evaluate(sampleRate)
+        },
+        Param("multi-threaded", { emptyList() }) { o, sampleRate, _ ->
+            o.evaluateInMultiThreadedMode(sampleRate)
+        },
+        Param("distributed", { facilitatorLocations }) { o, sampleRate, facilitatorLocations ->
+            o.evaluateInDistributedMode(sampleRate, facilitatorLocations)
+        },
     )
 
     describe("WAV") {
         describe("cut into 100 millisecond pieces") {
             modes.forEach { (mode, locateFacilitators, evaluate) ->
                 it("should perform in $mode mode") {
-                    val flushCounter = flushedOnOutputMetric.collector(locateFacilitators(), 0, 1000).attachAndRegister()
+                    val flushCounter =
+                        flushedOnOutputMetric.collector(locateFacilitators(), 0, 1000).attachAndRegister()
                     val gateState = gateStateOnOutputMetric.collector(locateFacilitators(), 0, 1000).attachAndRegister()
                     val outputState = outputStateMetric.collector(locateFacilitators(), 0, 1000).attachAndRegister()
-                    val inputProcessed = samplesProcessedOnInputMetric.collector(locateFacilitators(), 0, 1000).attachAndRegister()
-                    val bytesProcessed = bytesProcessedOnOutputMetric.collector(locateFacilitators(), 0, 1000).attachAndRegister()
+                    val inputProcessed =
+                        samplesProcessedOnInputMetric.collector(locateFacilitators(), 0, 1000).attachAndRegister()
+                    val bytesProcessed =
+                        bytesProcessedOnOutputMetric.collector(locateFacilitators(), 0, 1000).attachAndRegister()
 
                     val sampleRate = 5000.0f
                     val timeStreamMs = input { (i, sampleRate) -> i / (sampleRate / 1000.0).toLong() }
                     val input = 440.sine()
                     val o = input
-                            .merge(timeStreamMs) { (signal, time) ->
-                                checkNotNull(signal)
-                                checkNotNull(time)
-                                signal to time
-                            }
-                            .trim(2, TimeUnit.SECONDS)
-                            // 2ms windows within desired sample rate 5000 Hz
-                            .window(10) { ZeroSample to 0 }
-                            .map { window ->
-                                val samples = window.elements.map { it.first }
-                                val timeMarker = window.elements.first().second
-                                sampleVectorOf(samples).withOutputSignal(
-                                        if (timeMarker > 0 // ignore the first marker to avoid flushing empty file
-                                                && timeMarker % 100 < 2 // target every 100 millisecond notch with 2 ms precision
-                                        ) FlushOutputSignal else NoopOutputSignal,
-                                        timeMarker
-                                )
-                            }
-                            .toMono16bitWav("file://${outputDir.absolutePath}/sine.wav") {
-                                "-${((it ?: 0) / 100).toString().padStart(2, '0')}"
-                            }
+                        .merge(timeStreamMs) { (signal, time) ->
+                            checkNotNull(signal)
+                            checkNotNull(time)
+                            signal to time
+                        }
+                        .trim(2, TimeUnit.SECONDS)
+                        // 2ms windows within desired sample rate 5000 Hz
+                        .window(10) { ZeroSample to 0 }
+                        .map { window ->
+                            val samples = window.elements.map { it.first }
+                            val timeMarker = window.elements.first().second
+                            sampleVectorOf(samples).withOutputSignal(
+                                if (timeMarker > 0 // ignore the first marker to avoid flushing empty file
+                                    && timeMarker % 100 < 2 // target every 100 millisecond notch with 2 ms precision
+                                ) FlushOutputSignal else NoopOutputSignal,
+                                timeMarker
+                            )
+                        }
+                        .toMono16bitWav("file://${outputDir.absolutePath}/sine.wav") {
+                            "-${((it ?: 0) / 100).toString().padStart(2, '0')}"
+                        }
                     evaluate(o, sampleRate, locateFacilitators())
 
                     assertThat(flushCounter.collect())
-                            .prop("flushesCount") { v -> v.map { it.value }.sum() }
-                            .isCloseTo(19.0, 1e-16)
+                        .prop("flushesCount") { v -> v.map { it.value }.sum() }
+                        .isCloseTo(19.0, 1e-16)
 
                     assertThat(gateState.collect(), "At the end the gate is closed")
-                            .prop("lastReport") { it.last().value.increment }
-                            .isEqualTo(0.0)
+                        .prop("lastReport") { it.last().value.increment }
+                        .isEqualTo(0.0)
 
                     assertThat(outputState.collect(), "At the end the output is closed")
-                            .prop("lastReport") { it.last().value.increment }
-                            .isEqualTo(0.0)
+                        .prop("lastReport") { it.last().value.increment }
+                        .isEqualTo(0.0)
 
                     val expectedSampleGenerated = sampleRate * 2.0 /*sec*/ * 2.0 /*inputs*/
                     assertThat(inputProcessed.collect(), "All inputs are read")
-                            .prop("values.sum()") { it.map { it.value }.sum() }
-                            .isCloseTo(expectedSampleGenerated, expectedSampleGenerated * 0.05)
+                        .prop("values.sum()") { it.map { it.value }.sum() }
+                        .isCloseTo(expectedSampleGenerated, expectedSampleGenerated * 0.05)
 
                     val expectedBytesProcessed = sampleRate * 2.0 /*sec*/ * BitDepth.BIT_16.bytesPerSample
                     assertThat(bytesProcessed.collect(), "2 sec of data is being written")
-                            .prop("values.sum()") { it.map { it.value }.sum() }
-                            .isCloseTo(expectedBytesProcessed, expectedBytesProcessed * 0.05)
+                        .prop("values.sum()") { it.map { it.value }.sum() }
+                        .isCloseTo(expectedBytesProcessed, expectedBytesProcessed * 0.05)
 
                     assertThat(outputFiles()).eachIndexed(20) { file, index ->
                         val suffix = index.toString().padStart(2, '0')
-                        val samples = input.asSequence(sampleRate).drop(index * sampleRate.toInt()).take(sampleRate.toInt()).toList()
+                        val samples =
+                            input.asSequence(sampleRate).drop(index * sampleRate.toInt()).take(sampleRate.toInt())
+                                .toList()
                         file.prop("name") { it.name }.isEqualTo("sine-$suffix.wav")
-                        val expectedSize = 44 + sampleRate * BitDepth.BIT_16.bytesPerSample * 2.0 /*sec*/ / 20.0 /*files*/
-                        file.prop("size") { it.readBytes().size.toDouble() }.isCloseTo(expectedSize, expectedSize * 0.05)
+                        val expectedSize =
+                            44 + sampleRate * BitDepth.BIT_16.bytesPerSample * 2.0 /*sec*/ / 20.0 /*files*/
+                        file.prop("size") { it.readBytes().size.toDouble() }
+                            .isCloseTo(expectedSize, expectedSize * 0.05)
                         file.prop("content") {
                             wave("file://${it.absolutePath}").asSequence(sampleRate).toList()
                         }.isContainedBy(samples) { a, b -> abs(a - b) < 1e-4 }
@@ -148,9 +154,12 @@ object PartialFlushSpec : Spek({
                 it("should perform in $mode mode") {
                     val gateState = gateStateOnOutputMetric.collector(locateFacilitators(), 0, 0).attachAndRegister()
                     val outputState = outputStateMetric.collector(locateFacilitators(), 0, 1000).attachAndRegister()
-                    val inputProcessed = samplesProcessedOnInputMetric.collector(locateFacilitators(), 0, 10).attachAndRegister()
-                    val skipped = samplesSkippedOnOutputMetric.collector(locateFacilitators(), 0, 10).attachAndRegister()
-                    val bytesProcessed = bytesProcessedOnOutputMetric.collector(locateFacilitators(), 0, 1000).attachAndRegister()
+                    val inputProcessed =
+                        samplesProcessedOnInputMetric.collector(locateFacilitators(), 0, 10).attachAndRegister()
+                    val skipped =
+                        samplesSkippedOnOutputMetric.collector(locateFacilitators(), 0, 10).attachAndRegister()
+                    val bytesProcessed =
+                        bytesProcessedOnOutputMetric.collector(locateFacilitators(), 0, 1000).attachAndRegister()
 
                     val sampleRate = 500.0f
                     val silence1 = input { ZeroSample }.trim(100)
@@ -161,23 +170,27 @@ object PartialFlushSpec : Spek({
 
                     val windowSize = 10
                     val o = (sample1..silence1..sample2..silence2..sample3)
-                            .window(windowSize)
-                            .merge(input { it.first }.trim(1800L / windowSize)) { (window, index) ->
-                                checkNotNull(index)
-                                window to index
+                        .window(windowSize)
+                        .merge(input { it.first }.trim(1800L / windowSize)) { (window, index) ->
+                            checkNotNull(index)
+                            window to index
+                        }
+                        .map {
+                            val noiseLevel = 1e-2
+                            val signal = if (it.first?.elements?.map(::abs)?.average() ?: 0.0 < noiseLevel) {
+                                CloseGateOutputSignal
+                            } else {
+                                OpenGateOutputSignal
                             }
-                            .map {
-                                val noiseLevel = 1e-2
-                                val signal = if (it.first?.elements?.map(::abs)?.average() ?: 0.0 < noiseLevel) {
-                                    CloseGateOutputSignal
-                                } else {
-                                    OpenGateOutputSignal
-                                }
 
-                                it.first?.let { w -> sampleVectorOf(w).withOutputSignal(signal, it.second) }
-                                        ?: sampleVectorOf(emptyList()).withOutputSignal(CloseOutputSignal)
-                            }
-                            .toMono16bitWav("file://${outputDir.absolutePath}/sine.wav") { "-${(it ?: 0).toString().padStart(2, '0')}" }
+                            it.first?.let { w -> sampleVectorOf(w).withOutputSignal(signal, it.second) }
+                                ?: sampleVectorOf(emptyList()).withOutputSignal(CloseOutputSignal)
+                        }
+                        .toMono16bitWav("file://${outputDir.absolutePath}/sine.wav") {
+                            "-${
+                                (it ?: 0).toString().padStart(2, '0')
+                            }"
+                        }
                     evaluate(o, sampleRate, locateFacilitators())
 
                     assertThat(gateState.collect(), "Gate history").all {
@@ -187,23 +200,24 @@ object PartialFlushSpec : Spek({
                     }
 
                     assertThat(outputState.collect(), "Output is closed")
-                            .prop("lastReport") { it.last().value.increment }
-                            .isEqualTo(0.0)
+                        .prop("lastReport") { it.last().value.increment }
+                        .isEqualTo(0.0)
 
-                    val expectedSampleGenerated = sampleRate * (0.1 + 0.2 + 0.5 + 0.5 + 0.5) /*sec*/ * 1.1 /*inputs + windowed indexer*/
+                    val expectedSampleGenerated =
+                        sampleRate * (0.1 + 0.2 + 0.5 + 0.5 + 0.5) /*sec*/ * 1.1 /*inputs + windowed indexer*/
                     assertThat(inputProcessed.collect(), "All inputs read")
-                            .prop("values.sum()") { it.map { it.value }.sum() }
-                            .isCloseTo(expectedSampleGenerated, expectedSampleGenerated * 0.05)
+                        .prop("values.sum()") { it.map { it.value }.sum() }
+                        .isCloseTo(expectedSampleGenerated, expectedSampleGenerated * 0.05)
 
                     val expectedSampleSkipped = sampleRate * (0.1 + 0.2) /*sec*/ / windowSize
                     assertThat(skipped.collect(), "All noise signals skipped")
-                            .prop("values.sum()") { it.map { it.value }.sum() }
-                            .isCloseTo(expectedSampleSkipped, expectedSampleSkipped * 0.05)
+                        .prop("values.sum()") { it.map { it.value }.sum() }
+                        .isCloseTo(expectedSampleSkipped, expectedSampleSkipped * 0.05)
 
                     val expectedBytesProcessed = sampleRate * (0.5 + 0.5 + 0.5) /*sec*/ * BitDepth.BIT_16.bytesPerSample
                     assertThat(bytesProcessed.collect())
-                            .prop("values.sum()") { it.map { it.value }.sum() }
-                            .isCloseTo(expectedBytesProcessed, expectedBytesProcessed * 0.05)
+                        .prop("values.sum()") { it.map { it.value }.sum() }
+                        .isCloseTo(expectedBytesProcessed, expectedBytesProcessed * 0.05)
 
                     assertThat(outputFiles()).eachIndexed(3) { file, index ->
                         val (suffix, samples) = when (index) {
@@ -223,8 +237,8 @@ object PartialFlushSpec : Spek({
         }
 
         describe("End the stream on specific sample sequence") {
-            class SequenceDetectFn(initParameters: FnInitParameters)
-                : Fn<Window<Sample>, Managed<OutputSignal, Unit, SampleVector>>(initParameters) {
+            class SequenceDetectFn(initParameters: FnInitParameters) :
+                Fn<Window<Sample>, Managed<OutputSignal, Unit, SampleVector>>(initParameters) {
 
                 constructor(endSequence: List<Sample>) : this(FnInitParameters().addDoubles("endSequence", endSequence))
 
@@ -259,8 +273,10 @@ object PartialFlushSpec : Spek({
             modes.forEach { (mode, locateFacilitators, evaluate) ->
                 it("should perform in $mode mode") {
                     val outputState = outputStateMetric.collector(locateFacilitators(), 0, 1000).attachAndRegister()
-                    val inputProcessed = samplesProcessedOnInputMetric.collector(locateFacilitators(), 0, 10).attachAndRegister()
-                    val bytesProcessed = bytesProcessedOnOutputMetric.collector(locateFacilitators(), 0, 1000).attachAndRegister()
+                    val inputProcessed =
+                        samplesProcessedOnInputMetric.collector(locateFacilitators(), 0, 10).attachAndRegister()
+                    val bytesProcessed =
+                        bytesProcessedOnOutputMetric.collector(locateFacilitators(), 0, 1000).attachAndRegister()
                     val sampleRate = 500.0f
                     val endSequence = listOf(1.5, 1.5, 1.5)
                     val endSignal = endSequence.input()
@@ -268,32 +284,36 @@ object PartialFlushSpec : Spek({
                     val noise = input { sampleOf(Random.nextInt()) }.trim(1000)
 
                     val o = (signal..endSignal..noise)
-                            .window(64)
-                            .map(SequenceDetectFn(endSequence))
-                            .toMono16bitWav("file://${outputDir.absolutePath}/sine.wav") { "-${Random.nextInt().toString(36)}" }
+                        .window(64)
+                        .map(SequenceDetectFn(endSequence))
+                        .toMono16bitWav("file://${outputDir.absolutePath}/sine.wav") {
+                            "-${
+                                Random.nextInt().toString(36)
+                            }"
+                        }
                     evaluate(o, sampleRate, locateFacilitators())
 
                     assertThat(outputState.collect(), "Output is closed")
-                            .prop("lastReport") { it.last().value.increment }
-                            .isEqualTo(0.0)
+                        .prop("lastReport") { it.last().value.increment }
+                        .isEqualTo(0.0)
 
                     if (mode == "local") {
                         val expectedSampleGenerated = sampleRate * 1.0 /*sec*/ * 1.0 /*signal*/
                         assertThat(inputProcessed.collect(), "All inputs read")
-                                .prop("values.sum()") { it.map { it.value }.sum() }
-                                .isCloseTo(expectedSampleGenerated, expectedSampleGenerated * 0.05)
+                            .prop("values.sum()") { it.map { it.value }.sum() }
+                            .isCloseTo(expectedSampleGenerated, expectedSampleGenerated * 0.05)
                     } else {
                         // non-local processors are greedy, and read up to a noise
                         val expectedSampleGenerated = sampleRate * 1.0 /*sec*/ * 2.0 /*signal + noise*/
                         assertThat(inputProcessed.collect(), "All inputs read")
-                                .prop("values.sum()") { it.map { it.value }.sum() }
-                                .isCloseTo(expectedSampleGenerated, expectedSampleGenerated * 0.05)
+                            .prop("values.sum()") { it.map { it.value }.sum() }
+                            .isCloseTo(expectedSampleGenerated, expectedSampleGenerated * 0.05)
                     }
 
                     val expectedBytesProcessed = sampleRate * 1.0 /*sec*/ * BitDepth.BIT_16.bytesPerSample
                     assertThat(bytesProcessed.collect())
-                            .prop("values.sum()") { it.map { it.value }.sum() }
-                            .isCloseTo(expectedBytesProcessed, expectedBytesProcessed * 0.05)
+                        .prop("values.sum()") { it.map { it.value }.sum() }
+                        .isCloseTo(expectedBytesProcessed, expectedBytesProcessed * 0.05)
 
                     assertThat(outputFiles()).eachIndexed(1) { file, _ ->
                         val samples = signal.asSequence(sampleRate).toList()
@@ -313,8 +333,10 @@ object PartialFlushSpec : Spek({
                 it("should perform in $mode mode") {
                     val gateState = gateStateOnOutputMetric.collector(locateFacilitators(), 0, 0).attachAndRegister()
                     val outputState = outputStateMetric.collector(locateFacilitators(), 0, 1000).attachAndRegister()
-                    val inputProcessed = samplesProcessedOnInputMetric.collector(locateFacilitators(), 0, 10).attachAndRegister()
-                    val skipped = samplesSkippedOnOutputMetric.collector(locateFacilitators(), 0, 10).attachAndRegister()
+                    val inputProcessed =
+                        samplesProcessedOnInputMetric.collector(locateFacilitators(), 0, 10).attachAndRegister()
+                    val skipped =
+                        samplesSkippedOnOutputMetric.collector(locateFacilitators(), 0, 10).attachAndRegister()
 
                     val sampleRate = 500.0f
                     val silence1 = input { ZeroSample }.trim(100)
@@ -325,30 +347,30 @@ object PartialFlushSpec : Spek({
 
                     val windowSize = 10
                     val o = (sample1..silence1..sample2..silence2..sample3)
-                            .window(windowSize)
-                            .merge(input { it.first }.trim(1800L / windowSize)) { (window, index) ->
-                                checkNotNull(index)
-                                window to index
+                        .window(windowSize)
+                        .merge(input { it.first }.trim(1800L / windowSize)) { (window, index) ->
+                            checkNotNull(index)
+                            window to index
+                        }
+                        .map {
+                            val w = it.first ?: throw IllegalStateException("Unreachable")
+                            val noiseLevel = 1e-2
+                            val averageLevel = w.elements.map(::abs).average()
+                            val signal = when {
+                                it.second >= 54L -> CloseOutputSignal // end right after the sample2
+                                averageLevel < noiseLevel -> CloseGateOutputSignal
+                                else -> OpenGateOutputSignal
                             }
-                            .map {
-                                val w = it.first ?: throw IllegalStateException("Unreachable")
-                                val noiseLevel = 1e-2
-                                val averageLevel = w.elements.map(::abs).average()
-                                val signal = when {
-                                    it.second >= 54L -> CloseOutputSignal // end right after the sample2
-                                    averageLevel < noiseLevel -> CloseGateOutputSignal
-                                    else -> OpenGateOutputSignal
-                                }
-                                sampleVectorOf(w).withOutputSignal(signal, it.second)
-                            }
-                            .toCsv(
-                                    uri = "file://${outputDir.absolutePath}/sine.wav",
-                                    header = listOf("#") + (0 until windowSize).map { "sample#$it" },
-                                    elementSerializer = { (index, _, sampleVector) ->
-                                        listOf("$index") + sampleVector.map { String.format("%.10f", it) }
-                                    },
-                                    suffix = { "-${(it ?: 0).toString().padStart(2, '0')}" }
-                            )
+                            sampleVectorOf(w).withOutputSignal(signal, it.second)
+                        }
+                        .toCsv(
+                            uri = "file://${outputDir.absolutePath}/sine.wav",
+                            header = listOf("#") + (0 until windowSize).map { "sample#$it" },
+                            elementSerializer = { (index, _, sampleVector) ->
+                                listOf("$index") + sampleVector.map { String.format("%.10f", it) }
+                            },
+                            suffix = { "-${(it ?: 0).toString().padStart(2, '0')}" }
+                        )
                     evaluate(o, sampleRate, locateFacilitators())
 
                     assertThat(gateState.collect(), "Gate history is open-close-open-close").all {
@@ -358,26 +380,28 @@ object PartialFlushSpec : Spek({
                     }
 
                     assertThat(outputState.collect(), "Output is closed")
-                            .prop("lastReport") { it.last().value.increment }
-                            .isEqualTo(0.0)
+                        .prop("lastReport") { it.last().value.increment }
+                        .isEqualTo(0.0)
 
                     if (mode == "local") {
-                        val expectedSampleGenerated = sampleRate * (0.5 + 0.1 + 0.5) /*sec*/ * 1.1 /*inputs + windowed indexer*/
+                        val expectedSampleGenerated =
+                            sampleRate * (0.5 + 0.1 + 0.5) /*sec*/ * 1.1 /*inputs + windowed indexer*/
                         assertThat(inputProcessed.collect(), "read sample1+silence1+sample2")
-                                .prop("values.sum()") { it.map { it.value }.sum() }
-                                .isCloseTo(expectedSampleGenerated, expectedSampleGenerated * 0.05)
+                            .prop("values.sum()") { it.map { it.value }.sum() }
+                            .isCloseTo(expectedSampleGenerated, expectedSampleGenerated * 0.05)
                     } else {
                         // non-local processors are greedy, and read up to the end
-                        val expectedSampleGenerated = sampleRate * (0.5 + 0.1 + 0.5 + 0.2 + 0.5) /*sec*/ * 1.1 /*inputs + windowed indexer*/
+                        val expectedSampleGenerated =
+                            sampleRate * (0.5 + 0.1 + 0.5 + 0.2 + 0.5) /*sec*/ * 1.1 /*inputs + windowed indexer*/
                         assertThat(inputProcessed.collect(), "read sample1+silence1+sample2")
-                                .prop("values.sum()") { it.map { it.value }.sum() }
-                                .isCloseTo(expectedSampleGenerated, expectedSampleGenerated * 0.05)
+                            .prop("values.sum()") { it.map { it.value }.sum() }
+                            .isCloseTo(expectedSampleGenerated, expectedSampleGenerated * 0.05)
                     }
 
                     val expectedSampleSkipped = sampleRate * (0.1) /*sec*/ / windowSize
                     assertThat(skipped.collect(), "Only signal1 skipped")
-                            .prop("values.sum()") { it.map { it.value }.sum() }
-                            .isCloseTo(expectedSampleSkipped, expectedSampleSkipped * 0.05)
+                        .prop("values.sum()") { it.map { it.value }.sum() }
+                        .isCloseTo(expectedSampleSkipped, expectedSampleSkipped * 0.05)
 
                     assertThat(outputFiles()).eachIndexed(2) { file, index ->
                         val (suffix, samples) = when (index) {
@@ -387,16 +411,16 @@ object PartialFlushSpec : Spek({
                         }
                         file.prop("name") { it.name }.isEqualTo("sine-$suffix.wav")
                         file.prop("content") { it.readText() }
-                                .isEqualTo(
-                                        "#," + (0 until windowSize).joinToString(",") { "sample#$it" } + "\n" +
-                                                samples.asSequence(sampleRate)
-                                                        .windowed(windowSize, windowSize)
-                                                        .mapIndexed { i, w ->
-                                                            "${i + suffix.toInt()}," +
-                                                                    w.joinToString(",") { String.format("%.10f", it) }
-                                                        }
-                                                        .joinToString("\n") + "\n"
-                                )
+                            .isEqualTo(
+                                "#," + (0 until windowSize).joinToString(",") { "sample#$it" } + "\n" +
+                                        samples.asSequence(sampleRate)
+                                            .windowed(windowSize, windowSize)
+                                            .mapIndexed { i, w ->
+                                                "${i + suffix.toInt()}," +
+                                                        w.joinToString(",") { String.format("%.10f", it) }
+                                            }
+                                            .joinToString("\n") + "\n"
+                            )
                     }
                 }
             }

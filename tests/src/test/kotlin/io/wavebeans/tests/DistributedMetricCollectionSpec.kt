@@ -3,6 +3,7 @@ package io.wavebeans.tests
 import assertk.assertThat
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.execution.distributed.DistributedOverseer
 import io.wavebeans.lib.io.*
 import io.wavebeans.lib.stream.trim
@@ -16,15 +17,15 @@ import java.io.File
 import java.util.concurrent.Executors
 import kotlin.reflect.jvm.jvmName
 
-object DistributedMetricCollectionSpec : Spek({
+class DistributedMetricCollectionSpec : DescribeSpec({
 
     val facilitatorPorts = createPorts(2)
 
     val facilitatorsLocations = facilitatorPorts.map { "127.0.0.1:$it" }
 
-    val pool by memoized(CachingMode.SCOPE) { Executors.newCachedThreadPool() }
+    val pool = Executors.newCachedThreadPool()
 
-    beforeGroup {
+    beforeSpec {
         facilitatorPorts.forEach {
             pool.submit {
                 startFacilitator(it)
@@ -34,7 +35,7 @@ object DistributedMetricCollectionSpec : Spek({
         facilitatorsLocations.forEach(::waitForFacilitatorToStart)
     }
 
-    afterGroup {
+    afterSpec {
         try {
             facilitatorsLocations.forEach(::terminateFacilitator)
         } finally {

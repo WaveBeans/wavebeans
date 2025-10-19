@@ -5,10 +5,11 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.matches
 import assertk.assertions.prop
+import io.kotest.core.spec.style.DescribeSpec
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 
-class EnvironmentSpec : Spek({
+class EnvironmentSpec : DescribeSpec({
 
     describe("Kotlin compiler installed") {
         it("should be 1.7.x") {

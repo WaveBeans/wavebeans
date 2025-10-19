@@ -2,6 +2,7 @@ package io.wavebeans.tests
 
 import assertk.assertThat
 import assertk.assertions.*
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.execution.MultiThreadedOverseer
 import io.wavebeans.execution.SingleThreadedOverseer
 import io.wavebeans.lib.*
@@ -27,7 +28,7 @@ import kotlin.system.measureTimeMillis
 
 private val log = KotlinLogging.logger {}
 
-object MultiPartitionCorrectnessSpec : Spek({
+class MultiPartitionCorrectnessSpec : DescribeSpec({
 
     fun runInParallel(
             outputs: List<StreamOutput<out Any>>,
