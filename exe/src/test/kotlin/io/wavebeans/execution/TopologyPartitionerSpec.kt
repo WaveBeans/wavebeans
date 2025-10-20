@@ -5,6 +5,7 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.prop
 import assertk.assertions.size
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.lib.AnyBean
 import io.wavebeans.lib.io.sine
 import io.wavebeans.lib.io.toCsv
@@ -12,10 +13,8 @@ import io.wavebeans.lib.stream.div
 import io.wavebeans.lib.stream.plus
 import io.wavebeans.lib.stream.times
 import io.wavebeans.lib.stream.trim
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
 
-object TopologyPartitionerSpec : Spek({
+class TopologyPartitionerSpec : DescribeSpec({
 
     val ids = mutableMapOf<AnyBean, Long>()
 
@@ -23,7 +22,7 @@ object TopologyPartitionerSpec : Spek({
         override fun id(bean: AnyBean): Long = ids[bean] ?: throw IllegalStateException("$bean is not found")
     }
 
-    beforeGroup {
+    beforeTest {
         ids.clear()
     }
 

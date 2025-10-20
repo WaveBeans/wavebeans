@@ -5,6 +5,7 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
 import assertk.assertions.support.fail
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.execution.SingleThreadedOverseer
 import io.wavebeans.execution.eachIndexed
 import io.wavebeans.lib.Sample
@@ -17,31 +18,26 @@ import io.wavebeans.lib.stream.window.window
 import io.wavebeans.tests.*
 import kotlinx.serialization.Serializable
 import mu.KotlinLogging
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.lifecycle.CachingMode.SCOPE
-import org.spekframework.spek2.style.specification.Suite
-import org.spekframework.spek2.style.specification.describe
 import java.io.File
 import java.util.concurrent.Executors
 import kotlin.math.abs
-import kotlin.random.Random
 
-object DistributedOverseerSpec : Spek({
+class DistributedOverseerSpec : DescribeSpec({
 
     val log = KotlinLogging.logger {}
     val ports = createPorts(2)
-    val facilitatorsLocations by memoized(SCOPE) { listOf("127.0.0.1:${ports[0]}", "127.0.0.1:${ports[1]}") }
+    val facilitatorsLocations by lazy { listOf("127.0.0.1:${ports[0]}", "127.0.0.1:${ports[1]}") }
 
-    val pool by memoized(SCOPE) { Executors.newCachedThreadPool() }
+    val pool by lazy { Executors.newCachedThreadPool() }
 
-    beforeGroup {
+    beforeSpec {
         pool.submit { startFacilitator(ports[0]) }
         pool.submit { startFacilitator(ports[1]) }
 
         facilitatorsLocations.forEach(::waitForFacilitatorToStart)
     }
 
-    afterGroup {
+    afterSpec {
         try {
             facilitatorsLocations.forEach(::terminateFacilitator)
         } finally {
@@ -52,9 +48,9 @@ object DistributedOverseerSpec : Spek({
 
     describe("Running code accessible by Facilitator without extra loading") {
 
-        fun Suite.assertExecution(outputs: () -> List<Pair<StreamOutput<out Any>, File>>) {
-            val outputsDistributed by memoized(SCOPE) { outputs() }
-            val distributed by memoized(SCOPE) {
+        fun assertExecution(outputs: () -> List<Pair<StreamOutput<out Any>, File>>) {
+            val outputsDistributed by lazy { outputs() }
+            val distributed by lazy {
                 DistributedOverseer(
                     outputsDistributed.map { it.first },
                     facilitatorsLocations,
@@ -63,35 +59,35 @@ object DistributedOverseerSpec : Spek({
                 )
             }
 
-            val outputsSingle by memoized(SCOPE) { outputs() }
-            val single by memoized(SCOPE) {
+            val outputsSingle by lazy { outputs() }
+            val single by lazy {
                 SingleThreadedOverseer(outputsSingle.map { it.first })
             }
 
-            it("shouldn't throw any exceptions") {
-                val exceptions = distributed.eval(44100.0f)
+            //it("shouldn't throw any exceptions") {
+            val exceptions = distributed.use {
+                it.eval(44100.0f)
                     .mapNotNull { it.get().exception }
+            }
+            assertThat(exceptions).isEmpty()
 
-                distributed.close()
-                assertThat(exceptions).isEmpty()
-            }
-            it("shouldn't throw any exceptions") {
-                val exceptions = single.eval(44100.0f)
+            //it("shouldn't throw any exceptions") {
+            val exceptions2 = single.use {
+                it.eval(44100.0f)
                     .mapNotNull { it.get().exception }
-                single.close()
-                assertThat(exceptions).isEmpty()
             }
-            it("should have the same output") {
-                assertThat(outputsDistributed).eachIndexed { o, i ->
-                    o.prop("fileContent") { it.second.readLines() }.all {
-                        size().isGreaterThan(1)
-                        isEqualTo(outputsSingle[i].second.readLines())
-                    }
+            assertThat(exceptions2).isEmpty()
+
+            //it("should have the same output") {
+            assertThat(outputsDistributed).eachIndexed { o, i ->
+                o.prop("fileContent") { it.second.readLines() }.all {
+                    size().isGreaterThan(1)
+                    isEqualTo(outputsSingle[i].second.readLines())
                 }
             }
         }
 
-        describe("Using builtin functions and types") {
+        it("should execute using builtin functions and types") {
             val outputs = {
                 val file1 = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
                 val file2 = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
@@ -111,7 +107,7 @@ object DistributedOverseerSpec : Spek({
             assertExecution(outputs)
         }
 
-        describe("Using custom types") {
+        it("should execute using custom types") {
 
             @Serializable
             data class InnerSample(val v: Sample) : Measured {
@@ -148,12 +144,12 @@ object DistributedOverseerSpec : Spek({
 
     describe("Failing on error") {
 
-        fun Suite.assertExecutionExceptions(
+        fun assertExecutionExceptions(
             outputs: () -> List<StreamOutput<out Any>>,
             assertBlock: Assert<List<Throwable>>.() -> Unit
         ) {
-            val outputsDistributed by memoized(SCOPE) { outputs() }
-            val distributed by memoized(SCOPE) {
+            val outputsDistributed by lazy { outputs() }
+            val distributed by lazy {
                 DistributedOverseer(
                     outputsDistributed,
                     facilitatorsLocations,
@@ -162,15 +158,13 @@ object DistributedOverseerSpec : Spek({
                 )
             }
 
-            it("should throw exceptions") {
-                val exceptions = distributed.eval(44100.0f)
-                    .mapNotNull { it.get().exception }
-                distributed.close()
-                assertBlock(assertThat(exceptions))
-            }
+            val exceptions = distributed.eval(44100.0f)
+                .mapNotNull { it.get().exception }
+            distributed.close()
+            assertBlock(assertThat(exceptions))
         }
 
-        describe("Used non serializable class") {
+        it("it should execute when used non serializable class") {
 
             data class NonSerializable(val v: Sample)
 
@@ -189,7 +183,7 @@ object DistributedOverseerSpec : Spek({
             }
         }
 
-        describe("Exception during execution of some bean") {
+        it("should execute when exception happened during execution of some bean") {
             val outputs = {
                 val input = 440.sine().map { check(false) { "Doesn't work" }; it }
                 val output1 = input
@@ -212,7 +206,7 @@ object DistributedOverseerSpec : Spek({
         val file = File.createTempFile("testAppOut", ".csv")
 
         fun codeFile(name: String): Pair<String, String> {
-            return name to this::class.java.getResourceAsStream("/testApp/$name").reader().readText()
+            return name to this::class.java.getResourceAsStream("/testApp/$name")!!.reader().readText()
                 .replace(
                     "/[*]FILE[*]/.*/[*]FILE[*]/".toRegex(),
                     "File(\"${file.absolutePath}\")"
@@ -235,7 +229,7 @@ object DistributedOverseerSpec : Spek({
                 .filter { it.isNotEmpty() }
         }
 
-        val jarFile by memoized(SCOPE) {
+        val jarFile by lazy {
             compileCode(
                 mapOf(
                     codeFile("Runner.kt"),
@@ -247,7 +241,7 @@ object DistributedOverseerSpec : Spek({
         }
 
         describe("Successful runner") {
-            val runner by memoized(SCOPE) {
+            val runner by lazy {
                 CommandRunner(
                     javaCmd(),
                     "-cp", System.getProperty("java.class.path") + ":" + jarFile.absolutePath,
@@ -278,7 +272,7 @@ object DistributedOverseerSpec : Spek({
         }
 
         describe("Custom type runner") {
-            val runner by memoized(SCOPE) {
+            val runner by lazy {
                 CommandRunner(
                     javaCmd(),
                     "-cp", System.getProperty("java.class.path") + ":" + jarFile.absolutePath,
@@ -286,7 +280,7 @@ object DistributedOverseerSpec : Spek({
                 )
             }
 
-            val runCall by memoized(SCOPE) { runner.run(inheritIO = false) }
+            val runCall by lazy { runner.run(inheritIO = false) }
             it("should execute") {
                 assertThat(runCall.exitCode).isEqualTo(0)
             }
@@ -308,7 +302,7 @@ object DistributedOverseerSpec : Spek({
         }
 
         describe("Error runner") {
-            val runner by memoized(SCOPE) {
+            val runner by lazy {
                 CommandRunner(
                     javaCmd(),
                     "-cp", System.getProperty("java.class.path") + ":" + jarFile.absolutePath,

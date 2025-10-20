@@ -2,13 +2,12 @@ package io.wavebeans.execution.medium
 
 import assertk.assertThat
 import assertk.assertions.*
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.execution.Call
 import io.wavebeans.lib.Sample
 import io.wavebeans.lib.sampleOf
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
 
-object PlainPodCallResultSpec : Spek({
+class PlainPodCallResultSpec : DescribeSpec({
 
     describe("Wrapping value") {
 
@@ -44,7 +43,7 @@ object PlainPodCallResultSpec : Spek({
         describe("Wrapping Unit") {
             val result = result(Unit)
 
-            it("should have non empty obj") { assertThat(result.obj).isEqualTo(kotlin.Unit) }
+            it("should have non empty obj") { assertThat(result.obj).isEqualTo(Unit) }
             it("should have empty exception") { assertThat(result.exception).isNull() }
         }
 

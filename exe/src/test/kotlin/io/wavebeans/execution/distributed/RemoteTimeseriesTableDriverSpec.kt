@@ -2,49 +2,50 @@ package io.wavebeans.execution.distributed
 
 import assertk.assertThat
 import assertk.assertions.*
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.execution.eachIndexed
 import io.wavebeans.lib.Sample
 import io.wavebeans.lib.s
 import io.wavebeans.lib.sampleOf
 import io.wavebeans.lib.table.*
+import io.wavebeans.tests.createPorts
 import io.wavebeans.tests.seqStream
 import org.mockito.kotlin.*
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.lifecycle.CachingMode.SCOPE
-import org.spekframework.spek2.lifecycle.CachingMode.TEST
-import org.spekframework.spek2.style.specification.describe
 
-object RemoteTimeseriesTableDriverSpec : Spek({
+class RemoteTimeseriesTableDriverSpec : DescribeSpec({
+    val tableName = "table1"
+    lateinit var tableDriver: InMemoryTimeseriesTableDriver<Sample>
+    beforeTest {
+        tableDriver = mock<InMemoryTimeseriesTableDriver<Sample>>().also {
+            val tableRegistry = TableRegistry.default
+            if (tableRegistry.exists(tableName)) tableRegistry.unregister(tableName)
+            tableRegistry.register(tableName, it)
+        }
+    }
+
+    val communicatorPort = createPorts(1).first()
+
+    val facilitator by lazy {
+        Facilitator(
+            communicatorPort = communicatorPort,
+            threadsNumber = 1,
+            onServerShutdownTimeoutMillis = 100
+        )
+    }
+
+    beforeSpec {
+        facilitator.start()
+    }
+
+    afterSpec {
+        facilitator.terminate()
+        facilitator.close()
+    }
+
+
+    val remoteTableDriver by lazy { RemoteTimeseriesTableDriver(tableName, "127.0.0.1:$communicatorPort", Sample::class) }
+
     describe("Pointing to Facilitator") {
-        val tableName = "table1"
-        val tableDriver by memoized(TEST) {
-            mock<InMemoryTimeseriesTableDriver<Sample>>().also {
-                val tableRegistry = TableRegistry.default
-                if (tableRegistry.exists(tableName)) tableRegistry.unregister(tableName)
-                tableRegistry.register(tableName, it)
-            }
-        }
-
-        val facilitator by memoized(SCOPE) {
-            Facilitator(
-                    communicatorPort = 50001,
-                    threadsNumber = 1,
-                    onServerShutdownTimeoutMillis = 100
-            )
-        }
-
-        beforeGroup {
-            facilitator.start()
-        }
-
-        afterGroup {
-            facilitator.terminate()
-            facilitator.close()
-        }
-
-
-        val remoteTableDriver by memoized(SCOPE) { RemoteTimeseriesTableDriver<Sample>(tableName, "127.0.0.1:50001", Sample::class) }
-
         it("should not return sample rate if not initialized") {
             assertThat { remoteTableDriver.sampleRate }
                 .isFailure()
@@ -96,9 +97,9 @@ object RemoteTimeseriesTableDriverSpec : Spek({
         describe("Different queries") {
 
             val queries = mapOf(
-                    "last query" to LastIntervalTableQuery(1.s),
-                    "time range query" to TimeRangeTableQuery(0.s, 1.s),
-                    "continuous read query" to ContinuousReadTableQuery(0.s)
+                "last query" to LastIntervalTableQuery(1.s),
+                "time range query" to TimeRangeTableQuery(0.s, 1.s),
+                "continuous read query" to ContinuousReadTableQuery(0.s)
             )
 
             queries.forEach { (name, query) ->
@@ -106,9 +107,9 @@ object RemoteTimeseriesTableDriverSpec : Spek({
                     whenever(tableDriver.tableType).thenReturn(Sample::class)
                     whenever(tableDriver.query(eq(query))).thenReturn(seqStream().asSequence(1.0f))
                     assertThat(remoteTableDriver.query(query))
-                            .prop("take(5)") { it.take(5).toList() }.eachIndexed(5) { v, idx ->
-                                v.isInstanceOf(Sample::class).isCloseTo(idx * 1e-10, 1e-14)
-                            }
+                        .prop("take(5)") { it.take(5).toList() }.eachIndexed(5) { v, idx ->
+                            v.isInstanceOf(Sample::class).isCloseTo(idx * 1e-10, 1e-14)
+                        }
                 }
             }
         }

@@ -4,6 +4,7 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
 import assertk.fail
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.lib.*
 import io.wavebeans.lib.io.*
 import io.wavebeans.lib.stream.*
@@ -12,15 +13,10 @@ import io.wavebeans.lib.stream.window.WindowStreamParams
 import io.wavebeans.lib.stream.window.plus
 import io.wavebeans.lib.stream.window.window
 import io.wavebeans.lib.table.*
-import io.wavebeans.tests.seqStream
 import kotlinx.serialization.Serializable
 import mu.KotlinLogging
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.lifecycle.CachingMode
-import org.spekframework.spek2.lifecycle.CachingMode.SCOPE
-import org.spekframework.spek2.style.specification.describe
 
-object TopologySerializerSpec : Spek({
+class TopologySerializerSpec : DescribeSpec({
 
     val log = KotlinLogging.logger {}
 
@@ -36,9 +32,9 @@ object TopologySerializerSpec : Spek({
             .trim(3000)
             .toCsv("file:///some2.csv")
 
-        val topology by memoized(SCOPE) { listOf(o1, o2).buildTopology() }
+        val topology by lazy { listOf(o1, o2).buildTopology() }
 
-        val deserializedTopology by memoized(SCOPE) {
+        val deserializedTopology by lazy {
             with(TopologySerializer) {
                 val topologySerialized = serialize(topology)
                 deserialize(topologySerialized)
