@@ -3,6 +3,7 @@ package io.wavebeans.http
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.lib.io.input
 import io.wavebeans.lib.sampleOf
 import io.wavebeans.lib.stream.SampleCountMeasurement
@@ -14,7 +15,7 @@ import org.spekframework.spek2.style.specification.describe
 import java.io.BufferedReader
 import java.util.concurrent.TimeUnit
 
-object JsonBeanStreamReaderSpec : Spek({
+class JsonBeanStreamReaderSpec : DescribeSpec({
 
     fun elementRegex(valueRegex: String) = Regex("\\{\"offset\":\\d+,\"value\":$valueRegex}")
 

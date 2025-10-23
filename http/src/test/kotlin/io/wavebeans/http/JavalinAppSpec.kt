@@ -5,6 +5,7 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
 import io.javalin.Javalin
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.execution.MultiThreadedOverseer
 import io.wavebeans.execution.SingleThreadedOverseer
 import io.wavebeans.lib.*
@@ -37,11 +38,11 @@ import org.spekframework.spek2.lifecycle.CachingMode.SCOPE
 import org.spekframework.spek2.style.specification.describe
 import java.util.concurrent.TimeUnit
 
-object JavalinAppSpec : Spek({
+class JavalinAppSpec : DescribeSpec({
 
-    val javalin by memoized(SCOPE) { Javalin.create().start(findFreePort()) }
+    val javalin by lazy { Javalin.create().start(findFreePort()) }
 
-    val app by memoized(SCOPE) {
+    val app by lazy {
         DefaultJavalinApp(
             listOf(
                 { it.tableService(TableRegistry.default) },
@@ -50,8 +51,8 @@ object JavalinAppSpec : Spek({
         )
     }
 
-    beforeGroup { app.setUp(javalin) }
-    afterGroup { javalin.stop() }
+    beforeSpec { app.setUp(javalin) }
+    afterSpec { javalin.stop() }
 
     describe("TableService") {
 
@@ -62,10 +63,8 @@ object JavalinAppSpec : Spek({
             val elementRegex = elementRegex("-?\\d+\\.\\d+([eE]?-\\d+)?")
 
             val overseer = SingleThreadedOverseer(listOf(o))
-            beforeGroup {
-                overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
-            }
-            afterGroup { overseer.close() }
+            overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+            overseer.close()
 
             it("should return last 100ms") {
                 javalin.handleRequest(GET, "/table/table1/last?interval=100ms").apply {
@@ -114,11 +113,8 @@ object JavalinAppSpec : Spek({
             val elementRegex = elementRegex("\\{\"v\":-?\\d+}")
 
             val overseer = SingleThreadedOverseer(listOf(o))
-            beforeGroup {
-                overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
-            }
-
-            afterGroup { overseer.close() }
+            overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+            overseer.close()
 
             it("should return last 100ms") {
                 javalin.handleRequest(GET, "/table/table2/last?interval=100ms&sampleRate=44100.0").apply {
@@ -168,10 +164,8 @@ object JavalinAppSpec : Spek({
             val elementRegex = elementRegex("\\{\"v\":\"-?[0-9a-fA-F]+\"}")
 
             val overseer = SingleThreadedOverseer(listOf(o))
-            beforeGroup {
-                overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
-            }
-            afterGroup { overseer.close() }
+            overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+            overseer.close()
 
             it("should return last 100ms") {
                 javalin.handleRequest(GET, "/table/b/last?interval=1ms&sampleRate=44100.0").apply {
@@ -201,10 +195,8 @@ object JavalinAppSpec : Spek({
                 )
 
                 val overseer = SingleThreadedOverseer(listOf(o))
-                beforeGroup {
-                    overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
-                }
-                afterGroup { overseer.close() }
+                overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+                overseer.close()
 
                 it("should return last 100ms") {
                     javalin.handleRequest(GET, "/table/fft/last?interval=100ms").apply {
@@ -228,10 +220,8 @@ object JavalinAppSpec : Spek({
                 )
 
                 val overseer = SingleThreadedOverseer(listOf(o))
-                beforeGroup {
-                    overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
-                }
-                afterGroup { overseer.close() }
+                overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+                overseer.close()
 
                 it("should return last 100ms") {
                     javalin.handleRequest(GET, "/table/windowSample/last?interval=100ms").apply {
@@ -249,10 +239,8 @@ object JavalinAppSpec : Spek({
                 val elementRegex = elementRegex("\\[[-eE\\d\\.\\,]+\\]")
 
                 val overseer = SingleThreadedOverseer(listOf(o))
-                beforeGroup {
-                    overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
-                }
-                afterGroup { overseer.close() }
+                overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+                overseer.close()
 
                 it("should return last 100ms") {
                     javalin.handleRequest(GET, "/table/listDouble/last?interval=100ms").apply {
@@ -269,10 +257,8 @@ object JavalinAppSpec : Spek({
                 val elementRegex = elementRegex("\\[[-\\d\\,]+\\]")
 
                 val overseer = SingleThreadedOverseer(listOf(o))
-                beforeGroup {
-                    overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
-                }
-                afterGroup { overseer.close() }
+                overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+                overseer.close()
 
                 it("should return last 100ms") {
                     javalin.handleRequest(GET, "/table/listInt/last?interval=100ms").apply {
@@ -301,10 +287,8 @@ object JavalinAppSpec : Spek({
                 )
 
                 val overseer = SingleThreadedOverseer(listOf(o))
-                beforeGroup {
-                    overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
-                }
-                afterGroup { overseer.close() }
+                overseer.eval(44100.0f).all { it.get(10000, TimeUnit.MILLISECONDS).finished }
+                overseer.close()
 
                 it("should return last 100ms") {
                     javalin.handleRequest(GET, "/table/windowA/last?interval=100ms").apply {
@@ -325,10 +309,8 @@ object JavalinAppSpec : Spek({
             val o = 440.sine().trim(2000).toSampleTable("mySampleTable", 1.s)
             val o2 = 440.sine().trim(2000).toSampleTable("mySampleVectorTable", 1.s, 441)
             val overseer = MultiThreadedOverseer(listOf(o, o2), 2, 1)
-
-            beforeGroup { overseer.eval(44100.0f).all { it.get().finished } }
-
-            afterGroup { overseer.close() }
+            overseer.eval(44100.0f).all { it.get().finished }
+            overseer.close()
 
             it("should return 404 for non-existing table") {
                 javalin.handleRequest(GET, "/audio/nonExistingTable/stream/wav").apply {
