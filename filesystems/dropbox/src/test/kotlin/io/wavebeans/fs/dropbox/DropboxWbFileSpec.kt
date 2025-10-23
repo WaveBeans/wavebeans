@@ -13,7 +13,7 @@ import org.spekframework.spek2.style.specification.describe
 import java.net.URI
 
 @OptIn(ExperimentalKotest::class)
-object DropboxWbFileSpec : DescribeSpec({
+class DropboxWbFileSpec : DescribeSpec({
 
     afterTest {
         WbFileDriver.unregisterDriver("dropbox")
