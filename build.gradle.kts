@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.retry)
@@ -19,10 +17,8 @@ allprojects {
         mavenCentral()
     }
 
-    tasks.withType<KotlinCompile>().all {
-        kotlinOptions.jvmTarget = "11"
-        kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlin.ExperimentalStdlibApi"
-        kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlinx.serialization.ExperimentalSerializationApi"
+    kotlin {
+        jvmToolchain(11)
     }
 }
 
@@ -39,7 +35,6 @@ subprojects {
         testImplementation(rootProject.libs.logback.classic)
 
         testImplementation(rootProject.libs.kotest.runner.junit5)
-        testImplementation(rootProject.libs.kotest.framework.datatest)
         testImplementation(rootProject.libs.assertk)
         testImplementation(rootProject.libs.mockito.kotlin)
     }

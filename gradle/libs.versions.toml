@@ -1,11 +1,11 @@
 [versions]
-kotlin = "1.7.20"
-kotlinx-serialization = "1.3.3"
-kotest = "5.8.0"
+kotlin = "2.2.20"
+kotlinx-serialization = "1.9.0"
+kotest = "6.0.4"
 kotlin-logging = "1.7.7"
 logback = "1.5.20"
-assertk = "0.25"
-mockito-kotlin = "4.1.0"
+assertk = "0.26"
+mockito-kotlin = "5.4.0"
 netty = "4.2.7.Final"
 javalin = "3.13.7"
 http4k = "4.0.0.0"
@@ -51,7 +51,6 @@ dropbox-core-sdk = { module = "com.dropbox.core:dropbox-core-sdk", version.ref =
 javax-annotation-api = { module = "javax.annotation:javax.annotation-api", version.ref = "javax-annotation" }
 
 kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
-kotest-framework-datatest = { module = "io.kotest:kotest-framework-datatest", version.ref = "kotest" }
 
 protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "protobuf" }
 protobuf-java-util = { module = "com.google.protobuf:protobuf-java-util", version.ref = "protobuf" }

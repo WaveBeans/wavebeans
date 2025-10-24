@@ -414,7 +414,7 @@ class JavalinAppSpec : DescribeSpec({
 })
 
 private fun Assert<org.http4k.core.Headers>.contentType() =
-    this.prop("Content-Type") { it.find { it.first.toLowerCase() == "content-type" }?.second }
+    this.prop("Content-Type") { it.find { it.first.lowercase() == "content-type" }?.second }
 
 private fun Assert<String>.elements(): Assert<List<String>> =
     this.prop("elements") { it.split("[\\r\\n]".toRegex()).filterNot { it.isEmpty() } }

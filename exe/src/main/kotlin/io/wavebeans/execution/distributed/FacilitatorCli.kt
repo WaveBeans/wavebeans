@@ -58,7 +58,7 @@ class FacilitatorCli(
         }
 
         lateinit var configFilePath: String
-        when (args[0].toLowerCase()) {
+        when (args[0].lowercase()) {
             configDescribeOption -> {
                 printWriter.println("""
                             |The following config attributes of `facilitatorConfig` are supported:

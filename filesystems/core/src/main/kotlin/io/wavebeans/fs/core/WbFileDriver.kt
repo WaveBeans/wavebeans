@@ -26,7 +26,7 @@ interface WbFileDriver {
          * @param driver the driver implementation instance that register under the scheme.
          */
         fun registerDriver(scheme: String, driver: WbFileDriver) {
-            registry.putIfAbsent(scheme.toLowerCase(), driver)
+            registry.putIfAbsent(scheme.lowercase(), driver)
                     ?.let { throw IllegalStateException("Scheme $scheme is already registered: $it") }
         }
 
@@ -48,7 +48,7 @@ interface WbFileDriver {
          * @throws IllegalArgumentException if the driver can't be located
          */
         fun instance(scheme: String): WbFileDriver =
-                registry[scheme.toLowerCase()]
+                registry[scheme.lowercase()]
                         ?: throw IllegalArgumentException("Scheme $scheme can be found among registered $registry")
 
         /**
@@ -58,7 +58,7 @@ interface WbFileDriver {
          * @throws IllegalArgumentException if the driver can't be located
          */
         fun createFile(uri: URI): WbFile =
-                registry[uri.scheme.toLowerCase()]
+                registry[uri.scheme.lowercase()]
                         ?.createWbFile(uri)
                         ?: throw IllegalArgumentException("Can't locate correct driver for URI $uri among registered $registry")
 

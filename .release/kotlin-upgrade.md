@@ -1,4 +1,5 @@
-* A few versions upgraded:
-    * Kotlin to 1.7.20. Targets JDK 11
-    * Protobuf to 3.21.6
-    * kotlinx.serialization to 1.3.3
+* Kotlin versions upgraded:
+    * Kotlin to 2.2.20. Targets JDK 11
+    * kotlinx.serialization to 1.9.0
+    * kotest to 6.0.4
+    * mockito to 5.4.0
