@@ -47,7 +47,7 @@ val copyBuiltCli by tasks.registering(Copy::class) {
 val makeCliScripts by tasks.registering(CreateStartScripts::class) {
     dependsOn(copyBuiltCli)
     outputDir = File("$buildDir/cliScripts")
-    mainClassName = "io.wavebeans.cli.CliKt"
+    mainClass.set("io.wavebeans.cli.CliKt")
     applicationName = "wavebeans"
     classpath = fileTree(buildDir.absolutePath + "/builtCli/lib")
     (unixStartScriptGenerator as DefaultTemplateBasedStartScriptGenerator).template = resources.text.fromFile("resources/unix.txt")
@@ -66,7 +66,7 @@ val copyBuiltExe by tasks.registering(Copy::class) {
 val makeExeScripts by tasks.registering(CreateStartScripts::class) {
     dependsOn(copyBuiltExe)
     outputDir = File("$buildDir/exeScripts")
-    mainClassName = "io.wavebeans.execution.distributed.FacilitatorCliKt"
+    mainClass.set("io.wavebeans.execution.distributed.FacilitatorCliKt")
     applicationName = "wavebeans-facilitator"
     classpath = fileTree(buildDir.absolutePath + "/builtExe/lib")
     (unixStartScriptGenerator as DefaultTemplateBasedStartScriptGenerator).template = resources.text.fromFile("resources/unix.txt")
@@ -74,7 +74,7 @@ val makeExeScripts by tasks.registering(CreateStartScripts::class) {
 }
 
 val copyMetricsPrometheus by tasks.registering(Copy::class) {
-    dependsOn(":metrics-prometheus:jar")
+    dependsOn(":metrics-prometheus:assemble")
     val builtExtra = file("$buildDir/builtExtra/prometheus")
     from(project(":metrics-prometheus").buildDir.absolutePath + "/libs")
     from(

@@ -5,7 +5,7 @@ dependencies {
     implementation(project(":metrics-core"))
     implementation(project(":filesystems-core"))
 
-    implementation("ch.qos.logback:logback-classic:1.2.3")
+    implementation(libs.logback.classic)
 
-    implementation("com.willowtreeapps.assertk:assertk-jvm:0.25")
+    implementation(libs.assertk)
 }

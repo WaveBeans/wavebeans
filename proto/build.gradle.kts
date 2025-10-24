@@ -4,13 +4,11 @@ val grpcVersion: String by System.getProperties()
 val protobufVersion: String by System.getProperties()
 
 buildscript {
-    val protobufGradlePluginVersion: String by System.getProperties()
-
     repositories {
         mavenCentral()
     }
     dependencies {
-        classpath("com.google.protobuf:protobuf-gradle-plugin:$protobufGradlePluginVersion")
+        classpath(libs.protobuf.gradle)
     }
 }
 
@@ -21,11 +19,8 @@ repositories {
 
 plugins {
     idea
-    id("com.google.osdetector") version "1.7.1"
-}
-
-apply {
-    plugin("com.google.protobuf")
+    alias(libs.plugins.osdetector)
+    alias(libs.plugins.protobuf)
 }
 
 idea {
@@ -35,29 +30,31 @@ idea {
 }
 
 dependencies {
-    api("com.google.protobuf:protobuf-java:$protobufVersion")
-    api("io.grpc:grpc-protobuf:$grpcVersion")
-    api("com.google.protobuf:protobuf-java-util:$protobufVersion")
-    api("io.grpc:grpc-stub:$grpcVersion")
-    implementation("io.grpc:grpc-netty-shaded:$grpcVersion")
-    compileOnly("javax.annotation:javax.annotation-api:1.3.1")
+    api(libs.protobuf.java)
+    api(libs.grpc.protobuf)
+    api(libs.protobuf.java.util)
+    api(libs.grpc.stub)
+    implementation(libs.grpc.netty.shaded)
+    compileOnly(libs.javax.annotation.api)
 }
 
 protobuf {
     plugins {
         id("grpc") {
+            val grpcVer = libs.versions.grpc.get()
             artifact = if (osdetector.os == "osx") {
-                "io.grpc:protoc-gen-grpc-java:$grpcVersion:osx-x86_64"
+                "io.grpc:protoc-gen-grpc-java:${grpcVer}:osx-x86_64"
             } else {
-                "io.grpc:protoc-gen-grpc-java:$grpcVersion"
+                "io.grpc:protoc-gen-grpc-java:${grpcVer}"
             }
         }
     }
     protoc {
+        val protobufVer = libs.versions.protobuf.get()
         artifact = if (osdetector.os == "osx") {
-            "com.google.protobuf:protoc:$protobufVersion:osx-x86_64"
+            "com.google.protobuf:protoc:${protobufVer}:osx-x86_64"
         } else {
-            "com.google.protobuf:protoc:$protobufVersion"
+            "com.google.protobuf:protoc:${protobufVer}"
         }
     }
     generateProtoTasks {

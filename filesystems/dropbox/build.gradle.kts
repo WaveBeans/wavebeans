@@ -4,5 +4,5 @@ tasks.jar {
 
 dependencies {
     implementation(project(":filesystems-core"))
-    implementation("com.dropbox.core:dropbox-core-sdk:7.0.0")
+    implementation(libs.dropbox.core.sdk)
 }

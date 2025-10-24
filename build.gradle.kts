@@ -1,10 +1,8 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    val kotlinVersion: String by System.getProperties()
-
-    kotlin("jvm") version kotlinVersion
-    id("org.gradle.test-retry") version "1.6.2"
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.retry)
 
     `java-library`
     `maven-publish`
@@ -32,20 +30,18 @@ subprojects {
 
     group = "io.wavebeans"
 
-    val kotestVersion: String by System.getProperties()
-
     dependencies {
-        implementation(kotlin("stdlib-jdk8"))
-        implementation(kotlin("reflect"))
-        implementation("io.github.microutils:kotlin-logging:1.7.7")
+        implementation(rootProject.libs.kotlin.stdlib.jdk8)
+        implementation(rootProject.libs.kotlin.reflect)
+        implementation(rootProject.libs.kotlin.logging)
 
         testImplementation(project(":tests"))
-        testImplementation("ch.qos.logback:logback-classic:1.2.3")
+        testImplementation(rootProject.libs.logback.classic)
 
-        testImplementation("io.kotest:kotest-runner-junit5:$kotestVersion")
-        testImplementation("io.kotest:kotest-framework-datatest:$kotestVersion")
-        testImplementation("com.willowtreeapps.assertk:assertk-jvm:0.25")
-        testImplementation("org.mockito.kotlin:mockito-kotlin:4.1.0")
+        testImplementation(rootProject.libs.kotest.runner.junit5)
+        testImplementation(rootProject.libs.kotest.framework.datatest)
+        testImplementation(rootProject.libs.assertk)
+        testImplementation(rootProject.libs.mockito.kotlin)
     }
 
     java {
