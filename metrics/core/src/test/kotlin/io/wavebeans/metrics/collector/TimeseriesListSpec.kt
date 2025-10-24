@@ -6,16 +6,17 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isNull
 import assertk.assertions.isTrue
 import assertk.fail
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.metrics.eachIndexed
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 
 
-object TimeseriesListSpec : Spek({
+class TimeseriesListSpec : DescribeSpec({
     describe("Int timeseries list with default 60 sec granular") {
         val list = TimeseriesList<Int> { a, b -> a + b }
 
-        beforeEachTest { list.reset() }
+        beforeTest { list.reset() }
 
         it("should return sum of added values inside the range. All values") {
             assertThat(list.append(1, 1.min)).isTrue()
@@ -111,7 +112,7 @@ object TimeseriesListSpec : Spek({
     describe("Int timeseries list without rolling up") {
         val list = TimeseriesList<Int>(granularValueInMs = 0) { a, b -> a + b }
 
-        beforeEachTest { list.reset() }
+        beforeTest { list.reset() }
 
         it("should return sum of added values inside the range. All values") {
             assertThat(list.append(1, 1.min)).isTrue()
@@ -235,7 +236,7 @@ object TimeseriesListSpec : Spek({
     describe("GaugeAccumulator without rolling up") {
         val list = TimeseriesList<GaugeAccumulator>(0) { a, b -> a + b }
 
-        beforeEachTest { list.reset() }
+        beforeTest { list.reset() }
 
         it("should accumulate all values") {
             assertThat(list.append(GaugeAccumulator(false, 1.0), 1.min)).isTrue()
@@ -266,7 +267,7 @@ object TimeseriesListSpec : Spek({
     describe("GaugeAccumulator with 60 sec granularity") {
         val list = TimeseriesList<GaugeAccumulator>(60000) { a, b -> a + b }
 
-        beforeEachTest { list.reset() }
+        beforeTest { list.reset() }
 
         it("should accumulate values") {
             assertThat(list.append(GaugeAccumulator(false, 1.0), 1.min)).isTrue()

@@ -3,22 +3,25 @@ package io.wavebeans.metrics
 import assertk.assertThat
 import assertk.assertions.isNull
 import assertk.assertions.isSuccess
+import io.kotest.core.spec.IsolationMode
+import io.kotest.core.spec.style.DescribeSpec
 import org.mockito.kotlin.*
 import org.mockito.ArgumentMatchers
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.lifecycle.CachingMode
 import org.spekframework.spek2.style.specification.describe
 
-object MetricServiceSpec : Spek({
+class MetricServiceSpec : DescribeSpec({
+    isolationMode = IsolationMode.InstancePerLeaf
 
     describe("Mock implementation") {
 
         describe("Increment metric") {
 
-            val myMetricObject by memoized(CachingMode.TEST) { MetricObject.counter("io.wavebeans.execution.metrics", "test", "") }
-            val myMetricConnector by memoized(CachingMode.TEST) { mock<MetricConnector>() }
+            val myMetricObject by lazy { MetricObject.counter("io.wavebeans.execution.metrics", "test", "") }
+            val myMetricConnector by lazy { mock<MetricConnector>() }
 
-            beforeEachTest {
+            beforeTest {
                 MetricService.reset()
                 MetricService.registerConnector(myMetricConnector)
             }
@@ -58,10 +61,10 @@ object MetricServiceSpec : Spek({
 
         describe("Gauge metric") {
 
-            val myMetricObject by memoized(CachingMode.TEST) { MetricObject.gauge("io.wavebeans.execution.metrics", "test", "") }
-            val myMetricConnector by memoized(CachingMode.TEST) { mock<MetricConnector>() }
+            val myMetricObject by lazy { MetricObject.gauge("io.wavebeans.execution.metrics", "test", "") }
+            val myMetricConnector by lazy { mock<MetricConnector>() }
 
-            beforeEachTest {
+            beforeTest {
                 MetricService.reset()
                 MetricService.registerConnector(myMetricConnector)
             }
@@ -91,10 +94,10 @@ object MetricServiceSpec : Spek({
 
         describe("Time metric") {
 
-            val myMetricObject by memoized(CachingMode.TEST) { MetricObject.time("io.wavebeans.execution.metrics", "test", "") }
-            val myMetricConnector by memoized(CachingMode.TEST) { mock<MetricConnector>() }
+            val myMetricObject by lazy { MetricObject.time("io.wavebeans.execution.metrics", "test", "") }
+            val myMetricConnector by lazy { mock<MetricConnector>() }
 
-            beforeEachTest {
+            beforeTest {
                 MetricService.reset()
                 MetricService.registerConnector(myMetricConnector)
             }

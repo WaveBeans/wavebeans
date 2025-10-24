@@ -5,6 +5,9 @@ import assertk.assertThat
 import assertk.assertions.*
 import assertk.fail
 import io.grpc.ServerBuilder
+import io.kotest.assertions.nondeterministic.eventually
+import io.kotest.core.spec.IsolationMode
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.metrics.MetricObject
 import io.wavebeans.metrics.MetricService
 import io.wavebeans.metrics.eachIndexed
@@ -13,18 +16,22 @@ import org.spekframework.spek2.Spek
 import org.spekframework.spek2.lifecycle.CachingMode.*
 import org.spekframework.spek2.style.specification.describe
 import java.lang.Thread.sleep
+import kotlin.time.Duration.Companion.seconds
 
-object MetricCollectorSpec : Spek({
+class MetricCollectorSpec : DescribeSpec({
+    isolationMode = IsolationMode.InstancePerLeaf
 
     describe("Single mode") {
 
         describe("Counter") {
-            val counter by memoized(TEST) { MetricObject.counter("component", "count", "") }
+            val counter by lazy { MetricObject.counter("component", "count", "") }
 
-            val counterMetricCollector by memoized(TEST) { counter.collector(granularValueInMs = 0) }
-            val counterMetricCollectorWithTag by memoized(TEST) { counter.withTags("tag" to "value").collector(granularValueInMs = 0) }
+            val counterMetricCollector by lazy { counter.collector(granularValueInMs = 0) }
+            val counterMetricCollectorWithTag by lazy {
+                counter.withTags("tag" to "value").collector(granularValueInMs = 0)
+            }
 
-            beforeEachTest {
+            beforeTest {
                 MetricService.reset()
                 MetricService.registerConnector(counterMetricCollector)
                 MetricService.registerConnector(counterMetricCollectorWithTag)
@@ -123,11 +130,13 @@ object MetricCollectorSpec : Spek({
             it("should merge with another") {
                 counter.increment()
 
-                counterMetricCollector.merge(sequenceOf(
+                counterMetricCollector.merge(
+                    sequenceOf(
                         2.0 at 2L,
                         3.0 at 3L,
                         5.0 at System.currentTimeMillis() + 5000
-                ))
+                    )
+                )
 
                 val values = counterMetricCollector.collectValues(Long.MAX_VALUE)
 
@@ -144,12 +153,12 @@ object MetricCollectorSpec : Spek({
         }
 
         describe("Time") {
-            val time by memoized(TEST) { MetricObject.time("component", "time", "") }
+            val time by lazy { MetricObject.time("component", "time", "") }
 
-            val timeMetricCollector by memoized(TEST) { time.collector(granularValueInMs = 0) }
-            val timeMetricCollectorWithTag by memoized(TEST) { time.withTags("tag" to "value").collector(granularValueInMs = 0) }
+            val timeMetricCollector by lazy { time.collector(granularValueInMs = 0) }
+            val timeMetricCollectorWithTag by lazy { time.withTags("tag" to "value").collector(granularValueInMs = 0) }
 
-            beforeEachTest {
+            beforeTest {
                 MetricService.reset()
                 MetricService.registerConnector(timeMetricCollector)
                 MetricService.registerConnector(timeMetricCollectorWithTag)
@@ -209,11 +218,13 @@ object MetricCollectorSpec : Spek({
             it("should merge with another") {
                 time.time(100)
 
-                timeMetricCollector.merge(sequenceOf(
+                timeMetricCollector.merge(
+                    sequenceOf(
                         TimeAccumulator(1, 200) at 2L,
                         TimeAccumulator(1, 300) at 3L,
                         TimeAccumulator(1, 500) at System.currentTimeMillis() + 5000
-                ))
+                    )
+                )
 
                 val values = timeMetricCollector.collectValues(Long.MAX_VALUE)
 
@@ -230,12 +241,14 @@ object MetricCollectorSpec : Spek({
         }
 
         describe("Gauge") {
-            val gauge by memoized(TEST) { MetricObject.gauge("component", "gauge", "") }
+            val gauge by lazy { MetricObject.gauge("component", "gauge", "") }
 
-            val gaugeMetricCollector by memoized(TEST) { gauge.collector(granularValueInMs = 0) }
-            val gaugeMetricCollectorWithTag by memoized(TEST) { gauge.withTags("tag" to "value").collector(granularValueInMs = 0) }
+            val gaugeMetricCollector by lazy { gauge.collector(granularValueInMs = 0) }
+            val gaugeMetricCollectorWithTag by lazy {
+                gauge.withTags("tag" to "value").collector(granularValueInMs = 0)
+            }
 
-            beforeEachTest {
+            beforeTest {
                 MetricService.reset()
                 MetricService.registerConnector(gaugeMetricCollector)
                 MetricService.registerConnector(gaugeMetricCollectorWithTag)
@@ -311,11 +324,13 @@ object MetricCollectorSpec : Spek({
             it("should merge with another") {
                 gauge.set(1.0)
 
-                gaugeMetricCollector.merge(sequenceOf(
+                gaugeMetricCollector.merge(
+                    sequenceOf(
                         GaugeAccumulator(false, 2.0) at 2L,
                         GaugeAccumulator(false, 3.0) at 3L,
                         GaugeAccumulator(false, 5.0) at System.currentTimeMillis() + 5000
-                ))
+                    )
+                )
 
                 val values = gaugeMetricCollector.collectValues(Long.MAX_VALUE)
 
@@ -335,66 +350,66 @@ object MetricCollectorSpec : Spek({
     describe("Distributed mode") {
 
         describe("One downstream collector") {
-            val port by memoized(EACH_GROUP) { findFreePort() }
-            val counter by memoized(EACH_GROUP) { MetricObject.counter("component", "count", "") }
-            val time by memoized(EACH_GROUP) { MetricObject.time("component", "time", "") }
-            val gauge by memoized(EACH_GROUP) { MetricObject.gauge("component", "gauge", "") }
+            val port by lazy { findFreePort() }
+            val counter by lazy { MetricObject.counter("component", "count", "") }
+            val time by lazy { MetricObject.time("component", "time", "") }
+            val gauge by lazy { MetricObject.gauge("component", "gauge", "") }
 
-            val counterUpstream by memoized(EACH_GROUP) {
+            val counterUpstream by lazy {
                 counter.collector(
-                        downstreamCollectors = listOf("localhost:$port"),
-                        granularValueInMs = 0,
-                        refreshIntervalMs = 0
+                    downstreamCollectors = listOf("localhost:$port"),
+                    granularValueInMs = 0,
+                    refreshIntervalMs = 0
                 )
             }
 
-            val counterUpstreamWithTag by memoized(EACH_GROUP) {
+            val counterUpstreamWithTag by lazy {
                 counter.withTags("tag" to "value").collector(
-                        downstreamCollectors = listOf("localhost:$port"),
-                        granularValueInMs = 0,
-                        refreshIntervalMs = 0
+                    downstreamCollectors = listOf("localhost:$port"),
+                    granularValueInMs = 0,
+                    refreshIntervalMs = 0
                 )
             }
 
-            val timeUpstream by memoized(EACH_GROUP) {
+            val timeUpstream by lazy {
                 time.collector(
-                        downstreamCollectors = listOf("localhost:$port"),
-                        granularValueInMs = 0,
-                        refreshIntervalMs = 0
+                    downstreamCollectors = listOf("localhost:$port"),
+                    granularValueInMs = 0,
+                    refreshIntervalMs = 0
                 )
             }
 
-            val timeUpstreamWithTag by memoized(EACH_GROUP) {
+            val timeUpstreamWithTag by lazy {
                 time.withTags("tag" to "value").collector(
-                        downstreamCollectors = listOf("localhost:$port"),
-                        granularValueInMs = 0,
-                        refreshIntervalMs = 0
+                    downstreamCollectors = listOf("localhost:$port"),
+                    granularValueInMs = 0,
+                    refreshIntervalMs = 0
                 )
             }
 
-            val gaugeUpstream by memoized(EACH_GROUP) {
+            val gaugeUpstream by lazy {
                 gauge.collector(
-                        downstreamCollectors = listOf("localhost:$port"),
-                        granularValueInMs = 0,
-                        refreshIntervalMs = 0
+                    downstreamCollectors = listOf("localhost:$port"),
+                    granularValueInMs = 0,
+                    refreshIntervalMs = 0
                 )
             }
 
-            val gaugeUpstreamWithTag by memoized(EACH_GROUP) {
+            val gaugeUpstreamWithTag by lazy {
                 gauge.withTags("tag" to "value").collector(
-                        downstreamCollectors = listOf("localhost:$port"),
-                        granularValueInMs = 0,
-                        refreshIntervalMs = 0
+                    downstreamCollectors = listOf("localhost:$port"),
+                    granularValueInMs = 0,
+                    refreshIntervalMs = 0
                 )
             }
 
-            val server by memoized(EACH_GROUP) {
+            val server by lazy {
                 ServerBuilder.forPort(port)
-                        .addService(MetricGrpcService.instance())
-                        .build()
+                    .addService(MetricGrpcService.instance())
+                    .build()
             }
 
-            beforeGroup {
+            beforeTest {
                 server.start()
                 assertThat(counterUpstream.attachCollector()).isTrue()
                 assertThat(counterUpstreamWithTag.attachCollector()).isTrue()
@@ -404,7 +419,7 @@ object MetricCollectorSpec : Spek({
                 assertThat(gaugeUpstreamWithTag.attachCollector()).isTrue()
             }
 
-            afterGroup {
+            afterTest {
                 server.shutdownNow()
                 counterUpstream.close()
                 counterUpstreamWithTag.close()
@@ -433,8 +448,8 @@ object MetricCollectorSpec : Spek({
                 counterUpstream.mergeWithDownstreamCollectors(afterEventMoment)
 
                 assertThat(counterUpstream.collectValues(afterEventMoment))
-                        .prop("values.toSet") { it.map { it.value }.toSet() }
-                        .isEqualTo(setOf(1.0, 2.0, 3.0))
+                    .prop("values.toSet") { it.map { it.value }.toSet() }
+                    .isEqualTo(setOf(1.0, 2.0, 3.0))
             }
 
             it("should get counter values from downstream collector respecting tags") {
@@ -447,8 +462,8 @@ object MetricCollectorSpec : Spek({
                 counterUpstreamWithTag.mergeWithDownstreamCollectors(afterEventMoment)
 
                 assertThat(counterUpstreamWithTag.collectValues(afterEventMoment))
-                        .prop("values.toSet") { it.map { it.value }.toSet() }
-                        .isEqualTo(setOf(2.0))
+                    .prop("values.toSet") { it.map { it.value }.toSet() }
+                    .isEqualTo(setOf(2.0))
             }
 
             it("should get time values from downstream collector") {
@@ -461,8 +476,8 @@ object MetricCollectorSpec : Spek({
                 timeUpstream.mergeWithDownstreamCollectors(afterEventMoment)
 
                 assertThat(timeUpstream.collectValues(afterEventMoment))
-                        .prop("valuesAsSet") { it.map { it.value }.toSet() }
-                        .isEqualTo(setOf(TimeAccumulator(1, 100), TimeAccumulator(1, 200), TimeAccumulator(1, 300)))
+                    .prop("valuesAsSet") { it.map { it.value }.toSet() }
+                    .isEqualTo(setOf(TimeAccumulator(1, 100), TimeAccumulator(1, 200), TimeAccumulator(1, 300)))
             }
 
             it("should get time values from downstream collector respecting tags") {
@@ -475,8 +490,8 @@ object MetricCollectorSpec : Spek({
                 timeUpstreamWithTag.mergeWithDownstreamCollectors(afterEventMoment)
 
                 assertThat(timeUpstreamWithTag.collectValues(afterEventMoment))
-                        .prop("valuesAsSet") { it.map { it.value }.toSet() }
-                        .isEqualTo(setOf(TimeAccumulator(1, 200)))
+                    .prop("valuesAsSet") { it.map { it.value }.toSet() }
+                    .isEqualTo(setOf(TimeAccumulator(1, 200)))
             }
 
             it("should populate gauge values from downstream collector") {
@@ -489,8 +504,14 @@ object MetricCollectorSpec : Spek({
                 gaugeUpstream.mergeWithDownstreamCollectors(afterEventMoment)
 
                 assertThat(gaugeUpstream.collectValues(afterEventMoment))
-                        .prop("valuesAsSet") { it.map { it.value }.toSet() }
-                        .isEqualTo(setOf(GaugeAccumulator(true, 100.0), GaugeAccumulator(false, 200.0), GaugeAccumulator(true, 300.0)))
+                    .prop("valuesAsSet") { it.map { it.value }.toSet() }
+                    .isEqualTo(
+                        setOf(
+                            GaugeAccumulator(true, 100.0),
+                            GaugeAccumulator(false, 200.0),
+                            GaugeAccumulator(true, 300.0)
+                        )
+                    )
             }
 
             it("should populate gauge values from downstream collector respecting tags") {
@@ -503,92 +524,94 @@ object MetricCollectorSpec : Spek({
                 gaugeUpstreamWithTag.mergeWithDownstreamCollectors(afterEventMoment)
 
                 assertThat(gaugeUpstreamWithTag.collectValues(afterEventMoment))
-                        .prop("valuesAsSet") { it.map { it.value }.toSet() }
-                        .isEqualTo(setOf(GaugeAccumulator(false, 200.0)))
+                    .prop("valuesAsSet") { it.map { it.value }.toSet() }
+                    .isEqualTo(setOf(GaugeAccumulator(false, 200.0)))
             }
         }
 
         describe("Collecting automatically") {
-            val port by memoized(EACH_GROUP) { findFreePort() }
-            val counter by memoized(EACH_GROUP) { MetricObject.counter("component1", "name1", "") }
+            val port = findFreePort()
+            val counter = MetricObject.counter("component1", "name1", "")
 
-            val remoteMetricCollector by memoized(EACH_GROUP) {
-                counter.collector(
-                        downstreamCollectors = listOf("localhost:$port"),
-                        granularValueInMs = 0,
-                        refreshIntervalMs = 1
-                )
-            }
+            val remoteMetricCollector = counter.collector(
+                downstreamCollectors = listOf("localhost:$port"),
+                granularValueInMs = 0,
+                refreshIntervalMs = 1
+            )
 
-            val server by memoized(EACH_GROUP) {
-                ServerBuilder.forPort(port)
-                        .addService(MetricGrpcService.instance())
-                        .build()
-            }
+            val server = ServerBuilder.forPort(port)
+                .addService(MetricGrpcService.instance())
+                .build()
 
-            beforeGroup {
+            beforeTest {
                 server.start()
             }
 
-            afterGroup {
+            afterTest {
                 remoteMetricCollector.close()
                 server.shutdownNow()
             }
 
-            it("should attach on first iteration") {
-                assertThat(remoteMetricCollector.awaitAttached()).isTrue()
-            }
-
             it("should get values from downstream collector") {
+                assertThat(remoteMetricCollector.awaitAttached()).isTrue()
+
                 counter.increment(1.0)
                 counter.increment(2.0)
                 remoteMetricCollector.increment(counter, 3.0)
 
-                val afterEventMoment = System.currentTimeMillis() + 100
+                val afterEventMoment = System.currentTimeMillis() + 10000
 
-                sleep(500) // wait for upstream metric collector to do a few syncs
-
-                assertThat(remoteMetricCollector.collectValues(afterEventMoment))
+                val collected = mutableListOf<TimedValue<Double>>()
+                eventually(1.seconds) {
+                    collected += remoteMetricCollector.collectValues(afterEventMoment)
+                    assertThat(collected)
                         .prop("values.toSet") { it.map { it.value }.toSet() }
                         .isEqualTo(setOf(1.0, 2.0, 3.0))
+                }
             }
         }
 
         describe("Two downstream collectors") {
-            val port1 by memoized(EACH_GROUP) { findFreePort() }
-            val port2 by memoized(EACH_GROUP) { findFreePort() }
+            val port1 by lazy { findFreePort() }
+            val port2 by lazy { findFreePort() }
 
-            val counter by memoized(EACH_GROUP) { MetricObject.counter("component1_TwoDownstreamCollectors", "name1_TwoDownstreamCollectors", "") }
-
-            val remoteMetricCollector by memoized(EACH_GROUP) {
-                counter.collector(
-                        downstreamCollectors = listOf("localhost:$port1", "localhost:$port2"),
-                        granularValueInMs = 0,
-                        refreshIntervalMs = 1
+            val counter by lazy {
+                MetricObject.counter(
+                    "component1_TwoDownstreamCollectors",
+                    "name1_TwoDownstreamCollectors",
+                    ""
                 )
             }
 
-            val server1 by memoized(EACH_GROUP) {
+            val remoteMetricCollector by lazy {
+                counter.collector(
+                    downstreamCollectors = listOf("localhost:$port1", "localhost:$port2"),
+                    granularValueInMs = 0,
+                    refreshIntervalMs = 1
+                )
+            }
+
+            val server1 by lazy {
                 ServerBuilder.forPort(port1)
-                        .addService(MetricGrpcService.instance())
-                        .build()
+                    .addService(MetricGrpcService.instance())
+                    .build()
             }
 
-            val server2 by memoized(EACH_GROUP) {
+            val server2 by lazy {
                 ServerBuilder.forPort(port2)
-                        .addService(MetricGrpcService.instance())
-                        .build()
+                    .addService(MetricGrpcService.instance())
+                    .build()
             }
 
 
-            beforeGroup {
+            beforeTest {
                 server1.start()
                 server2.start()
                 // attach to downstream collectors
                 assertThat(remoteMetricCollector.attachCollector()).isTrue()
             }
 
-            afterGroup {
+            afterTest {
                 remoteMetricCollector.close()
                 server1.shutdownNow()
                 server2.shutdownNow()
@@ -605,8 +628,8 @@ object MetricCollectorSpec : Spek({
                 remoteMetricCollector.mergeWithDownstreamCollectors(Long.MAX_VALUE)
 
                 assertThat(remoteMetricCollector.collectValues(Long.MAX_VALUE))
-                        .prop("values.toList().sorted()") { it.map { it.value }.sorted() }
-                        .isEqualTo(listOf(1.0, 1.0, 2.0, 2.0, 3.0, 3.0, 4.0, 4.0, 5.0))
+                    .prop("values.toList().sorted()") { it.map { it.value }.sorted() }
+                    .isEqualTo(listOf(1.0, 1.0, 2.0, 2.0, 3.0, 3.0, 4.0, 4.0, 5.0))
             }
         }
     }

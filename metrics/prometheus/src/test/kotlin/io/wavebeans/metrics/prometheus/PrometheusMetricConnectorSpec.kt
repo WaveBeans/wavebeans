@@ -5,6 +5,8 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.prop
+import io.kotest.core.spec.IsolationMode
+import io.kotest.core.spec.style.DescribeSpec
 import org.mockito.kotlin.*
 import io.prometheus.client.Collector
 import io.prometheus.client.CollectorRegistry
@@ -16,24 +18,25 @@ import org.spekframework.spek2.Spek
 import org.spekframework.spek2.lifecycle.CachingMode
 import org.spekframework.spek2.style.specification.describe
 
-object PrometheusMetricConnectorSpec : Spek({
+class PrometheusMetricConnectorSpec : DescribeSpec({
+    isolationMode = IsolationMode.InstancePerLeaf
 
-    val registry by memoized(CachingMode.TEST) {
+    val registry by lazy {
         val registry = mock<CollectorRegistry>()
         registry
     }
 
-    val connector by memoized(CachingMode.TEST) {
+    val connector by lazy {
         val connector = PrometheusMetricConnector(null, registry)
         connector
     }
 
-    beforeEachTest {
+    beforeTest {
         MetricService.reset()
         MetricService.registerConnector(connector)
     }
 
-    afterEachTest {
+    afterTest {
         connector.close()
     }
 
