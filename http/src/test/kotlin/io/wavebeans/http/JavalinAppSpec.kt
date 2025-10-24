@@ -33,9 +33,6 @@ import org.http4k.core.Method.GET
 import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.lifecycle.CachingMode.SCOPE
-import org.spekframework.spek2.style.specification.describe
 import java.util.concurrent.TimeUnit
 
 class JavalinAppSpec : DescribeSpec({

@@ -3,12 +3,8 @@ package io.wavebeans.lib.stream
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import io.kotest.core.spec.style.DescribeSpec
-import io.wavebeans.lib.stream
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
 import io.wavebeans.lib.*
 import io.wavebeans.lib.io.input
-import io.wavebeans.lib.io.inputWithSampleRate
 import io.wavebeans.lib.stream.window.Window
 import io.wavebeans.lib.stream.window.window
 

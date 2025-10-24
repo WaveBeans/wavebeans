@@ -5,9 +5,10 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.support.fail
 import io.kotest.core.spec.style.DescribeSpec
-import io.wavebeans.lib.*
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
+import io.wavebeans.lib.DoubleStream
+import io.wavebeans.lib.Sample
+import io.wavebeans.lib.asGroupedDoubles
+import io.wavebeans.lib.at
 
 class SampleScalarWindowStreamSpec : DescribeSpec ({
     describe("Fixed window size=2") {

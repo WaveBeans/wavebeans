@@ -1,15 +1,11 @@
 package io.wavebeans.metrics
 
 import assertk.assertThat
-import assertk.assertions.isNull
 import assertk.assertions.isSuccess
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.DescribeSpec
-import org.mockito.kotlin.*
 import org.mockito.ArgumentMatchers
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.lifecycle.CachingMode
-import org.spekframework.spek2.style.specification.describe
+import org.mockito.kotlin.*
 
 class MetricServiceSpec : DescribeSpec({
     isolationMode = IsolationMode.InstancePerLeaf

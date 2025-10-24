@@ -12,10 +12,6 @@ import io.wavebeans.metrics.MetricObject
 import io.wavebeans.metrics.MetricService
 import io.wavebeans.metrics.eachIndexed
 import io.wavebeans.tests.findFreePort
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.lifecycle.CachingMode.*
-import org.spekframework.spek2.style.specification.describe
-import java.lang.Thread.sleep
 import kotlin.time.Duration.Companion.seconds
 
 class MetricCollectorSpec : DescribeSpec({

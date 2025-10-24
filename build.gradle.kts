@@ -32,7 +32,6 @@ subprojects {
 
     group = "io.wavebeans"
 
-    val spekVersion: String by System.getProperties()
     val kotestVersion: String by System.getProperties()
 
     dependencies {
@@ -42,10 +41,6 @@ subprojects {
 
         testImplementation(project(":tests"))
         testImplementation("ch.qos.logback:logback-classic:1.2.3")
-
-        // spek usage is deprecated in favor of kotest
-        testImplementation("org.spekframework.spek2:spek-dsl-jvm:$spekVersion")
-        testRuntimeOnly("org.spekframework.spek2:spek-runner-junit5:$spekVersion")
 
         testImplementation("io.kotest:kotest-runner-junit5:$kotestVersion")
         testImplementation("io.kotest:kotest-framework-datatest:$kotestVersion")
@@ -59,9 +54,7 @@ subprojects {
     }
 
     tasks.test {
-        systemProperty("SPEK_TIMEOUT", 0)
         useJUnitPlatform {
-            includeEngines("spek2")
             includeEngines("kotest")
         }
         maxHeapSize = "2g"

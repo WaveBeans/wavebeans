@@ -7,16 +7,13 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.prop
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.DescribeSpec
-import org.mockito.kotlin.*
 import io.prometheus.client.Collector
 import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.Gauge
 import io.prometheus.client.Summary
 import io.wavebeans.metrics.MetricObject
 import io.wavebeans.metrics.MetricService
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.lifecycle.CachingMode
-import org.spekframework.spek2.style.specification.describe
+import org.mockito.kotlin.*
 
 class PrometheusMetricConnectorSpec : DescribeSpec({
     isolationMode = IsolationMode.InstancePerLeaf

@@ -6,10 +6,6 @@ import assertk.assertions.isFalse
 import io.kotest.common.ExperimentalKotest
 import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.fs.core.WbFileDriver
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.dsl.Skip
-import org.spekframework.spek2.lifecycle.CachingMode
-import org.spekframework.spek2.style.specification.describe
 import java.net.URI
 
 @OptIn(ExperimentalKotest::class)

@@ -9,9 +9,9 @@ import io.wavebeans.lib.*
 import io.wavebeans.lib.io.input
 import io.wavebeans.lib.stream.map
 import io.wavebeans.lib.stream.window.window
-import org.mockito.kotlin.*
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import kotlin.math.absoluteValue
 import kotlin.random.Random
 

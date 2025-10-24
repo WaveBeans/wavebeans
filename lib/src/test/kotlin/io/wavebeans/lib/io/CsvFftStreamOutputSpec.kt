@@ -11,8 +11,6 @@ import io.wavebeans.lib.stream.fft.fft
 import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.stream.window.window
 import io.wavebeans.tests.eachIndexed
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileInputStream

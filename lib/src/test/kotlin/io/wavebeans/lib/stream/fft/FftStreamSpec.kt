@@ -3,17 +3,14 @@ package io.wavebeans.lib.stream.fft
 import assertk.assertThat
 import assertk.assertions.*
 import io.kotest.core.spec.style.DescribeSpec
-import io.wavebeans.tests.eachIndexed
 import io.wavebeans.lib.io.sine
 import io.wavebeans.lib.io.sineSweep
-import io.wavebeans.lib.ms
 import io.wavebeans.lib.ns
 import io.wavebeans.lib.stream.plus
 import io.wavebeans.lib.stream.rangeTo
 import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.stream.window.window
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
+import io.wavebeans.tests.eachIndexed
 import kotlin.math.PI
 
 class FftStreamSpec : DescribeSpec({

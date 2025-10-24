@@ -8,16 +8,11 @@ import io.wavebeans.lib.io.StreamOutput
 import io.wavebeans.lib.io.sine
 import io.wavebeans.lib.io.toMono16bitWav
 import io.wavebeans.lib.io.wave
-import io.wavebeans.lib.math.r
 import io.wavebeans.lib.stream.*
 import io.wavebeans.lib.stream.fft.fft
 import io.wavebeans.lib.stream.fft.inverseFft
-import io.wavebeans.lib.stream.window.hamming
 import io.wavebeans.lib.stream.window.window
 import io.wavebeans.metrics.MetricService
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.lifecycle.CachingMode
-import org.spekframework.spek2.style.specification.describe
 import java.io.File
 import kotlin.math.abs
 

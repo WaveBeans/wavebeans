@@ -5,8 +5,6 @@ import assertk.assertions.isEqualTo
 import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.lib.asInt
 import io.wavebeans.lib.stream
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
 import java.util.concurrent.TimeUnit
 
 object ProjectionBeanStreamSpec : DescribeSpec({

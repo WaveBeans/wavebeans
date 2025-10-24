@@ -8,8 +8,6 @@ import assertk.assertions.isTrue
 import assertk.fail
 import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.metrics.eachIndexed
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
 
 
 class TimeseriesListSpec : DescribeSpec({

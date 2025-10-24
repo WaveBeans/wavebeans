@@ -4,10 +4,11 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.size
 import io.kotest.core.spec.style.DescribeSpec
-import io.wavebeans.lib.*
+import io.wavebeans.lib.IntStream
+import io.wavebeans.lib.asGroupedInts
+import io.wavebeans.lib.at
+import io.wavebeans.lib.stream
 import io.wavebeans.lib.stream.rangeProjection
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
 
 class WindowStreamSpec : DescribeSpec({
 
