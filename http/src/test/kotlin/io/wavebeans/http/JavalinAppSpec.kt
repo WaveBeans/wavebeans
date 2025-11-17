@@ -27,6 +27,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.encoding.encodeStructure
 import org.http4k.client.OkHttp
 import org.http4k.core.Method
 import org.http4k.core.Method.GET
@@ -148,9 +149,9 @@ class JavalinAppSpec : DescribeSpec({
                 override fun deserialize(decoder: Decoder): B = throw UnsupportedOperationException("Don't need it")
 
                 override fun serialize(encoder: Encoder, value: B) {
-                    val s = encoder.beginStructure(descriptor)
-                    s.encodeStringElement(descriptor, 0, value.v)
-                    s.endStructure(descriptor)
+                    encoder.encodeStructure(descriptor) {
+                        encodeStringElement(descriptor, 0, value.v)
+                    }
                 }
             }
             JsonBeanStreamReader.register(B::class, BSerializer())

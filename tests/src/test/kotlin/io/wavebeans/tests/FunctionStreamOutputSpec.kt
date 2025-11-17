@@ -44,14 +44,14 @@ class FunctionStreamOutputSpec : DescribeSpec({
         val evaluate: (StreamOutput<*>, Float, List<String>) -> Unit
     )
 
-    val modes: List<Param> = listOf(
-        Param("local", { emptyList() }) { o, sampleRate, _ ->
+    val modes = mapOf(
+        "local" to Param("local", { emptyList() }) { o, sampleRate, _ ->
             o.evaluate(sampleRate)
         },
-        Param("multi-threaded", { emptyList() }) { o, sampleRate, _ ->
+        "multi-threaded" to Param("multi-threaded", { emptyList() }) { o, sampleRate, _ ->
             o.evaluateInMultiThreadedMode(sampleRate)
         },
-        Param("distributed", { facilitatorLocations }) { o, sampleRate, facilitators ->
+        "distributed" to Param("distributed", { facilitatorLocations }) { o, sampleRate, facilitators ->
             o.evaluateInDistributedMode(sampleRate, facilitators)
         },
     )

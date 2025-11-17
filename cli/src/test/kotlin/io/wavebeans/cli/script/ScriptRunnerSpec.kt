@@ -36,16 +36,20 @@ class ScriptRunnerSpec : DescribeSpec({
         }
     }
 
-    val modes = listOf(
-        RunMode.DISTRIBUTED to mapOf(
-            "partitions" to 2,
-            "facilitatorLocations" to portRange.map { "127.0.0.1:$it" }),
-        RunMode.MULTI_THREADED to mapOf<String, Any>("partitions" to 2, "threads" to 2),
-        RunMode.LOCAL to emptyMap<String, Any>(),
+    data class TestMode(val runMode: RunMode, val runOptions: Map<String, Any>)
+
+    val modes = mapOf(
+        "distributed" to TestMode(
+            RunMode.DISTRIBUTED, mapOf(
+                "partitions" to 2,
+                "facilitatorLocations" to portRange.map { "127.0.0.1:$it" })
+        ),
+        "multi-threaded" to TestMode(RunMode.MULTI_THREADED, mapOf<String, Any>("partitions" to 2, "threads" to 2)),
+        "local" to TestMode(RunMode.LOCAL, emptyMap()),
     )
 
-    fun Pair<RunMode, Map<String, Any>>.eval(script: String) =
-        ScriptRunner(script, runMode = this.first, runOptions = this.second)
+    fun TestMode.eval(script: String) =
+        ScriptRunner(script, runMode = this.runMode, runOptions = this.runOptions)
             .use { it.start().awaitForResult() }
 
     describe("Running scripts") {

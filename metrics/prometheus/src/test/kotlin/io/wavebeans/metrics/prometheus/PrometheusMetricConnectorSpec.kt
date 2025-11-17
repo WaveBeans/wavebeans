@@ -147,7 +147,7 @@ class PrometheusMetricConnectorSpec : DescribeSpec({
             assertThat(counter.labels("n/a", "n/a").get()).isEqualTo(1.0)
         }
 
-        it("should decrement without tags") {
+        it("should decrement without tags 2") {
             metricCounter.withTags("label2" to "v").set(6.0)
             metricCounter.withTags("label2" to "v").decrement(2.0)
             val counter = registry.real<Gauge>()

@@ -189,9 +189,9 @@ class BSerializer : KSerializer<B> {
         throw UnsupportedOperationException("Don't need it")
 
     override fun serialize(encoder: Encoder, value: B) {
-        val s = encoder.beginStructure(descriptor)
-        s.encodeStringElement(descriptor, 0, value.v)
-        s.endStructure(descriptor)
+        encoder.encodeStructure(descriptor) {
+            encodeStringElement(descriptor, 0, value.v)
+        }
     }
 }
 ```

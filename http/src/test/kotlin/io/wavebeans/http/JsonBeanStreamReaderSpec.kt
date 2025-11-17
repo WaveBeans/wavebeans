@@ -62,7 +62,7 @@ class JsonBeanStreamReaderSpec : DescribeSpec({
                     .isFailure()
                     .all {
                         message().isNotNull().startsWith("Serializer for class 'N' is not found.\n" +
-                                "Mark the class as @Serializable or provide the serializer explicitly.")
+                                "Please ensure that class is marked as '@Serializable' and that the serialization compiler plugin is applied.")
                         hasClass(SerializationException::class)
                     }
         }

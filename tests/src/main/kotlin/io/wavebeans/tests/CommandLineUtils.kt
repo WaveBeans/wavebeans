@@ -1,11 +1,14 @@
 package io.wavebeans.tests
 
+import mu.KotlinLogging
 import java.io.File
+
+private val log = KotlinLogging.logger { }
 
 fun kotlincCmd(): String {
     val kotlinc = "kotlinc"
     val kotlinHome = System.getenv("KOTLIN_HOME")
-        ?.takeIf { File("$it/$kotlinc").exists() }
+        ?.takeIf { File("$it/bin/$kotlinc").exists() }
         ?: System.getenv("PATH")
             .split(":")
             .firstOrNull { File("$it/$kotlinc").exists() }
@@ -14,7 +17,10 @@ fun kotlincCmd(): String {
                     " PATH or KOTLIN_HOME environment variable"
         )
 
-    return "$kotlinHome/$kotlinc"
+    log.info { "Using kotlinc from $kotlinHome" }
+    log.debug { "PATH env=${System.getenv("PATH")}" }
+    log.debug { "KOTLIN_HOME env=${System.getenv("KOTLIN_HOME")}" }
+    return "$kotlinHome/bin/$kotlinc"
 }
 
 fun compileCode(codeFiles: Map<String, String>): File {
@@ -27,6 +33,7 @@ fun compileCode(codeFiles: Map<String, String>): File {
     val compileCall = CommandRunner(
         kotlincCmd(),
         "-d", jarFile.absolutePath, *scriptFiles.map { it.absolutePath }.toTypedArray(),
+        "-Xlambdas=class",
         "-cp", System.getProperty("java.class.path"),
         "-jvm-target", "11"
     ).run()

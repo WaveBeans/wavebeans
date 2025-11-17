@@ -27,6 +27,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.encoding.encodeStructure
 import okhttp3.OkHttpClient
 import org.http4k.client.OkHttp
 import org.http4k.core.Method
@@ -119,9 +120,9 @@ class WbHttpServiceIntegrationSpec : DescribeSpec({
                 }
 
                 override fun serialize(encoder: Encoder, value: AnotherCustomSample) {
-                    val s = encoder.beginStructure(descriptor)
-                    s.encodeSerializableElement(descriptor, 0, Sample.serializer(), value.sample1)
-                    s.endStructure(descriptor)
+                    encoder.encodeStructure(descriptor) {
+                        encodeSerializableElement(descriptor, 0, Sample.serializer(), value.sample1)
+                    }
                 }
             }
 

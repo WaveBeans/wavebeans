@@ -175,6 +175,7 @@ Unit
         val scriptCompilationConfiguration = ScriptCompilationConfiguration {
             jvm {
                 compilerOptions.append(
+                    "-Xlambdas=class",
                     "-jvm-target", "11"
                 )
             }

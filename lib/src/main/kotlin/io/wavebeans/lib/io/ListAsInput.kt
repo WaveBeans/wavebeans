@@ -7,7 +7,6 @@ import io.wavebeans.lib.stream.FiniteStream
 import io.wavebeans.metrics.clazzTag
 import io.wavebeans.metrics.samplesProcessedOnInputMetric
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
@@ -16,6 +15,8 @@ import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.CompositeDecoder
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.encoding.decodeStructure
+import kotlinx.serialization.encoding.encodeStructure
 import kotlinx.serialization.serializer
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.jvm.jvmName
@@ -27,7 +28,7 @@ fun <T : Any> List<T>.input(): FiniteStream<T> {
 
 // TODO serializable
 class ListAsInputParams(
-        val list: List<Any>
+    val list: List<Any>
 ) : BeanParams {
     override fun toString(): String {
         return "ListAsInputParams(list=$list)"
@@ -58,38 +59,40 @@ object ListAsInputParamsSerializer : KSerializer<ListAsInputParams> {
         }
 
     override fun deserialize(decoder: Decoder): ListAsInputParams {
-        val dec = decoder.beginStructure(descriptor)
-        var type: String? = null
-        var list: List<Any>? = null
-        @Suppress("UNCHECKED_CAST")
-        loop@ while (true) {
-            when (val i = dec.decodeElementIndex(descriptor)) {
-                CompositeDecoder.DECODE_DONE -> break@loop
-                0 -> type = dec.decodeStringElement(descriptor, i)
-                1 -> list = dec.decodeSerializableElement(descriptor, i, ListSerializer(PlainObjectSerializer(type!!)))
-                else -> throw SerializationException("Unknown index $i")
+        return decoder.decodeStructure(descriptor) {
+            lateinit var type: String
+            lateinit var list: List<Any>
+            @Suppress("UNCHECKED_CAST")
+            loop@ while (true) {
+                when (val i = decodeElementIndex(descriptor)) {
+                    CompositeDecoder.DECODE_DONE -> break@loop
+                    0 -> type = decodeStringElement(descriptor, i)
+                    1 -> list = decodeSerializableElement(descriptor, i, ListSerializer(PlainObjectSerializer(type)))
+                    else -> throw SerializationException("Unknown index $i")
+                }
             }
+            ListAsInputParams(list)
         }
-        return ListAsInputParams(list!!)
     }
 
     override fun serialize(encoder: Encoder, value: ListAsInputParams) {
-        val s = encoder.beginStructure(descriptor)
-        val elType = value.list.first()::class.jvmName
-        s.encodeStringElement(descriptor, 0, elType)
-        s.encodeSerializableElement(descriptor, 1, ListSerializer(PlainObjectSerializer(elType)), value.list)
-        s.endStructure(descriptor)
+        encoder.encodeStructure(descriptor) {
+            val elType = value.list.first()::class.jvmName
+            encodeStringElement(descriptor, 0, elType)
+            encodeSerializableElement(descriptor, 1, ListSerializer(PlainObjectSerializer(elType)), value.list)
+        }
     }
 }
 
 class ListAsInput<T : Any>(
-        override val parameters: ListAsInputParams
+    override val parameters: ListAsInputParams
 ) : FiniteStream<T>, SourceBean<T> {
 
     private val samplesProcessed = samplesProcessedOnInputMetric.withTags(clazzTag to ListAsInput::class.jvmName)
 
     @Suppress("UNCHECKED_CAST")
-    override fun asSequence(sampleRate: Float): Sequence<T> = parameters.list.asSequence().map { samplesProcessed.increment(); it as T }
+    override fun asSequence(sampleRate: Float): Sequence<T> =
+        parameters.list.asSequence().map { samplesProcessed.increment(); it as T }
 
     override fun length(timeUnit: TimeUnit): Long = 0
 

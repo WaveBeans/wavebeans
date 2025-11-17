@@ -1,3 +1,7 @@
+import org.gradle.kotlin.dsl.compileKotlin
+import org.gradle.kotlin.dsl.kotlin
+import org.gradle.kotlin.dsl.support.kotlinCompilerOptions
+
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.retry)
@@ -18,6 +22,9 @@ allprojects {
     }
 
     kotlin {
+        compilerOptions {
+            freeCompilerArgs.add("-Xlambdas=class")
+        }
         jvmToolchain(11)
     }
 }

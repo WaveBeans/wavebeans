@@ -19,9 +19,10 @@ class SerializableMediumBuilder : MediumBuilder {
 /**
  * [Medium] for distributed execution.
  */
-@Serializable(with = SerializableMediumSerializer::class)
+@Serializable//(with = SerializableMediumSerializer::class)
 class SerializableMedium(
-        val items: List<Any>
+    @Serializable(with = ListObjectSerializer::class)
+    val items: List<Any>
 ) : Medium {
 
     override fun extractElement(at: Int): Any? {
@@ -42,32 +43,4 @@ class SerializableMedium(
     override fun hashCode(): Int {
         return items.hashCode()
     }
-}
-
-object SerializableMediumSerializer : KSerializer<SerializableMedium> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(SerializableMedium::class.jvmName) {
-        element("items", ListObjectSerializer.descriptor)
-    }
-
-    override fun deserialize(decoder: Decoder): SerializableMedium {
-        val dec = decoder.beginStructure(descriptor)
-        var l: List<Any>? = null
-        loop@ while (true) {
-            when (val i = dec.decodeElementIndex(descriptor)) {
-                CompositeDecoder.DECODE_DONE -> break@loop
-                0 -> l = dec.decodeSerializableElement(descriptor, i, ListObjectSerializer)
-                else -> throw SerializationException("Unknown index $i")
-            }
-        }
-
-        dec.endStructure(descriptor)
-        return SerializableMedium(l!!)
-    }
-
-    override fun serialize(encoder: Encoder, value: SerializableMedium) {
-        val s = encoder.beginStructure(descriptor)
-        s.encodeSerializableElement(descriptor, 0, ListObjectSerializer, value.items)
-        s.endStructure(descriptor)
-    }
-
 }

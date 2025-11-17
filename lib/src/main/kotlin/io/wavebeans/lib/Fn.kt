@@ -1,5 +1,6 @@
 package io.wavebeans.lib
 
+import io.wavebeans.lib.WaveBeansClassLoader.classForName
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
@@ -11,6 +12,13 @@ import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.CompositeDecoder
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.encoding.decodeStructure
+import kotlinx.serialization.encoding.encodeStructure
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.ObjectInputStream
+import java.io.ObjectOutputStream
+import kotlin.io.encoding.Base64
 import kotlin.reflect.jvm.jvmName
 
 private const val fnClazz = "fnClazz"
@@ -44,20 +52,29 @@ abstract class Fn<T, R>(val initParams: FnInitParameters = FnInitParameters()) {
          * @throws [IllegalStateException] if constructor with only parameter og [FnInitParameters] is not found.
          */
         @Suppress("UNCHECKED_CAST")
-        fun <T, R> instantiate(clazz: Class<out Fn<T, R>>, initParams: FnInitParameters = FnInitParameters()): Fn<T, R> {
+        fun <T, R> instantiate(
+            clazz: Class<out Fn<T, R>>,
+            initParams: FnInitParameters = FnInitParameters()
+        ): Fn<T, R> {
             return clazz.declaredConstructors
-                    .firstOrNull { with(it.parameterTypes) { size == 1 && get(0).isAssignableFrom(FnInitParameters::class.java) } }
-                    .let { it ?: clazz.declaredConstructors.firstOrNull { c -> c.parameters.isEmpty() } }
-                    ?.also { it.isAccessible = true }
-                    ?.let { c ->
-                        if (c.parameters.size == 1)
-                            c.newInstance(initParams)
-                        else
-                            c.newInstance()
-                    }
-                    ?.let { it as Fn<T, R> }
-                    ?: throw IllegalStateException("$clazz has no proper constructor with ${FnInitParameters::class} as only one parameter or empty at all, " +
-                            "it has: ${clazz.declaredConstructors.joinToString { it.parameterTypes.toList().toString() }}")
+                .firstOrNull { with(it.parameterTypes) { size == 1 && get(0).isAssignableFrom(FnInitParameters::class.java) } }
+                .let { it ?: clazz.declaredConstructors.firstOrNull { c -> c.parameters.isEmpty() } }
+                ?.also { it.isAccessible = true }
+                ?.let { c ->
+                    if (c.parameters.size == 1)
+                        c.newInstance(initParams)
+                    else
+                        c.newInstance()
+                }
+                ?.let { it as Fn<T, R> }
+                ?: throw IllegalStateException(
+                    "$clazz has no proper constructor with ${FnInitParameters::class} as only one parameter or empty at all, " +
+                            "it has: ${
+                                clazz.declaredConstructors.joinToString {
+                                    it.parameterTypes.toList().toString()
+                                }
+                            }"
+                )
         }
 
         /**
@@ -82,16 +99,16 @@ abstract class Fn<T, R>(val initParams: FnInitParameters = FnInitParameters()) {
             val (fnClazzStr, paramsStr) = value.split("|").take(2)
             val fnClazz = Class.forName(fnClazzStr) as Class<Fn<T, R>>
             val params = paramsStr.split(";")
-                    .filter { it.isNotBlank() }
-                    .map {
-                        val (k, v) = it.split(":").take(2)
-                        k to if (v == "null") {
-                            null
-                        } else {
-                            v
-                        }
+                .filter { it.isNotBlank() }
+                .map {
+                    val (k, v) = it.split(":").take(2)
+                    k to if (v == "null") {
+                        null
+                    } else {
+                        v
                     }
-                    .toMap()
+                }
+                .toMap()
             return instantiate(fnClazz, FnInitParameters(params))
         }
     }
@@ -102,10 +119,12 @@ abstract class Fn<T, R>(val initParams: FnInitParameters = FnInitParameters()) {
      * Gets the compact representation the function as string.
      */
     fun asString(): String {
-        val fnClazz = this::class.jvmName
+        val fnClazz = getClassName()
         val params = initParams.params.map { "${it.key}:${it.value}" }.joinToString(";")
         return "$fnClazz|$params"
     }
+
+    fun getClassName() = this::class.jvmName
 
 }
 
@@ -131,11 +150,12 @@ class FnInitParameters {
     fun add(name: String, value: Long): FnInitParameters = FnInitParameters(params + (name to value.toString()))
     fun add(name: String, value: Float): FnInitParameters = FnInitParameters(params + (name to value.toString()))
     fun add(name: String, value: Double): FnInitParameters = FnInitParameters(params + (name to value.toString()))
+    fun add(name: String, value: ByteArray): FnInitParameters = FnInitParameters(params + (name to Base64.encode(value)))
     fun <T : Any> add(name: String, value: Collection<T>, stringifier: (T) -> String): FnInitParameters =
-            FnInitParameters(params + (name to value.joinToString(separator = ",") { stringifier(it) }))
+        FnInitParameters(params + (name to value.joinToString(separator = ",") { stringifier(it) }))
 
     fun <T : Any> addObj(name: String, value: T, stringifier: (T) -> String): FnInitParameters =
-            FnInitParameters(params + (name to stringifier(value)))
+        FnInitParameters(params + (name to stringifier(value)))
 
     fun addStrings(name: String, value: Collection<String>): FnInitParameters = add(name, value) { it }
     fun addInts(name: String, value: Collection<Int>): FnInitParameters = add(name, value) { it.toString() }
@@ -145,7 +165,7 @@ class FnInitParameters {
     fun add(name: String, value: Fn<*, *>): FnInitParameters = addObj(name, value) { it.asString() }
 
     operator fun get(name: String): String? = params[name]
-    fun notNull(name: String): String = params[name] ?: throw IllegalArgumentException("Parameters $name is null")
+    fun notNull(name: String): String = requireNotNull(params[name]){"Parameters $name is null"}
 
     fun <T : Any> obj(name: String, objectifier: (String) -> T): T = notNull(name).let(objectifier)
     fun <T : Any> objOrNull(name: String, objectifier: (String) -> T): T? = get(name)?.let(objectifier)
@@ -179,11 +199,14 @@ class FnInitParameters {
     fun doubles(name: String): List<Double> = list(name) { it.toDouble() }
     fun doublesOrNull(name: String): List<Double>? = listOrNull(name) { it.toDouble() }
 
+    fun byteArray(name: String): ByteArray = Base64.decode(notNull(name))
+    fun byteArrayOrNull(name: String): ByteArray? = get(name)?.let { Base64.decode(it) }
+
     fun <T : Any> list(name: String, objectifier: (String) -> T): List<T> = listOrNull(name, objectifier)
-            ?: throw IllegalArgumentException("Parameters $name is null")
+        ?: throw IllegalArgumentException("Parameters $name is null")
 
     fun <T : Any> listOrNull(name: String, objectifier: (String) -> T): List<T>? =
-            params[name]?.split(",")?.map(objectifier)
+        params[name]?.split(",")?.map(objectifier)
 }
 
 /**
@@ -195,15 +218,17 @@ class WrapFn<T, R>(initParams: FnInitParameters) : Fn<T, R>(initParams) {
     private val fn: (T) -> R
 
     init {
-        val clazzName = initParams[fnClazz]!!
+        val clazzName = initParams.string(fnClazz)
         try {
-            val clazz = WaveBeansClassLoader.classForName(clazzName)
+            val clazz = classForName(clazzName)
             val constructor = clazz.declaredConstructors.first()
             constructor.isAccessible = true
             fn = constructor.newInstance() as (T) -> R
         } catch (e: IllegalArgumentException) {
-            throw IllegalArgumentException("Wrapping function $clazzName failed, perhaps it is implemented as inner class" +
-                    " and should be wrapped manually", e)
+            throw IllegalArgumentException(
+                "Wrapping function $clazzName failed, perhaps it is implemented as inner class" +
+                        " and should be wrapped manually", e
+            )
         }
     }
 
@@ -223,62 +248,62 @@ object FnInitParametersSerializer : KSerializer<FnInitParameters> {
     }
 
     override fun deserialize(decoder: Decoder): FnInitParameters {
-        val dec = decoder.beginStructure(descriptor)
-        var params: Map<String, String>? = null
-        loop@ while (true) {
-            when (val i = dec.decodeElementIndex(descriptor)) {
-                CompositeDecoder.DECODE_DONE -> break@loop
-                0 -> params = dec.decodeSerializableElement(
+        return decoder.decodeStructure(descriptor) {
+            lateinit var params: Map<String, String>
+            loop@ while (true) {
+                when (val i = decodeElementIndex(descriptor)) {
+                    CompositeDecoder.DECODE_DONE -> break@loop
+                    0 -> params = decodeSerializableElement(
                         descriptor,
                         i,
                         mapSerializer
-                )
-                else -> throw SerializationException("Unknown index $i")
+                    )
+                    else -> throw SerializationException("Unknown index $i")
+                }
             }
+            FnInitParameters(params)
         }
-        return FnInitParameters(params!!)
     }
 
     override fun serialize(encoder: Encoder, value: FnInitParameters) {
-        val s = encoder.beginStructure(descriptor)
-        s.encodeSerializableElement(
+        encoder.encodeStructure(descriptor) {
+            encodeSerializableElement(
                 descriptor,
                 0,
                 MapSerializer(String.serializer(), String.serializer().nullable),
                 value.params
-        )
-        s.endStructure(descriptor)
+            )
+        }
     }
-
 }
 
 @Suppress("UNCHECKED_CAST")
 object FnSerializer : KSerializer<Fn<*, *>> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(Fn::class.jvmName) {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(Fn::class.qualifiedName!!) {
         element("fnClass", String.serializer().descriptor)
-        element("initParams", FnInitParametersSerializer.descriptor)
+        element("initParams", FnInitParameters.serializer().descriptor)
     }
 
-    override fun deserialize(decoder: Decoder): Fn<*, *> {
-        val dec = decoder.beginStructure(descriptor)
-        var initParams: FnInitParameters? = null
-        var fnClazz: Class<Fn<Any, Any>>? = null
+    override fun deserialize(decoder: Decoder): Fn<*, *> = decoder.decodeStructure(descriptor) {
+        lateinit var initParams: FnInitParameters
+        lateinit var fnClazz: Class<Fn<Any, Any>>
         loop@ while (true) {
-            when (val i = dec.decodeElementIndex(descriptor)) {
+            when (val i = decodeElementIndex(descriptor)) {
                 CompositeDecoder.DECODE_DONE -> break@loop
-                0 -> fnClazz = WaveBeansClassLoader.classForName(dec.decodeStringElement(descriptor, i)) as Class<Fn<Any, Any>>
-                1 -> initParams = dec.decodeSerializableElement(descriptor, i, FnInitParameters.serializer())
+                0 -> fnClazz = classForName(decodeStringElement(descriptor, i)) as Class<Fn<Any, Any>>
+                1 -> initParams = decodeSerializableElement(descriptor, i, FnInitParameters.serializer())
                 else -> throw SerializationException("Unknown index $i")
             }
         }
-        return Fn.instantiate(fnClazz!!, initParams!!)
+
+        Fn.instantiate(fnClazz, initParams)
     }
 
     override fun serialize(encoder: Encoder, value: Fn<*, *>) {
-        val structure = encoder.beginStructure(descriptor)
-        structure.encodeStringElement(descriptor, 0, value::class.jvmName)
-        structure.encodeSerializableElement(descriptor, 1, FnInitParametersSerializer, value.initParams)
-        structure.endStructure(descriptor)
+        encoder.encodeStructure(descriptor) {
+            encodeStringElement(descriptor, 0, value.getClassName())
+            encodeSerializableElement(descriptor, 1, FnInitParameters.serializer(), value.initParams)
+        }
     }
 
 }

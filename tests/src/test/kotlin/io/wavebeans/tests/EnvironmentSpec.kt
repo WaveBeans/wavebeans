@@ -10,7 +10,7 @@ import io.kotest.core.spec.style.DescribeSpec
 class EnvironmentSpec : DescribeSpec({
 
     describe("Kotlin compiler installed") {
-        it("should be 1.7.x") {
+        it("should be 2.x.x") {
             val cmd = CommandRunner(
                 kotlincCmd(),
                 "-version"
@@ -20,7 +20,7 @@ class EnvironmentSpec : DescribeSpec({
                 prop(CommandResult::exitCode).isEqualTo(0)
                 prop(CommandResult::output)
                     .transform { String(it) }
-                    .matches(".*kotlinc-jvm 1\\.7\\.\\d+.*".toRegex(RegexOption.DOT_MATCHES_ALL))
+                    .matches(".*kotlinc-jvm 2\\.\\d+\\.\\d+.*".toRegex(RegexOption.DOT_MATCHES_ALL))
             }
         }
     }
