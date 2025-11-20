@@ -1,6 +1,6 @@
 package io.wavebeans.tests
 
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.IOException
 import java.net.InetAddress
 import java.net.InetSocketAddress

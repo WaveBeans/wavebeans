@@ -1,9 +1,9 @@
 package io.wavebeans.lib.io
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.wavebeans.fs.core.WbFile
 import io.wavebeans.fs.core.WbFileDriver
 import io.wavebeans.fs.core.WbFileOutputStream
-import mu.KotlinLogging
 import java.io.BufferedOutputStream
 import java.io.File
 import java.io.IOException

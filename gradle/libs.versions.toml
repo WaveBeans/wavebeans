@@ -2,7 +2,7 @@
 kotlin = "2.2.20"
 kotlinx-serialization = "1.9.0"
 kotest = "6.0.4"
-kotlin-logging = "1.7.7"
+kotlin-logging = "7.0.13"
 logback = "1.5.20"
 assertk = "0.26"
 mockito-kotlin = "5.4.0"
@@ -32,7 +32,7 @@ kotlin-main-kts = { module = "org.jetbrains.kotlin:kotlin-main-kts", version.ref
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 kotlinx-serialization-protobuf = { module = "org.jetbrains.kotlinx:kotlinx-serialization-protobuf", version.ref = "kotlinx-serialization" }
 
-kotlin-logging = { module = "io.github.microutils:kotlin-logging", version.ref = "kotlin-logging" }
+kotlin-logging = { module = "io.github.oshai:kotlin-logging", version.ref = "kotlin-logging" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 assertk = { module = "com.willowtreeapps.assertk:assertk-jvm", version.ref = "assertk" }
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito-kotlin" }

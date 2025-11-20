@@ -1,6 +1,6 @@
 package io.wavebeans.cli.script
 
-import mu.KotlinLogging.logger
+import io.github.oshai.kotlinlogging.KotlinLogging.logger
 import org.jetbrains.kotlin.cli.common.repl.ReplCodeLine
 import org.jetbrains.kotlin.cli.common.repl.ReplCompileResult
 import org.jetbrains.kotlin.cli.common.repl.ReplEvalResult
@@ -21,7 +21,6 @@ import kotlin.script.experimental.jvm.jvm
 import kotlin.script.experimental.jvmhost.repl.JvmReplCompiler
 import kotlin.script.experimental.jvmhost.repl.JvmReplEvaluator
 import kotlin.script.experimental.util.LinkedSnippet
-import kotlin.script.experimental.util.PropertiesCollection
 
 class ScriptRunner(
     private val content: String,
@@ -52,8 +51,7 @@ class ScriptRunner(
             "io.wavebeans.cli.script.*",
             "java.util.concurrent.TimeUnit.*", // to use time units easier
             "java.io.File",
-            "mu.KLogger",
-            "mu.KotlinLogging"
+            "io.github.oshai.kotlinlogging.KotlinLogging"
         ).map { "import $it" }
 
     private fun Any.parameter(): String = when (this) {
@@ -88,7 +86,7 @@ class ScriptRunner(
 
 ${(imports + customImports).joinToString(separator = "\n")}
 
-val log: KLogger = KotlinLogging.logger("ScriptRunner")
+val log = KotlinLogging.logger("ScriptRunner")
 
 val evaluator: ScriptEvaluator = $evaluator
 

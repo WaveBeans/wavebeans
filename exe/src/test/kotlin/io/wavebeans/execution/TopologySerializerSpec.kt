@@ -4,6 +4,7 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
 import assertk.fail
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.lib.*
 import io.wavebeans.lib.io.*
@@ -14,7 +15,6 @@ import io.wavebeans.lib.stream.window.plus
 import io.wavebeans.lib.stream.window.window
 import io.wavebeans.lib.table.*
 import kotlinx.serialization.Serializable
-import mu.KotlinLogging
 
 class TopologySerializerSpec : DescribeSpec({
 

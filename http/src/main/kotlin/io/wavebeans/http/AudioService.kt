@@ -1,5 +1,6 @@
 package io.wavebeans.http
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.javalin.Javalin
 import io.wavebeans.lib.*
 import io.wavebeans.lib.io.WavHeader
@@ -10,7 +11,6 @@ import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.table.TableRegistry
 import io.wavebeans.lib.table.TimeseriesTableDriver
 import io.wavebeans.metrics.*
-import mu.KotlinLogging
 import java.io.InputStream
 import java.util.*
 import java.util.concurrent.LinkedTransferQueue
@@ -60,7 +60,7 @@ class AudioService(internal val tableRegistry: TableRegistry) {
         val metricTags = arrayOf(
             tableTag to tableName,
             bitDepthTag to bitDepth.bits.toString(),
-            formatTag to format.contentType.toString(),
+            formatTag to format.contentType,
             limitTag to (limit?.toString() ?: "n/a"),
             offsetTag to (offset?.toString() ?: "n/a")
         )

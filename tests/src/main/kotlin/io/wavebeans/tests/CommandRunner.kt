@@ -1,6 +1,6 @@
 package io.wavebeans.tests
 
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.TimeUnit
 import kotlin.io.path.createTempDirectory

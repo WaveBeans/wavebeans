@@ -2,6 +2,7 @@ package io.wavebeans.tests
 
 import assertk.assertThat
 import assertk.assertions.*
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.execution.MultiThreadedOverseer
 import io.wavebeans.execution.SingleThreadedOverseer
@@ -16,7 +17,6 @@ import io.wavebeans.lib.stream.window.hamming
 import io.wavebeans.lib.stream.window.window
 import io.wavebeans.lib.table.TableRegistry
 import io.wavebeans.lib.table.toTable
-import mu.KotlinLogging
 import java.io.File
 import java.io.OutputStream
 import kotlin.math.PI

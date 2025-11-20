@@ -1,5 +1,6 @@
 package io.wavebeans.execution.distributed
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.grpc.ServerBuilder
 import io.wavebeans.communicator.JobContent
 import io.wavebeans.communicator.JobStatusResponse
@@ -17,7 +18,6 @@ import io.wavebeans.metrics.MetricConnectorDescriptor
 import io.wavebeans.metrics.collector.MetricGrpcService
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.modules.SerializersModule
-import mu.KotlinLogging
 import java.io.Closeable
 import java.io.FileOutputStream
 import java.io.IOException

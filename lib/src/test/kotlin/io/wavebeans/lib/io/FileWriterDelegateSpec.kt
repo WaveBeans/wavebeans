@@ -3,11 +3,10 @@ package io.wavebeans.lib.io
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.prop
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.tests.eachIndexed
-import mu.KotlinLogging
 import java.io.File
-import java.net.URI
 import java.nio.file.Files
 
 class FileWriterDelegateSpec : DescribeSpec({

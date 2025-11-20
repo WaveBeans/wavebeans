@@ -1,8 +1,8 @@
 package io.wavebeans.metrics.collector
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.wavebeans.communicator.MetricApiClient
 import io.wavebeans.metrics.*
-import mu.KotlinLogging
 import java.io.Closeable
 import java.lang.Thread.sleep
 import java.util.concurrent.*

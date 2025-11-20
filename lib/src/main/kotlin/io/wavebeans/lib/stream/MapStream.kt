@@ -1,6 +1,7 @@
 package io.wavebeans.lib.stream
 
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.wavebeans.lib.*
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -8,7 +9,6 @@ import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.*
-import mu.KotlinLogging
 
 fun <T : Any, R : Any> BeanStream<T>.map(transform: (T) -> R): BeanStream<R> = this.map(Fn.wrap(transform))
 fun <T : Any, R : Any> BeanStream<T>.map(transform: Fn<T, R>): BeanStream<R> =

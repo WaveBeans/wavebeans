@@ -1,15 +1,14 @@
 package io.wavebeans.http
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.netty.handler.codec.http.FullHttpRequest
 import io.netty.handler.codec.http.HttpHeaderNames
-import mu.KotlinLogging
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.security.Principal
 import java.util.*
 import javax.servlet.*
 import javax.servlet.http.*
-import kotlin.NoSuchElementException
 
 fun <I : Sequence<T>, T> I.asEnumeration(): Enumeration<T> {
     val i = this.iterator()

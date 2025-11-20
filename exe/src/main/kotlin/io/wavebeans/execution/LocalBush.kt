@@ -1,11 +1,11 @@
 package io.wavebeans.execution
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.wavebeans.execution.config.ExecutionConfig
 import io.wavebeans.execution.medium.PodCallResult
 import io.wavebeans.execution.pod.Pod
 import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.execution.pod.TickPod
-import mu.KotlinLogging
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Future

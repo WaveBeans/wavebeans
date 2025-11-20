@@ -1,6 +1,6 @@
 package io.wavebeans.metrics
 
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlin.reflect.KFunction
 import kotlin.reflect.typeOf
 

@@ -1,9 +1,9 @@
 package io.wavebeans.lib.io
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.wavebeans.lib.BeanStream
 import io.wavebeans.lib.Managed
 import io.wavebeans.metrics.*
-import mu.KotlinLogging
 import kotlin.reflect.KClass
 import kotlin.reflect.jvm.jvmName
 

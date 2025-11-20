@@ -1,5 +1,6 @@
 package io.wavebeans.execution.distributed
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.wavebeans.communicator.FacilitatorApiClient
 import io.wavebeans.communicator.HttpCommunicatorClient
 import io.wavebeans.communicator.JobStatusResponse.JobStatus.FutureStatus.*
@@ -11,7 +12,6 @@ import io.wavebeans.lib.table.TableOutput
 import io.wavebeans.lib.table.TableOutputParams
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.modules.SerializersModule
-import mu.KotlinLogging
 import java.io.File
 import java.io.FileOutputStream
 import java.util.concurrent.*

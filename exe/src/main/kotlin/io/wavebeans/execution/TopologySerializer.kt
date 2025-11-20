@@ -1,8 +1,7 @@
 package io.wavebeans.execution
 
-import kotlinx.serialization.json.Json
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.modules.SerializersModule
-import mu.KotlinLogging
 
 object TopologySerializer {
 

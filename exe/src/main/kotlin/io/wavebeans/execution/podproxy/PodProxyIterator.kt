@@ -1,12 +1,12 @@
 package io.wavebeans.execution.podproxy
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.wavebeans.execution.BushCallerRepository
 import io.wavebeans.execution.PodDiscovery
 import io.wavebeans.execution.config.ExecutionConfig
 import io.wavebeans.execution.medium.Medium
 import io.wavebeans.execution.medium.value
 import io.wavebeans.execution.pod.PodKey
-import mu.KotlinLogging
 import java.util.concurrent.TimeUnit
 
 

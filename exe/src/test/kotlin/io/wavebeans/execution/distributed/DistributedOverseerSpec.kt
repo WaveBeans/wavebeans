@@ -5,6 +5,7 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
 import assertk.assertions.support.fail
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.execution.SingleThreadedOverseer
 import io.wavebeans.execution.eachIndexed
@@ -17,7 +18,6 @@ import io.wavebeans.lib.stream.window.hamming
 import io.wavebeans.lib.stream.window.window
 import io.wavebeans.tests.*
 import kotlinx.serialization.Serializable
-import mu.KotlinLogging
 import java.io.File
 import java.util.concurrent.Executors
 import kotlin.math.abs

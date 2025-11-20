@@ -4,7 +4,8 @@ import assertk.assertThat
 import assertk.assertions.isCloseTo
 import assertk.assertions.isEqualTo
 import assertk.assertions.prop
-import io.kotest.assertions.retry
+import io.github.oshai.kotlinlogging.KotlinLogging
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.lib.*
 import io.wavebeans.lib.BitDepth.*
 import io.wavebeans.lib.stream.map
@@ -12,14 +13,11 @@ import io.wavebeans.lib.stream.merge
 import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.stream.window.window
 import io.wavebeans.tests.eachIndexed
-import mu.KotlinLogging
-import io.kotest.core.spec.style.DescribeSpec
 import java.io.File
 import java.nio.file.Files
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAccessor
-import kotlin.time.Duration.Companion.seconds
 
 private const val sampleRate = 192000.0f
 private val log = KotlinLogging.logger { }

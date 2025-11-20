@@ -2,6 +2,7 @@ package io.wavebeans.cli
 
 import assertk.assertThat
 import assertk.assertions.*
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.cli.WaveBeansCli.Companion.name
 import io.wavebeans.cli.WaveBeansCli.Companion.options
@@ -11,7 +12,6 @@ import io.wavebeans.execution.distributed.Facilitator
 import io.wavebeans.lib.WaveBeansClassLoader
 import io.wavebeans.tests.createPorts
 import io.wavebeans.tests.findFreePort
-import mu.KotlinLogging
 import org.apache.commons.cli.DefaultParser
 import org.http4k.client.OkHttp
 import org.http4k.core.Method
@@ -259,6 +259,6 @@ private fun assertHttpHandling(cli: WaveBeansCli, out: ByteArrayOutputStream, po
         assertThat(result.get(5, SECONDS)).isNotEmpty()
         assertThat(String(out.toByteArray())).isNotEmpty()
     } finally {
-        pool.shutdownNow();
+        pool.shutdownNow()
     }
 }

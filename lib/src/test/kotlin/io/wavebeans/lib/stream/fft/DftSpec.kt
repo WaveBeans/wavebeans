@@ -5,6 +5,7 @@ import assertk.assertions.hasMessage
 import assertk.assertions.isFailure
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.lib.io.sine
 import io.wavebeans.lib.io.sineSweep
@@ -15,7 +16,6 @@ import io.wavebeans.lib.math.plus
 import io.wavebeans.lib.math.r
 import io.wavebeans.lib.stream.plus
 import io.wavebeans.tests.eachIndexed
-import mu.KotlinLogging
 
 object DftSpec : DescribeSpec({
 

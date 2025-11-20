@@ -1,7 +1,7 @@
 package io.wavebeans.execution
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.wavebeans.lib.io.StreamOutput
-import mu.KotlinLogging
 import java.lang.Thread.sleep
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors

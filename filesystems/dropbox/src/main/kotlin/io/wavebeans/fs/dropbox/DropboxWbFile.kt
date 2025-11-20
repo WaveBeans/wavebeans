@@ -3,8 +3,10 @@ package io.wavebeans.fs.dropbox
 import com.dropbox.core.v2.DbxClientV2
 import com.dropbox.core.v2.files.DeleteErrorException
 import com.dropbox.core.v2.files.GetMetadataErrorException
-import io.wavebeans.fs.core.*
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
+import io.wavebeans.fs.core.WbFile
+import io.wavebeans.fs.core.WbFileInputStream
+import io.wavebeans.fs.core.WbFileOutputStream
 import java.net.URI
 
 data class DropboxWbFile(

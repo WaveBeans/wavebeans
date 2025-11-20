@@ -2,9 +2,9 @@ package io.wavebeans.fs.dropbox
 
 import com.dropbox.core.DbxRequestConfig
 import com.dropbox.core.v2.DbxClientV2
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.wavebeans.fs.core.WbFile
 import io.wavebeans.fs.core.WbFileDriver
-import mu.KotlinLogging
 import java.net.URI
 import kotlin.random.Random
 

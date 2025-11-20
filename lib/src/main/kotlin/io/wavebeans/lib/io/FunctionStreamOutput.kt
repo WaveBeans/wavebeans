@@ -1,5 +1,6 @@
 package io.wavebeans.lib.io
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.wavebeans.lib.*
 import io.wavebeans.metrics.clazzTag
 import io.wavebeans.metrics.samplesProcessedOnOutputMetric
@@ -9,12 +10,7 @@ import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
-import kotlinx.serialization.encoding.CompositeDecoder
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.encoding.decodeStructure
-import kotlinx.serialization.encoding.encodeStructure
-import mu.KotlinLogging
+import kotlinx.serialization.encoding.*
 import kotlin.reflect.KClass
 import kotlin.reflect.jvm.jvmName
 

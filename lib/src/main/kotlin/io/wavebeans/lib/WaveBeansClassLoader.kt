@@ -1,6 +1,6 @@
 package io.wavebeans.lib
 
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 
 object WaveBeansClassLoader {
 
