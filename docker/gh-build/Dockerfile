@@ -1,13 +1,15 @@
 FROM eclipse-temurin:11-jdk
 
-MAINTAINER WaveBeans
-
+LABEL maintainer="WaveBeans"
 LABEL "com.github.actions.name"="JDK 11 with Kotlin 2.2.20"
 LABEL "com.github.actions.description"="Can run java app and uses Kotlin SDK"
+
+RUN apt-get update &&\
+    apt-get install unzip
 
 RUN cd /usr/lib && \
     wget -q https://github.com/JetBrains/kotlin/releases/download/v2.2.20/kotlin-compiler-2.2.20.zip && \
     unzip kotlin-compiler-*.zip && \
     rm kotlin-compiler-*.zip
 
-ENV PATH $PATH:/usr/lib/kotlinc/bin
+ENV PATH=$PATH:/usr/lib/kotlinc/bin
