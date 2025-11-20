@@ -18,7 +18,8 @@ class DropboxWbFileSpec : DescribeSpec({
     val clientIdentifier = System.getenv("DBX_TEST_CLIENT_ID")
     val accessToken = System.getenv("DBX_TEST_ACCESS_TOKEN")
 
-    describe("Using generated access token")
+    // TODO that requires auth token refresh flow implementation
+    xdescribe("Using generated access token")
         .config(enabledIf = { !clientIdentifier.isNullOrBlank() && !accessToken.isNullOrBlank() }) {
 
             beforeTest {
