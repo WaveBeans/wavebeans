@@ -8,7 +8,8 @@ private val log = KotlinLogging.logger { }
 fun kotlincCmd(): String {
     val kotlinc = "kotlinc"
     val kotlinHome = System.getenv("KOTLIN_HOME")
-        ?.takeIf { File("$it/bin/$kotlinc").exists() }
+        ?.let { if (!it.endsWith("/bin/") || !it.endsWith("/bin")) "$it/bin" else it }
+        ?.takeIf { File("$it/$kotlinc").exists() }
         ?: System.getenv("PATH")
             .split(":")
             .firstOrNull { File("$it/$kotlinc").exists() }
@@ -20,7 +21,7 @@ fun kotlincCmd(): String {
     log.info { "Using kotlinc from $kotlinHome" }
     log.debug { "PATH env=${System.getenv("PATH")}" }
     log.debug { "KOTLIN_HOME env=${System.getenv("KOTLIN_HOME")}" }
-    return "$kotlinHome/bin/$kotlinc"
+    return "$kotlinHome/$kotlinc"
 }
 
 fun compileCode(codeFiles: Map<String, String>): File {
