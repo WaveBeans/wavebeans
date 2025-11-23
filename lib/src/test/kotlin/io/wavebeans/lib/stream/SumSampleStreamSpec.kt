@@ -3,15 +3,13 @@ package io.wavebeans.lib.stream
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotSameAs
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.lib.BitDepth
 import io.wavebeans.lib.listOfShortsAsInts
-import io.wavebeans.lib.listOfShortsAsInts
 import io.wavebeans.lib.stream
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
 import java.util.concurrent.TimeUnit.MILLISECONDS
 
-object SumSampleStreamSpec : Spek({
+object SumSampleStreamSpec : DescribeSpec({
 
     describe("Source stream 50 samples length of 50 Hz of 8 bit (1 sec)") {
         val sourceSampleStream = (0..49).stream(50.0f, BitDepth.BIT_16)

@@ -4,16 +4,12 @@ import com.uchuhimo.konf.Config
 import com.uchuhimo.konf.Item
 import com.uchuhimo.konf.source.Source
 import com.uchuhimo.konf.source.hocon
-import io.wavebeans.metrics.MetricConnector
-import io.wavebeans.metrics.MetricService
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.PrintStream
 import java.util.concurrent.Callable
 import java.util.concurrent.CountDownLatch
 import java.util.jar.JarFile
 import java.util.jar.Manifest
-import kotlin.reflect.KFunction
-import kotlin.reflect.typeOf
 import kotlin.system.exitProcess
 
 fun main(args: Array<String>) {
@@ -58,7 +54,7 @@ class FacilitatorCli(
         }
 
         lateinit var configFilePath: String
-        when (args[0].toLowerCase()) {
+        when (args[0].lowercase()) {
             configDescribeOption -> {
                 printWriter.println("""
                             |The following config attributes of `facilitatorConfig` are supported:

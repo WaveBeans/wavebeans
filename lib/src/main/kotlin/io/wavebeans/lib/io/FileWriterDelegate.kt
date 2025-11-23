@@ -1,9 +1,9 @@
 package io.wavebeans.lib.io
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.wavebeans.fs.core.WbFile
 import io.wavebeans.fs.core.WbFileDriver
 import io.wavebeans.fs.core.WbFileOutputStream
-import mu.KotlinLogging
 import java.io.BufferedOutputStream
 import java.io.File
 import java.io.IOException
@@ -165,5 +165,9 @@ fun <A : Any> suffixedFileWriterDelegate(uri: String, suffix: (A?) -> String): F
             val u = URI(uri)
             val f = File(u.path)
             val newFilePath = f.parent + File.separatorChar + f.nameWithoutExtension + suffix(argument) + "." + f.extension
-            URI(u.scheme + "://" + newFilePath)
+            if (u.scheme == "file") {
+                File(newFilePath).toURI()
+            } else {
+                URI(u.scheme, u.authority, newFilePath, null, null)
+            }
         })

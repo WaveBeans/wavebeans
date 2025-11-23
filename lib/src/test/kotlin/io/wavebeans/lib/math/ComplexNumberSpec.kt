@@ -5,10 +5,9 @@ import assertk.assertions.isCloseTo
 import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThan
 import assertk.assertions.isLessThan
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
+import io.kotest.core.spec.style.DescribeSpec
 
-object ComplexNumberSpec : Spek({
+class ComplexNumberSpec : DescribeSpec({
     describe("Given complex number `3 + 4i`") {
         val c = complex(3.0, 4.0)
 

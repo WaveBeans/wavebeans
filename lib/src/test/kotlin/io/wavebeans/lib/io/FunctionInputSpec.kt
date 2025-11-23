@@ -4,10 +4,9 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import io.wavebeans.lib.asInt
 import io.wavebeans.lib.sampleOf
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
+import io.kotest.core.spec.style.DescribeSpec
 
-object FunctionInputSpec : Spek({
+class FunctionInputSpec : DescribeSpec({
     describe("Sequence of integers") {
 
         it("should generate 10 integers if it returns only that") {

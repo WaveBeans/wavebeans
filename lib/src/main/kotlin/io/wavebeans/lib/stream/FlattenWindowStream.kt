@@ -1,18 +1,13 @@
 package io.wavebeans.lib.stream
 
 import io.wavebeans.lib.*
-import io.wavebeans.lib.io.WavFileOutputParams
 import io.wavebeans.lib.stream.window.Window
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
-import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
-import kotlinx.serialization.encoding.CompositeDecoder
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
-import kotlin.reflect.jvm.jvmName
+import kotlinx.serialization.encoding.*
 
 /**
  * Flattens the windowed stream of any type [T]. Flatten is a process that extracts a single stream of all elements to
@@ -30,16 +25,16 @@ import kotlin.reflect.jvm.jvmName
  */
 @JvmName("flattenWindow")
 inline fun <reified T : Any> BeanStream<Window<T>>.flatten(overlapResolve: Fn<Pair<T, T>, T>? = null): BeanStream<T> =
-        FlattenWindowStream(
-                this,
-                FlattenWindowStreamsParams(
-                        overlapResolve ?: when (T::class) {
-                            Sample::class -> Fn.wrap { (a, b) -> (a as Sample + b as Sample) as T }
-                            SampleVector::class -> Fn.wrap { (a, b) -> (a as SampleVector + b as SampleVector) as T }
-                            else -> Fn.wrap { throw IllegalStateException("Overlap resolve function should be specified") }
-                        }
-                )
+    FlattenWindowStream(
+        this,
+        FlattenWindowStreamsParams(
+            overlapResolve ?: when (T::class) {
+                Sample::class -> Fn.wrap { (a, b) -> (a as Sample + b as Sample) as T }
+                SampleVector::class -> Fn.wrap { (a, b) -> (a as SampleVector + b as SampleVector) as T }
+                else -> Fn.wrap { throw IllegalStateException("Overlap resolve function should be specified") }
+            }
         )
+    )
 
 /**
  * Flattens the windowed stream of any type [T]. Flatten is a process that extracts a single stream of all elements to
@@ -53,7 +48,7 @@ inline fun <reified T : Any> BeanStream<Window<T>>.flatten(overlapResolve: Fn<Pa
  */
 @JvmName("flattenWindow")
 inline fun <reified T : Any> BeanStream<Window<T>>.flatten(noinline overlapResolve: (Pair<T, T>) -> T): BeanStream<T> =
-        this.flatten(Fn.wrap(overlapResolve))
+    this.flatten(Fn.wrap(overlapResolve))
 
 /**
  * Parameters to use with [FlattenWindowStream].
@@ -62,40 +57,42 @@ inline fun <reified T : Any> BeanStream<Window<T>>.flatten(noinline overlapResol
  */
 @Serializable(with = FlattenWindowStreamsParamsSerializer::class)
 class FlattenWindowStreamsParams<T : Any>(
-        /**
-         * The function as [Fn] that resolves the conflict of overlapping elements while flattening the windows with step < size.
-         */
-        val overlapResolve: Fn<Pair<T, T>, T>
+    /**
+     * The function as [Fn] that resolves the conflict of overlapping elements while flattening the windows with step < size.
+     */
+    val overlapResolve: Fn<Pair<T, T>, T>
 ) : BeanParams
 
 /**
  * Serializer for [FlattenWindowStreamsParams].
  */
 object FlattenWindowStreamsParamsSerializer : KSerializer<FlattenWindowStreamsParams<*>> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(FlattenWindowStreamsParams::class.jvmName) {
-        element("overlapResolve", FnSerializer.descriptor)
-    }
+    override val descriptor: SerialDescriptor =
+        buildClassSerialDescriptor(FlattenWindowStreamsParams::class.qualifiedName!!) {
+            element("overlapResolve", FnSerializer.descriptor)
+        }
 
     override fun deserialize(decoder: Decoder): FlattenWindowStreamsParams<*> {
-        val dec = decoder.beginStructure(descriptor)
-        var overlapResolve: Fn<*, *>? = null
-        loop@ while (true) {
-            when (val i = dec.decodeElementIndex(descriptor)) {
-                CompositeDecoder.DECODE_DONE -> break@loop
-                0 -> overlapResolve = dec.decodeSerializableElement(descriptor, i, FnSerializer)
-                else -> throw SerializationException("Unknown index $i")
+        return decoder.decodeStructure(descriptor) {
+            lateinit var overlapResolve: Fn<*, *>
+            loop@ while (true) {
+                when (val i = decodeElementIndex(descriptor)) {
+                    CompositeDecoder.DECODE_DONE -> break@loop
+                    0 -> overlapResolve = decodeSerializableElement(descriptor, i, FnSerializer)
+                    else -> throw SerializationException("Unknown index $i")
+                }
             }
+            @Suppress("UNCHECKED_CAST")
+            FlattenWindowStreamsParams(
+                overlapResolve as Fn<Pair<Any, Any>, Any>
+            )
         }
-        @Suppress("UNCHECKED_CAST")
-        return FlattenWindowStreamsParams(
-                overlapResolve!! as Fn<Pair<Any, Any>, Any>
-        )
     }
 
     override fun serialize(encoder: Encoder, value: FlattenWindowStreamsParams<*>) {
-        val structure = encoder.beginStructure(descriptor)
-        structure.encodeSerializableElement(descriptor, 0, FnSerializer, value.overlapResolve)
-        structure.endStructure(descriptor)
+        encoder.encodeStructure(descriptor) {
+            encodeSerializableElement(descriptor, 0, FnSerializer, value.overlapResolve)
+        }
     }
 
 }
@@ -111,15 +108,15 @@ object FlattenWindowStreamsParamsSerializer : KSerializer<FlattenWindowStreamsPa
  * @return the flattened stream of [T].
  */
 class FlattenWindowStream<T : Any>(
-        override val input: BeanStream<Window<T>>,
-        override val parameters: FlattenWindowStreamsParams<T>
+    override val input: BeanStream<Window<T>>,
+    override val parameters: FlattenWindowStreamsParams<T>
 ) : AbstractOperationBeanStream<Window<T>, T>(input), BeanStream<T>, AlterBean<Window<T>, T>, SinglePartitionBean {
 
     private class WindowEl<T : Any>(
-            val window: Window<T>,
-            val size: Int = window.size,
-            val step: Int = window.step,
-            var index: Int = 0,
+        val window: Window<T>,
+        val size: Int = window.size,
+        val step: Int = window.step,
+        var index: Int = 0,
     ) {
         operator fun get(index: Int): T {
             return if (index >= 0 && index < window.elements.size)

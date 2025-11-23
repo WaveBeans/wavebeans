@@ -1,6 +1,6 @@
 package io.wavebeans.metrics
 
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlin.reflect.KFunction
 import kotlin.reflect.typeOf
 
@@ -76,9 +76,9 @@ data class MetricConnectorDescriptor(
                 typeOf<Long>() -> parameterValueProto.toLong()
                 typeOf<Long?>() -> parameterValueProto.toLongOrNull()
                 typeOf<String>() -> parameterValueProto
-                typeOf<String?>() -> if (parameterValueProto.toLowerCase() == "null") null else parameterValueProto
+                typeOf<String?>() -> if (parameterValueProto.lowercase() == "null") null else parameterValueProto
                 typeOf<Boolean>() -> parameterValueProto.toBoolean()
-                typeOf<Boolean?>() -> if (parameterValueProto.toLowerCase() == "null") null else parameterValueProto.toBoolean()
+                typeOf<Boolean?>() -> if (parameterValueProto.lowercase() == "null") null else parameterValueProto.toBoolean()
                 typeOf<Float>() -> parameterValueProto.toFloat()
                 typeOf<Float?>() -> parameterValueProto.toFloatOrNull()
                 typeOf<Double>() -> parameterValueProto.toDouble()

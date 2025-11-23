@@ -5,6 +5,13 @@ import kotlinx.serialization.Serializable
 import java.util.concurrent.TimeUnit
 import kotlin.properties.Delegates
 
+/**
+ * Trims the current `BeanStream` to a specified duration, resulting in a `FiniteStream`.
+ *
+ * @param length the duration to trim the stream to, expressed in the specified time unit.
+ * @param timeUnit the time unit for the given length, defaults to `TimeUnit.MILLISECONDS`.
+ * @return a `FiniteStream` limited to the specified duration.
+ */
 fun <T:Any> BeanStream<T>.trim(length: Long, timeUnit: TimeUnit = TimeUnit.MILLISECONDS): FiniteStream<T> =
         TrimmedFiniteStream(this, TrimmedFiniteSampleStreamParams(length, timeUnit))
 

@@ -7,3 +7,4 @@
 ds
 .DS_Store
 logs/
+.kotlin/

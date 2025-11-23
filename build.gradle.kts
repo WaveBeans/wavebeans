@@ -1,10 +1,10 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.gradle.kotlin.dsl.compileKotlin
+import org.gradle.kotlin.dsl.kotlin
+import org.gradle.kotlin.dsl.support.kotlinCompilerOptions
 
 plugins {
-    val kotlinVersion: String by System.getProperties()
-
-    kotlin("jvm") version kotlinVersion
-    id("org.gradle.test-retry") version "1.2.0"
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.retry)
 
     `java-library`
     `maven-publish`
@@ -21,10 +21,11 @@ allprojects {
         mavenCentral()
     }
 
-    tasks.withType<KotlinCompile>().all {
-        kotlinOptions.jvmTarget = "11"
-        kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlin.ExperimentalStdlibApi"
-        kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlinx.serialization.ExperimentalSerializationApi"
+    kotlin {
+        compilerOptions {
+            freeCompilerArgs.add("-Xlambdas=class")
+        }
+        jvmToolchain(11)
     }
 }
 
@@ -32,24 +33,17 @@ subprojects {
 
     group = "io.wavebeans"
 
-    val spekVersion: String by System.getProperties()
-    val kotestVersion: String by System.getProperties()
-
     dependencies {
-        implementation(kotlin("stdlib-jdk8"))
-        implementation(kotlin("reflect"))
-        implementation("io.github.microutils:kotlin-logging:1.7.7")
+        implementation(rootProject.libs.kotlin.stdlib.jdk8)
+        implementation(rootProject.libs.kotlin.reflect)
+        implementation(rootProject.libs.kotlin.logging)
 
         testImplementation(project(":tests"))
-        testImplementation("ch.qos.logback:logback-classic:1.2.3")
+        testImplementation(rootProject.libs.logback.classic)
 
-        // spek usage is deprecated in favor of kotest
-        testImplementation("org.spekframework.spek2:spek-dsl-jvm:$spekVersion")
-        testRuntimeOnly("org.spekframework.spek2:spek-runner-junit5:$spekVersion")
-
-        testImplementation("io.kotest:kotest-runner-junit5:$kotestVersion")
-        testImplementation("com.willowtreeapps.assertk:assertk-jvm:0.25")
-        testImplementation("org.mockito.kotlin:mockito-kotlin:4.1.0")
+        testImplementation(rootProject.libs.kotest.runner.junit5)
+        testImplementation(rootProject.libs.assertk)
+        testImplementation(rootProject.libs.mockito.kotlin)
     }
 
     java {
@@ -58,16 +52,15 @@ subprojects {
     }
 
     tasks.test {
-        systemProperty("SPEK_TIMEOUT", 0)
         useJUnitPlatform {
-            includeEngines("spek2")
             includeEngines("kotest")
         }
         maxHeapSize = "2g"
         // that attempts to fix flaky tests once and for all
         retry {
             maxRetries.set(3)
-            maxFailures.set(10)
+            maxFailures.set(20)
+            failOnPassedAfterRetry.set(true)
         }
     }
 

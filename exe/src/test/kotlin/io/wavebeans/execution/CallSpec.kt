@@ -2,20 +2,16 @@ package io.wavebeans.execution
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
+import io.kotest.core.spec.style.DescribeSpec
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.*
-import kotlin.reflect.KType
-import kotlin.reflect.full.starProjectedType
 import kotlin.reflect.typeOf
 
 
-@Suppress("UNCHECKED_CAST")
 inline fun <reified T : Any> call(value: String): T =
         Call.parseRequest("method?param=$value").param("param", typeOf<T>()) as T
 
-object CallSpec : Spek({
+class CallSpec : DescribeSpec({
 
     describe("valid request parse") {
 

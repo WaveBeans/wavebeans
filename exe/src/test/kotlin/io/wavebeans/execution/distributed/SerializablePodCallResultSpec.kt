@@ -3,6 +3,7 @@ package io.wavebeans.execution.distributed
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.execution.Call
 import io.wavebeans.execution.medium.PodCallResult
 import io.wavebeans.execution.medium.value
@@ -11,11 +12,8 @@ import io.wavebeans.lib.sampleOf
 import io.wavebeans.lib.stream.window.Window
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.protobuf.ProtoNumber
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.lifecycle.CachingMode.SCOPE
-import org.spekframework.spek2.style.specification.describe
 
-object SerializablePodCallResultSpec : Spek({
+class SerializablePodCallResultSpec : DescribeSpec({
 
     val builder = SerializablePodCallResultBuilder()
 
@@ -49,7 +47,7 @@ object SerializablePodCallResultSpec : Spek({
 
             val clazz = Clazz("1", 2, 3.0, listOf(true, false))
 
-            val result by memoized(SCOPE) { result(clazz) }
+            val result by lazy { result(clazz) }
 
             it("should have non empty obj") { assertThat(result.obj).isNotNull() }
             it("should have empty exception") { assertThat(result.exception).isNull() }
@@ -59,35 +57,35 @@ object SerializablePodCallResultSpec : Spek({
 
         describe("Primitives") {
             describe("Long") {
-                val result by memoized(SCOPE) { result(123L) }
+                val result by lazy { result(123L) }
 
                 it("should have non empty obj") { assertThat(result.obj).isNotNull() }
                 it("should have empty exception") { assertThat(result.exception).isNull() }
                 it("should return valid value") { assertThat(result.value<Long>()).isEqualTo(123L) }
             }
             describe("Int") {
-                val result by memoized(SCOPE) { result(123) }
+                val result by lazy { result(123) }
 
                 it("should have non empty obj") { assertThat(result.obj).isNotNull() }
                 it("should have empty exception") { assertThat(result.exception).isNull() }
                 it("should return valid value") { assertThat(result.value<Int>()).isEqualTo(123) }
             }
             describe("Double") {
-                val result by memoized(SCOPE) { result(123.0) }
+                val result by lazy { result(123.0) }
 
                 it("should have non empty obj") { assertThat(result.obj).isNotNull() }
                 it("should have empty exception") { assertThat(result.exception).isNull() }
                 it("should return valid value") { assertThat(result.value<Long>()).isEqualTo(123.0) }
             }
             describe("Float") {
-                val result by memoized(SCOPE) { result(123.0f) }
+                val result by lazy { result(123.0f) }
 
                 it("should have non empty obj") { assertThat(result.obj).isNotNull() }
                 it("should have empty exception") { assertThat(result.exception).isNull() }
                 it("should return valid value") { assertThat(result.value<Long>()).isEqualTo(123.0f) }
             }
             describe("Boolean") {
-                val result by memoized(SCOPE) { result(true) }
+                val result by lazy { result(true) }
 
                 it("should have non empty obj") { assertThat(result.obj).isNotNull() }
                 it("should have empty exception") { assertThat(result.exception).isNull() }
@@ -97,7 +95,7 @@ object SerializablePodCallResultSpec : Spek({
 
         describe("Sample") {
             val value = sampleOf(1.0)
-            val result by memoized(SCOPE) { result(value) }
+            val result by lazy { result(value) }
 
             it("should have non empty obj") { assertThat(result.obj).isNotNull() }
             it("should have empty exception") { assertThat(result.exception).isNull() }
@@ -105,14 +103,14 @@ object SerializablePodCallResultSpec : Spek({
         }
 
         describe("Unit") {
-            val result by memoized(SCOPE) { result(Unit) }
+            val result by lazy { result(Unit) }
 
-            it("should have non empty obj") { assertThat(result.obj).isEqualTo(kotlin.Unit) }
+            it("should have non empty obj") { assertThat(result.obj).isEqualTo(Unit) }
             it("should have empty exception") { assertThat(result.exception).isNull() }
         }
 
         describe("null") {
-            val result by memoized(SCOPE) { result(null) }
+            val result by lazy { result(null) }
 
             it("should have non empty obj") { assertThat(result.obj).isNull() }
             it("should have empty exception") { assertThat(result.exception).isNull() }
@@ -120,7 +118,7 @@ object SerializablePodCallResultSpec : Spek({
 
         describe("Primitive arrays") {
             describe("double array") {
-                val result by memoized(SCOPE) { result(DoubleArray(65536) { 1.0 }) }
+                val result by lazy { result(DoubleArray(65536) { 1.0 }) }
 
                 it("should have non empty obj") { assertThat(result.obj).isNotNull() }
                 it("should have empty exception") { assertThat(result.exception).isNull() }
@@ -128,7 +126,7 @@ object SerializablePodCallResultSpec : Spek({
             }
 
             describe("byte array") {
-                val result by memoized(SCOPE) { result(ByteArray(65536) { 1.toByte() }) }
+                val result by lazy { result(ByteArray(65536) { 1.toByte() }) }
 
                 it("should have non empty obj") { assertThat(result.obj).isNotNull() }
                 it("should have empty exception") { assertThat(result.exception).isNull() }
@@ -136,7 +134,7 @@ object SerializablePodCallResultSpec : Spek({
             }
 
             describe("int array") {
-                val result by memoized(SCOPE) { result(IntArray(65536) { 1 }) }
+                val result by lazy { result(IntArray(65536) { 1 }) }
 
                 it("should have non empty obj") { assertThat(result.obj).isNotNull() }
                 it("should have empty exception") { assertThat(result.exception).isNull() }
@@ -144,7 +142,7 @@ object SerializablePodCallResultSpec : Spek({
             }
 
             describe("float array") {
-                val result by memoized(SCOPE) { result(FloatArray(65536) { 1.0f }) }
+                val result by lazy { result(FloatArray(65536) { 1.0f }) }
 
                 it("should have non empty obj") { assertThat(result.obj).isNotNull() }
                 it("should have empty exception") { assertThat(result.exception).isNull() }
@@ -152,7 +150,7 @@ object SerializablePodCallResultSpec : Spek({
             }
 
             describe("long array") {
-                val result by memoized(SCOPE) { result(LongArray(65536) { 1L }) }
+                val result by lazy { result(LongArray(65536) { 1L }) }
 
                 it("should have non empty obj") { assertThat(result.obj).isNotNull() }
                 it("should have empty exception") { assertThat(result.exception).isNull() }
@@ -162,7 +160,7 @@ object SerializablePodCallResultSpec : Spek({
 
         describe("list of samples") {
             val sampleList = listOf(sampleOf(1), sampleOf(2))
-            val result by memoized(SCOPE) { result(sampleList) }
+            val result by lazy { result(sampleList) }
 
             it("should have non empty obj") { assertThat(result.obj).isNotNull() }
             it("should have empty exception") { assertThat(result.exception).isNull() }
@@ -196,7 +194,7 @@ object SerializablePodCallResultSpec : Spek({
 
         describe("empty list of samples") {
             val sampleList = listOf<Sample>()
-            val result by memoized(SCOPE) { result(sampleList) }
+            val result by lazy { result(sampleList) }
 
             it("should have non empty obj") { assertThat(result.obj).isNotNull() }
             it("should have empty exception") { assertThat(result.exception).isNull() }
@@ -216,7 +214,7 @@ object SerializablePodCallResultSpec : Spek({
                     listOf(Obj(6))
             )
 
-            val result by memoized(SCOPE) { result(list) }
+            val result by lazy { result(list) }
 
             it("should have non empty obj") { assertThat(result.obj).isNotNull() }
             it("should have empty exception") { assertThat(result.exception).isNull() }
@@ -227,7 +225,7 @@ object SerializablePodCallResultSpec : Spek({
 
             val obj = SerializableMediumBuilder().from(listOf(sampleOf(1.0), sampleOf(1.1), sampleOf(-0.1)))
 
-            val result by memoized(SCOPE) { result(obj) }
+            val result by lazy { result(obj) }
 
             it("should have non empty obj") { assertThat(result.obj).isNotNull() }
             it("should have empty exception") { assertThat(result.exception).isNull() }
@@ -236,9 +234,9 @@ object SerializablePodCallResultSpec : Spek({
 
         describe("windows") {
 
-            val obj = Window<Int>(6, 2, listOf(1, 2, 3, 4, 5, 6)) { 0 }
+            val obj = Window(6, 2, listOf(1, 2, 3, 4, 5, 6)) { 0 }
 
-            val result by memoized(SCOPE) { result(obj) }
+            val result by lazy { result(obj) }
 
             it("should have non empty obj") { assertThat(result.obj).isNotNull() }
             it("should have empty exception") { assertThat(result.exception).isNull() }
@@ -249,7 +247,7 @@ object SerializablePodCallResultSpec : Spek({
     describe("Wrapping errors") {
 
         describe("Wrapping Exception") {
-            val result by memoized(SCOPE) { result(IllegalStateException("test message")) }
+            val result by lazy { result(IllegalStateException("test message")) }
 
             it("should be an exception") {
                 assertThat(result.exception)
@@ -264,7 +262,7 @@ object SerializablePodCallResultSpec : Spek({
         }
 
         describe("Wrapping Exception with cause") {
-            val result by memoized(SCOPE) { result(IllegalStateException("test message", IllegalArgumentException("some cause"))) }
+            val result by lazy { result(IllegalStateException("test message", IllegalArgumentException("some cause"))) }
 
             it("should be an exception") {
                 assertThat(result.exception)
@@ -284,7 +282,7 @@ object SerializablePodCallResultSpec : Spek({
         }
 
         describe("Wrapping Error") {
-            val result by memoized(SCOPE) { result(NotImplementedError("test message")) }
+            val result by lazy { result(NotImplementedError("test message")) }
 
             it("should be an error") {
                 assertThat(result.exception)

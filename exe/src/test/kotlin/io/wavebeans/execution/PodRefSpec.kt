@@ -7,25 +7,22 @@ import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.prop
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.execution.pod.Pod
 import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.execution.pod.SplittingPod
 import io.wavebeans.execution.pod.StreamingPod
-import io.wavebeans.execution.podproxy.*
+import io.wavebeans.execution.podproxy.MergingPodProxy
+import io.wavebeans.execution.podproxy.PodProxy
+import io.wavebeans.execution.podproxy.StreamingPodProxy
 import io.wavebeans.lib.*
 import io.wavebeans.lib.io.sine
 import io.wavebeans.lib.stream.div
 import io.wavebeans.lib.stream.trim
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
-import java.util.concurrent.TimeUnit
-import kotlin.reflect.KTypeProjection
 import kotlin.reflect.KTypeProjection.Companion.STAR
-import kotlin.reflect.KTypeProjection.Companion.covariant
 import kotlin.reflect.full.createType
-import kotlin.reflect.typeOf
 
-class PodRefSpec : Spek({
+class PodRefSpec : DescribeSpec({
 
     describe("One bean per pod") {
 

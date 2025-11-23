@@ -1,12 +1,12 @@
 package io.wavebeans.http
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.javalin.Javalin
 import io.netty.channel.ChannelHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelInboundHandlerAdapter
 import io.netty.channel.socket.SocketChannel
 import io.netty.handler.codec.http.*
-import mu.KotlinLogging
 import javax.servlet.http.HttpServlet
 
 @ChannelHandler.Sharable

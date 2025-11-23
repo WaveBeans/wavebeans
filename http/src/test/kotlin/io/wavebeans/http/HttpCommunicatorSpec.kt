@@ -3,17 +3,15 @@ package io.wavebeans.http
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.execution.distributed.RemoteTimeseriesTableDriver
 import io.wavebeans.lib.table.TableRegistryImpl
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.lifecycle.CachingMode.SCOPE
-import org.spekframework.spek2.style.specification.describe
 
-object HttpCommunicatorSpec : Spek({
+class HttpCommunicatorSpec : DescribeSpec({
     describe("Registering table") {
-        val tableRegistry by memoized(SCOPE) { TableRegistryImpl() }
+        val tableRegistry by lazy { TableRegistryImpl() }
 
-        val service by memoized(SCOPE) { HttpCommunicatorService(tableRegistry) }
+        val service by lazy { HttpCommunicatorService(tableRegistry) }
 
         it("should register remote table driver") {
             val tableName = "myTable"

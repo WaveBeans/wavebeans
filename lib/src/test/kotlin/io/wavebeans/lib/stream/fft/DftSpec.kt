@@ -5,7 +5,8 @@ import assertk.assertions.hasMessage
 import assertk.assertions.isFailure
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
-import io.wavebeans.tests.eachIndexed
+import io.github.oshai.kotlinlogging.KotlinLogging
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.lib.io.sine
 import io.wavebeans.lib.io.sineSweep
 import io.wavebeans.lib.isCloseTo
@@ -14,11 +15,9 @@ import io.wavebeans.lib.math.minus
 import io.wavebeans.lib.math.plus
 import io.wavebeans.lib.math.r
 import io.wavebeans.lib.stream.plus
-import mu.KotlinLogging
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
+import io.wavebeans.tests.eachIndexed
 
-object DftSpec : Spek({
+object DftSpec : DescribeSpec({
 
     val log = KotlinLogging.logger {}
 

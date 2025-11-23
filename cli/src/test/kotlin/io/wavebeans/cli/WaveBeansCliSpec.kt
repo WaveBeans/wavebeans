@@ -2,6 +2,8 @@ package io.wavebeans.cli
 
 import assertk.assertThat
 import assertk.assertions.*
+import io.github.oshai.kotlinlogging.KotlinLogging
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.cli.WaveBeansCli.Companion.name
 import io.wavebeans.cli.WaveBeansCli.Companion.options
 import io.wavebeans.cli.script.RunMode
@@ -10,16 +12,12 @@ import io.wavebeans.execution.distributed.Facilitator
 import io.wavebeans.lib.WaveBeansClassLoader
 import io.wavebeans.tests.createPorts
 import io.wavebeans.tests.findFreePort
-import mu.KotlinLogging
 import org.apache.commons.cli.DefaultParser
 import org.http4k.client.OkHttp
 import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.Suite
-import org.spekframework.spek2.style.specification.describe
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.PrintWriter
@@ -32,9 +30,9 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.TimeUnit.SECONDS
 
-object WaveBeansCliSpec : Spek({
+class WaveBeansCliSpec : DescribeSpec({
 
-    beforeEachTest {
+    beforeTest {
         WaveBeansClassLoader.reset()
     }
 
@@ -53,9 +51,11 @@ object WaveBeansCliSpec : Spek({
                 printer = PrintWriter(out)
             )
 
-            it("should execute") { assertThat(cli.tryScriptExecution()).isTrue() }
-            it("should generate non empty file") { assertThat(file.readText()).isNotEmpty() }
-            it("should output something to console") { assertThat(String(out.toByteArray())).isNotEmpty() }
+            it("should execute") {
+                assertThat(cli.tryScriptExecution()).isTrue()
+                assertThat(file.readText()).isNotEmpty()
+                assertThat(String(out.toByteArray())).isNotEmpty()
+            }
         }
 
         describe("Short-living from file") {
@@ -74,9 +74,9 @@ object WaveBeansCliSpec : Spek({
                 printer = PrintWriter(out)
             )
 
-            it("should execute") { assertThat(cli.tryScriptExecution()).isTrue() }
-            it("should generate non empty file") { assertThat(file.readText()).isNotEmpty() }
-            it("should output time to console") {
+            it("should execute") {
+                assertThat(cli.tryScriptExecution()).isTrue()
+                assertThat(file.readText()).isNotEmpty()
                 assertThat(String(out.toByteArray())).matches(Regex("\\d+\\.\\d+sec\\s*"))
             }
         }
@@ -100,17 +100,16 @@ object WaveBeansCliSpec : Spek({
                 printer = PrintWriter(out)
             )
 
-            it("should execute") { assertThat(cli.tryScriptExecution()).isTrue() }
-            it("should generate non empty file") { assertThat(file.readLines()).size().isGreaterThan(1) }
-            it("should output time to console") {
+            it("should execute") {
+                assertThat(cli.tryScriptExecution()).isTrue()
+                assertThat(file.readLines()).size().isGreaterThan(1)
                 assertThat(String(out.toByteArray())).matches(Regex("\\d+\\.\\d+sec\\s*"))
             }
         }
 
         describe("Short-living from executed on distributed environment") {
-
             val portRange = createPorts(2)
-            val gardeners = portRange.map {
+            val facilitators = portRange.map {
                 Facilitator(
                     communicatorPort = it,
                     threadsNumber = 2,
@@ -118,39 +117,36 @@ object WaveBeansCliSpec : Spek({
                     podDiscovery = object : PodDiscovery() {}
                 )
             }
+            facilitators.forEach { it.start() }
 
-            beforeGroup {
-                gardeners.forEach { it.start() }
-            }
-
-            afterGroup {
-                gardeners.forEach {
+            afterTest {
+                facilitators.forEach {
                     it.terminate()
                     it.close()
                 }
             }
 
-            val scriptFile = File.createTempFile("test", "kts").also { it.deleteOnExit() }
-            val file = File.createTempFile("test", "csv").also { it.deleteOnExit() }
-            scriptFile.writeBytes("440.sine().map{ it }.trim(1).toCsv(\"file://${file.absolutePath}\").out()".toByteArray())
-            val out = ByteArrayOutputStream()
-            val cli = WaveBeansCli(
-                cli = DefaultParser().parse(
-                    options, arrayOf(
-                        name,
-                        "--execute-file", scriptFile.absolutePath,
-                        "--time",
-                        "--run-mode", RunMode.DISTRIBUTED.id,
-                        "--partitions", "2",
-                        "--facilitators", portRange.map { "127.0.0.1:$it" }.joinToString(",")
-                    )
-                ),
-                printer = PrintWriter(out)
-            )
+            it("should execute") {
+                val scriptFile = File.createTempFile("test", "kts").also { it.deleteOnExit() }
+                val file = File.createTempFile("test", "csv").also { it.deleteOnExit() }
+                scriptFile.writeBytes("440.sine().map{ it }.trim(1).toCsv(\"file://${file.absolutePath}\").out()".toByteArray())
+                val out = ByteArrayOutputStream()
+                val cli = WaveBeansCli(
+                    cli = DefaultParser().parse(
+                        options, arrayOf(
+                            name,
+                            "--execute-file", scriptFile.absolutePath,
+                            "--time",
+                            "--run-mode", RunMode.DISTRIBUTED.id,
+                            "--partitions", "2",
+                            "--facilitators", portRange.map { "127.0.0.1:$it" }.joinToString(",")
+                        )
+                    ),
+                    printer = PrintWriter(out)
+                )
 
-            it("should execute") { assertThat(cli.tryScriptExecution()).isTrue() }
-            it("should generate non empty file") { assertThat(file.readLines()).size().isGreaterThan(1) }
-            it("should output time to console") {
+                assertThat(cli.tryScriptExecution()).isTrue()
+                assertThat(file.readLines()).size().isGreaterThan(1)
                 assertThat(String(out.toByteArray())).matches(Regex("\\d+\\.\\d+sec\\s*"))
             }
         }
@@ -171,7 +167,9 @@ object WaveBeansCliSpec : Spek({
                 printer = PrintWriter(out)
             )
 
-            assertHttpHandling(cli, out, httpPort)
+            it("should handle HTTP requests") {
+                assertHttpHandling(cli, out, httpPort)
+            }
         }
 
         describe("HTTP API in distributed mode") {
@@ -187,11 +185,11 @@ object WaveBeansCliSpec : Spek({
                 )
             }
 
-            beforeGroup {
+            beforeTest {
                 gardeners.forEach { it.start() }
             }
 
-            afterGroup {
+            afterTest {
                 gardeners.forEach {
                     it.terminate()
                     it.close()
@@ -200,32 +198,33 @@ object WaveBeansCliSpec : Spek({
 
             val out = ByteArrayOutputStream()
             val cli = WaveBeansCli(
-                cli = DefaultParser().parse(options, arrayOf(
-                    name,
-                    "--execute", "440.sine().map { it }.trim(1000).toTable(\"table1\").out()",
-                    "--http", "$httpPort",
-                    "--http-wait", "1",
-                    "--http-communicator-port", "$httpCommunicatorPort",
-                    "--verbose",
-                    "--run-mode", "distributed",
-                    "--partitions", "2",
-                    "--facilitators", portRange.joinToString(",") { "127.0.0.1:$it" }
-                )),
+                cli = DefaultParser().parse(
+                    options, arrayOf(
+                        name,
+                        "--execute", "440.sine().map { it }.trim(1000).toTable(\"table1\").out()",
+                        "--http", "$httpPort",
+                        "--http-wait", "1",
+                        "--http-communicator-port", "$httpCommunicatorPort",
+                        "--verbose",
+                        "--run-mode", "distributed",
+                        "--partitions", "2",
+                        "--facilitators", portRange.joinToString(",") { "127.0.0.1:$it" }
+                    )),
                 printer = PrintWriter(out)
             )
 
-            assertHttpHandling(cli, out, httpPort)
+            it("should handle HTTP requests") {
+                assertHttpHandling(cli, out, httpPort)
+            }
         }
     }
 })
 
-private fun Suite.assertHttpHandling(cli: WaveBeansCli, out: ByteArrayOutputStream, port: Int) {
+private fun assertHttpHandling(cli: WaveBeansCli, out: ByteArrayOutputStream, port: Int) {
     val log = KotlinLogging.logger { }
     val pool = Executors.newSingleThreadExecutor()
-
-    afterGroup { pool.shutdownNow() }
-
     val taskStarted = CountDownLatch(1)
+
     val result = pool.submit(Callable {
         fun result(): Response {
             val client = OkHttp()
@@ -253,11 +252,13 @@ private fun Suite.assertHttpHandling(cli: WaveBeansCli, out: ByteArrayOutputStre
         ret
     })
 
-    it("should execute") {
+    try {
         taskStarted.await(5000, MILLISECONDS) // wait for task to actually start
         assertThat(cli.tryScriptExecution()).isTrue()
         log.info { "Script executed with output: ${String(out.toByteArray())}" }
+        assertThat(result.get(5, SECONDS)).isNotEmpty()
+        assertThat(String(out.toByteArray())).isNotEmpty()
+    } finally {
+        pool.shutdownNow()
     }
-    it("should return some value") { assertThat(result.get(5, SECONDS)).isNotEmpty() }
-    it("should output something to console") { assertThat(String(out.toByteArray())).isNotEmpty() }
 }

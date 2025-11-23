@@ -1,8 +1,9 @@
 package io.wavebeans.tests
 
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.TimeUnit
+import kotlin.io.path.createTempDirectory
 import kotlin.random.Random
 
 class CommandRunner(vararg commands: String) {
@@ -17,7 +18,7 @@ class CommandRunner(vararg commands: String) {
         val id = Random.nextInt(0xFFFF, Int.MAX_VALUE).toString(16)
         log.debug { "[$id] Running command: ${cmds.joinToString(" ")}" }
 
-        val tempDir = createTempDir().also { it.deleteOnExit() }
+        val tempDir = createTempDirectory().toFile().also { it.deleteOnExit() }
         val processBuilder = ProcessBuilder(*cmds.toTypedArray())
                 .directory(tempDir)
 

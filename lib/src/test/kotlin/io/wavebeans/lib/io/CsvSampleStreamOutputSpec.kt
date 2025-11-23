@@ -2,17 +2,16 @@ package io.wavebeans.lib.io
 
 import assertk.assertThat
 import assertk.assertions.*
-import io.wavebeans.tests.eachIndexed
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.lib.stream.minus
 import io.wavebeans.lib.stream.trim
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
+import io.wavebeans.tests.eachIndexed
 import java.io.File
 import java.lang.Thread.sleep
 import java.util.concurrent.TimeUnit
 
 
-class CsvSampleStreamOutputSpec : Spek({
+class CsvSampleStreamOutputSpec : DescribeSpec({
     describe("A sinusoid of 10Hz, 500ms") {
         val sampleRate = 200.0f
         val x = 10.sine().trim(500)

@@ -1,5 +1,6 @@
 package io.wavebeans.execution
 
+import io.wavebeans.execution.distributed.AnySerializer
 import io.wavebeans.lib.BeanParams
 import io.wavebeans.lib.NoParams
 import io.wavebeans.lib.io.*
@@ -10,15 +11,25 @@ import io.wavebeans.lib.stream.window.WindowStreamParamsSerializer
 import io.wavebeans.lib.table.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.*
+import kotlinx.serialization.modules.EmptySerializersModule
+import kotlinx.serialization.serializer
+
+val jsonCompact = jsonCompact()
 
 fun jsonCompact(paramsModule: SerializersModule? = null) = Json {
-    serializersModule = paramsModule ?: EmptySerializersModule
+    serializersModule = paramsModule ?: EmptySerializersModule()
 }
 
 fun jsonPretty(paramsModule: SerializersModule? = null) = Json {
-    serializersModule = paramsModule ?: EmptySerializersModule
+    serializersModule = paramsModule ?: EmptySerializersModule()
     prettyPrint = true
 }
+
+class DeserializationException(obj: String, cause: Throwable) : Exception("Can't deserialize $obj", cause)
+
+inline fun <reified T> String.decode(json: Json = jsonCompact): T =
+    json.runCatching { decodeFromString<T>(this@decode) }
+        .getOrElse { throw DeserializationException(this, it) }
 
 fun SerializersModuleBuilder.tableQuery() {
     polymorphic(TableQuery::class) {

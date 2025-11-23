@@ -1,10 +1,10 @@
 package io.wavebeans.execution.pod
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.wavebeans.execution.Call
 import io.wavebeans.execution.medium.PodCallResult
 import io.wavebeans.lib.AnyBean
 import kotlinx.serialization.Serializable
-import mu.KotlinLogging
 import java.io.Closeable
 import java.lang.reflect.InvocationTargetException
 

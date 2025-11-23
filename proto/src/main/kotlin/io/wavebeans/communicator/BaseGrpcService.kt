@@ -1,8 +1,10 @@
 package io.wavebeans.communicator
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.grpc.stub.StreamObserver
-import mu.KotlinLogging
 
+
+private val log = KotlinLogging.logger { }
 /**
  * Handles response as a single element and send each it via calling [StreamObserver.onNext] and
  * finishes request correctly either in case of success or error.
@@ -66,6 +68,6 @@ fun <REQUEST, RESPONSE> StreamObserver<RESPONSE>.handle(
     block()
     this.onCompleted()
 } catch (e: Throwable) {
-    KotlinLogging.logger("io.wavebeans.communicator.GrpcHandler").error(e) { "Execution failed: $methodName($request)" }
+    log.error(e) { "Execution failed: $methodName($request)" }
     this.onError(e)
 }

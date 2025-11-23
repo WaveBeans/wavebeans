@@ -1,11 +1,10 @@
 package io.wavebeans.lib.table
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.wavebeans.lib.TimeMeasure
 import io.wavebeans.lib.ns
 import io.wavebeans.lib.s
-import mu.KotlinLogging
-import java.lang.Thread.*
-import kotlin.NoSuchElementException
+import java.lang.Thread.sleep
 
 /**
  * Implementation of iterator that continously reads the provided deque, assuming that someone from outside appends elements.

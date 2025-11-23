@@ -3,16 +3,14 @@ package io.wavebeans.execution.pod
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNull
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.execution.config.ExecutionConfig
 import io.wavebeans.execution.medium.PlainMedium
 import io.wavebeans.execution.newTestSplittingPod
 import io.wavebeans.lib.Sample
 import io.wavebeans.lib.asInt
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.lifecycle.CachingMode
-import org.spekframework.spek2.style.specification.describe
 
-object SplittingPodSpec : Spek({
+class SplittingPodSpec : DescribeSpec({
     val seq = (1..100).toList()
 
     val modes = mapOf(
@@ -25,15 +23,15 @@ object SplittingPodSpec : Spek({
 
     modes.forEach { mode ->
         describe("Mode: ${mode.key}") {
-            beforeEachGroup { mode.value.first() }
+            beforeTest { mode.value.first() }
 
             val sampleRemap = mode.value.second
 
             describe("SplittingPod returning predefined sequence. Two partitions") {
 
                 describe("Iterate over pod sequence") {
-                    val pod by memoized { newTestSplittingPod(seq, 2) }
-                    val iteratorKeys by memoized { arrayOf(pod.iteratorStart(100.0f, 0), pod.iteratorStart(100.0f, 1)) }
+                    val pod by lazy { newTestSplittingPod(seq, 2) }
+                    val iteratorKeys by lazy { arrayOf(pod.iteratorStart(100.0f, 0), pod.iteratorStart(100.0f, 1)) }
 
                     it("Partition 0: should be the same as defined sequence even elements") {
                         assertThat(sampleRemap(pod.iteratorNext(iteratorKeys[0], 50))?.map { it.asInt() })
@@ -50,9 +48,9 @@ object SplittingPodSpec : Spek({
 
             describe("SplittingPod returning predefined sequence. One partition") {
                 describe("Iterate over pod sequence") {
-                    val pod by memoized { newTestSplittingPod(seq, 1) }
+                    val pod by lazy { newTestSplittingPod(seq, 1) }
 
-                    val iteratorKey0 by memoized { pod.iteratorStart(100.0f, 0) }
+                    val iteratorKey0 by lazy { pod.iteratorStart(100.0f, 0) }
 
                     it("Partition 0: should be the same as defined sequence") {
                         assertThat(sampleRemap(pod.iteratorNext(iteratorKey0, 100))?.map { it.asInt() })
@@ -63,9 +61,9 @@ object SplittingPodSpec : Spek({
 
             describe("SplittingPod returning predefined sequence. Three partitions") {
                 describe("Iterate over pod sequence") {
-                    val pod by memoized(mode = CachingMode.SCOPE) { newTestSplittingPod(seq, 3) }
+                    val pod by lazy { newTestSplittingPod(seq, 3) }
 
-                    val iteratorKeys by memoized(mode = CachingMode.SCOPE) {
+                    val iteratorKeys by lazy {
                         arrayOf(
                                 pod.iteratorStart(100.0f, 0),
                                 pod.iteratorStart(100.0f, 1),
@@ -91,9 +89,9 @@ object SplittingPodSpec : Spek({
             }
 
             describe("Iterate over pod sequence with 2 proxies. Two partitions") {
-                val pod by memoized(mode = CachingMode.SCOPE) { newTestSplittingPod(seq, 2) }
+                val pod by lazy { newTestSplittingPod(seq, 2) }
 
-                val iteratorKeys by memoized(mode = CachingMode.SCOPE) {
+                val iteratorKeys by lazy {
                     arrayOf(
                             pod.iteratorStart(100.0f, 0), pod.iteratorStart(100.0f, 0),
                             pod.iteratorStart(100.0f, 1), pod.iteratorStart(100.0f, 1)
@@ -120,9 +118,9 @@ object SplittingPodSpec : Spek({
             }
 
             describe("Iterate over pod sequence for more than defined in sequence at once. Two partitions") {
-                val pod by memoized(mode = CachingMode.SCOPE) { newTestSplittingPod(seq, 2) }
+                val pod by lazy { newTestSplittingPod(seq, 2) }
 
-                val iteratorKeys by memoized(mode = CachingMode.SCOPE) {
+                val iteratorKeys by lazy {
                     arrayOf(pod.iteratorStart(100.0f, 0), pod.iteratorStart(100.0f, 1))
                 }
 
@@ -138,9 +136,9 @@ object SplittingPodSpec : Spek({
             }
 
             describe("Iterate over pod sequence for more than defined in sequence in two attempts. Two partitions") {
-                val pod by memoized(mode = CachingMode.SCOPE) { newTestSplittingPod(seq, 2) }
+                val pod by lazy { newTestSplittingPod(seq, 2) }
 
-                val iteratorKeys by memoized(mode = CachingMode.SCOPE) {
+                val iteratorKeys by lazy {
                     arrayOf(pod.iteratorStart(100.0f, 0), pod.iteratorStart(100.0f, 1))
                 }
 

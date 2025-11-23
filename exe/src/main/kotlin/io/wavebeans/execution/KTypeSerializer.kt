@@ -11,7 +11,6 @@ import kotlinx.serialization.encoding.Encoder
 import kotlin.reflect.*
 import kotlin.reflect.full.createType
 
-@Serializer(forClass = KType::class)
 object KTypeSerializer : KSerializer<KType> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("UUID", PrimitiveKind.STRING)
 

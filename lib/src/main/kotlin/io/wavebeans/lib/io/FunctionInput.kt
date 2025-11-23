@@ -13,6 +13,10 @@ import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.CompositeDecoder
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.encoding.decodeStructure
+import kotlinx.serialization.encoding.encodeStructure
+import kotlin.properties.Delegates
+import kotlin.properties.Delegates.notNull
 import kotlin.reflect.jvm.jvmName
 
 /**
@@ -64,26 +68,29 @@ object InputParamsSerializer : KSerializer<InputParams<*>> {
     }
 
     override fun deserialize(decoder: Decoder): InputParams<*> {
-        val dec = decoder.beginStructure(descriptor)
-        var sampleRate: Float? = null
-        var func: Fn<Pair<Long, Float>, Any?>? = null
-        @Suppress("UNCHECKED_CAST")
-        loop@ while (true) {
-            when (val i = dec.decodeElementIndex(descriptor)) {
-                CompositeDecoder.DECODE_DONE -> break@loop
-                0 -> func = dec.decodeSerializableElement(descriptor, i, FnSerializer) as Fn<Pair<Long, Float>, Any?>
-                1 -> sampleRate = dec.decodeNullableSerializableElement(descriptor, i, Float.serializer().nullable)
-                else -> throw SerializationException("Unknown index $i")
+        return decoder.decodeStructure(descriptor) {
+            var sampleRate: Float? = null
+            lateinit var func: Fn<Pair<Long, Float>, Any?>
+            @Suppress("UNCHECKED_CAST")
+            loop@ while (true) {
+                when (val i = decodeElementIndex(descriptor)) {
+                    CompositeDecoder.DECODE_DONE -> break@loop
+                    0 -> func =
+                        decodeSerializableElement(descriptor, i, FnSerializer) as Fn<Pair<Long, Float>, Any?>
+
+                    1 -> sampleRate = decodeNullableSerializableElement(descriptor, i, Float.serializer().nullable)
+                    else -> throw SerializationException("Unknown index $i")
+                }
             }
+            InputParams(func, sampleRate)
         }
-        return InputParams(func!!, sampleRate)
     }
 
     override fun serialize(encoder: Encoder, value: InputParams<*>) {
-        val structure = encoder.beginStructure(descriptor)
-        structure.encodeSerializableElement(descriptor, 0, FnSerializer, value.generator)
-        structure.encodeNullableSerializableElement(descriptor, 1, Float.serializer().nullable, value.sampleRate)
-        structure.endStructure(descriptor)
+        encoder.encodeStructure(descriptor) {
+            encodeSerializableElement(descriptor, 0, FnSerializer, value.generator)
+            encodeNullableSerializableElement(descriptor, 1, Float.serializer().nullable, value.sampleRate)
+        }
     }
 
 }

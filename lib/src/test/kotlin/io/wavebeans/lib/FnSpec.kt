@@ -5,10 +5,9 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isFailure
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
+import io.kotest.core.spec.style.DescribeSpec
 
-object FnSpec : Spek({
+class FnSpec : DescribeSpec({
 
     describe("Define Fn without parameters using Lambda function") {
 
@@ -19,7 +18,7 @@ object FnSpec : Spek({
         }
 
         describe("With outer closure dependencies") {
-            val dependentValue = 1L
+            val dependentValue = 2L
 
             it("should throw an exception during wrapping") {
                 assertThat { Fn.wrap<Int, Long> { it.toLong() * dependentValue } }
@@ -31,7 +30,6 @@ object FnSpec : Spek({
         describe("Lambda function wrapped and defined as Class") {
             val lambda: (Int) -> Long = { it.toLong() }
             val fn = Fn.wrap(lambda)
-//
             val fnInstantiated = Fn.instantiate(fn::class.java, fn.initParams)
 
             it("should return result") { assertThat(fnInstantiated.apply(1)).isEqualTo(1L) }

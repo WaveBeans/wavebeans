@@ -6,10 +6,9 @@ import assertk.assertions.isFailure
 import assertk.assertions.isNotNull
 import assertk.assertions.message
 import io.wavebeans.lib.isListOf
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
+import io.kotest.core.spec.style.DescribeSpec
 
-object ListAsInputSpec : Spek({
+class ListAsInputSpec : DescribeSpec({
     describe("List of Ints") {
         val x = listOf(1, 2, 3, 4)
 

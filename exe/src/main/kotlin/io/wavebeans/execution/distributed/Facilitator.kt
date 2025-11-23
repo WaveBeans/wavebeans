@@ -1,8 +1,12 @@
 package io.wavebeans.execution.distributed
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.grpc.ServerBuilder
+import io.wavebeans.communicator.JobContent
 import io.wavebeans.communicator.JobStatusResponse
 import io.wavebeans.communicator.JobStatusResponse.JobStatus.FutureStatus.*
+import io.wavebeans.communicator.PlantBushRequest
+import io.wavebeans.communicator.RegisterBushEndpointsRequest
 import io.wavebeans.execution.*
 import io.wavebeans.execution.config.ExecutionConfig
 import io.wavebeans.execution.medium.MediumBuilder
@@ -14,7 +18,6 @@ import io.wavebeans.metrics.MetricConnectorDescriptor
 import io.wavebeans.metrics.collector.MetricGrpcService
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.modules.SerializersModule
-import mu.KotlinLogging
 import java.io.Closeable
 import java.io.FileOutputStream
 import java.io.IOException
@@ -22,45 +25,46 @@ import java.io.InputStream
 import java.util.concurrent.*
 
 data class BushEndpoint(
-        val bushKey: BushKey,
-        val location: String,
-        val pods: List<PodKey>
+    val bushKey: BushKey,
+    val location: String,
+    val pods: List<PodKey>
 )
 
 class Facilitator(
-        private val threadsNumber: Int,
-        private val communicatorPort: Int? = null,
-        private val gardener: Gardener = Gardener(),
-        private val callTimeoutMillis: Long = 5000L,
-        private val onServerShutdownTimeoutMillis: Long = 5000L,
-        private val podCallResultBuilder: PodCallResultBuilder = SerializablePodCallResultBuilder(),
-        private val mediumBuilder: MediumBuilder = SerializableMediumBuilder(),
-        private val executionThreadPool: ExecutionThreadPool = MultiThreadedExecutionThreadPool(threadsNumber),
-        private val podDiscovery: PodDiscovery = PodDiscovery.default,
-        private val metricConnectorDescriptors: List<MetricConnectorDescriptor> = emptyList(),
-        private val maxInboundMessage: Int = 4 * 1024 * 1024
-        // TODO probably inject table registry also
+    private val threadsNumber: Int,
+    private val communicatorPort: Int? = null,
+    private val gardener: Gardener = Gardener(),
+    private val callTimeoutMillis: Long = 5000L,
+    private val onServerShutdownTimeoutMillis: Long = 5000L,
+    private val podCallResultBuilder: PodCallResultBuilder = SerializablePodCallResultBuilder(),
+    private val mediumBuilder: MediumBuilder = SerializableMediumBuilder(),
+    private val executionThreadPool: ExecutionThreadPool = MultiThreadedExecutionThreadPool(threadsNumber),
+    private val podDiscovery: PodDiscovery = PodDiscovery.default,
+    private val metricConnectorDescriptors: List<MetricConnectorDescriptor> = emptyList(),
+    private val maxInboundMessage: Int = 4 * 1024 * 1024
+    // TODO probably inject table registry also
 ) : Closeable {
 
     companion object {
         private val log = KotlinLogging.logger { }
+        private val json = jsonCompact(SerializersModule { tableQuery(); beanParams() })
     }
 
     class JobState(
-            val jobKey: JobKey,
-            val classLoader: FacilitatorClassLoader,
-            val futures: MutableList<Future<ExecutionResult>>,
-            val remoteBushes: MutableList<RemoteBush>
+        val jobKey: JobKey,
+        val classLoader: FacilitatorClassLoader,
+        val futures: MutableList<Future<ExecutionResult>>,
+        val remoteBushes: MutableList<RemoteBush>
     ) {
         companion object {
             fun create(jobKey: JobKey): JobState {
                 val cl = FacilitatorClassLoader(FacilitatorClassLoader(this::class.java.classLoader))
                 WaveBeansClassLoader.addClassLoader(cl)
                 return JobState(
-                        jobKey,
-                        cl,
-                        CopyOnWriteArrayList(),
-                        CopyOnWriteArrayList()
+                    jobKey,
+                    cl,
+                    CopyOnWriteArrayList(),
+                    CopyOnWriteArrayList()
                 )
             }
         }
@@ -75,8 +79,9 @@ class Facilitator(
 
     fun start(): Facilitator {
         if (startedFrom != null)
-            throw IllegalStateException("Facilitator $this is already started from: " +
-                    startedFrom!!.joinToString("\n") { "\tat $it" })
+            throw IllegalStateException(
+                "Facilitator $this is already started from: " +
+                        startedFrom!!.joinToString("\n") { "\tat $it" })
         startedFrom = Thread.currentThread().stackTrace.toList()
 
         ExecutionConfig.podCallResultBuilder(podCallResultBuilder)
@@ -96,12 +101,12 @@ class Facilitator(
             try {
                 communicatorPort?.let {
                     communicator = ServerBuilder.forPort(it)
-                            .maxInboundMessageSize(maxInboundMessage)
-                            .addService(TableGrpcService.instance(TableRegistry.default))
-                            .addService(FacilitatorGrpcService.instance(this))
-                            .addService(MetricGrpcService.instance())
-                            .build()
-                            .start()
+                        .maxInboundMessageSize(maxInboundMessage)
+                        .addService(TableGrpcService.instance(TableRegistry.default))
+                        .addService(FacilitatorGrpcService.instance(this))
+                        .addService(MetricGrpcService.instance())
+                        .build()
+                        .start()
                     log.info { "Communicator on port $it started." }
                 }
                 break
@@ -123,21 +128,18 @@ class Facilitator(
         jobStates(jobKey).classLoader += codeFile.toURI().toURL()
     }
 
-    fun plantBush(request: io.wavebeans.communicator.PlantBushRequest) {
+    fun plantBush(request: PlantBushRequest) {
         val jobKey = request.jobKey.toJobKey()
         gardener.plantBush(
-                jobKey,
-                request.jobContent.bushKey.toBushKey(),
-                jsonCompact(SerializersModule { tableQuery(); beanParams() }).decodeFromString(
-                        ListSerializer(PodRef.serializer()),
-                        request.jobContent.podsAsJson
-                ),
-                request.sampleRate
+            jobKey,
+            request.jobContent.bushKey.toBushKey(),
+            request.jobContent.podsAsJson.decode<List<PodRef>>(json),
+            request.sampleRate
         )
         jobStates(jobKey).futures.addAll(gardener.getAllFutures(jobKey))
     }
 
-    fun registerBushEndpoints(registerBushEndpointsRequest: io.wavebeans.communicator.RegisterBushEndpointsRequest) {
+    fun registerBushEndpoints(registerBushEndpointsRequest: RegisterBushEndpointsRequest) {
         val remoteBushes = jobStates(registerBushEndpointsRequest.jobKey.toJobKey()).remoteBushes
         registerBushEndpointsRequest.bushEndpointsList.forEach { bushEndpoint ->
             val bushKey = bushEndpoint.bushKey.toBushKey()
@@ -158,42 +160,43 @@ class Facilitator(
         return gardener.jobs()
     }
 
-    fun describeJob(jobKey: JobKey): List<io.wavebeans.communicator.JobContent> {
+    fun describeJob(jobKey: JobKey): List<JobContent> {
         fun stringify(l: List<PodRef>): String =
-                jsonCompact(SerializersModule { tableQuery(); beanParams() })
-                        .encodeToString(ListSerializer(PodRef.serializer()), l)
+            jsonCompact(SerializersModule { tableQuery(); beanParams() })
+                .encodeToString(ListSerializer(PodRef.serializer()), l)
         return gardener.job(jobKey).map {
-            io.wavebeans.communicator.JobContent.newBuilder()
-                    .setBushKey(it.bushKey.toString())
-                    .setPodsAsJson(stringify(it.podRefs))
-                    .build()
+            JobContent.newBuilder()
+                .setBushKey(it.bushKey.toString())
+                .setPodsAsJson(stringify(it.podRefs))
+                .build()
         }
     }
 
     fun status(jobKey: JobKey): List<JobStatusResponse.JobStatus> {
         return gardener.getAllFutures(jobKey).map { future ->
             JobStatusResponse.JobStatus.newBuilder()
-                    .setJobKey(jobKey.toString())
-                    .apply {
-                        when {
-                            future.isDone -> {
-                                try {
-                                    val result = future.get(5000, TimeUnit.MILLISECONDS)
-                                    status = if (result.exception == null) DONE else FAILED
-                                    result.exception?.let {
-                                        hasException = true
-                                        exception = it.toExceptionObj()
-                                    }
-                                } catch (e: ExecutionException) {
-                                    status = FAILED
+                .setJobKey(jobKey.toString())
+                .apply {
+                    when {
+                        future.isDone -> {
+                            try {
+                                val result = future.get(5000, TimeUnit.MILLISECONDS)
+                                status = if (result.exception == null) DONE else FAILED
+                                result.exception?.let {
                                     hasException = true
-                                    exception = (e.cause ?: e).toExceptionObj()
+                                    exception = it.toExceptionObj()
                                 }
+                            } catch (e: ExecutionException) {
+                                status = FAILED
+                                hasException = true
+                                exception = (e.cause ?: e).toExceptionObj()
                             }
-                            future.isCancelled -> status = CANCELLED
-                            else -> status = IN_PROGRESS
                         }
-                    }.build()
+
+                        future.isCancelled -> status = CANCELLED
+                        else -> status = IN_PROGRESS
+                    }
+                }.build()
         }
     }
 
@@ -235,9 +238,9 @@ class Facilitator(
 
     override fun close() {
         if (
-                communicator
-                        ?.shutdown()
-                        ?.awaitTermination(onServerShutdownTimeoutMillis, TimeUnit.MILLISECONDS) == false
+            communicator
+                ?.shutdown()
+                ?.awaitTermination(onServerShutdownTimeoutMillis, TimeUnit.MILLISECONDS) == false
         ) {
             communicator?.shutdownNow()
         }

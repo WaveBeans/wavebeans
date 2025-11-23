@@ -9,6 +9,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.encoding.encodeStructure
 import kotlin.reflect.jvm.jvmName
 
 object WindowSerializer : KSerializer<Window<Any>> {
@@ -24,11 +25,11 @@ object WindowSerializer : KSerializer<Window<Any>> {
             throw UnsupportedOperationException("This serializer can only be used for serialization!")
 
     override fun serialize(encoder: Encoder, value: Window<Any>) {
-        val s = encoder.beginStructure(descriptor)
-        s.encodeIntElement(descriptor, 0, value.size)
-        s.encodeIntElement(descriptor, 1, value.step)
-        s.encodeSerializableElement(descriptor, 2, ListSerializer(PlainObjectSerializer), value.elements)
-        s.encodeStringElement(descriptor, 3, value.elements.first()::class.jvmName)
-        s.endStructure(descriptor)
+        encoder.encodeStructure(descriptor) {
+            encodeIntElement(descriptor, 0, value.size)
+            encodeIntElement(descriptor, 1, value.step)
+            encodeSerializableElement(descriptor, 2, ListSerializer(PlainObjectSerializer), value.elements)
+            encodeStringElement(descriptor, 3, value.elements.first()::class.jvmName)
+        }
     }
 }

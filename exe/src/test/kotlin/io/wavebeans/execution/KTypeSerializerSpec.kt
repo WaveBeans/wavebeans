@@ -2,10 +2,9 @@ package io.wavebeans.execution
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import io.kotest.core.spec.style.DescribeSpec
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.serializersModuleOf
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
 import kotlin.reflect.typeOf
 
 private inline fun <reified T> Json.str(): String = this.encodeToString(KTypeSerializer, typeOf<T>())
@@ -13,7 +12,7 @@ private inline fun <reified T> Json.str(): String = this.encodeToString(KTypeSer
 private data class TestGenericClass<T>(val value: T)
 private data class TestPlainClass(val value: Int)
 
-object KTypeSerializerSpec : Spek({
+class KTypeSerializerSpec : DescribeSpec({
 
     val json = jsonCompact(serializersModuleOf(KTypeSerializer))
 

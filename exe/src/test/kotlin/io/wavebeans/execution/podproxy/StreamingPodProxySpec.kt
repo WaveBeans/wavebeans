@@ -3,6 +3,7 @@ package io.wavebeans.execution.podproxy
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.execution.*
 import io.wavebeans.execution.config.ExecutionConfig
 import io.wavebeans.execution.medium.PlainMediumBuilder
@@ -15,8 +16,6 @@ import io.wavebeans.lib.asInt
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Future
 
@@ -67,7 +66,7 @@ class PodProxyTester(
 }
 
 
-object StreamingPodProxySpec : Spek({
+class StreamingPodProxySpec : DescribeSpec({
 
     ExecutionConfig.podCallResultBuilder(PlainPodCallResultBuilder())
     ExecutionConfig.mediumBuilder(PlainMediumBuilder())

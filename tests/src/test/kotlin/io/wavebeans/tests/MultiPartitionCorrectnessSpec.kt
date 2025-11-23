@@ -2,6 +2,8 @@ package io.wavebeans.tests
 
 import assertk.assertThat
 import assertk.assertions.*
+import io.github.oshai.kotlinlogging.KotlinLogging
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.execution.MultiThreadedOverseer
 import io.wavebeans.execution.SingleThreadedOverseer
 import io.wavebeans.lib.*
@@ -15,9 +17,6 @@ import io.wavebeans.lib.stream.window.hamming
 import io.wavebeans.lib.stream.window.window
 import io.wavebeans.lib.table.TableRegistry
 import io.wavebeans.lib.table.toTable
-import mu.KotlinLogging
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
 import java.io.File
 import java.io.OutputStream
 import kotlin.math.PI
@@ -27,7 +26,7 @@ import kotlin.system.measureTimeMillis
 
 private val log = KotlinLogging.logger {}
 
-object MultiPartitionCorrectnessSpec : Spek({
+class MultiPartitionCorrectnessSpec : DescribeSpec({
 
     fun runInParallel(
             outputs: List<StreamOutput<out Any>>,

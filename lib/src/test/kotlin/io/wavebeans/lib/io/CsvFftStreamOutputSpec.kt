@@ -5,13 +5,12 @@ import assertk.assertions.each
 import assertk.assertions.isCloseTo
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.lib.stream
 import io.wavebeans.lib.stream.fft.fft
 import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.stream.window.window
 import io.wavebeans.tests.eachIndexed
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileInputStream
@@ -21,7 +20,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.streams.toList
 
 
-class CsvFftStreamOutputSpec : Spek({
+class CsvFftStreamOutputSpec : DescribeSpec({
     describe("FFT of signal with sample rate 4 Hz to CSV") {
         val sampleRate = 4.0f
         val x = (1..4)

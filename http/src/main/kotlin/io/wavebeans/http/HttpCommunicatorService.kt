@@ -1,10 +1,10 @@
 package io.wavebeans.http
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.grpc.stub.StreamObserver
 import io.wavebeans.communicator.*
 import io.wavebeans.execution.distributed.RemoteTimeseriesTableDriver
 import io.wavebeans.lib.table.TableRegistry
-import mu.KotlinLogging
 
 class HttpCommunicatorService(
         val tableRegistry: TableRegistry

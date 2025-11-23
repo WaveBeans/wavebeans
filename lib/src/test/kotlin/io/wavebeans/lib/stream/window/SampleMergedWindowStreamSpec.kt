@@ -3,13 +3,12 @@ package io.wavebeans.lib.stream.window
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.lib.*
 import io.wavebeans.lib.stream.rangeProjection
 import io.wavebeans.tests.eachIndexed
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
 
-object SampleMergedWindowStreamSpec : Spek({
+class SampleMergedWindowStreamSpec : DescribeSpec({
     describe("Fixed window of size=2") {
         val stream1 = (0..3).stream().window(2)
 

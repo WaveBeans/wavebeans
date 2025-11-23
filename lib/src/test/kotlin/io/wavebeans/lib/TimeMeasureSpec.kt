@@ -2,11 +2,10 @@ package io.wavebeans.lib
 
 import assertk.assertThat
 import assertk.assertions.*
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
+import io.kotest.core.spec.style.DescribeSpec
 import java.util.concurrent.TimeUnit.*
 
-object TimeMeasureSpec : Spek({
+class TimeMeasureSpec : DescribeSpec({
     describe("Instantiating") {
         it("should be 1 nanoseconds") { assertThat(1.ns).isEqualTo(TimeMeasure(1L, NANOSECONDS)) }
         it("should be 2 * 10^3 microseconds") { assertThat(2e3.us).isEqualTo(TimeMeasure(2000L, MICROSECONDS)) }
