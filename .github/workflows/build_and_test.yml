@@ -13,4 +13,4 @@ jobs:
           DBX_TEST_CLIENT_ID: ${{ secrets.DBX_TEST_CLIENT_ID }}
           DBX_TEST_ACCESS_TOKEN: ${{ secrets.DBX_TEST_ACCESS_TOKEN }}
         with:
-          args: ./gradlew build --info --workers 1 --no-daemon
+          args: ./gradlew build --info --max-workers 1 --no-daemon
