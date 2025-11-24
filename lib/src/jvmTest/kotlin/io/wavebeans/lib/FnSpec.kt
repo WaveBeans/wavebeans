@@ -2,13 +2,12 @@ package io.wavebeans.lib
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import assertk.assertions.isFailure
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
-import assertk.catch
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
+import io.kotest.core.spec.style.DescribeSpec
 
-object FnSpec : Spek({
+class FnSpec : DescribeSpec({
 
     describe("Define Fn without parameters using Lambda function") {
 
@@ -19,19 +18,19 @@ object FnSpec : Spek({
         }
 
         describe("With outer closure dependencies") {
-            val dependentValue = 1L
+            val dependentValue = 2L
 
             it("should throw an exception during wrapping") {
-                assertThat(catch { wrap<Int, Long> { it.toLong() * dependentValue } })
-                        .isNotNull().isInstanceOf(IllegalArgumentException::class)
+                assertThat { Fn.wrap<Int, Long> { it.toLong() * dependentValue } }
+                    .isFailure()
+                    .isNotNull().isInstanceOf(IllegalArgumentException::class)
             }
         }
 
         describe("Lambda function wrapped and defined as Class") {
             val lambda: (Int) -> Long = { it.toLong() }
-            val fn = wrap(lambda)
-
-            val fnInstantiated = instantiate(fn::class, fn.initParams)
+            val fn = Fn.wrap(lambda)
+            val fnInstantiated = Fn.instantiate(fn::class.java, fn.initParams)
 
             it("should return result") { assertThat(fnInstantiated.apply(1)).isEqualTo(1L) }
         }
@@ -84,9 +83,10 @@ object FnSpec : Spek({
             }
 
             it("should throw an exception during indirect instantiation") {
-                assertThat(catch { instantiate(AFn::class) })
-                        .isNotNull()
-                        .isInstanceOf(IllegalStateException::class)
+                assertThat { Fn.instantiate(AFn::class.java) }
+                    .isFailure()
+                    .isNotNull()
+                    .isInstanceOf(IllegalStateException::class)
             }
         }
 

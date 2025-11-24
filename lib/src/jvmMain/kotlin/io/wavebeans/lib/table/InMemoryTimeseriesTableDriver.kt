@@ -1,8 +1,8 @@
 package io.wavebeans.lib.table
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.wavebeans.lib.TimeMeasure
 import io.wavebeans.lib.s
-import mu.KotlinLogging
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture

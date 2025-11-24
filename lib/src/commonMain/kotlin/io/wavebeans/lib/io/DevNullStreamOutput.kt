@@ -1,7 +1,11 @@
 package io.wavebeans.lib.io
 
-import io.wavebeans.lib.*
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
+import io.wavebeans.lib.BeanStream
+import io.wavebeans.lib.NoParams
+import io.wavebeans.lib.SinglePartitionBean
+import io.wavebeans.metrics.clazzTag
+import io.wavebeans.metrics.samplesProcessedOnOutputMetric
 
 fun <T : Any> BeanStream<T>.toDevNull(): StreamOutput<T> = DevNullStreamOutput(this)
 

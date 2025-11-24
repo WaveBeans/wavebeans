@@ -15,6 +15,7 @@ import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.encoding.encodeStructure
 import kotlinx.serialization.modules.SerializersModule
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSuperclassOf
@@ -61,7 +62,6 @@ class JsonBeanStreamReader(
         }
     }
 
-    @Serializer(forClass = BeanStreamElement::class)
     private object BeanStreamElementSerializer : KSerializer<BeanStreamElement> {
         override val descriptor: SerialDescriptor = buildClassSerialDescriptor(BeanStreamElement::class.jvmName) {
             element("offset", Long.serializer().descriptor)
@@ -73,10 +73,10 @@ class JsonBeanStreamReader(
         }
 
         override fun serialize(encoder: Encoder, value: BeanStreamElement) {
-            val s = encoder.beginStructure(descriptor)
-            s.encodeLongElement(descriptor, 0, value.offset.time)
-            s.encodeSerializableElement(descriptor, 1, PlainObjectSerializer, value.value)
-            s.endStructure(descriptor)
+            encoder.encodeStructure(descriptor) {
+                encodeLongElement(descriptor, 0, value.offset.time)
+                encodeSerializableElement(descriptor, 1, PlainObjectSerializer, value.value)
+            }
         }
 
     }

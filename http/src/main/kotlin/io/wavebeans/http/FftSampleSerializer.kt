@@ -8,6 +8,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.encoding.encodeStructure
 import kotlin.reflect.jvm.jvmName
 
 object FftSampleSerializer : KSerializer<FftSample> {
@@ -31,16 +32,16 @@ object FftSampleSerializer : KSerializer<FftSample> {
             throw UnsupportedOperationException("This serializer can only be used for serialization!")
 
     override fun serialize(encoder: Encoder, value: FftSample) {
-        val s = encoder.beginStructure(descriptor)
-        s.encodeLongElement(descriptor, 0, value.index)
-        s.encodeIntElement(descriptor, 1, value.binCount)
-        s.encodeIntElement(descriptor, 2, value.samplesCount)
-        s.encodeFloatElement(descriptor, 3, value.sampleRate)
-        s.encodeSerializableElement(descriptor, 4, magnitudeSerializer, value.magnitude().toList())
-        s.encodeSerializableElement(descriptor, 5, phaseSerializer, value.phase().toList())
-        s.encodeSerializableElement(descriptor, 6, ListSerializer(Double.serializer()), value.frequency().toList())
-        s.encodeLongElement(descriptor, 7, value.time())
-        s.endStructure(descriptor)
+        encoder.encodeStructure(descriptor) {
+            encodeLongElement(descriptor, 0, value.index)
+            encodeIntElement(descriptor, 1, value.binCount)
+            encodeIntElement(descriptor, 2, value.samplesCount)
+            encodeFloatElement(descriptor, 3, value.sampleRate)
+            encodeSerializableElement(descriptor, 4, magnitudeSerializer, value.magnitude().toList())
+            encodeSerializableElement(descriptor, 5, phaseSerializer, value.phase().toList())
+            encodeSerializableElement(descriptor, 6, ListSerializer(Double.serializer()), value.frequency().toList())
+            encodeLongElement(descriptor, 7, value.time())
+        }
     }
 }
 

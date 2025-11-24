@@ -1,8 +1,8 @@
 package io.wavebeans.lib.io
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.wavebeans.lib.BeanStream
 import io.wavebeans.lib.SourceBean
-import mu.KotlinLogging
 
 /**
  * The base implementation for the input beans. It bypasses correctly the desired sample rate and makes sure the

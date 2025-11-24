@@ -4,6 +4,7 @@ import assertk.Assert
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.lib.AnyBean
 import io.wavebeans.lib.io.sine
 import io.wavebeans.lib.io.toCsv
@@ -11,14 +12,12 @@ import io.wavebeans.lib.stream.div
 import io.wavebeans.lib.stream.plus
 import io.wavebeans.lib.stream.times
 import io.wavebeans.lib.stream.trim
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
 import java.io.File
 import kotlin.reflect.full.isSubclassOf
 
-object BeanGroupingSpec : Spek({
+class BeanGroupingSpec : DescribeSpec({
 
-    beforeGroup {
+    beforeSpec {
         ids.clear()
     }
 

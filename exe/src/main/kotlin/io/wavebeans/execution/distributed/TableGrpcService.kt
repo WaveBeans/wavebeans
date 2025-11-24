@@ -1,6 +1,7 @@
 package io.wavebeans.execution.distributed
 
 import com.google.protobuf.ByteString
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.grpc.stub.StreamObserver
 import io.wavebeans.communicator.*
 import io.wavebeans.communicator.Any
@@ -9,7 +10,6 @@ import io.wavebeans.execution.distributed.proto.ProtoObj
 import io.wavebeans.lib.WaveBeansClassLoader
 import io.wavebeans.lib.table.TableRegistry
 import kotlinx.serialization.KSerializer
-import mu.KotlinLogging
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.jvm.jvmName
 

@@ -3,10 +3,9 @@ package io.wavebeans.lib.stream
 import assertk.assertThat
 import io.wavebeans.lib.*
 import io.wavebeans.lib.stream.window.window
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
+import io.kotest.core.spec.style.DescribeSpec
 
-object MapStreamSpec : Spek({
+class MapStreamSpec : DescribeSpec({
     describe("Sample to Sample mapping") {
         val stream = (0..5).stream()
 

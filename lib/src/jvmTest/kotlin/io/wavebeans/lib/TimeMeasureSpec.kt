@@ -3,11 +3,10 @@ package io.wavebeans.lib
 import assertk.assertThat
 import assertk.assertions.*
 import assertk.catch
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.lib.TimeUnit.*
 
-object TimeMeasureSpec : Spek({
+class TimeMeasureSpec : DescribeSpec({
     describe("Instantiating") {
         it("should be 1 nanoseconds") { assertThat(1.ns).isEqualTo(TimeMeasure(1L, NANOSECONDS)) }
         it("should be 2 * 10^3 microseconds") { assertThat(2e3.us).isEqualTo(TimeMeasure(2000L, MICROSECONDS)) }
@@ -51,16 +50,16 @@ object TimeMeasureSpec : Spek({
         it("should be 2 days") { assertThat(TimeMeasure.parse("2.2fd")).isEqualTo(2.d) }
         it("should be 2 days") { assertThat(TimeMeasure.parse("2.2D")).isEqualTo(2.d) }
         it("should not be parsed") {
-            assertThat(catch { TimeMeasure.parse("2.2") })
-                    .isNotNull().message().isNotNull().startsWith("Format invalid, should be:")
-            assertThat(catch { TimeMeasure.parse("2") })
-                    .isNotNull().message().isNotNull().startsWith("Format invalid, should be:")
-            assertThat(catch { TimeMeasure.parse("") })
-                    .isNotNull().message().isNotNull().startsWith("Format invalid, should be:")
-            assertThat(catch { TimeMeasure.parse("-1f") })
-                    .isNotNull().message().isNotNull().startsWith("Format invalid, should be:")
-            assertThat(catch { TimeMeasure.parse("1megasecond") })
-                    .isNotNull().message().isNotNull().startsWith("Format invalid, should be:")
+            assertThat { TimeMeasure.parse("2.2") }.isFailure()
+                .isNotNull().message().isNotNull().startsWith("Format invalid, should be:")
+            assertThat { TimeMeasure.parse("2") }.isFailure()
+                .isNotNull().message().isNotNull().startsWith("Format invalid, should be:")
+            assertThat { TimeMeasure.parse("") }.isFailure()
+                .isNotNull().message().isNotNull().startsWith("Format invalid, should be:")
+            assertThat { TimeMeasure.parse("-1f") }.isFailure()
+                .isNotNull().message().isNotNull().startsWith("Format invalid, should be:")
+            assertThat { TimeMeasure.parse("1megasecond") }.isFailure()
+                .isNotNull().message().isNotNull().startsWith("Format invalid, should be:")
         }
     }
 

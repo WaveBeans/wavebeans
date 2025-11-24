@@ -1,5 +1,6 @@
 package io.wavebeans.lib.io
 
+import kotli
 import io.wavebeans.lib.SinkBean
 
 /**
@@ -25,4 +26,10 @@ interface Writer : Closeable {
      */
     fun write(): Boolean
 
+}
+
+fun Writer.writeAll() {
+    while (write()) {
+        yield()
+    }
 }

@@ -20,15 +20,25 @@ import kotlinx.serialization.serializer
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 import kotlin.reflect.jvm.jvmName
+import kotlinx.serialization.modules.EmptySerializersModule
+import kotlinx.serialization.serializer
+
+val jsonCompact = jsonCompact()
 
 fun jsonCompact(paramsModule: SerializersModule? = null) = Json {
-    serializersModule = paramsModule ?: EmptySerializersModule
+    serializersModule = paramsModule ?: EmptySerializersModule()
 }
 
 fun jsonPretty(paramsModule: SerializersModule? = null) = Json {
-    serializersModule = paramsModule ?: EmptySerializersModule
+    serializersModule = paramsModule ?: EmptySerializersModule()
     prettyPrint = true
 }
+
+class DeserializationException(obj: String, cause: Throwable) : Exception("Can't deserialize $obj", cause)
+
+inline fun <reified T> String.decode(json: Json = jsonCompact): T =
+    json.runCatching { decodeFromString<T>(this@decode) }
+        .getOrElse { throw DeserializationException(this, it) }
 
 fun SerializersModuleBuilder.tableQuery() {
     polymorphic(TableQuery::class) {

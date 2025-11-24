@@ -4,14 +4,13 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import io.wavebeans.lib.*
 import io.wavebeans.lib.io.sine
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.lib.TimeUnit.MILLISECONDS
 import io.wavebeans.lib.TimeUnit.SECONDS
 
 private fun Number.repeat(times: Int): List<Number> = (1..times).map { this }
 
-class DiffSampleStreamSpec : Spek({
+class DiffSampleStreamSpec : DescribeSpec({
     val sampleRate = 50.0f
     describe("Two same size sequences") {
         val input1 = (1..8).stream(sampleRate, BitDepth.BIT_16)

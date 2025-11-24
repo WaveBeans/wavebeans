@@ -2,17 +2,14 @@ package io.wavebeans.lib
 
 import assertk.assertThat
 import assertk.assertions.*
-import assertk.catch
 import io.wavebeans.lib.WaveBeansClassLoader.classForName
 import io.wavebeans.lib.stream.fft.FftSample
 import io.wavebeans.lib.stream.window.Window
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.lifecycle.CachingMode
-import org.spekframework.spek2.style.specification.describe
+import io.kotest.core.spec.style.DescribeSpec
 import kotlin.jvm.java
 import kotlin.reflect.jvm.jvmName
 
-object WaveBeansClassLoaderSpec : Spek({
+class WaveBeansClassLoaderSpec : DescribeSpec({
 
     describe("Load default classes") {
 
@@ -47,38 +44,45 @@ object WaveBeansClassLoaderSpec : Spek({
 
     describe("Load external classes") {
         val className = "my.namespace.MyClass$1_lambda1234"
-        val classLoader by memoized(CachingMode.SCOPE) {
-            object : ClassLoader() {
-                override fun loadClass(name: String?): Class<*> {
-                    if (name == className) throw Exception(className)
-                    return super.loadClass(name)
-                }
+
+        fun newClassLoader(): ClassLoader = object : ClassLoader() {
+            override fun loadClass(name: String?): Class<*> {
+                if (name == className) throw Exception(className)
+                return super.loadClass(name)
             }
         }
+
         it("should throw exception for non-existing class") {
-            assertThat(catch { classForName(className) })
-                    .isNotNull()
-                    .isInstanceOf(ClassNotFoundException::class)
-                    .message().isNotNull().contains(className)
+            assertThat { classForName(className) }
+                .isFailure()
+                .isNotNull()
+                .isInstanceOf(ClassNotFoundException::class)
+                .message().isNotNull().contains(className)
         }
 
         it("should load class provided by registered classloader") {
-
+            val classLoader = newClassLoader()
             WaveBeansClassLoader.addClassLoader(classLoader)
-
-            assertThat(catch { classForName(className) })
+            try {
+                assertThat { classForName(className) }
+                    .isFailure()
                     .isNotNull()
                     .message().isNotNull().isEqualTo(className)
+            } finally {
+                WaveBeansClassLoader.removeClassLoader(classLoader)
+            }
         }
 
         it("should not load class if class loader unregistered") {
-
+            val classLoader = newClassLoader()
+            WaveBeansClassLoader.addClassLoader(classLoader)
             WaveBeansClassLoader.removeClassLoader(classLoader)
 
-            assertThat(catch { classForName(className) })
-                    .isNotNull()
-                    .isInstanceOf(ClassNotFoundException::class)
-                    .message().isNotNull().contains(className)
+            assertThat { classForName(className) }
+                .isFailure()
+                .isNotNull()
+                .isInstanceOf(ClassNotFoundException::class)
+                .message().isNotNull().contains(className)
         }
     }
 })

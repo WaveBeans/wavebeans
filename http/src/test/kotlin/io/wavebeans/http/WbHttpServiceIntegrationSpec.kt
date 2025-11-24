@@ -3,6 +3,7 @@ package io.wavebeans.http
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.execution.PodDiscovery
 import io.wavebeans.execution.SingleThreadedOverseer
 import io.wavebeans.execution.distributed.DistributedOverseer
@@ -26,32 +27,34 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.encoding.encodeStructure
 import okhttp3.OkHttpClient
 import org.http4k.client.OkHttp
 import org.http4k.core.Method
 import org.http4k.core.Request
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.lifecycle.CachingMode
-import org.spekframework.spek2.lifecycle.CachingMode.SCOPE
-import org.spekframework.spek2.style.specification.describe
 import java.lang.Thread.sleep
 
-object WbHttpServiceIntegrationSpec : Spek({
+class WbHttpServiceIntegrationSpec : DescribeSpec({
 
-    val client by memoized(SCOPE) {
+    val client by lazy {
         val c = OkHttpClient.Builder()
             .followRedirects(false)
             .build()
         OkHttp(c)
     }
 
+    var port = -1
+    lateinit var httpService: WbHttpService
+
+    beforeTest {
+        port = findFreePort()
+        httpService = WbHttpService(serverPort = port, gracePeriodMillis = 100)
+        httpService.start()
+    }
+
+    afterTest { httpService.close() }
+
     describe("Table service") {
-
-        val port by memoized(SCOPE) { findFreePort() }
-        val httpService by memoized(SCOPE) { WbHttpService(serverPort = port, gracePeriodMillis = 100) }
-
-        beforeGroup { httpService.start() }
-        afterGroup { httpService.close() }
 
         it("should return samples") {
 
@@ -117,9 +120,9 @@ object WbHttpServiceIntegrationSpec : Spek({
                 }
 
                 override fun serialize(encoder: Encoder, value: AnotherCustomSample) {
-                    val s = encoder.beginStructure(descriptor)
-                    s.encodeSerializableElement(descriptor, 0, Sample.serializer(), value.sample1)
-                    s.endStructure(descriptor)
+                    encoder.encodeStructure(descriptor) {
+                        encodeSerializableElement(descriptor, 0, Sample.serializer(), value.sample1)
+                    }
                 }
             }
 
@@ -147,14 +150,6 @@ object WbHttpServiceIntegrationSpec : Spek({
     }
 
     describe("Audio service") {
-
-        val port by memoized(SCOPE) { findFreePort() }
-        val httpService by memoized(SCOPE) { WbHttpService(serverPort = port, gracePeriodMillis = 100) }
-
-        beforeGroup { httpService.start() }
-
-        afterGroup { httpService.close() }
-
         it("should stream data for a little bit from sample table") {
             val tableName = "audioIntegration1"
             val o = 440.sine().toSampleTable(tableName, 1.s)
@@ -197,15 +192,15 @@ object WbHttpServiceIntegrationSpec : Spek({
         val tableName = "tableDistributed"
         val elementRegex = elementRegex("-?\\d+\\.\\d+([eE]?-\\d+)?")
 
-        val o by memoized(SCOPE) {
+        val o by lazy {
             440.sine().toSampleTable(tableName, 1.s)
         }
 
-        val httpPort by memoized(SCOPE) { findFreePort() }
-        val communicatorPort by memoized(SCOPE) { findFreePort()}
-        val facilitatorPort1 by memoized(SCOPE) { findFreePort()}
-        val facilitatorPort2 by memoized(SCOPE) { findFreePort()}
-        val httpService by memoized(SCOPE) {
+        val httpPort by lazy { findFreePort() }
+        val communicatorPort by lazy { findFreePort() }
+        val facilitatorPort1 by lazy { findFreePort() }
+        val facilitatorPort2 by lazy { findFreePort() }
+        val httpService by lazy {
             WbHttpService(
                 serverPort = httpPort,
                 gracePeriodMillis = 100,
@@ -214,7 +209,7 @@ object WbHttpServiceIntegrationSpec : Spek({
             )
         }
 
-        val facilitator1 by memoized(SCOPE) {
+        val facilitator1 by lazy {
             Facilitator(
                 communicatorPort = facilitatorPort1,
                 threadsNumber = 1,
@@ -223,7 +218,7 @@ object WbHttpServiceIntegrationSpec : Spek({
             )
         }
 
-        val facilitator2 by memoized(SCOPE) {
+        val facilitator2 by lazy {
             Facilitator(
                 communicatorPort = facilitatorPort2,
                 threadsNumber = 1,
@@ -232,7 +227,7 @@ object WbHttpServiceIntegrationSpec : Spek({
             )
         }
 
-        val overseer by memoized(SCOPE) {
+        val overseer by lazy {
             DistributedOverseer(
                 outputs = listOf(o),
                 facilitatorLocations = listOf("127.0.0.1:$facilitatorPort1", "127.0.0.1:$facilitatorPort2"),
@@ -241,14 +236,14 @@ object WbHttpServiceIntegrationSpec : Spek({
             )
         }
 
-        beforeGroup {
+        beforeTest {
             httpService.start()
             facilitator1.start()
             facilitator2.start()
             overseer.eval(44100.0f)
         }
 
-        afterGroup {
+        afterTest {
             overseer.close()
             httpService.close()
             facilitator1.terminate()

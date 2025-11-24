@@ -2,10 +2,11 @@ package io.wavebeans.lib.stream.fft
 
 import assertk.assertThat
 import assertk.assertions.hasMessage
+import assertk.assertions.isFailure
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
-import assertk.catch
-import io.wavebeans.tests.eachIndexed
+import io.github.oshai.kotlinlogging.KotlinLogging
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.lib.io.sine
 import io.wavebeans.lib.io.sineSweep
 import io.wavebeans.lib.isCloseTo
@@ -14,11 +15,9 @@ import io.wavebeans.lib.math.minus
 import io.wavebeans.lib.math.plus
 import io.wavebeans.lib.math.r
 import io.wavebeans.lib.stream.plus
-import mu.KotlinLogging
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
+import io.wavebeans.tests.eachIndexed
 
-object DftSpec : Spek({
+object DftSpec : DescribeSpec({
 
     val log = KotlinLogging.logger {}
 
@@ -133,12 +132,12 @@ object DftSpec : Spek({
 
         arrayOf(-4, -1, 0, 6, 120, 511, 513, 1023).forEach { n ->
             describe("FFT can be calculated only for N which is power of 2. Checking $n") {
-                val e = catch { fft(x, n) }
                 it("should throw an exception of ${IllegalArgumentException::class}") {
-                    assertThat(e)
-                            .isNotNull()
-                            .isInstanceOf(IllegalArgumentException::class)
-                            .hasMessage("N should be power of 2 but $n found")
+                    assertThat { fft(x, n) }
+                        .isFailure()
+                        .isNotNull()
+                        .isInstanceOf(IllegalArgumentException::class)
+                        .hasMessage("N should be power of 2 but $n found")
                 }
             }
         }

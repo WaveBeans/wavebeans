@@ -2,10 +2,10 @@ package io.wavebeans.fs.dropbox
 
 import com.dropbox.core.DbxRequestConfig
 import com.dropbox.core.v2.DbxClientV2
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.wavebeans.fs.core.WbFile
 import io.wavebeans.fs.core.WbFileDriver
 import io.wavebeans.lib.URI
-import mu.KotlinLogging
 import kotlin.random.Random
 
 internal const val DROPBOX_DEFAULT_BUFFER_SIZE = 65536

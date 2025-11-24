@@ -102,11 +102,11 @@ data class TimeMeasure(
          */
         fun parseOrNull(s: String): TimeMeasure? {
             if (s.length < 2) return null
-            val matches = regex.findAll(s.toLowerCase())
+            val matches = regex.findAll(s.lowercase())
             val (timeS, unitS) = matches.singleOrNull()?.destructured ?: return null
             return TimeMeasure(
                     timeS.toDouble().toLong(),
-                    when (unitS.toLowerCase()) {
+                    when (unitS.lowercase()) {
                         "ns" -> NANOSECONDS
                         "us" -> MICROSECONDS
                         "ms" -> MILLISECONDS

@@ -3,10 +3,7 @@ package io.wavebeans.execution.podproxy
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
-import assertk.catch
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.whenever
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.execution.*
 import io.wavebeans.execution.config.ExecutionConfig
 import io.wavebeans.execution.medium.PlainMediumBuilder
@@ -16,8 +13,9 @@ import io.wavebeans.execution.pod.Pod
 import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.lib.Sample
 import io.wavebeans.lib.asInt
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Future
 
@@ -68,7 +66,7 @@ class PodProxyTester(
 }
 
 
-object StreamingPodProxySpec : Spek({
+class StreamingPodProxySpec : DescribeSpec({
 
     ExecutionConfig.podCallResultBuilder(PlainPodCallResultBuilder())
     ExecutionConfig.mediumBuilder(PlainMediumBuilder())
@@ -112,12 +110,13 @@ object StreamingPodProxySpec : Spek({
             it("should not have value on 3rd iteration") {
                 assertThat(iterator)
                         .prop("hasNext") { it.hasNext() }.isEqualTo(false)
-                assertThat(catch { iterator.next() })
-                        .isNotNull()
-                        .isInstanceOf(NoSuchElementException::class)
-                        .message()
-                        .isNotNull()
-                        .isNotEmpty()
+                assertThat { iterator.next() }
+                    .isFailure()
+                    .isNotNull()
+                    .isInstanceOf(NoSuchElementException::class)
+                    .message()
+                    .isNotNull()
+                    .isNotEmpty()
             }
         }
 
@@ -143,12 +142,13 @@ object StreamingPodProxySpec : Spek({
             it("should not have value on 3rd iteration") {
                 assertThat(iterator)
                         .prop("hasNext") { it.hasNext() }.isEqualTo(false)
-                assertThat(catch { iterator.next() })
-                        .isNotNull()
-                        .isInstanceOf(NoSuchElementException::class)
-                        .message()
-                        .isNotNull()
-                        .isNotEmpty()
+                assertThat { iterator.next() }
+                    .isFailure()
+                    .isNotNull()
+                    .isInstanceOf(NoSuchElementException::class)
+                    .message()
+                    .isNotNull()
+                    .isNotEmpty()
             }
         }
 

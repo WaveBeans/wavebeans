@@ -16,9 +16,8 @@ import io.wavebeans.lib.stream.AfterFilling
 import io.wavebeans.lib.stream.FiniteStream
 import io.wavebeans.lib.stream.stream
 import io.wavebeans.lib.stream.window.Window
-import org.spekframework.spek2.dsl.Skip
-import org.spekframework.spek2.dsl.TestBody
-import org.spekframework.spek2.style.specification.Suite
+import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.core.test.TestScope
 
 fun BeanStream<Sample>.listOfBytesAsInts(sampleRate: Float, samplesToRead: Int = Int.MAX_VALUE): List<Int> =
         this.asSequence(sampleRate)
@@ -51,7 +50,7 @@ fun Assert<ComplexNumber>.isCloseTo(value: ComplexNumber, delta: ComplexNumber) 
     expected("${show(actual)} to be close to ${show(value)} with delta of ${show(delta)}, but was not")
 }
 
-fun Suite.itShouldHave(what: String, body: TestBody.() -> Unit) = this.it("should have $what", skip = Skip.No, body = body)
+fun DescribeSpec.itShouldHave(what: String, body: suspend TestScope.() -> Unit) = this.it("should have $what", body)
 
 fun Iterable<Int>.stream(sampleRate: Float, bitDepth: BitDepth = BitDepth.BIT_8): BeanStream<Sample> {
     return this.map {

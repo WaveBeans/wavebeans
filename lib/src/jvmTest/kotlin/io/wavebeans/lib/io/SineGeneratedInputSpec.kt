@@ -2,13 +2,12 @@ package io.wavebeans.lib.io
 
 import assertk.assertThat
 import assertk.assertions.isCloseTo
-import io.wavebeans.tests.eachIndexed
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.lib.stream.rangeProjection
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
 import io.wavebeans.lib.TimeUnit.MILLISECONDS
+import io.wavebeans.tests.eachIndexed
 
-object SineGeneratedInputSpec : Spek({
+class SineGeneratedInputSpec : DescribeSpec({
     describe("Sinusoid of A=1.0, f=10.0, phi=1.0, fs=50.0 and t=0.1") {
         val generator = 10.sine(
                 1.0,

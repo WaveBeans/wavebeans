@@ -1,5 +1,6 @@
 package io.wavebeans.lib.table
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.wavebeans.lib.TimeMeasure
 import io.wavebeans.lib.ns
 import io.wavebeans.lib.s

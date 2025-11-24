@@ -1,8 +1,7 @@
 package io.wavebeans.lib.stream
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.wavebeans.lib.BeanStream
-import io.wavebeans.lib.io.Writer
-import mu.KotlinLogging
 
 /**
  * The base implementation for the operation beans with one input. It requests correctly the desired sample rate from

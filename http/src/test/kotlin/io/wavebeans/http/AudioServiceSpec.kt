@@ -3,11 +3,11 @@ package io.wavebeans.http
 import assertk.Assert
 import assertk.all
 import assertk.assertThat
-import assertk.assertions.*
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.whenever
+import assertk.assertions.isEqualTo
+import assertk.assertions.isNotEmpty
+import assertk.assertions.prop
+import io.kotest.core.spec.IsolationMode
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.lib.*
 import io.wavebeans.lib.io.WavHeader
 import io.wavebeans.lib.io.input
@@ -16,25 +16,27 @@ import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.stream.window.window
 import io.wavebeans.lib.table.TableRegistry
 import io.wavebeans.lib.table.TimeseriesTableDriver
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.lifecycle.CachingMode.*
-import org.spekframework.spek2.style.specification.describe
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import java.io.InputStream
 
 private val sampleRate = 44100.0f
 
-object AudioServiceSpec : Spek({
+class AudioServiceSpec : DescribeSpec({
+    isolationMode = IsolationMode.InstancePerLeaf
 
     describe("Streaming WAV") {
         describe("Sample table") {
-            val tableRegistry by memoized(TEST) { mock<TableRegistry>() }
-            val tableDriver by memoized(TEST) {
+            val tableRegistry by lazy { mock<TableRegistry>() }
+            val tableDriver by lazy {
                 val driver = mock<TimeseriesTableDriver<Sample>>()
                 whenever(driver.tableType).thenReturn(Sample::class)
                 whenever(driver.sampleRate).thenReturn(sampleRate)
                 driver
             }
-            val service by memoized(TEST) {
+            val service by lazy {
                 whenever(tableRegistry.exists(eq("table"))).thenReturn(true)
                 whenever(tableRegistry.byName<Sample>("table")).thenReturn(tableDriver)
                 AudioService(tableRegistry)
@@ -63,14 +65,14 @@ object AudioServiceSpec : Spek({
         }
 
         describe("SampleVector table") {
-            val tableRegistry by memoized(TEST) { mock<TableRegistry>() }
-            val tableDriver by memoized(TEST) {
+            val tableRegistry by lazy { mock<TableRegistry>() }
+            val tableDriver by lazy {
                 val driver = mock<TimeseriesTableDriver<SampleVector>>()
                 whenever(driver.tableType).thenReturn(SampleVector::class)
                 whenever(driver.sampleRate).thenReturn(sampleRate)
                 driver
             }
-            val service by memoized(TEST) {
+            val service by lazy {
                 whenever(tableRegistry.exists(eq("table"))).thenReturn(true)
                 whenever(tableRegistry.byName<SampleVector>("table")).thenReturn(tableDriver)
                 AudioService(tableRegistry)

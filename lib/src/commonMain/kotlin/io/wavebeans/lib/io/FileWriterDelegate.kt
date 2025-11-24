@@ -1,10 +1,11 @@
 package io.wavebeans.lib.io
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.wavebeans.fs.core.WbFile
 import io.wavebeans.fs.core.WbFileDriver
+import io.wavebeans.fs.core.WbFileOutputStream
 import io.wavebeans.lib.File
 import io.wavebeans.lib.URI
-import mu.KotlinLogging
 import kotlin.jvm.Volatile
 
 /**

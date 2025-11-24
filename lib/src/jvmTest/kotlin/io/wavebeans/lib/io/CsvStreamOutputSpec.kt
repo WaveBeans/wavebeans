@@ -10,24 +10,13 @@ import io.wavebeans.lib.stream.merge
 import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.stream.window.window
 import io.wavebeans.tests.eachIndexed
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.lifecycle.CachingMode.TEST
-import org.spekframework.spek2.style.specification.describe
+import io.kotest.core.spec.style.DescribeSpec
+import java.io.File
 import java.lang.Thread.sleep
 import kotlin.math.absoluteValue
 import kotlin.random.Random
 
-object CsvStreamOutputSpec : Spek({
-
-    beforeGroup {
-        TestWbFileDriver.register()
-        WbFileDriver.defaultLocalFileScheme = "test"
-    }
-
-    afterGroup {
-        TestWbFileDriver.unregister()
-    }
-
+class CsvStreamOutputSpec : DescribeSpec({
     describe("Sample to csv") {
         it("should not be empty") {
             val file = TestWbFileDriver.createTempFile()
@@ -109,19 +98,19 @@ object CsvStreamOutputSpec : Spek({
                 val index: Long
         )
 
-        val outputDir by memoized(TEST) { Random.nextLong().absoluteValue.toString(36) }
-        fun outputFiles() = TestWbFileDriver.listFiles(outputDir).sortedBy { it.url }
-        fun BeanStream<Managed<OutputSignal, Long, Sample>>.toCsv(): StreamOutput<Managed<OutputSignal, Long, Sample>> = this.toCsv(
-                uri = "test:///${outputDir}/test.csv",
-                header = listOf("number", "value"),
-                elementSerializer = { (i, _, sample) ->
-                    listOf("$i", String.format("%.10f", sample))
-                },
-                suffix = { "-${it ?: 0}" }
-        )
-
         describe("Flush") {
             it("should write sample stream chunked into 10 different files") {
+                val outputDir = Files.createTempDirectory("tmp").toFile()
+                fun outputFiles() = outputDir.listFiles()?.map { it!! }?.sortedBy { it.name } ?: emptyList()
+                fun BeanStream<Managed<OutputSignal, Long, Sample>>.toCsv(): StreamOutput<Managed<OutputSignal, Long, Sample>> = this.toCsv(
+                        uri = "file://$${outputDir.absolutePath}/test.csv",
+                        header = listOf("number", "value"),
+                        elementSerializer = { (i, _, sample) ->
+                            listOf("$i", String.format("%.10f", sample))
+                        },
+                        suffix = { "-${it ?: 0}" }
+                )
+
                 seqStream()
                         .merge(input { it.first }) { (s, i) -> requireNotNull(s); requireNotNull(i); IndexedSample(s, i) }
                         .map {
@@ -138,13 +127,12 @@ object CsvStreamOutputSpec : Spek({
                 assertThat(outputFiles()).eachIndexed(10) { file, index ->
                     file.prop(TestFile::url).endsWith("test-$index.csv")
                     val offset = index * 100
-                    file.prop("content") { it.readText() }.isEqualTo(
-                            "number,value\n" +
+                    file.prop("lines") { it.readLines() }.isEqualTo(
+                            listOf("number,value") +
                                     (offset..(offset + 100)).asSequence()
                                             .zip(seqStream().asSequence(1000.0f).drop(offset).take(100))
-                                            .joinToString("\n") { "${it.first},${String.format("%.10f", it.second)}" } +
-                                    "\n"
-
+                                            .map { "${it.first},${String.format("%.10f", it.second)}" }
+                                            .toList()
                     )
                 }
 
@@ -152,6 +140,17 @@ object CsvStreamOutputSpec : Spek({
         }
         describe("Open-close gate") {
             it("should write only even chunks of sample stream into 5 different files") {
+                val outputDir = Files.createTempDirectory("tmp").toFile()
+                fun outputFiles() = outputDir.listFiles()?.map { it!! }?.sortedBy { it.name } ?: emptyList()
+                fun BeanStream<Managed<OutputSignal, Long, Sample>>.toCsv(): StreamOutput<Managed<OutputSignal, Long, Sample>> = this.toCsv(
+                        uri = "file://${outputDir.absolutePath}/test.csv",
+                        header = listOf("number", "value"),
+                        elementSerializer = { (i, _, sample) ->
+                            listOf("$i", String.format("%.10f", sample))
+                        },
+                        suffix = { "-${it ?: 0}" }
+                )
+
                 seqStream()
                         .merge(input { it.first }) { (s, i) -> requireNotNull(s); requireNotNull(i); IndexedSample(s, i) }
                         .map {
@@ -173,13 +172,12 @@ object CsvStreamOutputSpec : Spek({
                     val j = index * 2
                     file.prop(TestFile::url).endsWith("test-$j.csv")
                     val offset = j * 100
-                    file.prop("content") { it.readText() }.isEqualTo(
-                            "number,value\n" +
+                    file.prop("lines") { it.readLines() }.isEqualTo(
+                            listOf("number,value") +
                                     (offset..(offset + 100)).asSequence()
                                             .zip(seqStream().asSequence(1000.0f).drop(offset).take(100))
-                                            .joinToString("\n") { "${it.first},${String.format("%.10f", it.second)}" } +
-                                    "\n"
-
+                                            .map { "${it.first},${String.format("%.10f", it.second)}" }
+                                            .toList()
                     )
                 }
 

@@ -1,12 +1,14 @@
 package io.wavebeans.execution.config
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.wavebeans.execution.ExecutionThreadPool
 import io.wavebeans.execution.MultiThreadedExecutionThreadPool
+import io.wavebeans.execution.config.ExecutionConfig.executionThreadPool
+import io.wavebeans.execution.config.ExecutionConfig.serializationCompression
 import io.wavebeans.execution.medium.MediumBuilder
 import io.wavebeans.execution.medium.PlainMediumBuilder
 import io.wavebeans.execution.medium.PlainPodCallResultBuilder
 import io.wavebeans.execution.medium.PodCallResultBuilder
-import mu.KotlinLogging
 import java.util.zip.Deflater
 
 object ExecutionConfig {

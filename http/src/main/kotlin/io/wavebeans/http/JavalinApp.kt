@@ -1,8 +1,8 @@
 package io.wavebeans.http
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.javalin.Javalin
 import io.javalin.http.Context
-import mu.KotlinLogging
 
 interface JavalinApp {
     fun setUp(javalin: Javalin)

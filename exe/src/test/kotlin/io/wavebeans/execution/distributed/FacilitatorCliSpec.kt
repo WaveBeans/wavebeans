@@ -1,21 +1,21 @@
 package io.wavebeans.execution.distributed
 
 import assertk.assertThat
-import assertk.assertions.*
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.lifecycle.CachingMode
-import org.spekframework.spek2.lifecycle.CachingMode.SCOPE
-import org.spekframework.spek2.style.specification.describe
+import assertk.assertions.isEqualTo
+import assertk.assertions.isFalse
+import assertk.assertions.matches
+import assertk.assertions.startsWith
+import io.kotest.core.spec.style.DescribeSpec
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.PrintStream
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 
-object FacilitatorCliSpec : Spek({
+class FacilitatorCliSpec : DescribeSpec({
     describe("Getting help") {
         val ostream = ByteArrayOutputStream()
-        val cli by memoized(SCOPE) { FacilitatorCli(PrintStream(ostream), arrayOf("--help")) }
+        val cli by lazy { FacilitatorCli(PrintStream(ostream), arrayOf("--help")) }
 
         it("should return 0 exit code") { assertThat(cli.call()).isEqualTo(0) }
         it("should have specific output") {
@@ -34,7 +34,7 @@ object FacilitatorCliSpec : Spek({
 
     describe("Getting version") {
         val ostream = ByteArrayOutputStream()
-        val cli by memoized(SCOPE) { FacilitatorCli(PrintStream(ostream), arrayOf("--version")) }
+        val cli by lazy { FacilitatorCli(PrintStream(ostream), arrayOf("--version")) }
 
         it("should return 0 exit code") { assertThat(cli.call()).isEqualTo(0) }
         it("should have specific output") {
@@ -45,7 +45,7 @@ object FacilitatorCliSpec : Spek({
     describe("Starting up") {
         describe("No config file provided") {
             val ostream = ByteArrayOutputStream()
-            val cli by memoized(SCOPE) { FacilitatorCli(PrintStream(ostream), emptyArray()) }
+            val cli by lazy { FacilitatorCli(PrintStream(ostream), emptyArray()) }
 
             it("should return 1 exit code") {
                 assertThat(cli.call()).isEqualTo(1)
@@ -58,7 +58,7 @@ object FacilitatorCliSpec : Spek({
 
         describe("Invalid config file provided") {
             val ostream = ByteArrayOutputStream()
-            val confFile by memoized(SCOPE) {
+            val confFile by lazy {
                 File.createTempFile("facilitator", "conf").also {
                     it.writeText("""
                 invalidConfig {
@@ -67,7 +67,7 @@ object FacilitatorCliSpec : Spek({
             """.trimIndent())
                 }
             }
-            val cli by memoized(SCOPE) { FacilitatorCli(PrintStream(ostream), arrayOf(confFile.absolutePath)) }
+            val cli by lazy { FacilitatorCli(PrintStream(ostream), arrayOf(confFile.absolutePath)) }
 
             it("should return 1 exit code") {
                 assertThat(cli.call()).isEqualTo(1)
@@ -79,7 +79,7 @@ object FacilitatorCliSpec : Spek({
 
         describe("Valid config file provided") {
             val ostream = ByteArrayOutputStream()
-            val confFile by memoized(SCOPE) {
+            val confFile by lazy {
                 File.createTempFile("facilitator", "conf").also {
                     it.writeText("""
                 facilitatorConfig {
@@ -92,8 +92,8 @@ object FacilitatorCliSpec : Spek({
                 }
             }
 
-            val cli by memoized(SCOPE) { FacilitatorCli(PrintStream(ostream), arrayOf(confFile.absolutePath)) }
-            val pool by memoized(SCOPE) { Executors.newCachedThreadPool() }
+            val cli by lazy { FacilitatorCli(PrintStream(ostream), arrayOf(confFile.absolutePath)) }
+            val pool by lazy { Executors.newCachedThreadPool() }
 
             lateinit var future: Future<Int>
             it("should start the cli") {

@@ -1,9 +1,9 @@
 package io.wavebeans.tests
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
 import io.wavebeans.communicator.FacilitatorApiClient
-import mu.KotlinLogging
 import java.io.File
 
 private val log = KotlinLogging.logger { }

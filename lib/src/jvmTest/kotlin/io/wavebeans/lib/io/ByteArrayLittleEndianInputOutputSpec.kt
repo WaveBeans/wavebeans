@@ -21,8 +21,8 @@ import io.wavebeans.lib.sampleOf
 import io.wavebeans.lib.stream.FiniteStream
 import io.wavebeans.lib.stream.rangeProjection
 import io.wavebeans.lib.stream.trim
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
+import io.kotest.core.spec.style.DescribeSpec
+import java.io.File
 import java.lang.Thread.sleep
 import kotlin.math.absoluteValue
 import kotlin.random.Random
@@ -73,7 +73,7 @@ private class ByteArrayFileOutputMock(
     }
 }
 
-object ByteArrayLittleEndianInputOutputSpec : Spek({
+class ByteArrayLittleEndianInputOutputSpec : DescribeSpec({
     val sampleRate = 50.0f
     val buffer = ByteArray(100) { (it and 0xFF).toByte() }
 
@@ -111,16 +111,9 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
         describe("Projected range 0.0s..1.0s") {
             val projection = input.rangeProjection(0, 1000, MILLISECONDS)
 
-            itShouldHave("number of samples 50") { assertThat(projection.samplesCount(sampleRate)).isEqualTo(50L) }
-            itShouldHave("Length should be 1000ms for sample rate 50Hz") {
-                assertThat(
-                    projection.length(
-                        sampleRate,
-                        MILLISECONDS
-                    )
-                ).isEqualTo(1000L)
-            }
-            itShouldHave("Samples should be [0,50)") {
+            it("should have number of samples 50") { assertThat(projection.samplesCount(sampleRate)).isEqualTo(50L) }
+            it("should have Length should be 1000ms for sample rate 50Hz") { assertThat(projection.length(sampleRate, MILLISECONDS)).isEqualTo(1000L) }
+            it("should have Samples should be [0,50)") {
                 assertThat(projection.listOfBytesAsInts(sampleRate, 50)).isEqualTo(
                     (0 until 50).toList()
                 )
@@ -130,16 +123,9 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
         describe("Projected range 0.5s..1.0s") {
             val projection = input.rangeProjection(500, 1000, MILLISECONDS)
 
-            itShouldHave("number of samples 25") { assertThat(projection.samplesCount(sampleRate)).isEqualTo(25L) }
-            itShouldHave("length 500ms for sample rate 50Hz") {
-                assertThat(
-                    projection.length(
-                        sampleRate,
-                        MILLISECONDS
-                    )
-                ).isEqualTo(500L)
-            }
-            itShouldHave("samples with values [25,50)") {
+            it("should have number of samples 25") { assertThat(projection.samplesCount(sampleRate)).isEqualTo(25L) }
+            it("should have length 500ms for sample rate 50Hz") { assertThat(projection.length(sampleRate, MILLISECONDS)).isEqualTo(500L) }
+            it("should have samples with values [25,50)") {
                 assertThat(projection.listOfBytesAsInts(sampleRate)).isEqualTo(
                     (25 until 50).toList()
                 )
@@ -149,16 +135,9 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
         describe("Projected range 0.1s..0.2s") {
             val projection = input.rangeProjection(100, 200, MILLISECONDS)
 
-            itShouldHave("number of samples 5") { assertThat(projection.samplesCount(sampleRate)).isEqualTo(5L) }
-            itShouldHave("length 100ms for sample rate 50Hz") {
-                assertThat(
-                    projection.length(
-                        sampleRate,
-                        MILLISECONDS
-                    )
-                ).isEqualTo(100L)
-            }
-            itShouldHave("samples with values [5,10)") {
+            it("should have number of samples 5") { assertThat(projection.samplesCount(sampleRate)).isEqualTo(5L) }
+            it("should have length 100ms for sample rate 50Hz") { assertThat(projection.length(sampleRate, MILLISECONDS)).isEqualTo(100L) }
+            it("should have samples with values [5,10)") {
                 assertThat(projection.listOfBytesAsInts(sampleRate)).isEqualTo(
                     (5 until 10).toList()
                 )
@@ -168,16 +147,9 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
         describe("Projected range 1.5s..2.5s") {
             val projection = input.rangeProjection(1500, 2500, MILLISECONDS)
 
-            itShouldHave("number of samples 25") { assertThat(projection.samplesCount(sampleRate)).isEqualTo(25L) }
-            itShouldHave("length 500ms for sample rate 50Hz") {
-                assertThat(
-                    projection.length(
-                        sampleRate,
-                        MILLISECONDS
-                    )
-                ).isEqualTo(500L)
-            }
-            itShouldHave("samples with values [75,100)") {
+            it("should have number of samples 25") { assertThat(projection.samplesCount(sampleRate)).isEqualTo(25L) }
+            it("should have length 500ms for sample rate 50Hz") { assertThat(projection.length(sampleRate, MILLISECONDS)).isEqualTo(500L) }
+            it("should have samples with values [75,100)") {
                 assertThat(projection.listOfBytesAsInts(sampleRate)).isEqualTo(
                     (75 until 100).toList()
                 )
@@ -187,16 +159,9 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
         describe("Projected range -1.5s..2.5s") {
             val projection = input.rangeProjection(-1500, 2500, MILLISECONDS)
 
-            itShouldHave("number of samples 100") { assertThat(projection.samplesCount(sampleRate)).isEqualTo(100L) }
-            itShouldHave("length 2000ms for sample rate 50Hz") {
-                assertThat(
-                    projection.length(
-                        sampleRate,
-                        MILLISECONDS
-                    )
-                ).isEqualTo(2000L)
-            }
-            itShouldHave("samples with values [0,100)") {
+            it("should have number of samples 100") { assertThat(projection.samplesCount(sampleRate)).isEqualTo(100L) }
+            it("should have length 2000ms for sample rate 50Hz") { assertThat(projection.length(sampleRate, MILLISECONDS)).isEqualTo(2000L) }
+            it("should have samples with values [0,100)") {
                 assertThat(projection.listOfBytesAsInts(sampleRate)).isEqualTo(
                     (0 until 100).toList()
                 )
@@ -208,8 +173,8 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
         val buffer16 = ByteArray(200) { (it and 0xFF).toByte() }
         val input = buffer16.asInput(sampleRate, BitDepth.BIT_16)
 
-        itShouldHave("number of samples 100") { assertThat(input.samplesCount()).isEqualTo(100L) }
-        itShouldHave("length 2000ms") { assertThat(input.length(MILLISECONDS)).isEqualTo(2000L) }
+        it("should have number of samples 100") { assertThat(input.samplesCount()).isEqualTo(100L) }
+        it("should have length 2000ms") { assertThat(input.length(MILLISECONDS)).isEqualTo(2000L) }
 
         describe("samples with samples made of byte range [0,200)") {
             val samples = (0 until 200 step 2)
@@ -233,16 +198,9 @@ object ByteArrayLittleEndianInputOutputSpec : Spek({
         describe("Projected range 1.0s..2.0s") {
             val projection = input.rangeProjection(1000, 2000, MILLISECONDS)
 
-            itShouldHave("number of samples 25") { assertThat(projection.samplesCount(sampleRate)).isEqualTo(50L) }
-            itShouldHave("length 1000ms for sample rate 50Hz") {
-                assertThat(
-                    projection.length(
-                        sampleRate,
-                        MILLISECONDS
-                    )
-                ).isEqualTo(1000L)
-            }
-            itShouldHave("samples with samples made of byte range [100,200)") {
+            it("should have number of samples 25") { assertThat(projection.samplesCount(sampleRate)).isEqualTo(50L) }
+            it("should have length 1000ms for sample rate 50Hz") { assertThat(projection.length(sampleRate, MILLISECONDS)).isEqualTo(1000L) }
+            it("should have samples with samples made of byte range [100,200)") {
                 assertThat(projection.listOfShortsAsInts(sampleRate).map { it and 0xFFFF }).isEqualTo(
                     (100 until 200)
                         .windowed(2, 2)

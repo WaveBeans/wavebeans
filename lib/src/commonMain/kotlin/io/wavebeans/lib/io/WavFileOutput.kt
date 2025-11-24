@@ -1,6 +1,20 @@
 package io.wavebeans.lib.io
 
 import io.wavebeans.lib.*
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.encoding.CompositeDecoder
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.encoding.decodeStructure
+import kotlinx.serialization.encoding.encodeStructure
+import kotlin.properties.Delegates
+import kotlin.properties.Delegates.notNull
+import kotlin.reflect.jvm.jvmName
 
 /**
  * Streams the mono channel signal into the file with wav format, each sample is stored as unsigned 8 bit integer.
@@ -12,7 +26,7 @@ import io.wavebeans.lib.*
  * @return [StreamOutput] to run the processing on.
  */
 inline fun <reified T : Any> BeanStream<T>.toMono8bitWav(uri: String): StreamOutput<T> =
-        this.toWav<T, Unit, T>(uri, BitDepth.BIT_8, 1)
+    this.toWav<T, Unit, T>(uri, BitDepth.BIT_8, 1)
 
 /**
  * Streams the mono channel signal into the file with wav format, each sample is stored as signed 16 bit
@@ -24,7 +38,7 @@ inline fun <reified T : Any> BeanStream<T>.toMono8bitWav(uri: String): StreamOut
  * @return [StreamOutput] to run the processing on.
  */
 inline fun <reified T : Any> BeanStream<T>.toMono16bitWav(uri: String): StreamOutput<T> =
-        this.toWav<T, Unit, T>(uri, BitDepth.BIT_16, 1)
+    this.toWav<T, Unit, T>(uri, BitDepth.BIT_16, 1)
 
 /**
  * Streams the mono channel signal into the file with wav format, each sample is stored as signed 24 bit
@@ -36,7 +50,7 @@ inline fun <reified T : Any> BeanStream<T>.toMono16bitWav(uri: String): StreamOu
  * @return [StreamOutput] to run the processing on.
  */
 inline fun <reified T : Any> BeanStream<T>.toMono24bitWav(uri: String): StreamOutput<T> =
-        this.toWav<T, Unit, T>(uri, BitDepth.BIT_24, 1)
+    this.toWav<T, Unit, T>(uri, BitDepth.BIT_24, 1)
 
 /**
  * Streams the mono channel signal into the file with wav format, each sample is stored as signed 32 bit
@@ -48,7 +62,7 @@ inline fun <reified T : Any> BeanStream<T>.toMono24bitWav(uri: String): StreamOu
  * @return [StreamOutput] to run the processing on.
  */
 inline fun <reified T : Any> BeanStream<T>.toMono32bitWav(uri: String): StreamOutput<T> =
-        this.toWav<T, Unit, T>(uri, BitDepth.BIT_32, 1)
+    this.toWav<T, Unit, T>(uri, BitDepth.BIT_32, 1)
 
 /**
  * Streams the mono channel signal into the file with wav format, each sample is stored as unsigned 8 bit
@@ -69,8 +83,8 @@ inline fun <reified T : Any> BeanStream<T>.toMono32bitWav(uri: String): StreamOu
  * @return [StreamOutput] to run the processing on.
  */
 inline fun <A : Any, reified T : Any> BeanStream<Managed<OutputSignal, A, T>>.toMono8bitWav(
-        uri: String,
-        noinline suffix: (A?) -> String
+    uri: String,
+    noinline suffix: (A?) -> String
 ): StreamOutput<Managed<OutputSignal, A, T>> = toWav<Managed<OutputSignal, A, T>, A, T>(uri, BitDepth.BIT_8, 1, suffix)
 
 /**
@@ -92,8 +106,8 @@ inline fun <A : Any, reified T : Any> BeanStream<Managed<OutputSignal, A, T>>.to
  * @return [StreamOutput] to run the processing on.
  */
 inline fun <A : Any, reified T : Any> BeanStream<Managed<OutputSignal, A, T>>.toMono16bitWav(
-        uri: String,
-        noinline suffix: (A?) -> String
+    uri: String,
+    noinline suffix: (A?) -> String
 ): StreamOutput<Managed<OutputSignal, A, T>> = toWav<Managed<OutputSignal, A, T>, A, T>(uri, BitDepth.BIT_16, 1, suffix)
 
 /**
@@ -115,8 +129,8 @@ inline fun <A : Any, reified T : Any> BeanStream<Managed<OutputSignal, A, T>>.to
  * @return [StreamOutput] to run the processing on.
  */
 inline fun <A : Any, reified T : Any> BeanStream<Managed<OutputSignal, A, T>>.toMono24bitWav(
-        uri: String,
-        noinline suffix: (A?) -> String
+    uri: String,
+    noinline suffix: (A?) -> String
 ): StreamOutput<Managed<OutputSignal, A, T>> = toWav<Managed<OutputSignal, A, T>, A, T>(uri, BitDepth.BIT_24, 1, suffix)
 
 /**
@@ -138,8 +152,8 @@ inline fun <A : Any, reified T : Any> BeanStream<Managed<OutputSignal, A, T>>.to
  * @return [StreamOutput] to run the processing on.
  */
 inline fun <A : Any, reified T : Any> BeanStream<Managed<OutputSignal, A, T>>.toMono32bitWav(
-        uri: String,
-        noinline suffix: (A?) -> String
+    uri: String,
+    noinline suffix: (A?) -> String
 ): StreamOutput<Managed<OutputSignal, A, T>> = toWav<Managed<OutputSignal, A, T>, A, T>(uri, BitDepth.BIT_32, 1, suffix)
 
 /**
@@ -168,26 +182,30 @@ inline fun <A : Any, reified T : Any> BeanStream<Managed<OutputSignal, A, T>>.to
  */
 @Suppress("UNCHECKED_CAST")
 inline fun <R : Any, A : Any, reified T : Any> BeanStream<R>.toWav(
-        uri: String,
-        bitDepth: BitDepth,
-        numberOfChannels: Int,
-        noinline suffix: ((A?) -> String)? = null
+    uri: String,
+    bitDepth: BitDepth,
+    numberOfChannels: Int,
+    noinline suffix: ((A?) -> String)? = null
 ): StreamOutput<R> {
     when {
         (T::class == Sample::class || T::class == SampleVector::class) && suffix != null -> {
             return WavPartialFileOutput(
-                    this as BeanStream<Managed<OutputSignal, A, Any>>,
-                    WavFileOutputParams(uri, bitDepth, numberOfChannels, wrap(suffix))
+                this as BeanStream<Managed<OutputSignal, A, Any>>,
+                WavFileOutputParams(uri, bitDepth, numberOfChannels, Fn.wrap(suffix))
             ) as StreamOutput<R>
         }
+
         (T::class == Sample::class || T::class == SampleVector::class) && suffix == null -> {
             return WavFileOutput(
-                    this as BeanStream<Any>,
-                    WavFileOutputParams(uri, bitDepth, numberOfChannels)
+                this as BeanStream<Any>,
+                WavFileOutputParams(uri, bitDepth, numberOfChannels)
             ) as StreamOutput<R>
         }
-        else -> throw UnsupportedOperationException("Sample class ${T::class} and " +
-                "suffix=$suffix is not supported for streaming Wav output")
+
+        else -> throw UnsupportedOperationException(
+            "Sample class ${T::class} and " +
+                    "suffix=$suffix is not supported for streaming Wav output"
+        )
     }
 }
 
@@ -198,67 +216,68 @@ inline fun <R : Any, A : Any, reified T : Any> BeanStream<R>.toWav(
  */
 //@Serializable(with = WavFileOutputParamsSerializer::class)
 data class WavFileOutputParams<A : Any>(
-        /**
-         * The URI to stream to, i.e. `file:///home/user/my.wav`.
-         */
-        val uri: String,
-        /**
-         * The numeric type to use to store the samples. The byte order is LE.
-         */
-        val bitDepth: BitDepth,
-        /**
-         * Number of channels to store in wav-file.
-         */
-        val numberOfChannels: Int,
-        /**
-         * [Fn] function to generate suffix is applicable for the stream.
-         */
-        val suffix: Fn<A?, String> = wrap { "" },
+    /**
+     * The URI to stream to, i.e. `file:///home/user/my.wav`.
+     */
+    val uri: String,
+    /**
+     * The numeric type to use to store the samples. The byte order is LE.
+     */
+    val bitDepth: BitDepth,
+    /**
+     * Number of channels to store in wav-file.
+     */
+    val numberOfChannels: Int,
+    /**
+     * [Fn] function to generate suffix is applicable for the stream.
+     */
+    val suffix: Fn<A?, String> = wrap { "" },
 ) : BeanParams
 
-//object WavFileOutputParamsSerializer: KSerializer<WavFileOutputParams<*>> {
-//    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(WavFileOutputParams::class.jvmName) {
-//        element("uri", String.serializer().descriptor)
-//        element("bitDepth", Int.serializer().descriptor)
-//        element("numberOfChannels", Int.serializer().descriptor)
-//        element("suffix", FnSerializer.descriptor)
-//    }
-//
-//    override fun deserialize(decoder: Decoder): WavFileOutputParams<*> {
-//        val dec = decoder.beginStructure(descriptor)
-//        var uri: String? = null
-//        var bitDepth: Int? = null
-//        var numberOfChannels: Int? = null
-//        var suffix: Fn<*, *>? = null
-//        loop@ while (true) {
-//            when (val i = dec.decodeElementIndex(descriptor)) {
-//                CompositeDecoder.DECODE_DONE -> break@loop
-//                0 -> uri = dec.decodeStringElement(descriptor, i)
-//                1 -> bitDepth = dec.decodeIntElement(descriptor, i)
-//                2 -> numberOfChannels = dec.decodeIntElement(descriptor, i)
-//                3 -> suffix = dec.decodeSerializableElement(descriptor, i, FnSerializer)
-//                else -> throw SerializationException("Unknown index $i")
-//            }
-//        }
-//        @Suppress("UNCHECKED_CAST")
-//        return WavFileOutputParams(
-//                uri!!,
-//                BitDepth.of(bitDepth!!),
-//                numberOfChannels!!,
-//                suffix!! as Fn<Any?, String>
-//        )
-//    }
-//
-//    override fun serialize(encoder: Encoder, value: WavFileOutputParams<*>) {
-//        val structure = encoder.beginStructure(descriptor)
-//        structure.encodeStringElement(descriptor, 0, value.uri)
-//        structure.encodeSerializableElement(descriptor, 1, Int.serializer(), value.bitDepth.bits)
-//        structure.encodeSerializableElement(descriptor, 2, Int.serializer(), value.numberOfChannels)
-//        structure.encodeSerializableElement(descriptor, 3, FnSerializer, value.suffix)
-//        structure.endStructure(descriptor)
-//    }
-//
-//}
+object WavFileOutputParamsSerializer : KSerializer<WavFileOutputParams<*>> {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(WavFileOutputParams::class.jvmName) {
+        element("uri", String.serializer().descriptor)
+        element("bitDepth", Int.serializer().descriptor)
+        element("numberOfChannels", Int.serializer().descriptor)
+        element("suffix", FnSerializer.descriptor)
+    }
+
+    override fun deserialize(decoder: Decoder): WavFileOutputParams<*> {
+        return decoder.decodeStructure(descriptor) {
+            lateinit var uri: String
+            var bitDepth by notNull<Int>()
+            var numberOfChannels by notNull<Int>()
+            lateinit var suffix: Fn<*, *>
+            loop@ while (true) {
+                when (val i = decodeElementIndex(descriptor)) {
+                    CompositeDecoder.DECODE_DONE -> break@loop
+                    0 -> uri = decodeStringElement(descriptor, i)
+                    1 -> bitDepth = decodeIntElement(descriptor, i)
+                    2 -> numberOfChannels = decodeIntElement(descriptor, i)
+                    3 -> suffix = decodeSerializableElement(descriptor, i, FnSerializer)
+                    else -> throw SerializationException("Unknown index $i")
+                }
+            }
+            @Suppress("UNCHECKED_CAST")
+            WavFileOutputParams(
+                uri,
+                BitDepth.of(bitDepth),
+                numberOfChannels,
+                suffix as Fn<Any?, String>
+            )
+        }
+    }
+
+    override fun serialize(encoder: Encoder, value: WavFileOutputParams<*>) {
+        encoder.encodeStructure(descriptor) {
+            encodeStringElement(descriptor, 0, value.uri)
+            encodeSerializableElement(descriptor, 1, Int.serializer(), value.bitDepth.bits)
+            encodeSerializableElement(descriptor, 2, Int.serializer(), value.numberOfChannels)
+            encodeSerializableElement(descriptor, 3, FnSerializer, value.suffix)
+        }
+    }
+
+}
 
 /**
  * Performs the output of the [stream] to a single wav-file. Uses [WavWriter] ot perform the actual writing.
@@ -266,25 +285,25 @@ data class WavFileOutputParams<A : Any>(
  * never called.
  */
 class WavFileOutput(
-        /**
-         * The stream to store into a wav-file. Can be of type [Sample] or [SampleVector].
-         */
-        override val input: BeanStream<Any>,
-        /**
-         * Parameters to tune the stream output.
-         */
-        override val parameters: WavFileOutputParams<Unit>
+    /**
+     * The stream to store into a wav-file. Can be of type [Sample] or [SampleVector].
+     */
+    override val input: BeanStream<Any>,
+    /**
+     * Parameters to tune the stream output.
+     */
+    override val parameters: WavFileOutputParams<Unit>
 ) : AbstractStreamOutput<Any>(input), SinglePartitionBean {
 
     override fun outputWriter(inputSequence: Sequence<Any>, sampleRate: Float): Writer =
-            WavWriter(
-                    input,
-                    parameters.bitDepth,
-                    sampleRate,
-                    parameters.numberOfChannels,
-                    plainFileWriterDelegate<Unit>(parameters.uri),
-                    WavFileOutput::class
-            )
+        WavWriter(
+            input,
+            parameters.bitDepth,
+            sampleRate,
+            parameters.numberOfChannels,
+            plainFileWriterDelegate<Unit>(parameters.uri),
+            WavFileOutput::class
+        )
 }
 
 /**
@@ -293,24 +312,24 @@ class WavFileOutput(
  * whenever the [FlushOutputSignal] was called in order to generate new URI.
  */
 class WavPartialFileOutput<A : Any>(
-        /**
-         * The [Managed] stream to store into a wav-file. Sample type can be one of [Sample] or [SampleVector].
-         */
-        override val input: BeanStream<Managed<OutputSignal, A, Any>>,
-        /**
-         * Parameters to tune the stream output.
-         */
-        override val parameters: WavFileOutputParams<A>
+    /**
+     * The [Managed] stream to store into a wav-file. Sample type can be one of [Sample] or [SampleVector].
+     */
+    override val input: BeanStream<Managed<OutputSignal, A, Any>>,
+    /**
+     * Parameters to tune the stream output.
+     */
+    override val parameters: WavFileOutputParams<A>
 ) : AbstractStreamOutput<Managed<OutputSignal, A, Any>>(input), SinglePartitionBean {
 
     override fun outputWriter(inputSequence: Sequence<Managed<OutputSignal, A, Any>>, sampleRate: Float): Writer =
-            WavPartialWriter(
-                    input,
-                    parameters.bitDepth,
-                    sampleRate,
-                    parameters.numberOfChannels,
-                    suffixedFileWriterDelegate(parameters.uri) { parameters.suffix.apply(it) },
-                    WavPartialFileOutput::class
-            )
+        WavPartialWriter(
+            input,
+            parameters.bitDepth,
+            sampleRate,
+            parameters.numberOfChannels,
+            suffixedFileWriterDelegate(parameters.uri) { parameters.suffix.apply(it) },
+            WavPartialFileOutput::class
+        )
 }
 

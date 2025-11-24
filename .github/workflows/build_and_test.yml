@@ -1,7 +1,7 @@
   
 name: Build And Test
 
-on: [push, pull_request]
+on: [pull_request]
 
 jobs:
   test:
@@ -13,4 +13,23 @@ jobs:
           DBX_TEST_CLIENT_ID: ${{ secrets.DBX_TEST_CLIENT_ID }}
           DBX_TEST_ACCESS_TOKEN: ${{ secrets.DBX_TEST_ACCESS_TOKEN }}
         with:
-          args: ./gradlew test --info
+          args: ./gradlew build --info --max-workers 1 --no-daemon
+      # Upload HTML test reports
+      - name: Upload Test Reports
+        uses: actions/upload-artifact@v4
+        if: always()  # Always upload, even if tests fail
+        with:
+          name: test-reports
+          path: |
+            **/build/reports/tests/
+            **/build/test-results/
+          retention-days: 30
+
+      # Publish test results summary
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          junit_files: '**/build/test-results/**/TEST-*.xml'
+          check_name: 'Test Results'
+          comment_mode: always

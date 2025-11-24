@@ -1,8 +1,14 @@
 rootProject.name = "wavebeans"
 
+dependencyResolutionManagement {
+    versionCatalogs {
+        create("libs") {
+        }
+    }
+}
+
 include(":lib", ":cli", ":exe", ":http", ":distr", ":proto")
 include(":tests")
-
 
 include(":filesystems")
 include(":filesystems-core")

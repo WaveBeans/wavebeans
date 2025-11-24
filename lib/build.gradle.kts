@@ -1,9 +1,7 @@
 plugins {
-    val kotlinVersion: String by System.getProperties()
+    // TODO kotlin("multiplatform")
 
-    kotlin("multiplatform")
-    kotlin("plugin.serialization") version kotlinVersion
-    id("org.gradle.test-retry") version "1.2.0"
+    alias(libs.plugins.kotlin.serialization)
 }
 
 kotlin {

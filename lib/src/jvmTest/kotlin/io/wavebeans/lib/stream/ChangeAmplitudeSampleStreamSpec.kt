@@ -4,8 +4,7 @@ import assertk.Assert
 import assertk.assertThat
 import assertk.assertions.support.fail
 import io.wavebeans.lib.*
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
+import io.kotest.core.spec.style.DescribeSpec
 
 
 private fun Assert<List<Int>>.isProgression(expected: IntProgression) = given { actual ->
@@ -14,7 +13,7 @@ private fun Assert<List<Int>>.isProgression(expected: IntProgression) = given { 
 }
 
 
-object ChangeAmplitudeSampleStreamSpec : Spek({
+class ChangeAmplitudeSampleStreamSpec : DescribeSpec({
     describe("Int range stream") {
         val sampleRate = 10.0f
         fun stream(range: IntProgression) = range.stream(sampleRate, BitDepth.BIT_32)

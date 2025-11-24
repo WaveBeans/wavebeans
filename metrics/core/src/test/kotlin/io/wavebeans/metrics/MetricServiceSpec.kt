@@ -1,24 +1,23 @@
 package io.wavebeans.metrics
 
 import assertk.assertThat
-import assertk.assertions.isNull
-import assertk.catch
-import com.nhaarman.mockitokotlin2.*
+import assertk.assertions.isSuccess
+import io.kotest.core.spec.IsolationMode
+import io.kotest.core.spec.style.DescribeSpec
 import org.mockito.ArgumentMatchers
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.lifecycle.CachingMode
-import org.spekframework.spek2.style.specification.describe
+import org.mockito.kotlin.*
 
-object MetricServiceSpec : Spek({
+class MetricServiceSpec : DescribeSpec({
+    isolationMode = IsolationMode.InstancePerLeaf
 
     describe("Mock implementation") {
 
         describe("Increment metric") {
 
-            val myMetricObject by memoized(CachingMode.TEST) { MetricObject.counter("io.wavebeans.execution.metrics", "test", "") }
-            val myMetricConnector by memoized(CachingMode.TEST) { mock<MetricConnector>() }
+            val myMetricObject by lazy { MetricObject.counter("io.wavebeans.execution.metrics", "test", "") }
+            val myMetricConnector by lazy { mock<MetricConnector>() }
 
-            beforeEachTest {
+            beforeTest {
                 MetricService.reset()
                 MetricService.registerConnector(myMetricConnector)
             }
@@ -45,23 +44,23 @@ object MetricServiceSpec : Spek({
 
             it("shouldn't fail if exception is thrown by one of the connectors during increment") {
                 whenever(myMetricConnector.increment(any(), any())).thenThrow(IllegalStateException("shouldn't throw it"))
-                assertThat(catch { myMetricObject.increment() }).isNull()
+                assertThat { myMetricObject.increment() }.isSuccess()
                 verify(myMetricConnector).increment(eq(myMetricObject), eq(1.0))
             }
 
             it("shouldn't fail if exception is thrown by one of the connectors during decrement") {
                 whenever(myMetricConnector.decrement(any(), any())).thenThrow(IllegalStateException("shouldn't throw it"))
-                assertThat(catch { myMetricObject.decrement() }).isNull()
+                assertThat { myMetricObject.decrement() }.isSuccess()
                 verify(myMetricConnector).decrement(eq(myMetricObject), eq(1.0))
             }
         }
 
         describe("Gauge metric") {
 
-            val myMetricObject by memoized(CachingMode.TEST) { MetricObject.gauge("io.wavebeans.execution.metrics", "test", "") }
-            val myMetricConnector by memoized(CachingMode.TEST) { mock<MetricConnector>() }
+            val myMetricObject by lazy { MetricObject.gauge("io.wavebeans.execution.metrics", "test", "") }
+            val myMetricConnector by lazy { mock<MetricConnector>() }
 
-            beforeEachTest {
+            beforeTest {
                 MetricService.reset()
                 MetricService.registerConnector(myMetricConnector)
             }
@@ -78,23 +77,23 @@ object MetricServiceSpec : Spek({
 
             it("shouldn't fail if exception is thrown by one of the connectors during gauge record") {
                 whenever(myMetricConnector.gauge(any(), ArgumentMatchers.anyDouble())).thenThrow(IllegalStateException("shouldn't throw it"))
-                assertThat(catch { myMetricObject.set(1.0) }).isNull()
+                assertThat { myMetricObject.set(1.0) }.isSuccess()
                 verify(myMetricConnector).gauge(eq(myMetricObject), eq(1.0))
             }
 
             it("shouldn't fail if exception is thrown by one of the connectors during gauge delta record") {
                 whenever(myMetricConnector.gaugeDelta(any(), ArgumentMatchers.anyDouble())).thenThrow(IllegalStateException("shouldn't throw it"))
-                assertThat(catch { myMetricObject.increment(1.0) }).isNull()
+                assertThat { myMetricObject.increment(1.0) }.isSuccess()
                 verify(myMetricConnector).gaugeDelta(eq(myMetricObject), eq(1.0))
             }
         }
 
         describe("Time metric") {
 
-            val myMetricObject by memoized(CachingMode.TEST) { MetricObject.time("io.wavebeans.execution.metrics", "test", "") }
-            val myMetricConnector by memoized(CachingMode.TEST) { mock<MetricConnector>() }
+            val myMetricObject by lazy { MetricObject.time("io.wavebeans.execution.metrics", "test", "") }
+            val myMetricConnector by lazy { mock<MetricConnector>() }
 
-            beforeEachTest {
+            beforeTest {
                 MetricService.reset()
                 MetricService.registerConnector(myMetricConnector)
             }
@@ -106,7 +105,7 @@ object MetricServiceSpec : Spek({
 
             it("shouldn't fail if exception is thrown by one of the connectors during time record") {
                 whenever(myMetricConnector.time(any(), any())).thenThrow(IllegalStateException("shouldn't throw it"))
-                assertThat(catch { myMetricObject.time(1L) }).isNull()
+                assertThat { myMetricObject.time(1L) }.isSuccess()
                 verify(myMetricConnector).time(eq(myMetricObject), eq(1L))
             }
         }

@@ -2,7 +2,8 @@ package io.wavebeans.tests
 
 import assertk.assertThat
 import assertk.assertions.*
-import assertk.catch
+import io.github.oshai.kotlinlogging.KotlinLogging
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.execution.MultiThreadedOverseer
 import io.wavebeans.execution.SingleThreadedOverseer
 import io.wavebeans.lib.*
@@ -16,9 +17,6 @@ import io.wavebeans.lib.stream.window.hamming
 import io.wavebeans.lib.stream.window.window
 import io.wavebeans.lib.table.TableRegistry
 import io.wavebeans.lib.table.toTable
-import mu.KotlinLogging
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
 import java.io.File
 import java.io.OutputStream
 import kotlin.math.PI
@@ -28,7 +26,7 @@ import kotlin.system.measureTimeMillis
 
 private val log = KotlinLogging.logger {}
 
-object MultiPartitionCorrectnessSpec : Spek({
+class MultiPartitionCorrectnessSpec : DescribeSpec({
 
     fun runInParallel(
             outputs: List<StreamOutput<out Any>>,
@@ -340,10 +338,10 @@ object MultiPartitionCorrectnessSpec : Spek({
         val run1 = seqStream().map { SomeUnknownClass(1) }.trim(100).toDevNull()
 
         it("should throw exception when run in parallel") {
-            assertThat(catch { runInParallel(listOf(run1)) }).isNotNull()
+            assertThat { runInParallel(listOf(run1)) }.isFailure()
         }
         it("should  throw exception when run in single thread") {
-            assertThat(catch { runLocally(listOf(run1)) }).isNotNull()
+            assertThat { runLocally(listOf(run1)) }.isFailure()
         }
     }
 

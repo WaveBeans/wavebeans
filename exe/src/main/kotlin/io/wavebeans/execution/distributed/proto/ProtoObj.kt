@@ -31,8 +31,6 @@ object ProtoObj {
         is FloatArray? -> obj.toProtoValue()
         is IntArray? -> obj.toProtoValue()
         is LongArray? -> obj.toProtoValue()
-        null -> throw IllegalArgumentException("input object is null and unsupported, have to be wrapped to " +
-                "${ProtoValue::class} manually")
         else -> obj
     }
 

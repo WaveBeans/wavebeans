@@ -15,7 +15,7 @@ class DropboxWbFileOutputStream(
         private val dropboxDriverConfig: DropboxDriverConfig
 ) : OutputStream {
 
-    private val session = client.files().uploadSessionStart(false).finish()
+    private val session = client.files().uploadSessionStart().finish()
     private val buffer = ByteArray(dropboxDriverConfig.bufferSize)
     private var count = 0
     private var offset = 0L

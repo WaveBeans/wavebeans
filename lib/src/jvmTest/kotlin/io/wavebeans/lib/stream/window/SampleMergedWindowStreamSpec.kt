@@ -3,14 +3,12 @@ package io.wavebeans.lib.stream.window
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
-import assertk.catch
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.lib.*
 import io.wavebeans.lib.stream.rangeProjection
 import io.wavebeans.tests.eachIndexed
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
 
-object SampleMergedWindowStreamSpec : Spek({
+class SampleMergedWindowStreamSpec : DescribeSpec({
     describe("Fixed window of size=2") {
         val stream1 = (0..3).stream().window(2)
 
@@ -41,22 +39,22 @@ object SampleMergedWindowStreamSpec : Spek({
                 val res = (s1 * s2).asSequence(1.0f).asGroupedDoubles().toList()
                 assertThat(res).at(0).eachIndexed(2) { v, i ->
                     v.isCloseTo(
-                            when (i) {
-                                0 -> 0.05
-                                1 -> 0.12
-                                else -> throw UnsupportedOperationException()
-                            },
-                            1e-10
+                        when (i) {
+                            0 -> 0.05
+                            1 -> 0.12
+                            else -> throw UnsupportedOperationException()
+                        },
+                        1e-10
                     )
                 }
                 assertThat(res).at(1).eachIndexed(2) { v, i ->
                     v.isCloseTo(
-                            when (i) {
-                                0 -> 0.21
-                                1 -> 0.32
-                                else -> throw UnsupportedOperationException()
-                            },
-                            1e-10
+                        when (i) {
+                            0 -> 0.21
+                            1 -> 0.32
+                            else -> throw UnsupportedOperationException()
+                        },
+                        1e-10
                     )
                 }
             }
@@ -67,22 +65,22 @@ object SampleMergedWindowStreamSpec : Spek({
                 val res = (s1 / s2).asSequence(1.0f).asGroupedDoubles().toList()
                 assertThat(res).at(0).eachIndexed(2) { v, i ->
                     v.isCloseTo(
-                            when (i) {
-                                0 -> 0.5
-                                1 -> 0.5
-                                else -> throw UnsupportedOperationException()
-                            },
-                            1e-10
+                        when (i) {
+                            0 -> 0.5
+                            1 -> 0.5
+                            else -> throw UnsupportedOperationException()
+                        },
+                        1e-10
                     )
                 }
                 assertThat(res).at(1).eachIndexed(2) { v, i ->
                     v.isCloseTo(
-                            when (i) {
-                                0 -> 0.5
-                                1 -> 0.5
-                                else -> throw UnsupportedOperationException()
-                            },
-                            1e-10
+                        when (i) {
+                            0 -> 0.5
+                            1 -> 0.5
+                            else -> throw UnsupportedOperationException()
+                        },
+                        1e-10
                     )
                 }
             }
@@ -180,17 +178,19 @@ object SampleMergedWindowStreamSpec : Spek({
             val stream2 = (10..15).stream().window(3)
 
             it("should not be summed up") {
-                val e = catch { (stream1 + stream2).asSequence(1.0f).asGroupedInts().toList() }
-                assertThat(e)
-                        .isNotNull()
-                        .message().isEqualTo("Can't merge with stream with different window size or step")
+                assertThat { (stream1 + stream2).asSequence(1.0f).asGroupedInts().toList() }
+                    .isFailure()
+                    .isNotNull()
+                    .message()
+                    .isEqualTo("Can't merge with stream with different window size or step")
             }
 
             it("should not be subtracted") {
-                val e = catch { (stream1 - stream2).asSequence(1.0f).asGroupedInts().toList() }
-                assertThat(e)
-                        .isNotNull()
-                        .message().isEqualTo("Can't merge with stream with different window size or step")
+                assertThat { (stream1 - stream2).asSequence(1.0f).asGroupedInts().toList() }
+                    .isFailure()
+                    .isNotNull()
+                    .message()
+                    .isEqualTo("Can't merge with stream with different window size or step")
             }
 
         }
@@ -322,17 +322,19 @@ object SampleMergedWindowStreamSpec : Spek({
             val stream2 = (10..15).stream().window(4, 2)
 
             it("should not be summed up") {
-                val e = catch { (stream1 + stream2).asSequence(1.0f).asGroupedInts().toList() }
-                assertThat(e)
-                        .isNotNull()
-                        .message().isEqualTo("Can't merge with stream with different window size or step")
+                assertThat { (stream1 + stream2).asSequence(1.0f).asGroupedInts().toList() }
+                    .isFailure()
+                    .isNotNull()
+                    .message()
+                    .isEqualTo("Can't merge with stream with different window size or step")
             }
 
             it("should not be subtracted") {
-                val e = catch { (stream1 - stream2).asSequence(1.0f).asGroupedInts().toList() }
-                assertThat(e)
-                        .isNotNull()
-                        .message().isEqualTo("Can't merge with stream with different window size or step")
+                assertThat { (stream1 - stream2).asSequence(1.0f).asGroupedInts().toList() }
+                    .isFailure()
+                    .isNotNull()
+                    .message()
+                    .isEqualTo("Can't merge with stream with different window size or step")
             }
 
         }

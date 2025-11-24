@@ -5,13 +5,12 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.matches
 import assertk.assertions.prop
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
+import io.kotest.core.spec.style.DescribeSpec
 
-class EnvironmentSpec : Spek({
+class EnvironmentSpec : DescribeSpec({
 
     describe("Kotlin compiler installed") {
-        it("should be 1.7.x") {
+        it("should be 2.x.x") {
             val cmd = CommandRunner(
                 kotlincCmd(),
                 "-version"
@@ -21,7 +20,7 @@ class EnvironmentSpec : Spek({
                 prop(CommandResult::exitCode).isEqualTo(0)
                 prop(CommandResult::output)
                     .transform { String(it) }
-                    .matches(".*kotlinc-jvm 1\\.7\\.\\d+.*".toRegex(RegexOption.DOT_MATCHES_ALL))
+                    .matches(".*kotlinc-jvm 2\\.\\d+\\.\\d+.*".toRegex(RegexOption.DOT_MATCHES_ALL))
             }
         }
     }

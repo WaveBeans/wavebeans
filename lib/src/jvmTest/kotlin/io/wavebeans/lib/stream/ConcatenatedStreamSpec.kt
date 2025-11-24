@@ -11,11 +11,10 @@ import io.wavebeans.lib.BeanStream
 import io.wavebeans.lib.Sample
 import io.wavebeans.tests.eachIndexed
 import io.wavebeans.lib.seqStream
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.lib.TimeUnit
 
-object ConcatenatedStreamSpec : Spek({
+class ConcatenatedStreamSpec : DescribeSpec({
 
     describe("Concatenate finite streams") {
 

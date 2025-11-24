@@ -2,17 +2,16 @@ package io.wavebeans.lib.stream
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.lib.Sample
 import io.wavebeans.lib.math.i
-import io.wavebeans.lib.sampleVectorOf
 import io.wavebeans.lib.sampleOf
+import io.wavebeans.lib.sampleVectorOf
 import io.wavebeans.lib.stream.SampleCountMeasurement.samplesInObject
 import io.wavebeans.lib.stream.fft.FftSample
 import io.wavebeans.lib.stream.window.Window
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
 
-object SampleCountMeasurementSpec : Spek({
+object SampleCountMeasurementSpec : DescribeSpec({
     describe("Measuring builtin types") {
         it("should measure samples") {
             val obj = sampleOf(1)

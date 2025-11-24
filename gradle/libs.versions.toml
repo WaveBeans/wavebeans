@@ -1,0 +1,78 @@
+[versions]
+# common compile scope
+kotlin = "2.2.20"
+kotlinx-serialization = "1.9.0"
+kotlin-logging = "7.0.13"
+# fs compile scope
+dropbox = "7.0.0"
+# exe compile scope
+konf = "0.22.1"
+grpc = "1.76.0"
+protobuf = "4.33.0"
+javax-annotation = "1.3.1"
+logback = "1.5.20"
+# http compile scope
+javalin = "3.13.7"
+netty = "4.2.7.Final"
+# cli compile scopr
+commons-cli = "1.4"
+# test scope
+kotest = "6.0.4"
+assertk = "0.26"
+mockito-kotlin = "5.4.0"
+http4k = "4.0.0.0"
+test-retry = "1.6.4"
+# build scope
+gradle-protobuf-plugin = "0.9.5"
+osdetector = "1.7.1"
+
+[libraries]
+kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
+kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
+kotlin-scripting-jvm = { module = "org.jetbrains.kotlin:kotlin-scripting-jvm", version.ref = "kotlin" }
+kotlin-scripting-jvm-host = { module = "org.jetbrains.kotlin:kotlin-scripting-jvm-host", version.ref = "kotlin" }
+kotlin-scripting-common = { module = "org.jetbrains.kotlin:kotlin-scripting-common", version.ref = "kotlin" }
+kotlin-scripting-compiler-embeddable = { module = "org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable", version.ref = "kotlin" }
+kotlin-compiler-embeddable = { module = "org.jetbrains.kotlin:kotlin-compiler-embeddable", version.ref = "kotlin" }
+kotlin-main-kts = { module = "org.jetbrains.kotlin:kotlin-main-kts", version.ref = "kotlin" }
+
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+kotlinx-serialization-protobuf = { module = "org.jetbrains.kotlinx:kotlinx-serialization-protobuf", version.ref = "kotlinx-serialization" }
+
+kotlin-logging = { module = "io.github.oshai:kotlin-logging", version.ref = "kotlin-logging" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+assertk = { module = "com.willowtreeapps.assertk:assertk-jvm", version.ref = "assertk" }
+mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito-kotlin" }
+
+netty-all = { module = "io.netty:netty-all", version.ref = "netty" }
+javalin = { module = "io.javalin:javalin", version.ref = "javalin" }
+http4k-core = { module = "org.http4k:http4k-core", version.ref = "http4k" }
+http4k-client-okhttp = { module = "org.http4k:http4k-client-okhttp", version.ref = "http4k" }
+
+commons-cli = { module = "commons-cli:commons-cli", version.ref = "commons-cli" }
+konf-core = { module = "com.uchuhimo:konf-core", version.ref = "konf" }
+konf-hocon = { module = "com.uchuhimo:konf-hocon", version.ref = "konf" }
+
+dropbox-core-sdk = { module = "com.dropbox.core:dropbox-core-sdk", version.ref = "dropbox" }
+
+javax-annotation-api = { module = "javax.annotation:javax.annotation-api", version.ref = "javax-annotation" }
+
+kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
+
+protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "protobuf" }
+protobuf-java-util = { module = "com.google.protobuf:protobuf-java-util", version.ref = "protobuf" }
+grpc-protobuf = { module = "io.grpc:grpc-protobuf", version.ref = "grpc" }
+grpc-stub = { module = "io.grpc:grpc-stub", version.ref = "grpc" }
+grpc-netty-shaded = { module = "io.grpc:grpc-netty-shaded", version.ref = "grpc" }
+protobuf-gradle = { module = "com.google.protobuf:protobuf-gradle-plugin", version.ref = "gradle-protobuf-plugin" }
+
+[bundles]
+http4k = ["http4k-core", "http4k-client-okhttp"]
+konf = ["konf-core", "konf-hocon"]
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+osdetector = { id = "com.google.osdetector", version.ref = "osdetector" }
+retry = { id = "org.gradle.test-retry", version.ref = "test-retry" }
+protobuf = { id = "com.google.protobuf", version.ref = "gradle-protobuf-plugin" }

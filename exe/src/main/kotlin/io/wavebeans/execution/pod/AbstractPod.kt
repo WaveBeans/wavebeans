@@ -1,8 +1,8 @@
 package io.wavebeans.execution.pod
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.wavebeans.execution.config.ExecutionConfig
 import io.wavebeans.lib.BeanStream
-import mu.KotlinLogging
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue

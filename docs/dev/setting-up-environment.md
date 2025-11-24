@@ -32,6 +32,12 @@ info: kotlinc-jvm 1.7.10 (JRE 19)
 
 ```
 
+You can use [sdkman](https://sdkman.io/install/) to install it, from project root:
+
+```bash
+sdk env install
+```
+
 * Clone repository
 
 ```bash
@@ -49,7 +55,7 @@ Install plugins
 
 A few extra plugins you need to make sure you have installed.
 
-* To run tests using IDE: [Spek Framework plugin](https://plugins.jetbrains.com/plugin/10915-spek-framework).
+* To run tests using IDE: [Kotest plugin](https://plugins.jetbrains.com/plugin/14080-kotest)
 * For protobuf support: [Protobuf support plugin](https://plugins.jetbrains.com/plugin/8277-protobuf-support)
 
 Import project
@@ -60,14 +66,19 @@ To import the project just open via `File > Open` in IDE the `build.gradle.kts` 
 Setting up build configurations
 ----
 
-A few basic configurations are handy to create. Especially for running tests. As by the time of writing this there was no way found to run all tests at once, as well as using Spek plugin. So you need to cre JUnit runner and repeat steps for all projects (`lib`, `exe`, `cli`, `http`).
+A few basic configurations are handy to create, especially for running tests in IDE using the Kotest plugin. Repeat steps for all projects as needed (`lib`, `exe`, `cli`, `http`).
 
-* Create configuration, then select `JUnit`.
+* Create configuration, then select `Kotest`.
 * Name configuration, for example `LIB tests`.
-* Select `Test kind: All in package`.
+* Select `Test kind: All in package` (or choose `Spec`/`Tags` as needed).
 * Select `Search for tests: In single module`.
 * Select `Use classpath or module: io.wavebeans.lib.test` (or corresponding to the project).
-* Add additional VM option `-DSPEK_TIMEOUT=0` as some tests are taking more than default 10 seconds timeout and failing weirdly.
+
+Alternatively, you can run all tests via Gradle:
+
+```bash
+./gradlew test
+```
 
 While working on Protobuf stuff
 ----
@@ -90,6 +101,6 @@ First of all follow [the docs](/docs/user/api/file-systems.md#dropbox-file-syste
     export DBX_TEST_CLIENT_ID=test-client-id
     export DBX_TEST_ACCESS_TOKEN=access-token
     ```
-* To conveniently run in Intelliji IDEA and a default parameter into and Spek runners:
-    * `Run/Debug configurations > Templates > Spek 2 - JVM`
+* To conveniently run in Intelliji IDEA and set default parameters for Kotest runs:
+    * `Run/Debug configurations > Templates > Kotest`
     * Add both values under environment variables.

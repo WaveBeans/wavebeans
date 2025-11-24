@@ -1,6 +1,23 @@
 package io.wavebeans.lib.io
 
 import io.wavebeans.lib.*
+import io.wavebeans.metrics.clazzTag
+import io.wavebeans.metrics.samplesProcessedOnInputMetric
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.builtins.nullable
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.encoding.CompositeDecoder
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.encoding.decodeStructure
+import kotlinx.serialization.encoding.encodeStructure
+import kotlin.properties.Delegates
+import kotlin.properties.Delegates.notNull
+import kotlin.reflect.jvm.jvmName
 
 /**
  * Creates an input from provided function. The function has two parameters: the 0-based index and sample rate the input
@@ -45,37 +62,40 @@ fun <T : Any> input(sampleRate: Float, generator: Fn<Pair<Long, Float>, T?>): Be
 /**
  * Serializer for [InputParams]
  */
-//object InputParamsSerializer : KSerializer<InputParams<*>> {
-//
-//    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(InputParams::class.jvmName) {
-//        element("generateFn", FnSerializer.descriptor)
-//        element("sampleRate", Float.serializer().nullable.descriptor)
-//    }
-//
-//    override fun deserialize(decoder: Decoder): InputParams<*> {
-//        val dec = decoder.beginStructure(descriptor)
-//        var sampleRate: Float? = null
-//        var func: Fn<Pair<Long, Float>, Any?>? = null
-//        @Suppress("UNCHECKED_CAST")
-//        loop@ while (true) {
-//            when (val i = dec.decodeElementIndex(descriptor)) {
-//                CompositeDecoder.DECODE_DONE -> break@loop
-//                0 -> func = dec.decodeSerializableElement(descriptor, i, FnSerializer) as Fn<Pair<Long, Float>, Any?>
-//                1 -> sampleRate = dec.decodeNullableSerializableElement(descriptor, i, Float.serializer().nullable)
-//                else -> throw SerializationException("Unknown index $i")
-//            }
-//        }
-//        return InputParams(func!!, sampleRate)
-//    }
-//
-//    override fun serialize(encoder: Encoder, value: InputParams<*>) {
-//        val structure = encoder.beginStructure(descriptor)
-//        structure.encodeSerializableElement(descriptor, 0, FnSerializer, value.generator)
-//        structure.encodeNullableSerializableElement(descriptor, 1, Float.serializer().nullable, value.sampleRate)
-//        structure.endStructure(descriptor)
-//    }
-//
-//}
+object InputParamsSerializer : KSerializer<InputParams<*>> {
+
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(InputParams::class.jvmName) {
+        element("generateFn", FnSerializer.descriptor)
+        element("sampleRate", Float.serializer().nullable.descriptor)
+    }
+
+    override fun deserialize(decoder: Decoder): InputParams<*> {
+        return decoder.decodeStructure(descriptor) {
+            var sampleRate: Float? = null
+            lateinit var func: Fn<Pair<Long, Float>, Any?>
+            @Suppress("UNCHECKED_CAST")
+            loop@ while (true) {
+                when (val i = decodeElementIndex(descriptor)) {
+                    CompositeDecoder.DECODE_DONE -> break@loop
+                    0 -> func =
+                        decodeSerializableElement(descriptor, i, FnSerializer) as Fn<Pair<Long, Float>, Any?>
+
+                    1 -> sampleRate = decodeNullableSerializableElement(descriptor, i, Float.serializer().nullable)
+                    else -> throw SerializationException("Unknown index $i")
+                }
+            }
+            InputParams(func, sampleRate)
+        }
+    }
+
+    override fun serialize(encoder: Encoder, value: InputParams<*>) {
+        encoder.encodeStructure(descriptor) {
+            encodeSerializableElement(descriptor, 0, FnSerializer, value.generator)
+            encodeNullableSerializableElement(descriptor, 1, Float.serializer().nullable, value.sampleRate)
+        }
+    }
+
+}
 
 /**
  * Tuning parameters for [Input].

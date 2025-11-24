@@ -2,12 +2,10 @@ package io.wavebeans.lib.stream
 
 import assertk.all
 import assertk.assertThat
-import assertk.assertions.endsWith
-import assertk.assertions.isNotEmpty
-import assertk.assertions.isNotNull
-import assertk.assertions.message
-import assertk.catch
+import assertk.assertions.*
 import assertk.fail
+import io.wavebeans.lib.Managed
+import io.wavebeans.lib.BeanStream
 import io.wavebeans.lib.Sample
 import io.wavebeans.lib.io.*
 import io.wavebeans.lib.isListOf
@@ -17,13 +15,11 @@ import io.wavebeans.lib.stream.window.window
 import io.wavebeans.tests.evaluate
 import io.wavebeans.tests.isContainedBy
 import io.wavebeans.tests.toList
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.lifecycle.CachingMode.SCOPE
-import org.spekframework.spek2.style.specification.describe
+import io.kotest.core.spec.style.DescribeSpec
 import java.io.File
 import kotlin.math.abs
 
-object ResampleStreamSpec : Spek({
+class ResampleStreamSpec : DescribeSpec({
     describe("Resampling the input to match the output") {
 
         it("should upsample") {
@@ -136,46 +132,46 @@ object ResampleStreamSpec : Spek({
 
     describe("Samples in wav-files") {
         val input = (440.sine() * 0.2).trim(1000)
-        val outputFile by memoized(SCOPE) { File.createTempFile("temp", ".wav") }
-        val streamFromProcessedWavfFile by memoized(SCOPE) {
+        fun newStreamFromProcessedWavFile(): BeanStream<Sample> {
+            val outputFile = File.createTempFile("temp", ".wav").also { it.deleteOnExit() }
             input
                     .resample(to = 44100.0f)
                     .resample()
                     .toMono32bitWav("file://${outputFile.absolutePath}")
                     .evaluate(8000.0f)
-            wave("file://${outputFile.absolutePath}", resampleFn = null)
+            return wave("file://${outputFile.absolutePath}", resampleFn = null)
         }
 
         it("should resample 8000Hz sample rate to 4000Hz after reading from file") {
-            val samples = streamFromProcessedWavfFile.resample().toList(4000.0f).take(1000)
+            val samples: List<Double> = newStreamFromProcessedWavFile().resample().toList(4000.0f).take(1000)
             assertThat(samples).all {
                 isNotEmpty()
                 isContainedBy(input.toList(4000.0f, take = 1500)) { a, b -> abs(a - b) < 1e-2 }
             }
         }
         it("should resample 8000Hz sample rate to 4321Hz after reading from file") {
-            val samples = streamFromProcessedWavfFile.resample().toList(4321.0f).take(1000)
+            val samples: List<Double> = newStreamFromProcessedWavFile().resample().toList(4321.0f).take(1000)
             assertThat(samples).all {
                 isNotEmpty()
                 isContainedBy(input.toList(4321.0f, take = 1500)) { a, b -> abs(a - b) < 1e-2 }
             }
         }
         it("should resample 8000Hz sample rate to 16000Hz after reading from file") {
-            val samples = streamFromProcessedWavfFile.resample().toList(16000.0f).take(1000)
+            val samples = newStreamFromProcessedWavFile().resample().toList(16000.0f).take(1000)
             assertThat(samples).all {
                 isNotEmpty()
                 isContainedBy(input.toList(16000.0f, take = 1500)) { a, b -> abs(a - b) < 1e-1 }
             }
         }
         it("should resample 8000Hz sample rate to 12345Hz after reading from file") {
-            val samples = streamFromProcessedWavfFile.resample().toList(12345.0f).take(1000)
+            val samples = newStreamFromProcessedWavFile().resample().toList(12345.0f).take(1000)
             assertThat(samples).all {
                 isNotEmpty()
                 isContainedBy(input.toList(12345.0f, take = 1500)) { a, b -> abs(a - b) < 1e-2 }
             }
         }
         it("should resample 8000Hz sample rate to 16000Hz after reading from file and passing through FFT-Inverse FFT process") {
-            val samples = streamFromProcessedWavfFile
+            val samples = newStreamFromProcessedWavFile()
                     .window(1001)
                     .fft(1024)
                     .inverseFft()
@@ -189,54 +185,84 @@ object ResampleStreamSpec : Spek({
             }
         }
         it("should fail streaming without resample() via /dev/null writer") {
-            val e = catch { streamFromProcessedWavfFile.toDevNull().evaluate(16000.0f) }
-            assertThat(e).isNotNull()
-                    .message().isNotNull().endsWith("The stream should be resampled from 8000.0Hz to 16000.0Hz before writing")
+            assertThat { newStreamFromProcessedWavFile().toDevNull().evaluate(16000.0f) }
+                .isFailure()
+                .message().isNotNull()
+                .endsWith("The stream should be resampled from 8000.0Hz to 16000.0Hz before writing")
         }
         it("should fail streaming without resample() via wav-writer") {
-            val e = catch { streamFromProcessedWavfFile.toMono16bitWav("file:///anyfile.wav").evaluate(16000.0f) }
-            assertThat(e).isNotNull()
-                    .message().isNotNull().endsWith("The stream should be resampled from 8000.0Hz to 16000.0Hz before writing")
+            assertThat {
+                newStreamFromProcessedWavFile()
+                    .toMono16bitWav<Sample>("file:///anyfile.wav")
+                    .evaluate(16000.0f)
+            }
+                .isFailure()
+                .message().isNotNull()
+                .endsWith("The stream should be resampled from 8000.0Hz to 16000.0Hz before writing")
         }
         it("should fail streaming without resample() via partial wav-writer") {
-            val e = catch {
-                streamFromProcessedWavfFile
-                        .map { it.withOutputSignal<Sample, Unit>(NoopOutputSignal) }
-                        .toMono16bitWav("file:///anyfile.csv", suffix = { fail("Unreachable statement") })
-                        .evaluate(16000.0f)
+            assertThat {
+                newStreamFromProcessedWavFile()
+                    .map<Sample, Managed<OutputSignal, Unit, Sample>> {
+                        it.withOutputSignal(
+                            NoopOutputSignal
+                        )
+                    }
+                    .toMono16bitWav<Unit, Sample>(
+                        "file:///anyfile.csv",
+                        suffix = { fail("Unreachable statement") })
+                    .evaluate(16000.0f)
             }
-            assertThat(e).isNotNull()
-                    .message().isNotNull().endsWith("The stream should be resampled from 8000.0Hz to 16000.0Hz before writing")
+                .isFailure()
+                .message().isNotNull()
+                .endsWith("The stream should be resampled from 8000.0Hz to 16000.0Hz before writing")
         }
         it("should fail streaming without resample() via csv-writer") {
-            val e = catch { streamFromProcessedWavfFile.toCsv("file:///anyfile.csv").evaluate(16000.0f) }
-            assertThat(e).isNotNull()
-                    .message().isNotNull().endsWith("The stream should be resampled from 8000.0Hz to 16000.0Hz before writing")
+            assertThat {
+                newStreamFromProcessedWavFile().toCsv("file:///anyfile.csv").evaluate(16000.0f)
+            }
+                .isFailure()
+                .message().isNotNull()
+                .endsWith("The stream should be resampled from 8000.0Hz to 16000.0Hz before writing")
         }
         it("should fail streaming without resample() via FFT csv-writer") {
-            val e = catch { streamFromProcessedWavfFile.window(20).fft(32).magnitudeToCsv("file:///anyfile.csv").evaluate(16000.0f) }
-            assertThat(e).isNotNull()
-                    .message().isNotNull().endsWith("The stream should be resampled from 8000.0Hz to 16000.0Hz before writing")
+            assertThat {
+                newStreamFromProcessedWavFile().window(20).fft(32).magnitudeToCsv("file:///anyfile.csv")
+                    .evaluate(16000.0f)
+            }
+                .isFailure()
+                .message().isNotNull()
+                .endsWith("The stream should be resampled from 8000.0Hz to 16000.0Hz before writing")
         }
         it("should fail streaming without resample() via partial csv-writer") {
-            val e = catch {
-                streamFromProcessedWavfFile
-                        .map { it.withOutputSignal<Sample, Unit>(NoopOutputSignal) }
-                        .toCsv("file:///anyfile.csv", suffix = { fail("Unreachable statement") })
-                        .evaluate(16000.0f)
+            assertThat {
+                newStreamFromProcessedWavFile()
+                    .map<Sample, Managed<OutputSignal, Unit, Sample>> {
+                        it.withOutputSignal(
+                            NoopOutputSignal
+                        )
+                    }
+                    .toCsv("file:///anyfile.csv", suffix = { fail("Unreachable statement") })
+                    .evaluate(16000.0f)
             }
-            assertThat(e).isNotNull()
-                    .message().isNotNull().endsWith("The stream should be resampled from 8000.0Hz to 16000.0Hz before writing")
+                .isFailure()
+                .message().isNotNull()
+                .endsWith("The stream should be resampled from 8000.0Hz to 16000.0Hz before writing")
         }
         it("should fail streaming without resample() via function writer") {
-            val e = catch { streamFromProcessedWavfFile.out { fail("unreachable statement") }.evaluate(16000.0f) }
-            assertThat(e).isNotNull()
-                    .message().isNotNull().endsWith("The stream should be resampled from 8000.0Hz to 16000.0Hz before writing")
+            assertThat {
+                newStreamFromProcessedWavFile().out<Sample> { fail("unreachable statement") }
+                    .evaluate(16000.0f)
+            }
+                .isFailure()
+                .message().isNotNull()
+                .endsWith("The stream should be resampled from 8000.0Hz to 16000.0Hz before writing")
         }
         it("should fail when streaming without resample() via asSequence") {
-            val e = catch { streamFromProcessedWavfFile.asSequence(16000.0f).toList() }
-            assertThat(e).isNotNull()
-                    .message().isNotNull().endsWith("The stream should be resampled from 8000.0Hz to 16000.0Hz")
+            assertThat { newStreamFromProcessedWavFile().asSequence(16000.0f).toList<Sample>() }
+                .isFailure()
+                .message().isNotNull()
+                .endsWith("The stream should be resampled from 8000.0Hz to 16000.0Hz")
         }
     }
 })

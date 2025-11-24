@@ -4,11 +4,10 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
 import io.wavebeans.lib.stream.window.Window
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.tests.isEqualTo
 
-object SampleVectorSpec : Spek({
+class SampleVectorSpec : DescribeSpec({
     describe("Creation") {
         it("should be created of list of samples") {
             val a = sampleVectorOf(listOf(1, 2, 3, 4, 5).map { sampleOf(it) })
