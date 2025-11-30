@@ -1,8 +1,5 @@
 import com.google.protobuf.gradle.*
 
-val grpcVersion: String by System.getProperties()
-val protobufVersion: String by System.getProperties()
-
 buildscript {
     repositories {
         mavenCentral()
@@ -36,6 +33,14 @@ dependencies {
     api(libs.grpc.stub)
     implementation(libs.grpc.netty.shaded)
     compileOnly(libs.javax.annotation.api)
+}
+
+tasks.withType<Javadoc> {
+    options {
+        this as StandardJavadocDocletOptions
+        addBooleanOption("Xdoclint:none", true)
+        quiet()
+    }
 }
 
 protobuf {

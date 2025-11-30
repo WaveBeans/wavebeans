@@ -100,7 +100,7 @@ actual class WrapFn<T, R> actual constructor(initParams: FnInitParameters) : Fn<
         val clazzName = initParams[fnClazz]!!
         try {
             val clazz = WaveBeansClassLoader.classForName(clazzName)
-            val constructor = clazz.declaredConstructors.first()
+            val constructor = clazz.java.declaredConstructors.first()
             constructor.isAccessible = true
             fn = constructor.newInstance() as (T) -> R
         } catch (e: IllegalArgumentException) {

@@ -17,10 +17,10 @@ class ListAsInputSpec : DescribeSpec({
         }
         it("should not matter the sample rate") {
             assertThat(x.input().asSequence(1234.0f).toList())
-                    .isEqualTo(x.input().asSequence(2345.0f).toList())
+                .isEqualTo(x.input().asSequence(2345.0f).toList())
         }
         it("should now allow create input with empty list") {
-            assertThat { emptyList<Int>().input() }
+            assertThat(runCatching { emptyList<Int>().input() })
                 .isFailure()
                 .isNotNull()
                 .message().isEqualTo("Input list should not be empty")

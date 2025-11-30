@@ -67,7 +67,7 @@ class DropboxWbFileDriver(
             val rnd = (0..5).map { alphabet[Random.nextInt(alphabet.size)] }.joinToString("")
             file = DropboxWbFile(dropboxClient, URI("dropbox://$directory/$prefix.$rnd.$suffix"), dropboxDriverConfig)
             if (!file.exists()) break else file = null
-        } while (file == null && --attempts > 0)
+        } while (--attempts > 0)
         log.trace { "Temporary file is $file" }
         return file ?: throw IllegalStateException("Can't create temporary file")
     }

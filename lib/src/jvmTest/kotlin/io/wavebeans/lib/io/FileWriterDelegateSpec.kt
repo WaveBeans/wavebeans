@@ -5,19 +5,17 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.prop
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.kotest.core.spec.style.DescribeSpec
+import io.wavebeans.lib.uri
 import io.wavebeans.tests.eachIndexed
 import java.io.File
-import io.wavebeans.lib.URI
 import java.nio.file.Files
-import kotlin.math.absoluteValue
-import kotlin.random.Random
 
 class FileWriterDelegateSpec : DescribeSpec({
 
     describe("Single file") {
         it("should store short buffer without headers") {
             val outputFile = File.createTempFile("test", ".out").also { it.deleteOnExit() }
-            val delegate = FileWriterDelegate<Unit>({ outputFile.toURI() }, bufferSize = 128)
+            val delegate = FileWriterDelegate<Unit>({ uri(outputFile.toURI()) }, bufferSize = 128)
                 .also { it.initBuffer(null) }
 
             val input = "1234567890"
@@ -28,7 +26,7 @@ class FileWriterDelegateSpec : DescribeSpec({
         }
         it("should store buffer longer than internal buffer without headers") {
             val outputFile = File.createTempFile("test", ".out").also { it.deleteOnExit() }
-            val delegate = FileWriterDelegate<Unit>({ outputFile.toURI() }, bufferSize = 128)
+            val delegate = FileWriterDelegate<Unit>({ uri(outputFile.toURI()) }, bufferSize = 128)
                 .also { it.initBuffer(null) }
 
             val input = (0..100).joinToString("") { "1234567890" }
@@ -40,7 +38,7 @@ class FileWriterDelegateSpec : DescribeSpec({
 
         it("should store buffer longer than internal buffer with header and footer") {
             val outputFile = File.createTempFile("test", ".out").also { it.deleteOnExit() }
-            val delegate = FileWriterDelegate<Unit>({ outputFile.toURI() }, bufferSize = 128)
+            val delegate = FileWriterDelegate<Unit>({ uri(outputFile.toURI()) }, bufferSize = 128)
                 .also { it.initBuffer(null) }
 
             val input = (0..100).joinToString("") { "1234567890" }
@@ -59,7 +57,7 @@ class FileWriterDelegateSpec : DescribeSpec({
             val delegate = FileWriterDelegate<Unit>({
                 val outputFile = File.createTempFile("test", ".out").also { it.deleteOnExit() }
                 outputFiles += outputFile
-                outputFile.toURI()
+                uri(outputFile.toURI())
             }, bufferSize = 128).also { it.initBuffer(null) }
 
             val contents = listOf("1234567890", "qwertyuiop", "asdfghjkl", "zxcvbnm")
@@ -76,7 +74,7 @@ class FileWriterDelegateSpec : DescribeSpec({
             val delegate = FileWriterDelegate<Unit>({
                 val outputFile = File.createTempFile("test", ".out").also { it.deleteOnExit() }
                 outputFiles += outputFile
-                outputFile.toURI()
+                uri(outputFile.toURI())
             }, bufferSize = 128).also { it.initBuffer(null) }
 
             val contents = listOf("1234567890", "qwertyuiop", "asdfghjkl", "zxcvbnm")
@@ -97,7 +95,7 @@ class FileWriterDelegateSpec : DescribeSpec({
             val delegate = FileWriterDelegate<Unit>({
                 val outputFile = File.createTempFile("test", ".out").also { it.deleteOnExit() }
                 outputFiles += outputFile
-                outputFile.toURI()
+                uri(outputFile.toURI())
             }, bufferSize = 128).also { it.initBuffer(null) }
 
             val contents = listOf("1234567890", "qwertyuiop", "asdfghjkl", "zxcvbnm")
@@ -114,7 +112,7 @@ class FileWriterDelegateSpec : DescribeSpec({
             val delegate = FileWriterDelegate<Unit>({
                 val outputFile = File.createTempFile("test", ".out").also { it.deleteOnExit() }
                 outputFiles += outputFile
-                outputFile.toURI()
+                uri(outputFile.toURI())
             }, bufferSize = 128).also { it.initBuffer(null) }
 
             val contents = listOf("1234567890", "qwertyuiop", "asdfghjkl", "zxcvbnm")
@@ -146,7 +144,7 @@ class FileWriterDelegateSpec : DescribeSpec({
 
             assertThat(outputFiles).eachIndexed(contents.size) { file, index ->
                 file.prop("content") { it.readText() }.isEqualTo(contents[index])
-                file.prop("url") { it.url }.isEqualTo("test:///$directory/test$index.out")
+                file.prop("url") { it.toURI() }.isEqualTo("test:///$directory/test$index.out")
             }
         }
 
@@ -168,7 +166,7 @@ class FileWriterDelegateSpec : DescribeSpec({
 
             assertThat(outputFiles).eachIndexed(contents.size) { file, index ->
                 file.prop("content") { it.readText() }.isEqualTo(header + contents[index] + footer)
-                file.prop("url") { it.url }.isEqualTo("test:///$directory/test$index.out")
+                file.prop("url") { it.toURI() }.isEqualTo("test:///$directory/test$index.out")
             }
         }
     }
@@ -176,7 +174,11 @@ class FileWriterDelegateSpec : DescribeSpec({
 
 private val log = KotlinLogging.logger { }
 
-private fun WriterDelegate<Unit>.performWritesWithFlush(contents: List<String>, header: String? = null, footer: String? = null) {
+private fun WriterDelegate<Unit>.performWritesWithFlush(
+    contents: List<String>,
+    header: String? = null,
+    footer: String? = null
+) {
     contents.forEach {
         log.debug { "Writing buffer value=$it" }
         this.write(it.toByteArray())
@@ -185,7 +187,11 @@ private fun WriterDelegate<Unit>.performWritesWithFlush(contents: List<String>, 
     this.close({ header?.toByteArray() }, { footer?.toByteArray() })
 }
 
-private fun WriterDelegate<Unit>.performWritesWithManualBufferManagement(contents: List<String>, header: String? = null, footer: String? = null) {
+private fun WriterDelegate<Unit>.performWritesWithManualBufferManagement(
+    contents: List<String>,
+    header: String? = null,
+    footer: String? = null
+) {
     contents.forEachIndexed { index, value ->
         log.debug { "Writing buffer index=$index, value=$value" }
         if (index > 0)

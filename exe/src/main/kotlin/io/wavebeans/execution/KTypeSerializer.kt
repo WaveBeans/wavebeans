@@ -71,7 +71,7 @@ object KTypeSerializer : KSerializer<KType> {
                 val primitiveType = primitiveTypes[name]
                 if (primitiveType != null) return primitiveType
                 if (!name.contains('<')) {
-                    return WaveBeansClassLoader.classForName(name).kotlin.createType()
+                    return WaveBeansClassLoader.classForName(name).createType()
                 } else {
                     val className = name.takeWhile { it != '<' }
                     val projectedNamesAsString = name
@@ -80,7 +80,7 @@ object KTypeSerializer : KSerializer<KType> {
                             .dropLastWhile { it != '>' }
                             .dropLast(1) // drop the symbol itself
 
-                    val genericType = containerClasses[className] ?: WaveBeansClassLoader.classForName(className).kotlin
+                    val genericType = containerClasses[className] ?: WaveBeansClassLoader.classForName(className)
 
                     // parse project names, they may nest each other, e.g. `Q<R<S, T>, U>`
                     val projectedNames = mutableListOf<String>()

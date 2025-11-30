@@ -24,8 +24,8 @@ import kotlin.reflect.KClass
  * As pretty much everything out there, it should be used correctly.
  */
 actual class InMemoryTimeseriesTableDriver<T : Any> actual constructor(
-    override val tableName: String,
-    override val tableType: KClass<*>,
+    actual override val tableName: String,
+    actual override val tableType: KClass<*>,
     private val retentionPolicy: TableRetentionPolicy,
     private val automaticCleanupEnabled: Boolean
 ) : TimeseriesTableDriver<T> {
@@ -48,7 +48,7 @@ actual class InMemoryTimeseriesTableDriver<T : Any> actual constructor(
     }
 
 
-    override val sampleRate: Float
+    actual override val sampleRate: Float
         get() = sampleRateValue[0]
             .let { if (it < 0) throw IllegalStateException("Sample rate value is not initialized yet") else it }
 
@@ -60,7 +60,7 @@ actual class InMemoryTimeseriesTableDriver<T : Any> actual constructor(
     private val sampleRateValue: FloatArray = FloatArray(1) { Float.NEGATIVE_INFINITY }
     private val isFinished = AtomicBoolean(false)
 
-    override fun init(sampleRate: Float) {
+    actual override fun init(sampleRate: Float) {
         sampleRateValue[0] = sampleRate
         log.debug { "[$this] Initializing driver" }
         if (cleanUpTask == null && automaticCleanupEnabled) {
@@ -69,14 +69,14 @@ actual class InMemoryTimeseriesTableDriver<T : Any> actual constructor(
         }
     }
 
-    override fun finishStream() {
+    actual override fun finishStream() {
         log.debug { "[$this] Finishing stream" }
         isFinished.set(true)
     }
 
-    override fun isStreamFinished(): Boolean = isFinished.get()
+    actual override fun isStreamFinished(): Boolean = isFinished.get()
 
-    override fun reset() {
+    actual override fun reset() {
         log.debug { "[$this] Resetting driver" }
         _table.clear()
         isFinished.set(false)
@@ -110,7 +110,7 @@ actual class InMemoryTimeseriesTableDriver<T : Any> actual constructor(
         }
     }
 
-    override fun put(time: TimeMeasure, value: T) {
+    actual override fun put(time: TimeMeasure, value: T) {
         if (isStreamFinished()) throw IllegalStateException("[$this] The stream is already finished, you can't put any more data in it")
         val peekLast = _table.peekLast()
         if (peekLast != null && time < peekLast.timeMarker)
@@ -118,7 +118,7 @@ actual class InMemoryTimeseriesTableDriver<T : Any> actual constructor(
         _table += Item(time, value)
     }
 
-    override fun close() {
+    actual override fun close() {
         log.debug { "[$this] Closing" }
         cleanUpTask?.cancel(false)
         cleanUpTask = null
@@ -126,11 +126,11 @@ actual class InMemoryTimeseriesTableDriver<T : Any> actual constructor(
     }
 
 
-    override fun firstMarker(): TimeMeasure? = _table.peekFirst()?.timeMarker
+    actual override fun firstMarker(): TimeMeasure? = _table.peekFirst()?.timeMarker
 
-    override fun lastMarker(): TimeMeasure? = _table.peekLast()?.timeMarker
+    actual override fun lastMarker(): TimeMeasure? = _table.peekLast()?.timeMarker
 
-    override fun query(query: TableQuery): Sequence<T> {
+    actual override fun query(query: TableQuery): Sequence<T> {
         log.debug { "[$this] Running query $query" }
         return when (query) {
             is TimeRangeTableQuery -> {

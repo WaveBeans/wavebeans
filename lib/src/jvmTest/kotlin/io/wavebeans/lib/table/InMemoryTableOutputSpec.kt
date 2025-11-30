@@ -7,31 +7,18 @@ import assertk.assertions.*
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.lib.*
-import io.wavebeans.lib.Sample
 import io.wavebeans.lib.io.Writer
-import io.wavebeans.lib.io.use
-import io.wavebeans.lib.ms
-import io.wavebeans.lib.ns
-import io.wavebeans.lib.s
-import io.wavebeans.lib.seqStream
 import io.wavebeans.lib.stream.fft.FftSample
 import io.wavebeans.lib.stream.fft.fft
 import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.stream.window.Window
 import io.wavebeans.lib.stream.window.window
 import io.wavebeans.tests.eachIndexed
-import assertk.assertions.each
-import assertk.assertions.isCloseTo
-import assertk.assertions.isEmpty
-import assertk.assertions.isEqualTo
-import assertk.assertions.isFalse
-import assertk.assertions.isTrue
-import assertk.assertions.prop
-import assertk.assertions.size
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 
 class InMemoryTableOutputSpec : DescribeSpec({
-//    isolationMode = IsolationMode.InstancePerTest
-
     describe("Operations on closed table") {
 
         fun table(tableName: String): TimeseriesTableDriver<Sample> {
@@ -481,10 +468,10 @@ internal fun timed(timeout: Long, fn: () -> Unit): Boolean {
         }
     }
     t.start()
-    started.await(5000, MILLISECONDS)
-    if (!stopped.await(timeout, MILLISECONDS)) {
+    started.await(5000, TimeUnit.MILLISECONDS)
+    if (!stopped.await(timeout, TimeUnit.MILLISECONDS)) {
         t.interrupt()
-        stopped.await(5000, MILLISECONDS)
+        stopped.await(5000, TimeUnit.MILLISECONDS)
         return false
     }
     exception.get()?.let { throw it }

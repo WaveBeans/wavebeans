@@ -2,7 +2,6 @@ package io.wavebeans.lib
 
 import assertk.assertThat
 import assertk.assertions.*
-import assertk.catch
 import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.lib.TimeUnit.*
 
@@ -18,8 +17,22 @@ class TimeMeasureSpec : DescribeSpec({
     }
 
     describe("Arithmetic operation") {
-        it("should be 2.1 * 10^9 nanoseconds") { assertThat(2.s + 100.ms).isEqualTo(TimeMeasure(2_100_000_000, NANOSECONDS)) }
-        it("should be -10^9 nanoseconds") { assertThat(119.s - 2.m).isEqualTo(TimeMeasure(-1_000_000_000, NANOSECONDS)) }
+        it("should be 2.1 * 10^9 nanoseconds") {
+            assertThat(2.s + 100.ms).isEqualTo(
+                TimeMeasure(
+                    2_100_000_000,
+                    NANOSECONDS
+                )
+            )
+        }
+        it("should be -10^9 nanoseconds") {
+            assertThat(119.s - 2.m).isEqualTo(
+                TimeMeasure(
+                    -1_000_000_000,
+                    NANOSECONDS
+                )
+            )
+        }
     }
 
     describe("Comparing") {
@@ -29,9 +42,21 @@ class TimeMeasureSpec : DescribeSpec({
     }
 
     describe("Parsing") {
-        it("should be 1234567890123456 nanoseconds") { assertThat(TimeMeasure.parse("1234567890123456ns")).isEqualTo(1234567890123456L.ns) }
-        it("should be 1234567890123456 nanoseconds") { assertThat(TimeMeasure.parse("1234567890123456Ns")).isEqualTo(1234567890123456L.ns) }
-        it("should be 1234567890123456 nanoseconds") { assertThat(TimeMeasure.parse("1234567890123456LNS")).isEqualTo(1234567890123456L.ns) }
+        it("should be 1234567890123456 nanoseconds") {
+            assertThat(TimeMeasure.parse("1234567890123456ns")).isEqualTo(
+                1234567890123456L.ns
+            )
+        }
+        it("should be 1234567890123456 nanoseconds") {
+            assertThat(TimeMeasure.parse("1234567890123456Ns")).isEqualTo(
+                1234567890123456L.ns
+            )
+        }
+        it("should be 1234567890123456 nanoseconds") {
+            assertThat(TimeMeasure.parse("1234567890123456LNS")).isEqualTo(
+                1234567890123456L.ns
+            )
+        }
         it("should be -1 microseconds") { assertThat(TimeMeasure.parse("-1us")).isEqualTo((-1).us) }
         it("should be -1 microseconds") { assertThat(TimeMeasure.parse("-1US")).isEqualTo((-1).us) }
         it("should be -1 microseconds") { assertThat(TimeMeasure.parse("-1LUs")).isEqualTo((-1).us) }
@@ -50,15 +75,15 @@ class TimeMeasureSpec : DescribeSpec({
         it("should be 2 days") { assertThat(TimeMeasure.parse("2.2fd")).isEqualTo(2.d) }
         it("should be 2 days") { assertThat(TimeMeasure.parse("2.2D")).isEqualTo(2.d) }
         it("should not be parsed") {
-            assertThat { TimeMeasure.parse("2.2") }.isFailure()
+            assertThat(runCatching { TimeMeasure.parse("2.2") }).isFailure()
                 .isNotNull().message().isNotNull().startsWith("Format invalid, should be:")
-            assertThat { TimeMeasure.parse("2") }.isFailure()
+            assertThat(runCatching { TimeMeasure.parse("2") }).isFailure()
                 .isNotNull().message().isNotNull().startsWith("Format invalid, should be:")
-            assertThat { TimeMeasure.parse("") }.isFailure()
+            assertThat(runCatching { TimeMeasure.parse("") }).isFailure()
                 .isNotNull().message().isNotNull().startsWith("Format invalid, should be:")
-            assertThat { TimeMeasure.parse("-1f") }.isFailure()
+            assertThat(runCatching { TimeMeasure.parse("-1f") }).isFailure()
                 .isNotNull().message().isNotNull().startsWith("Format invalid, should be:")
-            assertThat { TimeMeasure.parse("1megasecond") }.isFailure()
+            assertThat(runCatching { TimeMeasure.parse("1megasecond") }).isFailure()
                 .isNotNull().message().isNotNull().startsWith("Format invalid, should be:")
         }
     }

@@ -7,6 +7,7 @@ import io.wavebeans.lib.stream.fft.FftSample
 import io.wavebeans.lib.stream.window.Window
 import io.kotest.core.spec.style.DescribeSpec
 import kotlin.jvm.java
+import kotlin.reflect.KClass
 import kotlin.reflect.jvm.jvmName
 
 class WaveBeansClassLoaderSpec : DescribeSpec({
@@ -45,15 +46,16 @@ class WaveBeansClassLoaderSpec : DescribeSpec({
     describe("Load external classes") {
         val className = "my.namespace.MyClass$1_lambda1234"
 
-        fun newClassLoader(): ClassLoader = object : ClassLoader() {
-            override fun loadClass(name: String?): Class<*> {
+        fun newClassLoader(): ClassLoader = object : ClassLoader {
+
+            override fun classForName(name: String): KClass<*> {
                 if (name == className) throw Exception(className)
-                return super.loadClass(name)
+                return Class.forName(name).kotlin
             }
         }
 
         it("should throw exception for non-existing class") {
-            assertThat { classForName(className) }
+            assertThat( runCatching{ classForName(className) } )
                 .isFailure()
                 .isNotNull()
                 .isInstanceOf(ClassNotFoundException::class)
@@ -64,7 +66,7 @@ class WaveBeansClassLoaderSpec : DescribeSpec({
             val classLoader = newClassLoader()
             WaveBeansClassLoader.addClassLoader(classLoader)
             try {
-                assertThat { classForName(className) }
+                assertThat( runCatching{ classForName(className) } )
                     .isFailure()
                     .isNotNull()
                     .message().isNotNull().isEqualTo(className)
@@ -78,7 +80,7 @@ class WaveBeansClassLoaderSpec : DescribeSpec({
             WaveBeansClassLoader.addClassLoader(classLoader)
             WaveBeansClassLoader.removeClassLoader(classLoader)
 
-            assertThat { classForName(className) }
+            assertThat( runCatching{ classForName(className) } )
                 .isFailure()
                 .isNotNull()
                 .isInstanceOf(ClassNotFoundException::class)

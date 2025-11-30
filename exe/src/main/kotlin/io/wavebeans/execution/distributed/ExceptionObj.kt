@@ -2,12 +2,9 @@ package io.wavebeans.execution.distributed
 
 import io.wavebeans.communicator.ExceptionDescriptor
 import io.wavebeans.communicator.ExceptionObj
-import io.wavebeans.execution.distributed.proto.ListProtoValue
 import io.wavebeans.execution.distributed.proto.ProtoValue
-import io.wavebeans.execution.distributed.proto.toProtoValue
 import io.wavebeans.lib.WaveBeansClassLoader
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 import kotlinx.serialization.protobuf.ProtoNumber
 import kotlin.reflect.KClass
 import kotlin.reflect.jvm.jvmName
@@ -44,14 +41,14 @@ fun ExceptionObj.toException(): CallingException {
     while (c.hasNext()) {
         val e = c.next()
         cause = CallingException(
-                WaveBeansClassLoader.classForName(e.clazz).kotlin as KClass<out Throwable>,
+                WaveBeansClassLoader.classForName(e.clazz) as KClass<out Throwable>,
                 e.message,
                 e.stackTraceList,
                 cause
         )
     }
     return CallingException(
-            WaveBeansClassLoader.classForName(exceptionDescriptor.clazz).kotlin as KClass<out Throwable>,
+            WaveBeansClassLoader.classForName(exceptionDescriptor.clazz) as KClass<out Throwable>,
             exceptionDescriptor.message,
             exceptionDescriptor.stackTraceList,
             cause

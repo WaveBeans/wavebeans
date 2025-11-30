@@ -23,6 +23,7 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.util.concurrent.*
+import kotlin.io.path.createTempFile
 
 data class BushEndpoint(
     val bushKey: BushKey,
@@ -70,7 +71,6 @@ class Facilitator(
         }
     }
 
-    private val tempDir = createTempDir("wavebeans-facilitator")
     private val terminate = CountDownLatch(1)
     private val startupClasses = startUpClasses()
     private val jobStates = ConcurrentHashMap<JobKey, JobState>()
@@ -121,7 +121,7 @@ class Facilitator(
     fun startupClasses(): List<ClassDesc> = startupClasses
 
     fun registerCode(jobKey: JobKey, jarFileStream: InputStream) {
-        val codeFile = createTempFile("code-$jobKey", "jar", tempDir)
+        val codeFile = createTempFile("code-$jobKey").toFile()
         FileOutputStream(codeFile).use {
             it.write(jarFileStream.readBytes())
         }

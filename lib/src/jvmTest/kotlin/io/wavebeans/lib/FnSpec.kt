@@ -21,7 +21,7 @@ class FnSpec : DescribeSpec({
             val dependentValue = 2L
 
             it("should throw an exception during wrapping") {
-                assertThat { Fn.wrap<Int, Long> { it.toLong() * dependentValue } }
+                assertThat(runCatching { wrap<Int, Long> { it.toLong() * dependentValue } })
                     .isFailure()
                     .isNotNull().isInstanceOf(IllegalArgumentException::class)
             }
@@ -29,8 +29,8 @@ class FnSpec : DescribeSpec({
 
         describe("Lambda function wrapped and defined as Class") {
             val lambda: (Int) -> Long = { it.toLong() }
-            val fn = Fn.wrap(lambda)
-            val fnInstantiated = Fn.instantiate(fn::class.java, fn.initParams)
+            val fn = wrap(lambda)
+            val fnInstantiated = instantiate(fn::class, fn.initParams)
 
             it("should return result") { assertThat(fnInstantiated.apply(1)).isEqualTo(1L) }
         }
@@ -70,8 +70,9 @@ class FnSpec : DescribeSpec({
                     instantiate(
                         AFn::class,
                         FnInitParameters().add("a", 1).add("b", 1L).add("c", "withInt")
-                    ).apply(1))
-                        .isEqualTo(1L)
+                    ).apply(1)
+                )
+                    .isEqualTo(1L)
             }
         }
 
@@ -83,7 +84,7 @@ class FnSpec : DescribeSpec({
             }
 
             it("should throw an exception during indirect instantiation") {
-                assertThat { Fn.instantiate(AFn::class.java) }
+                assertThat(runCatching { instantiate(AFn::class) })
                     .isFailure()
                     .isNotNull()
                     .isInstanceOf(IllegalStateException::class)
@@ -105,11 +106,11 @@ class FnSpec : DescribeSpec({
 
         describe("Primitive types") {
             data class Result(
-                    val long: Long,
-                    val int: Int,
-                    val float: Float,
-                    val double: Double,
-                    val string: String
+                val long: Long,
+                val int: Int,
+                val float: Float,
+                val double: Double,
+                val string: String
             )
 
             class Afn(initParameters: FnInitParameters) : Fn<Int, Result>(initParameters) {
@@ -125,33 +126,35 @@ class FnSpec : DescribeSpec({
 
             it("should be indirectly instantiated and executed") {
                 assertThat(
-                        instantiate(
-                            Afn::class,
-                            FnInitParameters()
-                                .add("long", 1L)
-                                .add("int", 2)
-                                .add("float", 3.0f)
-                                .add("double", 4.0)
-                                .add("string", "abc")
-                        ).apply(1)
-                ).isEqualTo(Result(
+                    instantiate(
+                        Afn::class,
+                        FnInitParameters()
+                            .add("long", 1L)
+                            .add("int", 2)
+                            .add("float", 3.0f)
+                            .add("double", 4.0)
+                            .add("string", "abc")
+                    ).apply(1)
+                ).isEqualTo(
+                    Result(
                         1L,
                         2,
                         3.0f,
                         4.0,
                         "abc"
-                ))
+                    )
+                )
 
             }
         }
 
         describe("Nullable primitive types") {
             data class Result(
-                    val long: Long?,
-                    val int: Int?,
-                    val float: Float?,
-                    val double: Double?,
-                    val string: String?
+                val long: Long?,
+                val int: Int?,
+                val float: Float?,
+                val double: Double?,
+                val string: String?
             )
 
             class Afn(initParameters: FnInitParameters) : Fn<Int, Result>(initParameters) {
@@ -167,28 +170,30 @@ class FnSpec : DescribeSpec({
 
             it("should be indirectly instantiated and executed") {
                 assertThat(
-                        instantiate(
-                            Afn::class,
-                            FnInitParameters()
-                        ).apply(1)
-                ).isEqualTo(Result(
+                    instantiate(
+                        Afn::class,
+                        FnInitParameters()
+                    ).apply(1)
+                ).isEqualTo(
+                    Result(
                         null,
                         null,
                         null,
                         null,
                         null
-                ))
+                    )
+                )
 
             }
         }
 
         describe("Collection of primitive types") {
             data class Result(
-                    val longList: List<Long>,
-                    val intList: List<Int>,
-                    val floatList: List<Float>,
-                    val doubleList: List<Double>,
-                    val stringList: List<String>
+                val longList: List<Long>,
+                val intList: List<Int>,
+                val floatList: List<Float>,
+                val doubleList: List<Double>,
+                val stringList: List<String>
             )
 
             class Afn(initParameters: FnInitParameters) : Fn<Int, Result>(initParameters) {
@@ -204,33 +209,35 @@ class FnSpec : DescribeSpec({
 
             it("should be indirectly instantiated and executed") {
                 assertThat(
-                        instantiate(
-                            Afn::class,
-                            FnInitParameters()
-                                .addLongs("long", listOf(1L, 10L))
-                                .addInts("int", listOf(2, 20))
-                                .addFloats("float", listOf(3.0f, 30.0f))
-                                .addDoubles("double", listOf(4.0, 40.0))
-                                .addStrings("string", listOf("abc", "def"))
-                        ).apply(1)
-                ).isEqualTo(Result(
+                    instantiate(
+                        Afn::class,
+                        FnInitParameters()
+                            .addLongs("long", listOf(1L, 10L))
+                            .addInts("int", listOf(2, 20))
+                            .addFloats("float", listOf(3.0f, 30.0f))
+                            .addDoubles("double", listOf(4.0, 40.0))
+                            .addStrings("string", listOf("abc", "def"))
+                    ).apply(1)
+                ).isEqualTo(
+                    Result(
                         listOf(1L, 10L),
                         listOf(2, 20),
                         listOf(3.0f, 30.0f),
                         listOf(4.0, 40.0),
                         listOf("abc", "def")
-                ))
+                    )
+                )
 
             }
         }
 
         describe("Nullable collection of primitive types") {
             data class Result(
-                    val longList: List<Long>?,
-                    val intList: List<Int>?,
-                    val floatList: List<Float>?,
-                    val doubleList: List<Double>?,
-                    val stringList: List<String>?
+                val longList: List<Long>?,
+                val intList: List<Int>?,
+                val floatList: List<Float>?,
+                val doubleList: List<Double>?,
+                val stringList: List<String>?
             )
 
             class Afn(initParameters: FnInitParameters) : Fn<Int, Result>(initParameters) {
@@ -246,25 +253,27 @@ class FnSpec : DescribeSpec({
 
             it("should be indirectly instantiated and executed") {
                 assertThat(
-                        instantiate(
-                            Afn::class,
-                            FnInitParameters()
-                        ).apply(1)
-                ).isEqualTo(Result(
+                    instantiate(
+                        Afn::class,
+                        FnInitParameters()
+                    ).apply(1)
+                ).isEqualTo(
+                    Result(
                         null,
                         null,
                         null,
                         null,
                         null
-                ))
+                    )
+                )
 
             }
         }
 
         describe("Custom types") {
             data class CustomType(
-                    val long: Long,
-                    val int: Int
+                val long: Long,
+                val int: Int
             )
 
             class Afn(initParameters: FnInitParameters) : Fn<Int, CustomType>(initParameters) {
@@ -278,11 +287,11 @@ class FnSpec : DescribeSpec({
 
             it("should be indirectly instantiated and executed") {
                 assertThat(
-                        instantiate(
-                            Afn::class,
-                            FnInitParameters()
-                                .addObj("obj", CustomType(1L, 2)) { "${it.long}|${it.int}" }
-                        ).apply(1)
+                    instantiate(
+                        Afn::class,
+                        FnInitParameters()
+                            .addObj("obj", CustomType(1L, 2)) { "${it.long}|${it.int}" }
+                    ).apply(1)
                 ).isEqualTo(CustomType(1L, 2))
 
             }
@@ -301,10 +310,10 @@ class FnSpec : DescribeSpec({
 
                 it("should be indirectly instantiated and executed") {
                     assertThat(
-                            instantiate(
-                                Afn::class,
-                                FnInitParameters().add("fn", fn)
-                            ).apply(1)
+                        instantiate(
+                            Afn::class,
+                            FnInitParameters().add("fn", fn)
+                        ).apply(1)
                     ).isEqualTo(1 * 42)
 
                 }
@@ -326,10 +335,10 @@ class FnSpec : DescribeSpec({
 
                 it("should be indirectly instantiated and executed") {
                     assertThat(
-                            instantiate(
-                                Afn::class,
-                                FnInitParameters().add("fn", TheAnswerFn())
-                            ).apply(1)
+                        instantiate(
+                            Afn::class,
+                            FnInitParameters().add("fn", TheAnswerFn())
+                        ).apply(1)
                     ).isEqualTo(1 * 42)
 
                 }
@@ -338,8 +347,8 @@ class FnSpec : DescribeSpec({
 
         describe("Nullable custom types") {
             data class CustomType(
-                    val long: Long,
-                    val int: Int
+                val long: Long,
+                val int: Int
             )
 
             class Afn(initParameters: FnInitParameters) : Fn<Int, CustomType?>(initParameters) {
@@ -352,10 +361,10 @@ class FnSpec : DescribeSpec({
 
             it("should be indirectly instantiated and executed") {
                 assertThat(
-                        instantiate(
-                            Afn::class,
-                            FnInitParameters()
-                        ).apply(1)
+                    instantiate(
+                        Afn::class,
+                        FnInitParameters()
+                    ).apply(1)
                 ).isEqualTo(null)
 
             }
@@ -363,8 +372,8 @@ class FnSpec : DescribeSpec({
 
         describe("Collection of custom types") {
             data class CustomType(
-                    val long: Long,
-                    val int: Int
+                val long: Long,
+                val int: Int
             )
 
             class Afn(initParameters: FnInitParameters) : Fn<Int, List<CustomType>>(initParameters) {
@@ -378,11 +387,11 @@ class FnSpec : DescribeSpec({
 
             it("should be indirectly instantiated and executed") {
                 assertThat(
-                        instantiate(
-                            Afn::class,
-                            FnInitParameters()
-                                .add("objs", listOf(CustomType(1L, 2), CustomType(3L, 4))) { "${it.long}|${it.int}" }
-                        ).apply(1)
+                    instantiate(
+                        Afn::class,
+                        FnInitParameters()
+                            .add("objs", listOf(CustomType(1L, 2), CustomType(3L, 4))) { "${it.long}|${it.int}" }
+                    ).apply(1)
                 ).isEqualTo(listOf(CustomType(1L, 2), CustomType(3L, 4)))
 
             }
@@ -390,8 +399,8 @@ class FnSpec : DescribeSpec({
 
         describe("Nullable collection of custom types") {
             data class CustomType(
-                    val long: Long,
-                    val int: Int
+                val long: Long,
+                val int: Int
             )
 
             class Afn(initParameters: FnInitParameters) : Fn<Int, List<CustomType>?>(initParameters) {
@@ -404,10 +413,10 @@ class FnSpec : DescribeSpec({
 
             it("should be indirectly instantiated and executed") {
                 assertThat(
-                        instantiate(
-                            Afn::class,
-                            FnInitParameters()
-                        ).apply(1)
+                    instantiate(
+                        Afn::class,
+                        FnInitParameters()
+                    ).apply(1)
                 ).isEqualTo(null)
 
             }

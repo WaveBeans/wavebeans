@@ -80,7 +80,7 @@ class FlattenStreamsParams<I : Any, T : Any>(
  */
 object FlattenStreamsParamsSerializer : KSerializer<FlattenStreamsParams<*, *>> {
     override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor(FlattenStreamsParams::class.qualifiedName!!) {
+        buildClassSerialDescriptor(FlattenStreamsParams::class.className()) {
             element("map", FnSerializer.descriptor)
         }
 

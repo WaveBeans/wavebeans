@@ -5,7 +5,6 @@ import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.lib.*
-import java.util.concurrent.TimeUnit
 
 class ZeroFillingFiniteSampleStreamSpec : DescribeSpec({
 

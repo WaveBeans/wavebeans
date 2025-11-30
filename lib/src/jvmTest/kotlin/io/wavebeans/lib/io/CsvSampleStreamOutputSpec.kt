@@ -3,25 +3,24 @@ package io.wavebeans.lib.io
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.fs.core.WbFileDriver
 import io.wavebeans.lib.TimeUnit
 import io.wavebeans.lib.stream.minus
 import io.wavebeans.lib.stream.trim
 import io.wavebeans.tests.eachIndexed
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
 import java.lang.Thread.sleep
 import kotlin.math.absoluteValue
 
 
-class CsvSampleStreamOutputSpec : Spek({
+class CsvSampleStreamOutputSpec : DescribeSpec({
 
-    beforeGroup {
+    beforeSpec {
         TestWbFileDriver.register()
         WbFileDriver.defaultLocalFileScheme = "test"
     }
 
-    afterGroup {
+    afterSpec {
         TestWbFileDriver.unregister()
     }
 

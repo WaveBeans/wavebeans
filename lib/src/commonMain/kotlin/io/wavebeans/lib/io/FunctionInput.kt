@@ -1,8 +1,6 @@
 package io.wavebeans.lib.io
 
 import io.wavebeans.lib.*
-import io.wavebeans.metrics.clazzTag
-import io.wavebeans.metrics.samplesProcessedOnInputMetric
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
@@ -10,14 +8,7 @@ import kotlinx.serialization.builtins.nullable
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
-import kotlinx.serialization.encoding.CompositeDecoder
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.encoding.decodeStructure
-import kotlinx.serialization.encoding.encodeStructure
-import kotlin.properties.Delegates
-import kotlin.properties.Delegates.notNull
-import kotlin.reflect.jvm.jvmName
+import kotlinx.serialization.encoding.*
 
 /**
  * Creates an input from provided function. The function has two parameters: the 0-based index and sample rate the input
@@ -64,7 +55,7 @@ fun <T : Any> input(sampleRate: Float, generator: Fn<Pair<Long, Float>, T?>): Be
  */
 object InputParamsSerializer : KSerializer<InputParams<*>> {
 
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(InputParams::class.jvmName) {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(InputParams::class.className()) {
         element("generateFn", FnSerializer.descriptor)
         element("sampleRate", Float.serializer().nullable.descriptor)
     }
@@ -103,7 +94,7 @@ object InputParamsSerializer : KSerializer<InputParams<*>> {
  * [generator] is a function as [Fn] of two parameters: the 0-based index and sample rate the input expected to be evaluated.
  * [sampleRate] is the sample rate that input supports, or null if it'll automatically adapt.
  */
-//@Serializable(with = InputParamsSerializer::class)
+@Serializable(with = InputParamsSerializer::class)
 class InputParams<T : Any>(
     val generator: Fn<Pair<Long, Float>, T?>,
     val sampleRate: Float? = null

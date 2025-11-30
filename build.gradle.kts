@@ -1,12 +1,9 @@
-import org.gradle.kotlin.dsl.compileKotlin
 import org.gradle.kotlin.dsl.kotlin
-import org.gradle.kotlin.dsl.support.kotlinCompilerOptions
 
 plugins {
-    alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.retry)
-    // TODO kotlin("multiplatform") version kotlinVersion
-
+    alias(libs.plugins.retry) apply false
+    alias(libs.plugins.kotlin.multiplatform) apply false
+    alias(libs.plugins.kotlin.jvm) apply false
 
     `java-library`
     `maven-publish`
@@ -18,30 +15,27 @@ allprojects {
     repositories {
         mavenCentral()
     }
-
-    kotlin {
-        compilerOptions {
-            freeCompilerArgs.add("-Xlambdas=class")
-        }
-        jvmToolchain(11)
-    }
 }
 
-kotlin {
-    jvm { }
-    js { browser { } }
-}
+//kotlin {
+//    jvmToolchain(11)
+//    jvm {
+//        compilerOptions {
+//            freeCompilerArgs.add("-Xlambdas=class")
+//        }
+//    }
+//    js { browser { } }
+//}
 
 subprojects {
 
     if (name == "lib") {
+        apply(plugin = "kotlin-multiplatform")
         return@subprojects
     }
 
-    apply {
-        plugin("kotlin")
-        plugin("org.gradle.test-retry")
-    }
+    apply(plugin = "kotlin")
+    apply(plugin = "org.gradle.test-retry")
 
     group = "io.wavebeans"
 

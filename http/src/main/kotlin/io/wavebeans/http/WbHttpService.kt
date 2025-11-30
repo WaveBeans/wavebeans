@@ -4,11 +4,8 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.grpc.Server
 import io.grpc.ServerBuilder
 import io.netty.bootstrap.ServerBootstrap
-import io.netty.channel.ChannelFuture
-import io.netty.channel.ChannelInitializer
-import io.netty.channel.ChannelOption
-import io.netty.channel.EventLoopGroup
-import io.netty.channel.nio.NioEventLoopGroup
+import io.netty.channel.*
+import io.netty.channel.nio.NioIoHandler
 import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioServerSocketChannel
 import io.netty.handler.logging.LogLevel
@@ -41,8 +38,9 @@ class WbHttpService(
             )
         ) + customHandlers
     }
-    private val bossGroup: EventLoopGroup = NioEventLoopGroup()
-    private val workerGroup: EventLoopGroup = NioEventLoopGroup()
+
+    private val bossGroup: EventLoopGroup = MultiThreadIoEventLoopGroup(NioIoHandler.newFactory())
+    private val workerGroup: EventLoopGroup = MultiThreadIoEventLoopGroup(NioIoHandler.newFactory())
     private var server: ChannelFuture? = null
     private var communicatorServer: Server? = null
 

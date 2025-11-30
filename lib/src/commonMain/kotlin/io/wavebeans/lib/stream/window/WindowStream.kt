@@ -1,11 +1,6 @@
 package io.wavebeans.lib.stream.window
 
-import io.wavebeans.lib.AlterBean
-import io.wavebeans.lib.BeanParams
-import io.wavebeans.lib.BeanStream
-import io.wavebeans.lib.Sample
-import io.wavebeans.lib.SinglePartitionBean
-import io.wavebeans.lib.ZeroSample
+import io.wavebeans.lib.*
 import io.wavebeans.lib.stream.AbstractOperationBeanStream
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -13,12 +8,9 @@ import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
-import kotlinx.serialization.encoding.CompositeDecoder
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.encoding.decodeStructure
-import kotlinx.serialization.encoding.encodeStructure
-import kotlin.reflect.jvm.jvmName
+import kotlinx.serialization.encoding.*
+import kotlin.properties.Delegates
+import kotlin.properties.Delegates.notNull
 
 /**
  * Creates a [BeanStream] of [Window] of type [Sample].
@@ -26,7 +18,7 @@ import kotlin.reflect.jvm.jvmName
  * @param size the size of the window. Must be more than 1.
  */
 fun BeanStream<Sample>.window(size: Int): BeanStream<Window<Sample>> =
-    WindowStream(this, WindowStreamParams(size, size) { ZeroSample })
+    WindowStream(this, WindowStreamParams(size, size, wrap { ZeroSample }))
 
 /**
  * Creates a [BeanStream] of [Window] of type [Sample].
@@ -35,7 +27,7 @@ fun BeanStream<Sample>.window(size: Int): BeanStream<Window<Sample>> =
  * @param step the step to use for a sliding window. Must be more or equal to 1.
  */
 fun BeanStream<Sample>.window(size: Int, step: Int): BeanStream<Window<Sample>> =
-    WindowStream(this, WindowStreamParams(size, step) { ZeroSample })
+    WindowStream(this, WindowStreamParams(size, step, wrap { ZeroSample }))
 
 /**
  * Creates a [BeanStream] of [Window] of specified type.
@@ -43,8 +35,8 @@ fun BeanStream<Sample>.window(size: Int, step: Int): BeanStream<Window<Sample>> 
  * @param size the size of the window. Must be more than 1.
  * @param zeroElFn function that creates zero element objects.
  */
-fun <T : Any> BeanStream<T>.window(size: Int, zeroElFn: () -> T): BeanStream<Window<T>> =
-    WindowStream(this, WindowStreamParams(size, size, zeroElFn))
+fun <T : Any> BeanStream<T>.window(size: Int, zeroElFn: (Unit) -> T): BeanStream<Window<T>> =
+    WindowStream(this, WindowStreamParams(size, size, wrap(zeroElFn)))
 
 /**
  * Creates a [BeanStream] of [Window] of specified type.
@@ -53,48 +45,42 @@ fun <T : Any> BeanStream<T>.window(size: Int, zeroElFn: () -> T): BeanStream<Win
  * @param step the step to use for a sliding window. Must be more or equal to 1.
  * @param zeroElFn function that creates zero element objects.
  */
-fun <T : Any> BeanStream<T>.window(size: Int, step: Int, zeroElFn: () -> T): BeanStream<Window<T>> =
-    WindowStream(this, WindowStreamParams(size, step, zeroElFn))
+fun <T : Any> BeanStream<T>.window(size: Int, step: Int, zeroElFn: (Unit) -> T): BeanStream<Window<T>> =
+    WindowStream(this, WindowStreamParams(size, step, wrap(zeroElFn)))
 
 
 object WindowStreamParamsSerializer : KSerializer<WindowStreamParams<*>> {
 
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(WindowStreamParams::class.qualifiedName!!) {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(WindowStreamParams::class.className()) {
         element("windowSize", Int.serializer().descriptor)
         element("step", Int.serializer().descriptor)
-        element("zeroElFn", String.serializer().descriptor)
+        element("zeroElFn", FnSerializer.descriptor)
     }
 
     override fun deserialize(decoder: Decoder): WindowStreamParams<*> {
         return decoder.decodeStructure(descriptor) {
-            var windowSize: Int? = null
-            var step: Int? = null
-            var funcClazzName: String? = null
+            var windowSize by notNull<Int>()
+            var step by notNull<Int>()
+            lateinit var funcClazzName: Fn<*, *>
             loop@ while (true) {
                 when (val i = decodeElementIndex(descriptor)) {
                     CompositeDecoder.DECODE_DONE -> break@loop
                     0 -> windowSize = decodeIntElement(descriptor, i)
                     1 -> step = decodeIntElement(descriptor, i)
-                    2 -> funcClazzName = decodeStringElement(descriptor, i)
+                    2 -> funcClazzName = decodeSerializableElement(descriptor, i, FnSerializer)
                     else -> throw SerializationException("Unknown index $i")
                 }
             }
-            val classForName = WaveBeansClassLoader.classForName(funcClazzName!!)
-            val constructor = classForName.getDeclaredConstructor()
-            constructor.isAccessible = true
-
             @Suppress("UNCHECKED_CAST")
-            val funcByName = constructor.newInstance() as () -> Any
-            WindowStreamParams(windowSize!!, step!!, funcByName)
+            WindowStreamParams(windowSize, step, funcClazzName as Fn<Unit, Any>)
         }
     }
 
     override fun serialize(encoder: Encoder, value: WindowStreamParams<*>) {
-        val funcName = value.zeroElFn::class.jvmName
         encoder.encodeStructure(descriptor) {
             encodeIntElement(descriptor, 0, value.windowSize)
             encodeIntElement(descriptor, 1, value.step)
-            encodeStringElement(descriptor, 2, funcName)
+            encodeSerializableElement(descriptor, 2, FnSerializer, value.zeroElFn)
         }
     }
 
@@ -107,11 +93,11 @@ object WindowStreamParamsSerializer : KSerializer<WindowStreamParams<*>> {
  * @param windowSize the size of the window. Must be more than 1.
  * @param step the size of the step to move window forward. For a fixed window should be the same as [windowSize]. Must be more or equal to 1.
  */
-//@Serializable(with = WindowStreamParamsSerializer::class)
+@Serializable(with = WindowStreamParamsSerializer::class)
 class WindowStreamParams<T : Any>(
     val windowSize: Int,
     val step: Int,
-    val zeroElFn: () -> T
+    val zeroElFn: Fn<Unit, T>
 ) : BeanParams {
     init {
         require(step >= 1) { "Step should be more or equal to 1" }
@@ -144,6 +130,6 @@ class WindowStream<T : Any>(
                 step = parameters.step,
                 partialWindows = true
             )
-            .map { Window(parameters.windowSize, parameters.step, it, parameters.zeroElFn) }
+            .map { Window(parameters.windowSize, parameters.step, it) { parameters.zeroElFn.apply(Unit) } }
     }
 }

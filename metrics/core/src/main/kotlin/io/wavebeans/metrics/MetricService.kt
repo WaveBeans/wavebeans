@@ -18,7 +18,7 @@ object MetricService : MetricConnector {
         metricConnectors += connector
         log.info {
             "Registered new connector $connector" +
-                    if (log.isDebugEnabled) " from:\n${Thread.currentThread().stackTrace.drop(4).joinToString("\n", postfix = "\n----end of stackTrace----") { "\t at $it" }}"
+                    if (log.isDebugEnabled()) " from:\n${Thread.currentThread().stackTrace.drop(4).joinToString("\n", postfix = "\n----end of stackTrace----") { "\t at $it" }}"
                     else ""
         }
         return this

@@ -53,7 +53,7 @@ class RemoteTimeseriesTableDriver<T : Any>(
     @Suppress("UNCHECKED_CAST")
     override fun query(query: TableQuery): Sequence<T> {
         val serializerClass = client.tableElementSerializer()
-        val cl = WaveBeansClassLoader.classForName(serializerClass).kotlin
+        val cl = WaveBeansClassLoader.classForName(serializerClass)
         val kSerializer = (cl.objectInstance ?: cl.createInstance()) as KSerializer<T>
         return client.query(TableQuerySerializer.serialize(query))
                 .map { ProtoObj.unwrapIfNeeded(it.asObj(kSerializer)) as T }

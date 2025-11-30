@@ -2,8 +2,6 @@ package io.wavebeans.lib.io
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.wavebeans.lib.*
-import io.wavebeans.metrics.clazzTag
-import io.wavebeans.metrics.samplesProcessedOnOutputMetric
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
@@ -38,7 +36,7 @@ inline fun <reified T : Any> BeanStream<T>.out(
  * * It doesn't affect anything in other phases.
  */
 inline fun <reified T : Any> BeanStream<T>.out(
-        noinline writeFunction: (WriteFunctionArgument<T>) -> Boolean
+    noinline writeFunction: (WriteFunctionArgument<T>) -> Boolean
 ): StreamOutput<T> = this.out(wrap(writeFunction))
 
 /**
@@ -94,7 +92,7 @@ enum class WriteFunctionPhase {
  *    if it returns `false` the writer will stop processing, but anyway [WriteFunctionPhase.CLOSE] phase will be initiated.
  *  * It doesn't affect anything in other phases.
  */
-//@Serializable(with = FunctionStreamOutputParamsSerializer::class)
+@Serializable(with = FunctionStreamOutputParamsSerializer::class)
 data class FunctionStreamOutputParams<T : Any>(
     /**
      * The class of the sample.
@@ -115,10 +113,11 @@ data class FunctionStreamOutputParams<T : Any>(
  */
 object FunctionStreamOutputParamsSerializer : KSerializer<FunctionStreamOutputParams<*>> {
 
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(FunctionStreamOutputParams::class.jvmName) {
-        element("sampleClazz", String.serializer().descriptor)
-        element("writeFunction", FnSerializer.descriptor)
-    }
+    override val descriptor: SerialDescriptor =
+        buildClassSerialDescriptor(FunctionStreamOutputParams::class.className()) {
+            element("sampleClazz", String.serializer().descriptor)
+            element("writeFunction", FnSerializer.descriptor)
+        }
 
     override fun deserialize(decoder: Decoder): FunctionStreamOutputParams<*> {
         return decoder.decodeStructure(descriptor) {
@@ -129,7 +128,7 @@ object FunctionStreamOutputParamsSerializer : KSerializer<FunctionStreamOutputPa
                 when (val i = decodeElementIndex(descriptor)) {
                     CompositeDecoder.DECODE_DONE -> break@loop
                     0 -> sampleClazz =
-                        WaveBeansClassLoader.classForName(decodeStringElement(descriptor, i)).kotlin as KClass<Any>
+                        WaveBeansClassLoader.classForName(decodeStringElement(descriptor, i)) as KClass<Any>
 
                     1 -> writeFunction = decodeSerializableElement(
                         descriptor,
@@ -146,7 +145,7 @@ object FunctionStreamOutputParamsSerializer : KSerializer<FunctionStreamOutputPa
 
     override fun serialize(encoder: Encoder, value: FunctionStreamOutputParams<*>) {
         encoder.encodeStructure(descriptor) {
-            encodeSerializableElement(descriptor, 0, String.serializer(), value.sampleClazz.jvmName)
+            encodeSerializableElement(descriptor, 0, String.serializer(), value.sampleClazz.className())
             encodeSerializableElement(descriptor, 1, FnSerializer, value.writeFunction)
         }
     }

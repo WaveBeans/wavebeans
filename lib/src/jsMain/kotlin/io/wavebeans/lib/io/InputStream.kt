@@ -1,37 +1,37 @@
 package io.wavebeans.lib.io
 
-actual class BufferedInputStream actual constructor(stream: InputStream) : InputStream() {
-    override fun read(): Int {
+actual class BufferedInputStream actual constructor(stream: InputStream) : InputStream {
+    actual override fun read(): Int {
         TODO("Not yet implemented")
     }
 
-    override fun read(buf: ByteArray): Int {
+    actual override fun read(buf: ByteArray): Int {
         TODO("Not yet implemented")
     }
 
-    override fun read(buf: ByteArray, offset: Int, length: Int): Int {
+    actual override fun read(buf: ByteArray, offset: Int, length: Int): Int {
         TODO("Not yet implemented")
     }
 
-    override fun close() {
+    actual override fun close() {
         TODO("Not yet implemented")
     }
 }
 
-actual class DataInputStream actual constructor(stream: InputStream) : InputStream() {
-    override fun read(): Int {
+actual class DataInputStream actual constructor(stream: InputStream) : InputStream {
+    actual override fun read(): Int {
         TODO("Not yet implemented")
     }
 
-    override fun read(buf: ByteArray): Int {
+    actual override fun read(buf: ByteArray): Int {
         TODO("Not yet implemented")
     }
 
-    override fun read(buf: ByteArray, offset: Int, length: Int): Int {
+    actual override fun read(buf: ByteArray, offset: Int, length: Int): Int {
         TODO("Not yet implemented")
     }
 
-    override fun close() {
+    actual override fun close() {
         TODO("Not yet implemented")
     }
 
@@ -44,26 +44,20 @@ actual class DataInputStream actual constructor(stream: InputStream) : InputStre
     }
 }
 
-actual abstract class InputStream: Closeable {
-    actual abstract fun read(): Int
-    actual abstract fun read(buf: ByteArray): Int
-    actual abstract fun read(buf: ByteArray, offset: Int, length: Int): Int
-}
-
-actual class ByteArrayInputStream actual constructor(buffer: ByteArray) : InputStream() {
-    override fun read(): Int {
+actual class ByteArrayInputStream actual constructor(buffer: ByteArray) : InputStream {
+    actual override fun read(): Int {
         TODO("Not yet implemented")
     }
 
-    override fun read(buf: ByteArray): Int {
+    actual override fun read(buf: ByteArray): Int {
         TODO("Not yet implemented")
     }
 
-    override fun read(buf: ByteArray, offset: Int, length: Int): Int {
+    actual override fun read(buf: ByteArray, offset: Int, length: Int): Int {
         TODO("Not yet implemented")
     }
 
-    override fun close() {
+    actual override fun close() {
         TODO("Not yet implemented")
     }
 }

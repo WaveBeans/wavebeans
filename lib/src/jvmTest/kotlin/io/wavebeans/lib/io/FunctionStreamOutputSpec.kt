@@ -87,7 +87,7 @@ class FunctionStreamOutputSpec : DescribeSpec({
             assertThat(IntStorage.list()).isEqualTo(listOf(0, -2))
         }
         it("should throw an exception properly and the output processing should end") {
-            assertThat {
+            assertThat(runCatching {
                 input.out {
                     if (it.sampleIndex == 5L) throw IllegalStateException("some exception")
                     when (it.phase) {
@@ -97,7 +97,7 @@ class FunctionStreamOutputSpec : DescribeSpec({
                     }
                     true
                 }.evaluate(1000.0f)
-            }
+            })
                 .isFailure()
                 .isNotNull().message().isEqualTo("some exception")
             assertThat(IntStorage.list()).isEqualTo((0..4).toList())
@@ -107,7 +107,7 @@ class FunctionStreamOutputSpec : DescribeSpec({
     describe("Writing encoded samples") {
 
         class FileEncoderFn<T : Any>(file: String) : Fn<WriteFunctionArgument<T>, Boolean>(
-                FnInitParameters().add("file", file)
+            FnInitParameters().add("file", file)
         ) {
 
             private val file by lazy { File(initParams.string("file")).outputStream().buffered() }
@@ -124,6 +124,7 @@ class FunctionStreamOutputSpec : DescribeSpec({
                                 buffer.encodeSampleLEBytes(0, element, bitDepth)
                                 file.write(buffer)
                             }
+
                             SampleVector::class -> {
                                 val element = argument.sample!! as SampleVector
                                 val buffer = ByteArray(bytesPerSample * element.size)
@@ -132,9 +133,11 @@ class FunctionStreamOutputSpec : DescribeSpec({
                                 }
                                 file.write(buffer)
                             }
+
                             else -> fail("Unsupported $argument")
                         }
                     }
+
                     CLOSE -> file.close()
                     END -> {
                         /** nothing to do */
@@ -151,23 +154,28 @@ class FunctionStreamOutputSpec : DescribeSpec({
             val outputFile = File.createTempFile("temp", ".raw").also { it.deleteOnExit() }
             input.out(FileEncoderFn<Sample>(outputFile.absolutePath)).evaluate(sampleRate)
 
-            val generated = ByteArrayLittleEndianInput(ByteArrayLittleEndianInputParams(
+            val generated = ByteArrayLittleEndianInput(
+                ByteArrayLittleEndianInputParams(
                     sampleRate,
                     BitDepth.BIT_32,
                     outputFile.readBytes()
-            )).toList(sampleRate)
+                )
+            ).toList(sampleRate)
 
             assertThat(generated).isContainedBy(input.toList(sampleRate)) { a, b -> abs(a - b) < 1e-8 }
         }
         it("should store sample vector bytes as LE into a file") {
             val outputFile = File.createTempFile("temp", ".raw").also { it.deleteOnExit() }
-            input.window(64).map { sampleVectorOf(it) }.out(FileEncoderFn<SampleVector>(outputFile.absolutePath)).evaluate(sampleRate)
+            input.window(64).map { sampleVectorOf(it) }.out(FileEncoderFn<SampleVector>(outputFile.absolutePath))
+                .evaluate(sampleRate)
 
-            val generated = ByteArrayLittleEndianInput(ByteArrayLittleEndianInputParams(
+            val generated = ByteArrayLittleEndianInput(
+                ByteArrayLittleEndianInputParams(
                     sampleRate,
                     BitDepth.BIT_32,
                     outputFile.readBytes()
-            )).toList(sampleRate)
+                )
+            ).toList(sampleRate)
 
             assertThat(generated).isContainedBy(input.toList(sampleRate)) { a, b -> abs(a - b) < 1e-8 }
         }

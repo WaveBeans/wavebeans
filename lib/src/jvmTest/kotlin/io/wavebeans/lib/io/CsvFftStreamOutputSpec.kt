@@ -5,6 +5,7 @@ import assertk.assertions.each
 import assertk.assertions.isCloseTo
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.fs.core.WbFileDriver
 import io.wavebeans.lib.TimeUnit
 import io.wavebeans.lib.stream
@@ -12,20 +13,18 @@ import io.wavebeans.lib.stream.fft.fft
 import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.stream.window.window
 import io.wavebeans.tests.eachIndexed
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.style.specification.describe
 import java.io.File
 import java.lang.Thread.sleep
 
 
-class CsvFftStreamOutputSpec : Spek({
+class CsvFftStreamOutputSpec : DescribeSpec({
 
-    beforeGroup {
+    beforeSpec {
         TestWbFileDriver.register()
         WbFileDriver.defaultLocalFileScheme = "test"
     }
 
-    afterGroup {
+    afterSpec {
         TestWbFileDriver.unregister()
     }
 

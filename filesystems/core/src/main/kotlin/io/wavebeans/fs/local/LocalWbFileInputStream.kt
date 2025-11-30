@@ -3,7 +3,7 @@ package io.wavebeans.fs.local
 import io.wavebeans.lib.io.InputStream
 import java.io.FileInputStream
 
-class LocalWbFileInputStream(wbFile: LocalWbFile) : InputStream() {
+class LocalWbFileInputStream(wbFile: LocalWbFile) : InputStream {
 
     private val stream = FileInputStream(wbFile.file)
 
@@ -21,9 +21,9 @@ class LocalWbFileInputStream(wbFile: LocalWbFile) : InputStream() {
 
     override fun read(): Int = stream.read()
 
-    override fun read(b: ByteArray): Int = stream.read(b)
+    override fun read(buf: ByteArray): Int = stream.read(buf)
 
-    override fun read(b: ByteArray, off: Int, len: Int): Int = stream.read(b, off, len)
+    override fun read(buf: ByteArray, offset: Int, length: Int): Int = stream.read(buf, offset, length)
 
     override fun close() {
         stream.close()

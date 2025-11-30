@@ -1,8 +1,8 @@
 package io.wavebeans.lib
 
-actual class URI actual constructor(uri: String) {
+actual class URI(private val uri: java.net.URI) {
 
-    private val uri = java.net.URI(uri)
+    actual constructor(uri: String) : this(java.net.URI.create(uri))
 
     actual val scheme: String
         get() = uri.scheme
@@ -32,3 +32,5 @@ actual class File actual constructor(path: String) {
         get() = file.extension
 
 }
+
+fun uri(uri: java.net.URI) = URI(uri)

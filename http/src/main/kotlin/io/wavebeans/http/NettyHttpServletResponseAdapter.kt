@@ -115,10 +115,12 @@ class NettyHttpServletResponseAdapter(val response: FullHttpResponse) : HttpServ
         TODO("Not yet implemented")
     }
 
+    @Deprecated("Deprecated in Java")
     override fun encodeUrl(url: String?): String {
         TODO("Not yet implemented")
     }
 
+    @Deprecated("Deprecated in Java")
     override fun encodeRedirectUrl(url: String?): String {
         TODO("Not yet implemented")
     }
@@ -165,6 +167,7 @@ class NettyHttpServletResponseAdapter(val response: FullHttpResponse) : HttpServ
         response.status = HttpResponseStatus.valueOf(sc)
     }
 
+    @Deprecated("Deprecated in Java")
     override fun setStatus(sc: Int, sm: String?) {
         TODO("Not yet implemented")
     }

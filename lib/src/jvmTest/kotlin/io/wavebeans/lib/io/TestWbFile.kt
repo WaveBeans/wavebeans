@@ -53,7 +53,7 @@ class TestWbFile(
     }
 
     override fun createWbFileInputStream(): InputStream {
-        return object : InputStream() {
+        return object : InputStream {
             private val stream = ByteArrayInputStream(fs.getValue(uri.toString()))
             override fun close() {
                 stream.close()

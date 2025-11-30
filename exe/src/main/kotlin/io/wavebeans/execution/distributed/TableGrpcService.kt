@@ -33,7 +33,7 @@ class TableGrpcService(
 
     fun put(tableName: String, marker: io.wavebeans.lib.TimeMeasure, valueType: String, valueSerialized: ByteArray) {
         val table = tableRegistry.byName<kotlin.Any>(tableName)
-        val clazz = WaveBeansClassLoader.classForName(valueType).kotlin
+        val clazz = WaveBeansClassLoader.classForName(valueType)
         val kSerializer = SerializableRegistry.find(clazz)
         val obj = ProtoObj.unwrapIfNeeded(valueSerialized.asObj(kSerializer))
                 ?: throw IllegalStateException("Trying to put null value into $tableName " +

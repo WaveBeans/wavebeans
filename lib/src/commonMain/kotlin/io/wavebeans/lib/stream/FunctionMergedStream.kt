@@ -28,7 +28,7 @@ fun <T1 : Any, T2 : Any, R : Any> BeanStream<T1>.merge(
 object FunctionMergedStreamParamsSerializer : KSerializer<FunctionMergedStreamParams<*, *, *>> {
 
     override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor(FunctionMergedStreamParams::class.qualifiedName!!) {
+        buildClassSerialDescriptor(FunctionMergedStreamParams::class.className()) {
             element("mergeFn", FnSerializer.descriptor)
         }
 
@@ -52,6 +52,7 @@ object FunctionMergedStreamParamsSerializer : KSerializer<FunctionMergedStreamPa
             encodeSerializableElement(descriptor, 0, FnSerializer, value.merge)
         }
     }
+}
 
 //@Serializable(with = FunctionMergedStreamParamsSerializer::class)
 class FunctionMergedStreamParams<T1 : Any, T2 : Any, R : Any>(

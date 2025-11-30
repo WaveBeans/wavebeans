@@ -20,19 +20,41 @@ class DropboxWbFileOutputStream(
     private var count = 0
     private var offset = 0L
 
-    override fun write(b: Int) {
-        buffer[count] = b.toByte()
+    override fun write(byte: Int) {
+        buffer[count] = byte.toByte()
         if (++count == buffer.size) {
             flush()
         }
     }
 
     override fun write(buffer: ByteArray) {
-        TODO("Not yet implemented")
+        write(buffer, 0, buffer.size)
     }
 
     override fun write(buffer: ByteArray, offset: Int, length: Int) {
-        TODO("Not yet implemented")
+        if (offset < 0 || length < 0 || offset + length > buffer.size) {
+            throw IndexOutOfBoundsException("offset=$offset, length=$length, size=${buffer.size}")
+        }
+        if (length == 0) return
+
+        var srcPos = offset
+        var remaining = length
+        while (remaining > 0) {
+            // if internal buffer is full, flush it first
+            if (count == this.buffer.size) {
+                flush()
+            }
+            val space = this.buffer.size - count
+            val toCopy = minOf(remaining, space)
+            System.arraycopy(buffer, srcPos, this.buffer, count, toCopy)
+            count += toCopy
+            srcPos += toCopy
+            remaining -= toCopy
+            // flush if filled up to avoid large in-memory accumulation
+            if (count == this.buffer.size) {
+                flush()
+            }
+        }
     }
 
     override fun flush() {

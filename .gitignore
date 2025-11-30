@@ -8,3 +8,4 @@ ds
 .DS_Store
 logs/
 .kotlin/
+kotlin-js-store/

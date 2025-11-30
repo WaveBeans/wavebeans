@@ -3,39 +3,45 @@ package io.wavebeans.lib.table
 actual class ConcurrentHashMap<K, V> : MutableMap<K, V> {
     private val map = hashMapOf<K, V>()
 
-    override val entries: MutableSet<MutableMap.MutableEntry<K, V>>
+    actual override val entries: MutableSet<MutableMap.MutableEntry<K, V>>
         get() = map.entries
 
-    override val keys: MutableSet<K>
+    actual override val keys: MutableSet<K>
         get() = map.keys
 
-    override val size: Int
+    actual override val size: Int
         get() = map.size
 
-    override val values: MutableCollection<V>
+    actual override val values: MutableCollection<V>
         get() = map.values
 
-    override fun clear() {
+    actual override fun clear() {
         map.clear()
     }
 
-    override fun isEmpty(): Boolean = map.isEmpty()
+    actual override fun isEmpty(): Boolean = map.isEmpty()
 
-    override fun remove(key: K): V? = map.remove(key)
+    actual override fun remove(key: K): V? = map.remove(key)
 
-    override fun putAll(from: Map<out K, V>) {
+    actual override fun putAll(from: Map<out K, V>) {
         map.putAll(from)
     }
 
-    override fun put(key: K, value: V): V? = map.put(key, value)
+    actual override fun put(key: K, value: V): V? = map.put(key, value)
 
-    override fun get(key: K): V? = map[key]
+    actual override fun get(key: K): V? = map[key]
 
-    override fun containsValue(value: V): Boolean = map.containsValue(value)
+    actual override fun containsValue(value: V): Boolean = map.containsValue(value)
 
-    override fun containsKey(key: K): Boolean = map.containsKey(key)
+    actual override fun containsKey(key: K): Boolean = map.containsKey(key)
 
     actual fun putIfAbsent(k: K, v: V): V? {
-        TODO("Not yet implemented")
+        val oldValue = map[k]
+        return if (oldValue == null) {
+            map[k] = v
+            null
+        } else {
+            oldValue
+        }
     }
 }

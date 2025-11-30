@@ -15,7 +15,7 @@ fun Topology.partition(partitionsCount: Int): Topology {
 
 
     fun handleBean(beanRef: BeanRef, level: Int = 1) {
-        val beanClazz = WaveBeansClassLoader.classForName(beanRef.type).kotlin
+        val beanClazz = WaveBeansClassLoader.classForName(beanRef.type)
         val linkedBeans = this.links
                 .filter { it.from == beanRef.id }
                 .map { l -> this.refs.first { it.id == l.to } }
@@ -25,7 +25,7 @@ fun Topology.partition(partitionsCount: Int): Topology {
         handledBeans += beanRef
 
         for (linkedBeanRef in linkedBeans) {
-            val linkedBeanClazz = WaveBeansClassLoader.classForName(linkedBeanRef.type).kotlin
+            val linkedBeanClazz = WaveBeansClassLoader.classForName(linkedBeanRef.type)
             val (newLinks, newBeans) = when {
                 linkedBeanClazz.isSubclassOf(SinglePartitionBean::class) && beanClazz.isSubclassOf(Bean::class) -> {
                     val partitionedBeans = replacedBeans.getValue(beanRef)
@@ -92,7 +92,7 @@ fun Topology.partition(partitionsCount: Int): Topology {
         }
     }
 
-    this.refs.filter { WaveBeansClassLoader.classForName(it.type).kotlin.isSubclassOf(SinkBean::class) }
+    this.refs.filter { WaveBeansClassLoader.classForName(it.type).isSubclassOf(SinkBean::class) }
             .forEach {
                 beanRefs += it
                 replacedBeans[it] = listOf(it)

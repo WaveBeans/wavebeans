@@ -1,7 +1,7 @@
 package io.wavebeans.lib.io
 
-import kotli
 import io.wavebeans.lib.SinkBean
+import io.wavebeans.lib.yield
 
 /**
  * The type of [SinkBean] that outputs the stream somewhere.
@@ -17,7 +17,7 @@ interface StreamOutput<T : Any> : SinkBean<T> {
 /**
  * The writer created by [StreamOutput] that performs iterative writes.
  */
-interface Writer : Closeable {
+interface Writer : AutoCloseable {
 
     /**
      * Makes one iteration of write. May write in temporary buffer, always call [close] to flush the buffers.

@@ -2,6 +2,7 @@ package io.wavebeans.lib.stream
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.wavebeans.lib.*
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.nullable
@@ -9,12 +10,9 @@ import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.*
-import java.util.concurrent.TimeUnit
-import kotlin.properties.Delegates.notNull
-import kotlin.reflect.full.isSubtypeOf
 import kotlin.js.JsName
 import kotlin.jvm.JvmName
-import kotlin.properties.Delegates
+import kotlin.properties.Delegates.notNull
 import kotlin.reflect.typeOf
 
 /**
@@ -117,7 +115,7 @@ inline fun <reified S : BeanStream<T>, T : Any> S.resample(
         typeOf<BeanStream<*>>() ->
             ResampleBeanStream(this, ResampleStreamParams(to, resampleFn)) as S
 
-        streamType.isSubtypeOf(typeOf<FiniteStream<*>>()) ->
+        typeOf<FiniteStream<*>>() ->
             ResampleFiniteStream(this as FiniteStream<T>, ResampleStreamParams(to, resampleFn)) as S
 
         else -> throw UnsupportedOperationException("Type $streamType is not supported for resampling")
@@ -176,7 +174,7 @@ class ResampleStreamParams<T>(
 object ResampleStreamParamsSerializer : KSerializer<ResampleStreamParams<*>> {
 
     override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor(ResampleStreamParamsSerializer::class.qualifiedName!!) {
+        buildClassSerialDescriptor(ResampleStreamParamsSerializer::class.className()) {
             element("to", Float.serializer().nullable.descriptor)
             element("resampleFn", FnSerializer.descriptor)
         }

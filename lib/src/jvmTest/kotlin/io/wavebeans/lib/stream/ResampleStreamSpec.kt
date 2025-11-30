@@ -60,9 +60,9 @@ class ResampleStreamSpec : DescribeSpec({
                 require(fs == 1000.0f) { "Non 1000Hz sample rate is not supported" }
                 if (i < 5) i.toInt() else null
             }
-                    .resample(to = 2000.0f)
-                    .map { it * 2 }
-                    .resample()
+                .resample(to = 2000.0f)
+                .map { it * 2 }
+                .resample()
 
             assertThat(resampled.toList(4000.0f)).isListOf(0, 0, 0, 0, 2, 2, 2, 2, 4, 4, 4, 4, 6, 6, 6, 6, 8, 8, 8, 8)
         }
@@ -72,9 +72,9 @@ class ResampleStreamSpec : DescribeSpec({
                 require(fs == 1000.0f) { "Non 1000Hz sample rate is not supported" }
                 if (i < 5) i.toInt() else null
             }
-                    .resample(to = 500.0f, resampleFn = SimpleResampleFn { it.sum() })
-                    .map { it * 2 }
-                    .resample(resampleFn = SimpleResampleFn { it.sum() })
+                .resample(to = 500.0f, resampleFn = SimpleResampleFn { it.sum() })
+                .map { it * 2 }
+                .resample(resampleFn = SimpleResampleFn { it.sum() })
 
             assertThat(resampled.toList(250.0f)).isListOf(12, 8)
         }
@@ -92,16 +92,16 @@ class ResampleStreamSpec : DescribeSpec({
                 require(fs == 1000.0f) { "Non 1000Hz sample rate is not supported" }
                 if (i < 5) i.toInt() else null
             }
-                    .resample(to = 2500.0f, resampleFn = ::resample)
-                    .map { it * 2 }
-                    .resample(resampleFn = ::resample)
+                .resample(to = 2500.0f, resampleFn = ::resample)
+                .map { it * 2 }
+                .resample(resampleFn = ::resample)
 
             assertThat(resampled.toList(250.0f)).isListOf(
-                    0, -3, -2, -3,
-                    2, -3, -2, -3,
-                    4, -3, -2, -3,
-                    6, -3, -2, -3,
-                    8, -3, -2, -3,
+                0, -3, -2, -3,
+                2, -3, -2, -3,
+                4, -3, -2, -3,
+                6, -3, -2, -3,
+                8, -3, -2, -3,
             )
         }
 
@@ -110,9 +110,9 @@ class ResampleStreamSpec : DescribeSpec({
                 require(fs == 1000.0f) { "Non 1000Hz sample rate is not supported" }
                 if (i < 5) i.toInt() else null
             }
-                    .resample(to = 2000.0f)
-                    .map { it * 2 }
-                    .resample(resampleFn = SimpleResampleFn { it.sum() })
+                .resample(to = 2000.0f)
+                .map { it * 2 }
+                .resample(resampleFn = SimpleResampleFn { it.sum() })
 
             val generator = input { (i, fs) ->
                 require(fs == 1000.0f) { "Non 1000Hz sample rate is not supported" }
@@ -121,11 +121,11 @@ class ResampleStreamSpec : DescribeSpec({
 
             val mix = resampled.merge(generator) { (a, b) -> requireNotNull(a); requireNotNull(b); a + b }
             assertThat(mix.toList(1000.0f)).isListOf(
-                    0 * 2 + 0 * 2 + 0,
-                    1 * 2 + 1 * 2 + 10,
-                    2 * 2 + 2 * 2 + 20,
-                    3 * 2 + 3 * 2 + 30,
-                    4 * 2 + 4 * 2 + 40,
+                0 * 2 + 0 * 2 + 0,
+                1 * 2 + 1 * 2 + 10,
+                2 * 2 + 2 * 2 + 20,
+                3 * 2 + 3 * 2 + 30,
+                4 * 2 + 4 * 2 + 40,
             )
         }
     }
@@ -135,10 +135,10 @@ class ResampleStreamSpec : DescribeSpec({
         fun newStreamFromProcessedWavFile(): BeanStream<Sample> {
             val outputFile = File.createTempFile("temp", ".wav").also { it.deleteOnExit() }
             input
-                    .resample(to = 44100.0f)
-                    .resample()
-                    .toMono32bitWav("file://${outputFile.absolutePath}")
-                    .evaluate(8000.0f)
+                .resample(to = 44100.0f)
+                .resample()
+                .toMono32bitWav("file://${outputFile.absolutePath}")
+                .evaluate(8000.0f)
             return wave("file://${outputFile.absolutePath}", resampleFn = null)
         }
 
@@ -172,36 +172,36 @@ class ResampleStreamSpec : DescribeSpec({
         }
         it("should resample 8000Hz sample rate to 16000Hz after reading from file and passing through FFT-Inverse FFT process") {
             val samples = newStreamFromProcessedWavFile()
-                    .window(1001)
-                    .fft(1024)
-                    .inverseFft()
-                    .flatten()
-                    .resample()
-                    .toList(16000.0f)
-                    .take(1000)
+                .window(1001)
+                .fft(1024)
+                .inverseFft()
+                .flatten()
+                .resample()
+                .toList(16000.0f)
+                .take(1000)
             assertThat(samples).all {
                 isNotEmpty()
                 isContainedBy(input.toList(16000.0f, take = 2000)) { a, b -> abs(a - b) < 1e-1 }
             }
         }
         it("should fail streaming without resample() via /dev/null writer") {
-            assertThat { newStreamFromProcessedWavFile().toDevNull().evaluate(16000.0f) }
+            assertThat(runCatching { newStreamFromProcessedWavFile().toDevNull().evaluate(16000.0f) })
                 .isFailure()
                 .message().isNotNull()
                 .endsWith("The stream should be resampled from 8000.0Hz to 16000.0Hz before writing")
         }
         it("should fail streaming without resample() via wav-writer") {
-            assertThat {
+            assertThat(runCatching {
                 newStreamFromProcessedWavFile()
                     .toMono16bitWav<Sample>("file:///anyfile.wav")
                     .evaluate(16000.0f)
-            }
+            })
                 .isFailure()
                 .message().isNotNull()
                 .endsWith("The stream should be resampled from 8000.0Hz to 16000.0Hz before writing")
         }
         it("should fail streaming without resample() via partial wav-writer") {
-            assertThat {
+            assertThat(runCatching {
                 newStreamFromProcessedWavFile()
                     .map<Sample, Managed<OutputSignal, Unit, Sample>> {
                         it.withOutputSignal(
@@ -212,30 +212,30 @@ class ResampleStreamSpec : DescribeSpec({
                         "file:///anyfile.csv",
                         suffix = { fail("Unreachable statement") })
                     .evaluate(16000.0f)
-            }
+            })
                 .isFailure()
                 .message().isNotNull()
                 .endsWith("The stream should be resampled from 8000.0Hz to 16000.0Hz before writing")
         }
         it("should fail streaming without resample() via csv-writer") {
-            assertThat {
+            assertThat(runCatching {
                 newStreamFromProcessedWavFile().toCsv("file:///anyfile.csv").evaluate(16000.0f)
-            }
+            })
                 .isFailure()
                 .message().isNotNull()
                 .endsWith("The stream should be resampled from 8000.0Hz to 16000.0Hz before writing")
         }
         it("should fail streaming without resample() via FFT csv-writer") {
-            assertThat {
+            assertThat(runCatching {
                 newStreamFromProcessedWavFile().window(20).fft(32).magnitudeToCsv("file:///anyfile.csv")
                     .evaluate(16000.0f)
-            }
+            })
                 .isFailure()
                 .message().isNotNull()
                 .endsWith("The stream should be resampled from 8000.0Hz to 16000.0Hz before writing")
         }
         it("should fail streaming without resample() via partial csv-writer") {
-            assertThat {
+            assertThat(runCatching {
                 newStreamFromProcessedWavFile()
                     .map<Sample, Managed<OutputSignal, Unit, Sample>> {
                         it.withOutputSignal(
@@ -244,22 +244,22 @@ class ResampleStreamSpec : DescribeSpec({
                     }
                     .toCsv("file:///anyfile.csv", suffix = { fail("Unreachable statement") })
                     .evaluate(16000.0f)
-            }
+            })
                 .isFailure()
                 .message().isNotNull()
                 .endsWith("The stream should be resampled from 8000.0Hz to 16000.0Hz before writing")
         }
         it("should fail streaming without resample() via function writer") {
-            assertThat {
+            assertThat(runCatching {
                 newStreamFromProcessedWavFile().out<Sample> { fail("unreachable statement") }
                     .evaluate(16000.0f)
-            }
+            })
                 .isFailure()
                 .message().isNotNull()
                 .endsWith("The stream should be resampled from 8000.0Hz to 16000.0Hz before writing")
         }
         it("should fail when streaming without resample() via asSequence") {
-            assertThat { newStreamFromProcessedWavFile().asSequence(16000.0f).toList<Sample>() }
+            assertThat(runCatching { newStreamFromProcessedWavFile().asSequence(16000.0f).toList() })
                 .isFailure()
                 .message().isNotNull()
                 .endsWith("The stream should be resampled from 8000.0Hz to 16000.0Hz")

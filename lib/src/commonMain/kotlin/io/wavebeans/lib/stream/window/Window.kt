@@ -26,7 +26,7 @@ data class Window<T : Any>(
          * If [elements] has not enough element during some operations, it'll be replace by zero elements generated
          * by this function.
          */
-        val zeroEl: () -> T
+        val zeroEl: (Unit) -> T
 ) : Measured {
 
     override fun measure(): Int = step * SampleCountMeasurement.samplesInObject(elements.first())
@@ -45,9 +45,9 @@ data class Window<T : Any>(
         check(other == null || this.size == other.size && this.step == other.step) {
             "Can't merge with stream with different window size or step"
         }
-        val thisElements = this.elements + (0 until size - this.elements.size).map { zeroEl() }
+        val thisElements = this.elements + (0 until size - this.elements.size).map { zeroEl(Unit) }
         val otherList = other?.elements ?: emptyList()
-        val otherElements = otherList + (0 until size - otherList.size).map { zeroEl() }
+        val otherElements = otherList + (0 until size - otherList.size).map { zeroEl(Unit) }
         return Window(
                 size,
                 step,

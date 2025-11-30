@@ -4,7 +4,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.wavebeans.lib.TimeMeasure
 import io.wavebeans.lib.ns
 import io.wavebeans.lib.s
-import mu.KotlinLogging
 
 /**
  * Implementation of iterator that continously reads the provided deque, assuming that someone from outside appends elements.

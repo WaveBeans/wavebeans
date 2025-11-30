@@ -1,5 +1,19 @@
 package io.wavebeans.lib
 
+import io.wavebeans.lib.instantiate
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.builtins.MapSerializer
+import kotlinx.serialization.builtins.nullable
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.encoding.CompositeDecoder
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.encoding.decodeStructure
+import kotlinx.serialization.encoding.encodeStructure
 import kotlin.reflect.KClass
 
 const val fnClazz = "fnClazz"
@@ -58,7 +72,7 @@ expect abstract class Fn<T, R>(initParams: FnInitParameters = FnInitParameters()
  *
  * This value is stored inside the json specification as you've provided them.
  */
-//@Serializable(with = FnInitParametersSerializer::class)
+@Serializable(with = FnInitParametersSerializer::class)
 class FnInitParameters {
 
     constructor() : this(emptyMap())
@@ -137,74 +151,75 @@ expect class WrapFn<T, R>(initParams: FnInitParameters) : Fn<T, R> {
 }
 
 
-//object FnInitParametersSerializer : KSerializer<FnInitParameters> {
-//
-//    private val mapSerializer = MapSerializer(String.serializer(), String.serializer())
-//
-//    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(FnInitParameters::class.jvmName) {
-//        element("parametersMap", mapSerializer.descriptor)
-//    }
-//
-//    override fun deserialize(decoder: Decoder): FnInitParameters {
-//        val dec = decoder.beginStructure(descriptor)
-//        var params: Map<String, String>? = null
-//        loop@ while (true) {
-//            when (val i = dec.decodeElementIndex(descriptor)) {
-//                CompositeDecoder.DECODE_DONE -> break@loop
-//                0 -> params = dec.decodeSerializableElement(
-//                    descriptor,
-//                    i,
-//                    mapSerializer
-//                )
-//
-//                else -> throw SerializationException("Unknown index $i")
-//            }
-//        }
-//        return FnInitParameters(params!!)
-//    }
-//
-//    override fun serialize(encoder: Encoder, value: FnInitParameters) {
-//        val s = encoder.beginStructure(descriptor)
-//        s.encodeSerializableElement(
-//            descriptor,
-//            0,
-//            MapSerializer(String.serializer(), String.serializer().nullable),
-//            value.params
-//        )
-//        s.endStructure(descriptor)
-//    }
-//
-//}
-//
-//@Suppress("UNCHECKED_CAST")
-//object FnSerializer : KSerializer<Fn<*, *>> {
-//    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(Fn::class.jvmName) {
-//        element("fnClass", String.serializer().descriptor)
-//        element("initParams", FnInitParametersSerializer.descriptor)
-//    }
-//
-//    override fun deserialize(decoder: Decoder): Fn<*, *> {
-//        val dec = decoder.beginStructure(descriptor)
-//        var initParams: FnInitParameters? = null
-//        var fnClazz: Class<Fn<Any, Any>>? = null
-//        loop@ while (true) {
-//            when (val i = dec.decodeElementIndex(descriptor)) {
-//                CompositeDecoder.DECODE_DONE -> break@loop
-//                0 -> fnClazz =
-//                    WaveBeansClassLoader.classForName(dec.decodeStringElement(descriptor, i)) as Class<Fn<Any, Any>>
-//
-//                1 -> initParams = dec.decodeSerializableElement(descriptor, i, FnInitParameters.serializer())
-//                else -> throw SerializationException("Unknown index $i")
-//            }
-//        }
-//        return Fn.instantiate(fnClazz!!, initParams!!)
-//    }
-//
-//    override fun serialize(encoder: Encoder, value: Fn<*, *>) {
-//        val structure = encoder.beginStructure(descriptor)
-//        structure.encodeStringElement(descriptor, 0, value::class.jvmName)
-//        structure.encodeSerializableElement(descriptor, 1, FnInitParametersSerializer, value.initParams)
-//        structure.endStructure(descriptor)
-//    }
-//
-//}
+object FnInitParametersSerializer : KSerializer<FnInitParameters> {
+
+    private val mapSerializer = MapSerializer(String.serializer(), String.serializer())
+
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(FnInitParameters::class.className()) {
+        element("parametersMap", mapSerializer.descriptor)
+    }
+
+    override fun deserialize(decoder: Decoder): FnInitParameters {
+        return decoder.decodeStructure(descriptor) {
+            lateinit var params: Map<String, String>
+            loop@ while (true) {
+                when (val i = decodeElementIndex(descriptor)) {
+                    CompositeDecoder.DECODE_DONE -> break@loop
+                    0 -> params = decodeSerializableElement(
+                        descriptor,
+                        i,
+                        mapSerializer
+                    )
+
+                    else -> throw SerializationException("Unknown index $i")
+                }
+            }
+            FnInitParameters(params)
+        }
+    }
+
+    override fun serialize(encoder: Encoder, value: FnInitParameters) {
+        encoder.encodeStructure(descriptor) {
+            encodeSerializableElement(
+                descriptor,
+                0,
+                MapSerializer(String.serializer(), String.serializer().nullable),
+                value.params
+            )
+        }
+    }
+
+}
+
+@Suppress("UNCHECKED_CAST")
+object FnSerializer : KSerializer<Fn<*, *>> {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(Fn::class.className()) {
+        element("fnClass", String.serializer().descriptor)
+        element("initParams", FnInitParametersSerializer.descriptor)
+    }
+
+    override fun deserialize(decoder: Decoder): Fn<*, *> {
+        return decoder.decodeStructure(descriptor) {
+            lateinit var initParams: FnInitParameters
+            lateinit var fnClazz: KClass<Fn<Any, Any>>
+            loop@ while (true) {
+                when (val i = decodeElementIndex(descriptor)) {
+                    CompositeDecoder.DECODE_DONE -> break@loop
+                    0 -> fnClazz =
+                        WaveBeansClassLoader.classForName(decodeStringElement(descriptor, i)) as KClass<Fn<Any, Any>>
+
+                    1 -> initParams = decodeSerializableElement(descriptor, i, FnInitParameters.serializer())
+                    else -> throw SerializationException("Unknown index $i")
+                }
+            }
+            instantiate(fnClazz, initParams)
+        }
+    }
+
+    override fun serialize(encoder: Encoder, value: Fn<*, *>) {
+        encoder.encodeStructure(descriptor) {
+            encodeStringElement(descriptor, 0, value::class.className())
+            encodeSerializableElement(descriptor, 1, FnInitParametersSerializer, value.initParams)
+        }
+    }
+}

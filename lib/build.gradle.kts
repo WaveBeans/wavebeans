@@ -1,20 +1,17 @@
 plugins {
-    // TODO kotlin("multiplatform")
-
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.retry)
 }
 
 kotlin {
-    jvm {
-    }
+    jvm { }
     js(IR) { browser() }
+    compilerOptions {
+        freeCompilerArgs.add("-Xexpect-actual-classes")
+    }
 
     tasks.withType<Test> {
-        systemProperty("SPEK_TIMEOUT", 0)
-        useJUnitPlatform {
-            includeEngines("spek2")
-        }
-        maxHeapSize = "2g"
         // that attempts to fix flaky tests once and for all
         retry {
             maxRetries.set(3)
@@ -22,40 +19,43 @@ kotlin {
         }
     }
 
+    sourceSets.all {
+        languageSettings {
+            optIn("kotlinx.serialization.ExperimentalSerializationApi")
+        }
+    }
+
     sourceSets {
-        val commonMain by getting {
+        commonMain {
             dependencies {
-                val kotlinxSerializationRuntimeVersion: String by System.getProperties()
-                implementation(kotlin("stdlib"))
-                implementation("io.github.microutils:kotlin-logging:3.0.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationRuntimeVersion")
+                implementation(libs.kotlin.stdlib)
+                implementation(libs.kotlin.logging)
+                implementation(libs.kotlinx.serialization.json)
             }
         }
-        val commonTest by getting {
+        commonTest {
         }
-        val jvmMain by getting {
+        jvmMain  {
             dependencies {
-                implementation(kotlin("stdlib-jdk8"))
-                implementation(kotlin("reflect"))
+                implementation(libs.kotlin.stdlib.jdk8)
+                implementation(libs.kotlin.reflect)
             }
         }
-        val jvmTest by getting {
+        jvmTest {
             dependencies {
-                val spekVersion: String by System.getProperties()
                 implementation(project(":tests"))
-                implementation("org.spekframework.spek2:spek-dsl-jvm:$spekVersion")
-                runtimeOnly("org.spekframework.spek2:spek-runner-junit5:$spekVersion")
-                implementation("com.willowtreeapps.assertk:assertk-jvm:0.13")
-                implementation("com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0")
-                implementation("ch.qos.logback:logback-classic:1.2.3")
+                implementation(libs.kotest.runner.junit5)
+                implementation(libs.logback.classic)
+                implementation(libs.assertk)
+                implementation(libs.mockito.kotlin)
             }
         }
-        val jsMain by getting {
+        jsMain {
             dependencies {
-                implementation(kotlin("stdlib"))
+                implementation(libs.kotlin.stdlib)
             }
         }
-        val jsTest by getting {
+        jsTest {
         }
     }
 }

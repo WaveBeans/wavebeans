@@ -2,27 +2,13 @@ package io.wavebeans.lib.io
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.fs.core.WbFileDriver
-import io.wavebeans.lib.AnyBean
-import io.wavebeans.lib.Bean
-import io.wavebeans.lib.BeanParams
-import io.wavebeans.lib.BitDepth
-import io.wavebeans.lib.Sample
-import io.wavebeans.lib.TimeUnit
+import io.wavebeans.lib.*
 import io.wavebeans.lib.TimeUnit.MILLISECONDS
-import io.wavebeans.lib.URI
-import io.wavebeans.lib.asByte
-import io.wavebeans.lib.asInput
-import io.wavebeans.lib.asUnsignedByte
-import io.wavebeans.lib.itShouldHave
-import io.wavebeans.lib.listOfBytesAsInts
-import io.wavebeans.lib.listOfShortsAsInts
-import io.wavebeans.lib.sampleOf
 import io.wavebeans.lib.stream.FiniteStream
 import io.wavebeans.lib.stream.rangeProjection
 import io.wavebeans.lib.stream.trim
-import io.kotest.core.spec.style.DescribeSpec
-import java.io.File
 import java.lang.Thread.sleep
 import kotlin.math.absoluteValue
 import kotlin.random.Random
@@ -77,12 +63,12 @@ class ByteArrayLittleEndianInputOutputSpec : DescribeSpec({
     val sampleRate = 50.0f
     val buffer = ByteArray(100) { (it and 0xFF).toByte() }
 
-    beforeGroup {
+    beforeSpec {
         TestWbFileDriver.register()
         WbFileDriver.defaultLocalFileScheme = "test"
     }
 
-    afterGroup {
+    afterSpec {
         TestWbFileDriver.unregister()
     }
 

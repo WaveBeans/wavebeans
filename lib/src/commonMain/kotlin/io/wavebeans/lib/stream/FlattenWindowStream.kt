@@ -59,7 +59,7 @@ inline fun <reified T : Any> BeanStream<Window<T>>.flatten(noinline overlapResol
  *
  * @param T the type of the resulted element.
  */
-//@Serializable(with = FlattenWindowStreamsParamsSerializer::class)
+@Serializable(with = FlattenWindowStreamsParamsSerializer::class)
 class FlattenWindowStreamsParams<T : Any>(
     /**
      * The function as [Fn] that resolves the conflict of overlapping elements while flattening the windows with step < size.
@@ -72,7 +72,7 @@ class FlattenWindowStreamsParams<T : Any>(
  */
 object FlattenWindowStreamsParamsSerializer : KSerializer<FlattenWindowStreamsParams<*>> {
     override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor(FlattenWindowStreamsParams::class.qualifiedName!!) {
+        buildClassSerialDescriptor(FlattenWindowStreamsParams::class.className()) {
             element("overlapResolve", FnSerializer.descriptor)
         }
 
@@ -126,7 +126,7 @@ class FlattenWindowStream<T : Any>(
             return if (index >= 0 && index < window.elements.size)
                 window.elements[index]
             else
-                window.zeroEl()
+                window.zeroEl(Unit)
         }
     }
 

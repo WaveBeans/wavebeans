@@ -8,6 +8,14 @@ application {
     applicationName = "wavebeans-facilitator"
 }
 
+kotlin {
+    sourceSets.all {
+        languageSettings {
+            optIn("kotlinx.serialization.ExperimentalSerializationApi")
+        }
+    }
+}
+
 dependencies {
     implementation(project(":lib"))
     implementation(project(":proto"))

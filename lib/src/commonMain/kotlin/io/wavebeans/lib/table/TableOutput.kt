@@ -1,38 +1,18 @@
 package io.wavebeans.lib.table
 
-import io.wavebeans.lib.BeanParams
-import io.wavebeans.lib.BeanStream
-import io.wavebeans.lib.Fn
-import io.wavebeans.lib.Sample
-import io.wavebeans.lib.SampleVector
-import io.wavebeans.lib.SinglePartitionBean
-import io.wavebeans.lib.TimeMeasure
-import io.wavebeans.lib.TimeUnit
-import io.wavebeans.lib.d
+import io.wavebeans.lib.*
 import io.wavebeans.lib.io.StreamOutput
 import io.wavebeans.lib.io.Writer
-import io.wavebeans.lib.ns
-import io.wavebeans.lib.sampleVectorOf
-import io.wavebeans.lib.samplesCountToLength
 import io.wavebeans.lib.stream.SampleCountMeasurement
 import io.wavebeans.lib.stream.map
 import io.wavebeans.lib.stream.window.window
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
-import kotlinx.serialization.encoding.CompositeDecoder
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.encoding.decodeStructure
-import kotlinx.serialization.encoding.encodeStructure
-import java.util.concurrent.TimeUnit.NANOSECONDS
-import kotlin.properties.Delegates
+import kotlinx.serialization.encoding.*
 import kotlin.properties.Delegates.notNull
-import io.wavebeans.lib.timeToSampleIndexCeil
-import io.wavebeans.lib.wrap
 import kotlin.reflect.KClass
 
 /**
@@ -93,7 +73,7 @@ class TableOutputParams<T : Any>(
     val tableType: KClass<out T>,
     val maximumDataLength: TimeMeasure,
     val automaticCleanupEnabled: Boolean,
-    val tableDriverFactory: Fn<TableOutputParams<T>, TimeseriesTableDriver<T>> = Fn.wrap {
+    val tableDriverFactory: Fn<TableOutputParams<T>, TimeseriesTableDriver<T>> = wrap {
         InMemoryTimeseriesTableDriver(
             it.tableName,
             it.tableType,
@@ -104,7 +84,7 @@ class TableOutputParams<T : Any>(
 ) : BeanParams
 
 object TableOutputParamsSerializer : KSerializer<TableOutputParams<*>> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(TableOutputParams::class.qualifiedName!!) {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(TableOutputParams::class.className()) {
         element("tableName", String.serializer().descriptor)
         element("tableType", String.serializer().descriptor)
         element("maximumDataLength", TimeMeasure.serializer().descriptor)
@@ -124,7 +104,7 @@ object TableOutputParamsSerializer : KSerializer<TableOutputParams<*>> {
                 when (val i = decodeElementIndex(descriptor)) {
                     CompositeDecoder.DECODE_DONE -> break@loop
                     0 -> tableName = decodeStringElement(descriptor, i)
-                    1 -> tableType = WaveBeansClassLoader.classForName(decodeStringElement(descriptor, i)).kotlin
+                    1 -> tableType = WaveBeansClassLoader.classForName(decodeStringElement(descriptor, i))
                     2 -> maximumDataLength = decodeSerializableElement(descriptor, i, TimeMeasure.serializer())
                     3 -> automaticCleanupEnabled = decodeBooleanElement(descriptor, i)
                     4 -> tableDriverFactory = decodeSerializableElement(descriptor, i, FnSerializer)
@@ -146,7 +126,7 @@ object TableOutputParamsSerializer : KSerializer<TableOutputParams<*>> {
     override fun serialize(encoder: Encoder, value: TableOutputParams<*>) {
         encoder.encodeStructure(descriptor) {
             encodeStringElement(descriptor, 0, value.tableName)
-            encodeStringElement(descriptor, 1, value.tableType.jvmName)
+            encodeStringElement(descriptor, 1, value.tableType.className())
             encodeSerializableElement(descriptor, 2, TimeMeasure.serializer(), value.maximumDataLength)
             encodeSerializableElement(descriptor, 3, Boolean.serializer(), value.automaticCleanupEnabled)
             encodeSerializableElement(descriptor, 4, FnSerializer, value.tableDriverFactory)

@@ -9,9 +9,6 @@ import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.*
-import kotlinx.serialization.encoding.CompositeDecoder
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
 
 /**
  * Streams the sample of any type into a CSV file by specified [uri]. The [header] is specified separately and added
@@ -63,10 +60,10 @@ fun <T : Any> BeanStream<T>.toCsv(
     encoding: String = "UTF-8"
 ): StreamOutput<T> {
     return this.toCsv(
-            uri,
-            header,
-            wrap(elementSerializer),
-            encoding
+        uri,
+        header,
+        wrap(elementSerializer),
+        encoding
     )
 }
 
@@ -145,11 +142,11 @@ fun <A : Any, T : Any> BeanStream<Managed<OutputSignal, A, T>>.toCsv(
     encoding: String = "UTF-8",
 ): StreamOutput<Managed<OutputSignal, A, T>> {
     return this.toCsv(
-            uri,
-            header,
-            wrap(elementSerializer),
-            wrap(suffix),
-            encoding
+        uri,
+        header,
+        wrap(elementSerializer),
+        wrap(suffix),
+        encoding
     )
 }
 
@@ -158,13 +155,14 @@ fun <A : Any, T : Any> BeanStream<Managed<OutputSignal, A, T>>.toCsv(
  */
 object CsvStreamOutputParamsSerializer : KSerializer<CsvStreamOutputParams<*, *>> {
 
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(CsvStreamOutputParams::class.qualifiedName!!) {
-        element("uri", String.serializer().descriptor)
-        element("header", ListSerializer(String.serializer()).descriptor)
-        element("encoding", String.serializer().descriptor)
-        element("elementSerializer", FnSerializer.descriptor)
-        element("suffix", FnSerializer.descriptor)
-    }
+    override val descriptor: SerialDescriptor =
+        buildClassSerialDescriptor(CsvStreamOutputParams::class.className()) {
+            element("uri", String.serializer().descriptor)
+            element("header", ListSerializer(String.serializer()).descriptor)
+            element("encoding", String.serializer().descriptor)
+            element("elementSerializer", FnSerializer.descriptor)
+            element("suffix", FnSerializer.descriptor)
+        }
 
     override fun deserialize(decoder: Decoder): CsvStreamOutputParams<*, *> {
         return decoder.decodeStructure(descriptor) {
@@ -206,60 +204,11 @@ object CsvStreamOutputParamsSerializer : KSerializer<CsvStreamOutputParams<*, *>
     }
 
 }
-//object CsvStreamOutputParamsSerializer : KSerializer<CsvStreamOutputParams<*, *>> {
-//
-//    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(CsvStreamOutputParams::class.jvmName) {
-//        element("uri", String.serializer().descriptor)
-//        element("header", ListSerializer(String.serializer()).descriptor)
-//        element("elementSerializer", FnSerializer.descriptor)
-//        element("encoding", String.serializer().descriptor)
-//        element("suffix", FnSerializer.descriptor)
-//    }
-//
-//    override fun deserialize(decoder: Decoder): CsvStreamOutputParams<*, *> {
-//        val dec = decoder.beginStructure(descriptor)
-//        var uri: String? = null
-//        var header: List<String>? = null
-//        var fn: Fn<*, *>? = null
-//        var encoding: String? = null
-//        var suffix: Fn<*, *>? = null
-//        while (true) {
-//            when (val i = dec.decodeElementIndex(descriptor)) {
-//                0 -> uri = dec.decodeStringElement(descriptor, i)
-//                1 -> header = dec.decodeSerializableElement(descriptor, i, ListSerializer(String.serializer()))
-//                2 -> fn = dec.decodeSerializableElement(descriptor, i, FnSerializer)
-//                3 -> encoding = dec.decodeStringElement(descriptor, i)
-//                4 -> suffix = dec.decodeSerializableElement(descriptor, i, FnSerializer)
-//                CompositeDecoder.DECODE_DONE -> break
-//                else -> throw SerializationException("Unknown index $i")
-//            }
-//        }
-//        @Suppress("UNCHECKED_CAST")
-//        return CsvStreamOutputParams(
-//                uri!!,
-//                header!!,
-//                fn!! as Fn<Triple<Long, Float, Any>, List<String>>,
-//                encoding!!,
-//                suffix!! as Fn<Any?, String>
-//        )
-//    }
-//
-//    override fun serialize(encoder: Encoder, value: CsvStreamOutputParams<*, *>) {
-//        val structure = encoder.beginStructure(descriptor)
-//        structure.encodeStringElement(descriptor, 0, value.uri)
-//        structure.encodeSerializableElement(descriptor, 1, ListSerializer(String.serializer()), value.header)
-//        structure.encodeSerializableElement(descriptor, 2, FnSerializer, value.elementSerializer)
-//        structure.encodeStringElement(descriptor, 3, value.encoding)
-//        structure.encodeSerializableElement(descriptor, 4, FnSerializer, value.suffix)
-//        structure.endStructure(descriptor)
-//    }
-//
-//}
 
 /**
  * Parameters class for the [CsvStreamOutput] bean.
  */
-@Serializable//(with = CsvStreamOutputParamsSerializer::class)
+@Serializable(with = CsvStreamOutputParamsSerializer::class)
 data class CsvStreamOutputParams<A : Any, T : Any>(
     /**
      * The URI to stream to, i.e. `file:///home/user/my.csv`.
@@ -286,7 +235,7 @@ data class CsvStreamOutputParams<A : Any, T : Any>(
      * [FlushOutputSignal] or [OpenGateOutputSignal] was generated. The suffix inserted after the name and
      * before the extension: `file:///home/user/my${suffix}.csv`
      */
-    val suffix: Fn<A?, String> = Fn.wrap { "" },
+    val suffix: Fn<A?, String> = wrap { "" },
 ) : BeanParams
 
 /**
@@ -313,7 +262,7 @@ class CsvStreamOutput<T : Any>(
             override fun footer(): ByteArray? = null
 
             override fun serialize(element: T): ByteArray =
-                serializeCsvElement(sampleRate, element, charset, parameters.elementSerializer) { offset++ }
+                serializeCsvElement(sampleRate, element, parameters.elementSerializer) { offset++ }
         }
     }
 }
@@ -344,7 +293,7 @@ class CsvPartialStreamOutput<A : Any, T : Any>(
             override fun footer(): ByteArray? = null
 
             override fun serialize(element: T): ByteArray =
-                    serializeCsvElement(sampleRate, element, parameters.elementSerializer) { offset++ }
+                serializeCsvElement(sampleRate, element, parameters.elementSerializer) { offset++ }
 
             override fun skip(element: T) {
                 offset++
@@ -356,10 +305,10 @@ class CsvPartialStreamOutput<A : Any, T : Any>(
 private fun csvHeader(header: List<String>): ByteArray = (header.joinToString(",") + "\n").encodeToByteArray()
 
 private fun <T : Any> serializeCsvElement(
-        sampleRate: Float,
-        element: T,
-        elementSerializer: Fn<Triple<Long, Float, T>, List<String>>,
-        getOffset: () -> Long
+    sampleRate: Float,
+    element: T,
+    elementSerializer: Fn<Triple<Long, Float, T>, List<String>>,
+    getOffset: () -> Long
 ): ByteArray {
     val seq = elementSerializer.apply(Triple(getOffset(), sampleRate, element))
     return (seq.joinToString(",") + "\n").encodeToByteArray()

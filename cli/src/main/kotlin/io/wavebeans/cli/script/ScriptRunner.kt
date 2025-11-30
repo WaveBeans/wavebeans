@@ -8,6 +8,7 @@ import org.jetbrains.kotlin.scripting.compiler.plugin.impl.KJvmCompiledModuleInM
 import java.io.Closeable
 import java.io.File
 import java.util.concurrent.*
+import kotlin.io.path.createTempDirectory
 import kotlin.math.absoluteValue
 import kotlin.math.log10
 import kotlin.reflect.jvm.jvmName
@@ -80,7 +81,7 @@ class ScriptRunner(
             .toList()
         val cleanedContent = content.replace(importsRegex, "")
 
-        val additionalClassesDir = createTempDir("wavebeans-cli", "").also { it.deleteOnExit() }
+        val additionalClassesDir = createTempDirectory("wavebeans-cli").toFile().also { it.deleteOnExit() }
 
         val scriptContent = """package io.wavebeans.script
 

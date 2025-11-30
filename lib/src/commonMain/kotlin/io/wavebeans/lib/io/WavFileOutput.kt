@@ -7,14 +7,8 @@ import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
-import kotlinx.serialization.encoding.CompositeDecoder
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.encoding.decodeStructure
-import kotlinx.serialization.encoding.encodeStructure
-import kotlin.properties.Delegates
+import kotlinx.serialization.encoding.*
 import kotlin.properties.Delegates.notNull
-import kotlin.reflect.jvm.jvmName
 
 /**
  * Streams the mono channel signal into the file with wav format, each sample is stored as unsigned 8 bit integer.
@@ -191,7 +185,7 @@ inline fun <R : Any, A : Any, reified T : Any> BeanStream<R>.toWav(
         (T::class == Sample::class || T::class == SampleVector::class) && suffix != null -> {
             return WavPartialFileOutput(
                 this as BeanStream<Managed<OutputSignal, A, Any>>,
-                WavFileOutputParams(uri, bitDepth, numberOfChannels, Fn.wrap(suffix))
+                WavFileOutputParams(uri, bitDepth, numberOfChannels, wrap(suffix))
             ) as StreamOutput<R>
         }
 
@@ -214,7 +208,7 @@ inline fun <R : Any, A : Any, reified T : Any> BeanStream<R>.toWav(
  *
  * @param [A] if the [suffix] function is used, then the type of its argument, otherwise you mau use [Unit].
  */
-//@Serializable(with = WavFileOutputParamsSerializer::class)
+@Serializable(with = WavFileOutputParamsSerializer::class)
 data class WavFileOutputParams<A : Any>(
     /**
      * The URI to stream to, i.e. `file:///home/user/my.wav`.
@@ -235,7 +229,7 @@ data class WavFileOutputParams<A : Any>(
 ) : BeanParams
 
 object WavFileOutputParamsSerializer : KSerializer<WavFileOutputParams<*>> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(WavFileOutputParams::class.jvmName) {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(WavFileOutputParams::class.className()) {
         element("uri", String.serializer().descriptor)
         element("bitDepth", Int.serializer().descriptor)
         element("numberOfChannels", Int.serializer().descriptor)

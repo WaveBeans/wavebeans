@@ -19,6 +19,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.jar.JarEntry
 import java.util.jar.JarFile
 import java.util.jar.JarOutputStream
+import kotlin.io.path.createTempDirectory
 import kotlin.reflect.full.isSubclassOf
 
 class DistributedOverseer(
@@ -45,11 +46,11 @@ class DistributedOverseer(
     private val locationFutures = ConcurrentHashMap<String, CompletableFuture<ExecutionResult>>()
     private val facilitatorsCheckPool = Executors.newSingleThreadScheduledExecutor(NamedThreadFactory("facilitators-check"))
     private val distribution by lazy {
-        distributionPlanner.distribute(topology.buildPods(), facilitatorLocations).also {
+        distributionPlanner.distribute(topology.buildPods(), facilitatorLocations).also { plan ->
             log.info {
                 val json = jsonPretty(TopologySerializer.paramsModule)
                 "Planned the even distribution:\n" +
-                        it.entries.joinToString("\n") {
+                        plan.entries.joinToString("\n") {
                             "${it.key} -> ${json.encodeToString(ListSerializer(PodRef.serializer()), it.value)}"
                         }
             }
@@ -78,7 +79,7 @@ class DistributedOverseer(
                 val result = fetchResult()
                 if (result != null) {
                     if (result.exception != null) {
-                        log.info(result.exception) { "[#$iterationCounter] Completting with exception on $location for job $jobKey" }
+                        log.info(result.exception) { "[#$iterationCounter] Completing with exception on $location for job $jobKey" }
                         future.complete(ExecutionResult.error(result.exception))
                     } else {
                         log.info { "[#$iterationCounter] Completing successfully on $location for job $jobKey" }
@@ -156,7 +157,7 @@ class DistributedOverseer(
             val tableNames = it.value.asSequence()
                     .map { podRef -> podRef.internalBeans }
                     .flatten()
-                    .filter { beanRef -> WaveBeansClassLoader.classForName(beanRef.type).kotlin.isSubclassOf(TableOutput::class) }
+                    .filter { beanRef -> WaveBeansClassLoader.classForName(beanRef.type).isSubclassOf(TableOutput::class) }
                     .map { beanRef -> (beanRef.params as TableOutputParams<*>).tableName }
                     .toList()
             it.key to tableNames
@@ -177,7 +178,7 @@ class DistributedOverseer(
             it.value.asSequence()
                     .map { podRef -> podRef.internalBeans }
                     .flatten()
-                    .filter { beanRef -> WaveBeansClassLoader.classForName(beanRef.type).kotlin.isSubclassOf(TableOutput::class) }
+                    .filter { beanRef -> WaveBeansClassLoader.classForName(beanRef.type).isSubclassOf(TableOutput::class) }
                     .map { beanRef -> (beanRef.params as TableOutputParams<*>).tableName }
                     .toList()
         }.flatten()
@@ -197,7 +198,7 @@ class DistributedOverseer(
                 .forEach { (location, pods) ->
                     FacilitatorApiClient(location).use { facilitatorApiClient ->
 
-                        // upload required code to the facilitator
+                        // upload the required code to the facilitator
                         val gardenerCodeClasses = facilitatorApiClient.codeClasses()
                                 .map { it.classesList }
                                 .flatten()
@@ -210,15 +211,15 @@ class DistributedOverseer(
                                     )
                                 }
 
-                        val classesWithoutLocation = gardenerCodeClasses.asSequence()
+                        val classesWithoutLocation = gardenerCodeClasses
                                 .map { it.copy(location = "") }
                                 .toSet()
                         val absentClasses = myClasses
                                 .filter { it.copy(location = "") !in classesWithoutLocation }
                         log.info { "Uploading following classes to facilitator on $location:\n" + absentClasses.joinToString("\n") }
 
-                        // pack all absent classes as single jar file
-                        val jarDir = createTempDir("code").also { it.deleteOnExit() }
+                        // pack all absent classes as a single jar file
+                        val jarDir = createTempDirectory("code").toFile().also { it.deleteOnExit() }
                         absentClasses
                                 .groupBy { it.location }.forEach { (l, classDescList) ->
                                     val loc = File(l)
@@ -246,7 +247,7 @@ class DistributedOverseer(
                         additionalClasses.forEach {
                             it.value.copyTo(File(jarDir, it.key))
                         }
-                        val jarFile = File(createTempDir("code-jar"), "code.jar")
+                        val jarFile = File(createTempDirectory("code-jar").toFile(), "code.jar")
                         JarOutputStream(FileOutputStream(jarFile)).use { jos ->
                             absentClasses.forEach {
                                 try {
@@ -287,13 +288,13 @@ class DistributedOverseer(
         // register bush endpoints from other facilitators
         val byLocation = bushEndpoints.groupBy { it.location }
         byLocation.keys.forEach { location ->
-            val request = io.wavebeans.communicator.RegisterBushEndpointsRequest.newBuilder()
+            val request = RegisterBushEndpointsRequest.newBuilder()
                     .setJobKey(jobKey.toString())
             byLocation.filterKeys { it != location }
                     .map { it.value }
                     .flatten()
                     .forEach { bushEndpoint ->
-                        val bushEndpointBldr = io.wavebeans.communicator.RegisterBushEndpointsRequest.BushEndpoint
+                        val bushEndpointBldr = RegisterBushEndpointsRequest.BushEndpoint
                                 .newBuilder()
                                 .setBushKey(bushEndpoint.bushKey.toString())
                                 .setLocation(bushEndpoint.location)

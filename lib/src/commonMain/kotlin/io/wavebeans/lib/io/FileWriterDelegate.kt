@@ -3,10 +3,9 @@ package io.wavebeans.lib.io
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.wavebeans.fs.core.WbFile
 import io.wavebeans.fs.core.WbFileDriver
-import io.wavebeans.fs.core.WbFileOutputStream
 import io.wavebeans.lib.File
 import io.wavebeans.lib.URI
-import kotlin.jvm.Volatile
+import kotlin.concurrent.Volatile
 
 /**
  * Implements [WriterDelegate] to a file using [WbFileDriver] specified in schema of [uri].

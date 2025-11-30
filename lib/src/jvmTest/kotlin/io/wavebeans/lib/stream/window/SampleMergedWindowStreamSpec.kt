@@ -178,7 +178,7 @@ class SampleMergedWindowStreamSpec : DescribeSpec({
             val stream2 = (10..15).stream().window(3)
 
             it("should not be summed up") {
-                assertThat { (stream1 + stream2).asSequence(1.0f).asGroupedInts().toList() }
+                assertThat(runCatching { (stream1 + stream2).asSequence(1.0f).asGroupedInts().toList() })
                     .isFailure()
                     .isNotNull()
                     .message()
@@ -186,7 +186,7 @@ class SampleMergedWindowStreamSpec : DescribeSpec({
             }
 
             it("should not be subtracted") {
-                assertThat { (stream1 - stream2).asSequence(1.0f).asGroupedInts().toList() }
+                assertThat(runCatching { (stream1 - stream2).asSequence(1.0f).asGroupedInts().toList() })
                     .isFailure()
                     .isNotNull()
                     .message()
@@ -322,7 +322,7 @@ class SampleMergedWindowStreamSpec : DescribeSpec({
             val stream2 = (10..15).stream().window(4, 2)
 
             it("should not be summed up") {
-                assertThat { (stream1 + stream2).asSequence(1.0f).asGroupedInts().toList() }
+                assertThat(runCatching { (stream1 + stream2).asSequence(1.0f).asGroupedInts().toList() })
                     .isFailure()
                     .isNotNull()
                     .message()
@@ -330,7 +330,7 @@ class SampleMergedWindowStreamSpec : DescribeSpec({
             }
 
             it("should not be subtracted") {
-                assertThat { (stream1 - stream2).asSequence(1.0f).asGroupedInts().toList() }
+                assertThat(runCatching { (stream1 - stream2).asSequence(1.0f).asGroupedInts().toList() })
                     .isFailure()
                     .isNotNull()
                     .message()

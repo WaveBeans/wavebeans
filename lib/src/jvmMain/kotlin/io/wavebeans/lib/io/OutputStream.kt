@@ -12,23 +12,23 @@ actual class ByteArrayOutputStream actual constructor() : OutputStream, OutputSt
         return stream.toByteArray()
     }
 
-    override fun write(b: Int) {
-        stream.write(b)
+    actual override fun write(byte: Int) {
+        stream.write(byte)
     }
 
-    override fun write(buffer: ByteArray) {
+    actual override fun write(buffer: ByteArray) {
         stream.write(buffer)
     }
 
-    override fun write(buffer: ByteArray, offset: Int, length: Int) {
+    actual override fun write(buffer: ByteArray, offset: Int, length: Int) {
        stream.write(buffer, offset, length)
     }
 
-    override fun flush() {
+    actual override fun flush() {
         stream.flush()
     }
 
-    override fun close() {
+    actual override fun close() {
         stream.close()
     }
 }
@@ -40,11 +40,11 @@ actual class DataOutputStream actual constructor(stream: OutputStream) : OutputS
         else throw UnsupportedOperationException("${stream::class}")
     )
 
-    override fun write(byte: Int) {
+    actual override fun write(byte: Int) {
         stream.write(byte)
     }
 
-    override fun write(buffer: ByteArray) {
+    actual override fun write(buffer: ByteArray) {
         stream.write(buffer)
     }
 
@@ -56,15 +56,15 @@ actual class DataOutputStream actual constructor(stream: OutputStream) : OutputS
         stream.writeShort(s)
     }
 
-    override fun write(buffer: ByteArray, offset: Int, length: Int) {
+    actual override fun write(buffer: ByteArray, offset: Int, length: Int) {
         stream.write(buffer, offset, length)
     }
 
-    override fun flush() {
+    actual override fun flush() {
         stream.flush()
     }
 
-    override fun close() {
+    actual override fun close() {
         stream.close()
     }
 }
@@ -80,23 +80,23 @@ actual class BufferedOutputStream actual constructor(
         bufferSize
     )
 
-    override fun write(byte: Int) {
+    actual override fun write(byte: Int) {
         stream.write(byte)
     }
 
-    override fun write(buffer: ByteArray) {
+    actual override fun write(buffer: ByteArray) {
         stream.write(buffer)
     }
 
-    override fun write(buffer: ByteArray, offset: Int, length: Int) {
+    actual override fun write(buffer: ByteArray, offset: Int, length: Int) {
         stream.write(buffer, offset, length)
     }
 
-    override fun flush() {
+    actual override fun flush() {
         stream.flush()
     }
 
-    override fun close() {
+    actual override fun close() {
         stream.close()
     }
 }

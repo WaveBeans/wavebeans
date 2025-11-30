@@ -6,45 +6,45 @@ actual class ByteArrayOutputStream actual constructor() : OutputStream {
         TODO("Not yet implemented")
     }
 
-    override fun write(byte: Int) {
+    actual override fun write(byte: Int) {
         TODO("Not yet implemented")
     }
 
-    override fun write(buffer: ByteArray) {
+    actual override fun write(buffer: ByteArray) {
         TODO("Not yet implemented")
     }
 
-    override fun write(buffer: ByteArray, offset: Int, length: Int) {
+    actual override fun write(buffer: ByteArray, offset: Int, length: Int) {
         TODO("Not yet implemented")
     }
 
-    override fun flush() {
+    actual override fun flush() {
         TODO("Not yet implemented")
     }
 
-    override fun close() {
+    actual override fun close() {
         TODO("Not yet implemented")
     }
 }
 
 actual class DataOutputStream actual constructor(stream: OutputStream): OutputStream {
-    override fun write(byte: Int) {
+    actual override fun write(byte: Int) {
         TODO("Not yet implemented")
     }
 
-    override fun write(buffer: ByteArray) {
+    actual override fun write(buffer: ByteArray) {
         TODO("Not yet implemented")
     }
 
-    override fun write(buffer: ByteArray, offset: Int, length: Int) {
+    actual override fun write(buffer: ByteArray, offset: Int, length: Int) {
         TODO("Not yet implemented")
     }
 
-    override fun flush() {
+    actual override fun flush() {
         TODO("Not yet implemented")
     }
 
-    override fun close() {
+    actual override fun close() {
         TODO("Not yet implemented")
     }
 
@@ -59,23 +59,23 @@ actual class DataOutputStream actual constructor(stream: OutputStream): OutputSt
 
 actual class BufferedOutputStream actual constructor(stream: OutputStream, bufferSize: Int) :
     OutputStream {
-    override fun write(byte: Int) {
+    actual override fun write(byte: Int) {
         TODO("Not yet implemented")
     }
 
-    override fun write(buffer: ByteArray) {
+    actual override fun write(buffer: ByteArray) {
         TODO("Not yet implemented")
     }
 
-    override fun write(buffer: ByteArray, offset: Int, length: Int) {
+    actual override fun write(buffer: ByteArray, offset: Int, length: Int) {
         TODO("Not yet implemented")
     }
 
-    override fun flush() {
+    actual override fun flush() {
         TODO("Not yet implemented")
     }
 
-    override fun close() {
+    actual override fun close() {
         TODO("Not yet implemented")
     }
 
