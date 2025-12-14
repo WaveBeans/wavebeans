@@ -4,6 +4,7 @@ import assertk.Assert
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
+import assertk.fail
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.lib.*
@@ -17,6 +18,10 @@ import io.wavebeans.tests.eachIndexed
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.random.Random
+import kotlin.time.measureTime
+
+private val log = KotlinLogging.logger {}
 
 class InMemoryTableOutputSpec : DescribeSpec({
     describe("Operations on closed table") {
@@ -264,7 +269,7 @@ class InMemoryTableOutputSpec : DescribeSpec({
     describe("Streaming data from endless table") {
 
         describe("No initial offset") {
-            val tableName = "tableStream1"
+            val tableName = "tableStream1" + Random.nextLong().toString(36)
 
             val writer by lazy {
                 seqStream().toTable(tableName, 25.ms, automaticCleanupEnabled = false).writer(1000.0f)
@@ -282,22 +287,19 @@ class InMemoryTableOutputSpec : DescribeSpec({
             }
 
             it("should prepare the iterator") {
-                assertThat(iterator).all {
-                    prop("timed { hasNext() }") { timed(100) { it.hasNext() } }.isFalse()
+                assertThat(iterator, "should prepare the iterator").all {
+                    prop("timed { hasNext() }") { timed(1000) { it.hasNext() } }.isFalse()
                     returned().isEqualTo(0L)
                 }
-            }
-            it("should not read any elements within 100 ms") {
-                assertThat(iterator).all {
+                assertThat(iterator, "should not read any elements within 100ms").all {
                     tryTake(10, timeout = 100).isEmpty()
                     returned().isEqualTo(0L)
                 }
-            }
 
-            it("should perform clean up and remove 0 elements") { assertThat(table.performCleanup()).isEqualTo(0) }
-            it("should read first 25 elements") {
+                assertThat(table.performCleanup(), "should perform clean up and remove 0 elements").isEqualTo(0)
+
                 writer.writeSome(25)
-                assertThat(iterator).all {
+                assertThat(iterator, "should read first 25 elements").all {
                     take(25).eachIndexed(25) { s, i ->
                         s.isCloseTo(0 * 1e-10 + i * 1e-10, 1e-14)
                     }
@@ -305,7 +307,10 @@ class InMemoryTableOutputSpec : DescribeSpec({
                 }
             }
 
-            it("should perform clean up and remove 0 elements") { assertThat(table.performCleanup()).isEqualTo(0) }
+            it("should perform clean up and remove 0 elements") {
+                assertThat(table.performCleanup()).isEqualTo(0)
+            }
+
             it("should read second 25 elements") {
                 writer.writeSome(25)
                 assertThat(iterator).all {
@@ -397,6 +402,7 @@ class InMemoryTableOutputSpec : DescribeSpec({
         beforeTest {
             // write the whole stream
             while (writer.write()) {
+                yield()
             }
         }
 
@@ -431,11 +437,23 @@ class InMemoryTableOutputSpec : DescribeSpec({
 private fun newTableName() = "table_" + (0..8).map { ('a'..'z').random() }.joinToString("")
 
 internal fun Writer.writeSome(count: Int) {
-    repeat(count) { if (!this.write()) throw IllegalStateException("Can't write with $this") }
+    log.debug { "Writing $count elements to $this" }
+    val d = measureTime {
+        repeat(count) { if (!this.write()) throw IllegalStateException("Can't write with $this") }
+    }
+    log.debug { "Wrote $count elements to $this in $d ms" }
 }
 
 internal fun <T : Any> Assert<ContinuousReadTableIterator<T>>.take(count: Int): Assert<List<T>> =
-    this.prop("take($count)") { it.take(count) }
+    this.prop("take($count)") {
+        log.debug { "Taking $count elements from $it" }
+        val l = mutableListOf<T>()
+        val d = measureTime {
+            timed(1000) { l += it.take(count) }
+        }
+        log.debug { "Took elements from $it in $d ms. Retrieved (${l.size}): $l" }
+        l
+    }
 
 internal fun <T : Any> Assert<ContinuousReadTableIterator<T>>.returned(): Assert<Long> =
     this.prop("returned") { it.returned }
@@ -448,7 +466,7 @@ internal fun <T : Any> Assert<ContinuousReadTableIterator<T>>.tryTake(count: Int
     return this.prop("tryTake($count, timeout=$timeout)") { iterator ->
         val l = mutableListOf<T>()
         timed(timeout) { repeat(count) { l += iterator.next() } }
-        log.debug { "Trying take $count elements for $timeout ms. Only retrieved: $l" }
+        log.debug { "Trying take $count elements for $timeout ms. Retrieved (${l.size}): $l" }
         l // return what we could have read
     }
 }
@@ -468,10 +486,15 @@ internal fun timed(timeout: Long, fn: () -> Unit): Boolean {
         }
     }
     t.start()
-    started.await(5000, TimeUnit.MILLISECONDS)
+    if (!started.await(5000, TimeUnit.MILLISECONDS)) {
+        fail("Timed out while waiting for $timeout ms to start")
+    }
     if (!stopped.await(timeout, TimeUnit.MILLISECONDS)) {
         t.interrupt()
-        stopped.await(5000, TimeUnit.MILLISECONDS)
+        if (!stopped.await(5000, TimeUnit.MILLISECONDS)) {
+            fail("Timed out while waiting for $timeout ms to stop")
+            // that implies that thread `t` couldn't handle the interruption signal properly
+        }
         return false
     }
     exception.get()?.let { throw it }

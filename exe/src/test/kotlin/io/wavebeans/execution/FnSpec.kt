@@ -1,4 +1,4 @@
-package io.wavebeans.lib
+package io.wavebeans.execution
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
@@ -6,6 +6,10 @@ import assertk.assertions.isFailure
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import io.kotest.core.spec.style.DescribeSpec
+import io.wavebeans.lib.Fn
+import io.wavebeans.lib.FnInitParameters
+import io.wavebeans.lib.instantiate
+import io.wavebeans.lib.wrap
 
 class FnSpec : DescribeSpec({
 

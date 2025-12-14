@@ -202,7 +202,7 @@ class FacilitatorGrpcServiceSpec : DescribeSpec({
 
         lateinit var myClass: Class<*>
         it("should be able to create class instance and invoke the method") {
-            myClass = WaveBeansClassLoader.classForName("io.wavebeans.execution.test.MyClass")
+            myClass = WaveBeansClassLoader.classForName("io.wavebeans.execution.test.MyClass").java
             assertThat(myClass)
                 .prop("[answer(): Int]") { it.getMethod("answer").invoke(it.getDeclaredConstructor().newInstance()) }
                 .isEqualTo(42)
@@ -213,7 +213,7 @@ class FacilitatorGrpcServiceSpec : DescribeSpec({
         }
 
         it("should be able to create class instance and class loader should be the same") {
-            val myClass2 = WaveBeansClassLoader.classForName("io.wavebeans.execution.test.MyClass2")
+            val myClass2 = WaveBeansClassLoader.classForName("io.wavebeans.execution.test.MyClass2").java
             assertThat(myClass2).all {
                 prop("[answer(): Int]") { it.getMethod("answer").invoke(it.getDeclaredConstructor().newInstance()) }
                     .isEqualTo(42 * 2)

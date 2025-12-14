@@ -3,11 +3,13 @@ package io.wavebeans.lib
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlin.reflect.KClass
 
-internal class JavaClassLoader(val classLoader: java.lang.ClassLoader) : ClassLoader {
+class JavaClassLoader(val classLoader: java.lang.ClassLoader) : ClassLoader {
     override fun classForName(name: String): KClass<*> {
         return Class.forName(name, true, classLoader).kotlin
     }
 }
+
+fun java.lang.ClassLoader.toWaveBeansClassLoader(): ClassLoader = JavaClassLoader(this)
 
 actual object WaveBeansClassLoader {
 

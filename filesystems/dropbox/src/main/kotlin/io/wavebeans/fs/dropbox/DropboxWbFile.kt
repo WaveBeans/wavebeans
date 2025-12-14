@@ -4,8 +4,8 @@ import com.dropbox.core.v2.DbxClientV2
 import com.dropbox.core.v2.files.DeleteErrorException
 import com.dropbox.core.v2.files.GetMetadataErrorException
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.wavebeans.fs.core.*
 import io.wavebeans.lib.URI
+import io.wavebeans.lib.io.WbFile
 import io.wavebeans.lib.io.InputStream
 import io.wavebeans.lib.io.OutputStream
 

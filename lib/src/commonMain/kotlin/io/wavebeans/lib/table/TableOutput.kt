@@ -7,6 +7,7 @@ import io.wavebeans.lib.stream.SampleCountMeasurement
 import io.wavebeans.lib.stream.map
 import io.wavebeans.lib.stream.window.window
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -67,7 +68,7 @@ fun BeanStream<Sample>.toSampleTable(
 )
 
 
-//@Serializable(with = TableOutputParamsSerializer::class)
+@Serializable(with = TableOutputParamsSerializer::class)
 class TableOutputParams<T : Any>(
     val tableName: String,
     val tableType: KClass<out T>,

@@ -1,6 +1,5 @@
 package io.wavebeans.lib.io
 
-import io.wavebeans.fs.core.WbFile
 import io.wavebeans.lib.URI
 import java.io.ByteArrayOutputStream
 
@@ -8,10 +7,6 @@ class TestWbFile(
     val fs: MutableMap<String, ByteArray>,
     override val uri: URI
 ) : WbFile {
-
-    init {
-        fs[uri.toString()] = ByteArray(0)
-    }
 
     override fun exists(): Boolean {
         return fs.containsKey(uri.toString())
@@ -53,8 +48,9 @@ class TestWbFile(
     }
 
     override fun createWbFileInputStream(): InputStream {
-        return object : InputStream {
-            private val stream = ByteArrayInputStream(fs.getValue(uri.toString()))
+        return object : InputStream, InputStreamProvider {
+            override val stream = java.io.ByteArrayInputStream(fs.getValue(uri.toString()))
+
             override fun close() {
                 stream.close()
             }

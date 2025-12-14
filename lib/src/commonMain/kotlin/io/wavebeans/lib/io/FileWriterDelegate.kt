@@ -1,8 +1,6 @@
 package io.wavebeans.lib.io
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.wavebeans.fs.core.WbFile
-import io.wavebeans.fs.core.WbFileDriver
 import io.wavebeans.lib.File
 import io.wavebeans.lib.URI
 import kotlin.concurrent.Volatile
@@ -10,7 +8,7 @@ import kotlin.concurrent.Volatile
 /**
  * Implements [WriterDelegate] to a file using [WbFileDriver] specified in schema of [uri].
  *
- * Writes temporary buffer to a temporary file created with [localFileFactory],  by default `file`,
+ * Writes temporary buffer to a temporary file created with [localFileFactory],
  * once it is flushed or closed the file is copied over to desired location adding header and footer.
  *
  * The content is being buffered in the memory to avoid excessive IO. The size is defined by [bufferSize] and by
@@ -23,7 +21,7 @@ import kotlin.concurrent.Volatile
 class FileWriterDelegate<A : Any>(
     private val uriGenerationStrategy: (A?) -> URI,
     private val bufferSize: Int = 512 * 1024,
-    private val localFileFactory: WbFileDriver = WbFileDriver.defaultLocalFileFactory()
+    private val localFileFactory: WbFileDriver,
 ) : WriterDelegate<A> {
 
     companion object {
@@ -155,17 +153,26 @@ class FileWriterDelegate<A : Any>(
     }
 }
 
-fun <A : Any> plainFileWriterDelegate(uri: String): FileWriterDelegate<Unit> = FileWriterDelegate({ URI(uri) })
+fun <A : Any> plainFileWriterDelegate(uri: String): FileWriterDelegate<Unit> =
+    FileWriterDelegate(
+        uriGenerationStrategy = { URI(uri) },
+        localFileFactory = WbFileDriver.defaultLocalFileFactory()
+    )
 
 fun <A : Any> suffixedFileWriterDelegate(
-        uri: String,
-        bufferSize: Int = 512 * 1024,
-        localFileFactory: WbFileDriver = WbFileDriver.defaultLocalFileFactory(),
-        suffix: (A?) -> String
+    uri: String,
+    bufferSize: Int = 512 * 1024,
+    localFileFactory: WbFileDriver = WbFileDriver.defaultLocalFileFactory(),
+    suffix: (A?) -> String
 ): FileWriterDelegate<A> =
-        FileWriterDelegate({ argument ->
+    FileWriterDelegate(
+        { argument ->
             val u = URI(uri)
             val f = File(u.path)
-            val newFilePath = f.parent + File.separatorChar + f.nameWithoutExtension + suffix(argument) + "." + f.extension
+            val newFilePath =
+                f.parent + File.separatorChar + f.nameWithoutExtension + suffix(argument) + "." + f.extension
             URI(u.scheme + "://" + newFilePath)
-        }, bufferSize = bufferSize, localFileFactory = localFileFactory)
+        },
+        bufferSize = bufferSize,
+        localFileFactory = localFileFactory
+    )

@@ -3,7 +3,6 @@ package io.wavebeans.lib.io
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import io.kotest.core.spec.style.DescribeSpec
-import io.wavebeans.fs.core.WbFileDriver
 import io.wavebeans.lib.*
 import io.wavebeans.lib.TimeUnit.MILLISECONDS
 import io.wavebeans.lib.stream.FiniteStream

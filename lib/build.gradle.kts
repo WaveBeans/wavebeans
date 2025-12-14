@@ -9,9 +9,15 @@ kotlin {
     js(IR) { browser() }
     compilerOptions {
         freeCompilerArgs.add("-Xexpect-actual-classes")
+        freeCompilerArgs.add("-Xlambdas=class")
     }
 
     tasks.withType<Test> {
+        useJUnitPlatform()
+        testLogging {
+            events("passed", "skipped", "failed")
+            showStandardStreams = true
+        }
         // that attempts to fix flaky tests once and for all
         retry {
             maxRetries.set(3)
@@ -35,7 +41,7 @@ kotlin {
         }
         commonTest {
         }
-        jvmMain  {
+        jvmMain {
             dependencies {
                 implementation(libs.kotlin.stdlib.jdk8)
                 implementation(libs.kotlin.reflect)
@@ -48,6 +54,7 @@ kotlin {
                 implementation(libs.logback.classic)
                 implementation(libs.assertk)
                 implementation(libs.mockito.kotlin)
+                implementation(libs.kotlinx.coroutines.test)
             }
         }
         jsMain {
@@ -56,13 +63,8 @@ kotlin {
             }
         }
         jsTest {
+            dependencies {
+            }
         }
     }
 }
-//dependencies {
-//
-//
-//    implementation(project(":filesystems-core"))
-//    implementation(project(":metrics-core"))
-//    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationRuntimeVersion")
-//}

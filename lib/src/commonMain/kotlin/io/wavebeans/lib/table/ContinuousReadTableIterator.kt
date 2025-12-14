@@ -4,6 +4,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.wavebeans.lib.TimeMeasure
 import io.wavebeans.lib.ns
 import io.wavebeans.lib.s
+import io.wavebeans.lib.yield
 
 /**
  * Implementation of iterator that continously reads the provided deque, assuming that someone from outside appends elements.
@@ -41,7 +42,8 @@ internal class ContinuousReadTableIterator<T : Any>(
     init {
         log.debug {
             "[$this:$iterator] Starting iterator and skipping values up to $from. " +
-                    "Table: first=${table.peekFirst()}, last=${table.peekLast()}, size=${table.size}"
+                    "Table: first=${table.peekFirst()}, last=${table.peekLast()}, " +
+                    "size=${table.size}"
         }
     }
 
@@ -65,11 +67,14 @@ internal class ContinuousReadTableIterator<T : Any>(
             if (e == null && streamIsOver) break
 
             if (e == null) {
-                log.trace { "[$this:$iterator] Read $returned element, iterator got empty, waiting for a little bit and restarting it." }
+                log.trace {
+                    "[$this:$iterator] Read $returned element, iterator got empty, " +
+                            "waiting for a little bit and restarting it."
+                }
                 var i = 0
                 do {
                     // TODO may check if table has changed its state to avoid creating iterator over and over again when there is no new elements
-//                    sleep(0) // sleep is essential here to be able to get interrupted
+                    yield()
                     iterator = table.iterator()
                     i++
                 } while (!streamIsOver && waitForNextElement && !iterator.hasNext())
@@ -104,4 +109,14 @@ internal class ContinuousReadTableIterator<T : Any>(
         }
         return nextElement
     }
+
+    override fun toString(): String {
+        return "ContinuousReadTableIterator(from=$from, skippedToFrom=$skippedToFrom, " +
+                "skipped=$skipped, returned=$returned, previousE=$previousE, " +
+                "iterator=$iterator, perElementLog=$perElementLog, " +
+                "streamIsOver=$streamIsOver, nextElement=$nextElement, " +
+                "tableDriver.table=${tableDriver.table})"
+    }
+
+
 }

@@ -3,6 +3,7 @@
 kotlin = "2.2.20"
 kotlinx-serialization = "1.9.0"
 kotlin-logging = "7.0.13"
+kotlinx-coroutines = "1.7.3"
 # fs compile scope
 dropbox = "7.0.0"
 # exe compile scope
@@ -44,6 +45,7 @@ kotlin-logging = { module = "io.github.oshai:kotlin-logging", version.ref = "kot
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 assertk = { module = "com.willowtreeapps.assertk:assertk-jvm", version.ref = "assertk" }
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito-kotlin" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 
 netty-all = { module = "io.netty:netty-all", version.ref = "netty" }
 javalin = { module = "io.javalin:javalin", version.ref = "javalin" }

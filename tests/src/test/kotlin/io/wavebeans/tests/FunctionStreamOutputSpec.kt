@@ -4,7 +4,7 @@ import assertk.assertThat
 import assertk.fail
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.datatest.withData
-import io.wavebeans.fs.core.WbFileDriver
+import io.wavebeans.lib.io.WbFileDriver
 import io.wavebeans.lib.*
 import io.wavebeans.lib.io.*
 import io.wavebeans.lib.io.WriteFunctionPhase.*
@@ -14,7 +14,6 @@ import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.stream.window.window
 import io.wavebeans.metrics.MetricService
 import java.io.File
-import java.net.URI
 import kotlin.math.abs
 
 class FunctionStreamOutputSpec : DescribeSpec({
@@ -64,7 +63,7 @@ class FunctionStreamOutputSpec : DescribeSpec({
             constructor(file: String) : this(FnInitParameters().add("file", file))
 
             private val file by lazy {
-                WbFileDriver.createFile(URI(initParams.string("file")))
+                WbFileDriver.createFile(uri(initParams.string("file")))
                     .createWbFileOutputStream()
             }
             private val bytesPerSample = BitDepth.BIT_32.bytesPerSample

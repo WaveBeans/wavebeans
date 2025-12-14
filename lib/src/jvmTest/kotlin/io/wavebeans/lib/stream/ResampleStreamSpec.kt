@@ -16,10 +16,23 @@ import io.wavebeans.tests.evaluate
 import io.wavebeans.tests.isContainedBy
 import io.wavebeans.tests.toList
 import io.kotest.core.spec.style.DescribeSpec
+import io.wavebeans.lib.JvmFnWrapper
+import io.wavebeans.lib.fnWrapper
 import java.io.File
 import kotlin.math.abs
 
 class ResampleStreamSpec : DescribeSpec({
+
+    beforeSpec {
+        TestWbFileDriver.register()
+        WbFileDriver.defaultLocalFileScheme = "test"
+        fnWrapper = JvmFnWrapper()
+    }
+
+    afterSpec {
+        TestWbFileDriver.unregister()
+    }
+
     describe("Resampling the input to match the output") {
 
         it("should upsample") {
@@ -133,13 +146,13 @@ class ResampleStreamSpec : DescribeSpec({
     describe("Samples in wav-files") {
         val input = (440.sine() * 0.2).trim(1000)
         fun newStreamFromProcessedWavFile(): BeanStream<Sample> {
-            val outputFile = File.createTempFile("temp", ".wav").also { it.deleteOnExit() }
+            val outputFile = TestWbFileDriver.createTempFile()
             input
                 .resample(to = 44100.0f)
                 .resample()
-                .toMono32bitWav("file://${outputFile.absolutePath}")
+                .toMono32bitWav("test://${outputFile.url}")
                 .evaluate(8000.0f)
-            return wave("file://${outputFile.absolutePath}", resampleFn = null)
+            return wave("test://${outputFile.url}", resampleFn = null)
         }
 
         it("should resample 8000Hz sample rate to 4000Hz after reading from file") {

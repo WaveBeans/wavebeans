@@ -4,12 +4,11 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
 import io.kotest.core.spec.style.DescribeSpec
-import io.wavebeans.fs.core.WbFileDriver
 import io.wavebeans.lib.TimeUnit
 import io.wavebeans.lib.stream.minus
 import io.wavebeans.lib.stream.trim
+import io.wavebeans.lib.yield
 import io.wavebeans.tests.eachIndexed
-import java.lang.Thread.sleep
 import kotlin.math.absoluteValue
 
 
@@ -32,7 +31,7 @@ class CsvSampleStreamOutputSpec : DescribeSpec({
             val fileUrl = "test:///${kotlin.random.Random.nextLong().absoluteValue.toString(36)}.tmp"
             x.toCsv(fileUrl, TimeUnit.MILLISECONDS).writer(sampleRate).use { w ->
                 while (w.write()) {
-                    sleep(0)
+                    yield()
                 }
             }
 
@@ -77,7 +76,7 @@ class CsvSampleStreamOutputSpec : DescribeSpec({
             val fileUrl = "test:///${kotlin.random.Random.nextLong().absoluteValue.toString(36)}.tmp"
             x.toCsv(fileUrl, TimeUnit.MILLISECONDS).writer(sampleRate).use { w ->
                 while (w.write()) {
-                    sleep(0)
+                    yield()
                 }
             }
 
@@ -88,8 +87,8 @@ class CsvSampleStreamOutputSpec : DescribeSpec({
             val lines = TestWbFileDriver.driver.fs[fileUrl]?.decodeToString()?.trim()?.split("\n")
             assertThat(lines).isNotNull().all {
                 size().isEqualTo(101)
-                transform {
-                    it.drop(1)
+                transform { lines ->
+                    lines.drop(1)
                             .map { l ->
                                 l.split(",")
                                         .drop(1)

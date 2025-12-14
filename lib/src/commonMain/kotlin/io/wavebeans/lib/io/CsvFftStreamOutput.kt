@@ -35,7 +35,10 @@ class CsvFftStreamOutput(
 
     override fun outputWriter(inputSequence: Sequence<FftSample>, sampleRate: Float): Writer {
         var offset = 0L
-        val writer = FileWriterDelegate<Unit>({ URI(parameters.uri) })
+        val writer = FileWriterDelegate<Unit>(
+            { URI(parameters.uri) },
+            localFileFactory = WbFileDriver.defaultLocalFileFactory()
+        )
         return object : AbstractWriter<FftSample>(
             input,
             sampleRate,

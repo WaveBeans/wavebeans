@@ -1,5 +1,5 @@
 package io.wavebeans.lib
 
 actual fun yield() {
-    Thread.yield()
+    Thread.sleep(0)
 }

@@ -1,8 +1,6 @@
-package io.wavebeans.fs.core
+package io.wavebeans.lib.io
 
 import io.wavebeans.lib.URI
-import io.wavebeans.lib.io.InputStream
-import io.wavebeans.lib.io.OutputStream
 
 
 /**

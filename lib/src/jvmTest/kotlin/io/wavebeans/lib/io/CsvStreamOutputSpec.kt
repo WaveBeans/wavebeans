@@ -16,6 +16,16 @@ import kotlin.math.absoluteValue
 import kotlin.random.Random
 
 class CsvStreamOutputSpec : DescribeSpec({
+
+    beforeSpec {
+        TestWbFileDriver.register()
+        WbFileDriver.defaultLocalFileScheme = "test"
+    }
+
+    afterSpec {
+        TestWbFileDriver.unregister()
+    }
+
     describe("Sample to csv") {
         it("should not be empty") {
             val file = TestWbFileDriver.createTempFile()

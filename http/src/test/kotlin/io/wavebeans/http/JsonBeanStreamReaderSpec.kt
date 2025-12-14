@@ -3,9 +3,8 @@ package io.wavebeans.http
 import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
-import assertk.catch
-import io.wavebeans.lib.TimeUnit
 import io.kotest.core.spec.style.DescribeSpec
+import io.wavebeans.lib.TimeUnit
 import io.wavebeans.lib.io.input
 import io.wavebeans.lib.sampleOf
 import io.wavebeans.lib.stream.SampleCountMeasurement
@@ -13,7 +12,6 @@ import io.wavebeans.lib.stream.trim
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import java.io.BufferedReader
-import java.util.concurrent.TimeUnit
 
 class JsonBeanStreamReaderSpec : DescribeSpec({
 

@@ -34,3 +34,4 @@ actual class File actual constructor(path: String) {
 }
 
 fun uri(uri: java.net.URI) = URI(uri)
+fun uri(uri: String) = URI(uri)

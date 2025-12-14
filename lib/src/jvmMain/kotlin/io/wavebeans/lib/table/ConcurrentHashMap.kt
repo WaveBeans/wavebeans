@@ -1,6 +1,6 @@
 package io.wavebeans.lib.table
 
-actual class ConcurrentHashMap<K, V> : MutableMap<K, V> {
+actual class ConcurrentHashMap<K : Any, V : Any> : MutableMap<K, V> {
 
     private val map = java.util.concurrent.ConcurrentHashMap<K, V>()
 

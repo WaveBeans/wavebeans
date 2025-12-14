@@ -5,17 +5,29 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.prop
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.kotest.core.spec.style.DescribeSpec
-import io.wavebeans.lib.uri
 import io.wavebeans.tests.eachIndexed
-import java.io.File
-import java.nio.file.Files
+import kotlin.math.absoluteValue
+import kotlin.random.Random
 
 class FileWriterDelegateSpec : DescribeSpec({
 
+    beforeSpec {
+        TestWbFileDriver.register()
+        WbFileDriver.defaultLocalFileScheme = "test"
+    }
+
+    afterSpec {
+        TestWbFileDriver.unregister()
+    }
+
     describe("Single file") {
         it("should store short buffer without headers") {
-            val outputFile = File.createTempFile("test", ".out").also { it.deleteOnExit() }
-            val delegate = FileWriterDelegate<Unit>({ uri(outputFile.toURI()) }, bufferSize = 128)
+            val outputFile = TestWbFileDriver.createTempFile()
+            val delegate = FileWriterDelegate<Unit>(
+                { outputFile.toURI() },
+                bufferSize = 128,
+                localFileFactory = WbFileDriver.defaultLocalFileFactory()
+            )
                 .also { it.initBuffer(null) }
 
             val input = "1234567890"
@@ -25,8 +37,12 @@ class FileWriterDelegateSpec : DescribeSpec({
             assertThat(outputFile.readText()).isEqualTo(input)
         }
         it("should store buffer longer than internal buffer without headers") {
-            val outputFile = File.createTempFile("test", ".out").also { it.deleteOnExit() }
-            val delegate = FileWriterDelegate<Unit>({ uri(outputFile.toURI()) }, bufferSize = 128)
+            val outputFile = TestWbFileDriver.createTempFile()
+            val delegate = FileWriterDelegate<Unit>(
+                { outputFile.toURI() },
+                bufferSize = 128,
+                localFileFactory = WbFileDriver.defaultLocalFileFactory()
+            )
                 .also { it.initBuffer(null) }
 
             val input = (0..100).joinToString("") { "1234567890" }
@@ -37,8 +53,12 @@ class FileWriterDelegateSpec : DescribeSpec({
         }
 
         it("should store buffer longer than internal buffer with header and footer") {
-            val outputFile = File.createTempFile("test", ".out").also { it.deleteOnExit() }
-            val delegate = FileWriterDelegate<Unit>({ uri(outputFile.toURI()) }, bufferSize = 128)
+            val outputFile = TestWbFileDriver.createTempFile()
+            val delegate = FileWriterDelegate<Unit>(
+                { outputFile.toURI() },
+                bufferSize = 128,
+                localFileFactory = WbFileDriver.defaultLocalFileFactory(),
+            )
                 .also { it.initBuffer(null) }
 
             val input = (0..100).joinToString("") { "1234567890" }
@@ -53,12 +73,16 @@ class FileWriterDelegateSpec : DescribeSpec({
 
     describe("Multiple files with flush") {
         it("should store a few short files without headers and footers") {
-            val outputFiles = ArrayList<File>()
-            val delegate = FileWriterDelegate<Unit>({
-                val outputFile = File.createTempFile("test", ".out").also { it.deleteOnExit() }
-                outputFiles += outputFile
-                uri(outputFile.toURI())
-            }, bufferSize = 128).also { it.initBuffer(null) }
+            val outputFiles = ArrayList<TestFile>()
+            val delegate = FileWriterDelegate<Unit>(
+                {
+                    val outputFile = TestWbFileDriver.createTempFile()
+                    outputFiles += outputFile
+                    outputFile.toURI()
+                },
+                bufferSize = 128,
+                localFileFactory = WbFileDriver.defaultLocalFileFactory(),
+            ).also { it.initBuffer(null) }
 
             val contents = listOf("1234567890", "qwertyuiop", "asdfghjkl", "zxcvbnm")
 
@@ -70,12 +94,16 @@ class FileWriterDelegateSpec : DescribeSpec({
         }
 
         it("should store a few short files with headers and footers") {
-            val outputFiles = ArrayList<File>()
-            val delegate = FileWriterDelegate<Unit>({
-                val outputFile = File.createTempFile("test", ".out").also { it.deleteOnExit() }
-                outputFiles += outputFile
-                uri(outputFile.toURI())
-            }, bufferSize = 128).also { it.initBuffer(null) }
+            val outputFiles = ArrayList<TestFile>()
+            val delegate = FileWriterDelegate<Unit>(
+                {
+                    val outputFile = TestWbFileDriver.createTempFile()
+                    outputFiles += outputFile
+                    outputFile.toURI()
+                },
+                bufferSize = 128,
+                localFileFactory = WbFileDriver.defaultLocalFileFactory(),
+            ).also { it.initBuffer(null) }
 
             val contents = listOf("1234567890", "qwertyuiop", "asdfghjkl", "zxcvbnm")
             val header = "header1234567890"
@@ -91,12 +119,16 @@ class FileWriterDelegateSpec : DescribeSpec({
 
     describe("Multiple files with manual buffer manipulation") {
         it("should store a few short files without headers and footers") {
-            val outputFiles = ArrayList<File>()
-            val delegate = FileWriterDelegate<Unit>({
-                val outputFile = File.createTempFile("test", ".out").also { it.deleteOnExit() }
-                outputFiles += outputFile
-                uri(outputFile.toURI())
-            }, bufferSize = 128).also { it.initBuffer(null) }
+            val outputFiles = ArrayList<TestFile>()
+            val delegate = FileWriterDelegate<Unit>(
+                {
+                    val outputFile = TestWbFileDriver.createTempFile()
+                    outputFiles += outputFile
+                    outputFile.toURI()
+                },
+                bufferSize = 128,
+                localFileFactory = WbFileDriver.defaultLocalFileFactory(),
+            ).also { it.initBuffer(null) }
 
             val contents = listOf("1234567890", "qwertyuiop", "asdfghjkl", "zxcvbnm")
 
@@ -108,12 +140,16 @@ class FileWriterDelegateSpec : DescribeSpec({
         }
 
         it("should store a few short files with headers and footers") {
-            val outputFiles = ArrayList<File>()
-            val delegate = FileWriterDelegate<Unit>({
-                val outputFile = File.createTempFile("test", ".out").also { it.deleteOnExit() }
-                outputFiles += outputFile
-                uri(outputFile.toURI())
-            }, bufferSize = 128).also { it.initBuffer(null) }
+            val outputFiles = ArrayList<TestFile>()
+            val delegate = FileWriterDelegate<Unit>(
+                {
+                    val outputFile = TestWbFileDriver.createTempFile()
+                    outputFiles += outputFile
+                    outputFile.toURI()
+                },
+                bufferSize = 128,
+                localFileFactory = WbFileDriver.defaultLocalFileFactory(),
+            ).also { it.initBuffer(null) }
 
             val contents = listOf("1234567890", "qwertyuiop", "asdfghjkl", "zxcvbnm")
             val header = "header1234567890"
@@ -129,10 +165,10 @@ class FileWriterDelegateSpec : DescribeSpec({
 
     describe("Suffixed file writer") {
         it("should store a few short files without headers and footers") {
-            val directory = Files.createTempDirectory("tmp").toFile()
+            val directory = "/" + Random.nextLong().absoluteValue.toString(36)
             val delegate = run {
                 var i = 0
-                suffixedFileWriterDelegate<Unit>("file://${directory.absolutePath}/test.out") {
+                suffixedFileWriterDelegate<Unit>("test://${directory}/test.out") {
                     (i++).toString(16)
                 }.also { it.initBuffer(null) }
             }
@@ -140,19 +176,19 @@ class FileWriterDelegateSpec : DescribeSpec({
 
             delegate.performWritesWithFlush(contents)
 
-            val outputFiles = directory.listFiles()?.map { it!! }?.sortedBy { it.name } ?: emptyList()
+            val outputFiles = TestWbFileDriver.listFiles(directory).sortedBy { it.url }
 
             assertThat(outputFiles).eachIndexed(contents.size) { file, index ->
                 file.prop("content") { it.readText() }.isEqualTo(contents[index])
-                file.prop("url") { it.toURI() }.isEqualTo("test:///$directory/test$index.out")
+                file.prop("url") { it.url }.isEqualTo("test://$directory/test$index.out")
             }
         }
 
         it("should store a few short files with headers and footers") {
-            val directory = Files.createTempDirectory("tmp").toFile()
+            val directory = "/" + Random.nextLong().absoluteValue.toString(36)
             val delegate = run {
                 var i = 0
-                suffixedFileWriterDelegate<Unit>("file://${directory.absolutePath}/test.out") {
+                suffixedFileWriterDelegate<Unit>("test://${directory}/test.out") {
                     (i++).toString(16)
                 }.also { it.initBuffer(null) }
             }
@@ -162,11 +198,11 @@ class FileWriterDelegateSpec : DescribeSpec({
 
             delegate.performWritesWithFlush(contents, header, footer)
 
-            val outputFiles = directory.listFiles()?.map { it!! }?.sortedBy { it.name } ?: emptyList()
+            val outputFiles = TestWbFileDriver.listFiles(directory).sortedBy { it.url }
 
             assertThat(outputFiles).eachIndexed(contents.size) { file, index ->
                 file.prop("content") { it.readText() }.isEqualTo(header + contents[index] + footer)
-                file.prop("url") { it.toURI() }.isEqualTo("test:///$directory/test$index.out")
+                file.prop("url") { it.url }.isEqualTo("test://$directory/test$index.out")
             }
         }
     }

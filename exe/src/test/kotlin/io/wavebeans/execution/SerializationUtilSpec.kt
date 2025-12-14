@@ -2,17 +2,13 @@ package io.wavebeans.execution
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.lib.stream.AfterFillingFiniteStreamParams
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.modules.SerializersModule
-import org.spekframework.spek2.Spek
-import org.spekframework.spek2.lifecycle.CachingMode
-import org.spekframework.spek2.style.specification.describe
 
-class SerializationUtilSpec : Spek({
+class SerializationUtilSpec : DescribeSpec({
     describe("Bean params") {
-        val json by memoized(CachingMode.SCOPE) {
+        val json by lazy {
             jsonPretty(SerializersModule {
                 beanParams()
             })

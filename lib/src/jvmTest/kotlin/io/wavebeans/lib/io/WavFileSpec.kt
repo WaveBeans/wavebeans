@@ -1,11 +1,12 @@
 package io.wavebeans.lib.io
 
 import assertk.assertThat
+import assertk.assertions.endsWith
 import assertk.assertions.isCloseTo
-import assertk.assertions.isEqualTo
 import assertk.assertions.prop
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.datatest.withData
 import io.wavebeans.lib.*
 import io.wavebeans.lib.BitDepth.*
 import io.wavebeans.lib.stream.map
@@ -13,52 +14,64 @@ import io.wavebeans.lib.stream.merge
 import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.stream.window.window
 import io.wavebeans.tests.eachIndexed
-import java.io.File
-import java.nio.file.Files
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAccessor
+import kotlin.math.absoluteValue
+import kotlin.random.Random
 
 private const val sampleRate = 192000.0f
 private val log = KotlinLogging.logger { }
 
 class WavFileSpec : DescribeSpec({
 
-    lateinit var directory: File
+    lateinit var outputDir: String
     lateinit var input: BeanStream<Sample>
-    lateinit var file: File
+    lateinit var file: TestFile
 
-    beforeEach {
-        directory = Files.createTempDirectory("tmp").toFile()
-        file = File.createTempFile("wavtest", ".wav")
+    beforeSpec {
+        TestWbFileDriver.register()
+        fnWrapper = JvmFnWrapper()
+        WbFileDriver.defaultLocalFileScheme = "test"
+    }
+
+    afterSpec {
+        TestWbFileDriver.unregister()
+    }
+
+    beforeTest {
+        outputDir = "/" + Random.nextLong().absoluteValue.toString(36)
+        file = TestWbFileDriver.createTempFile()
         input = seqStream()
     }
-    fun outputFiles() = directory.listFiles()?.mapNotNull { it }?.sortedBy { it.name } ?: emptyList()
+
+    fun outputFiles() = TestWbFileDriver.listFiles(outputDir).sortedBy { it.url }
 
 
     describe("Writing mono") {
         val sine = 440.sine().trim(2)
         val expectedSize = 384
 
-        listOf(BIT_8 to 1e-2, BIT_16 to 1e-4, BIT_24 to 1e-6, BIT_32 to 1e-9).forEach { (bitDepth, precision) ->
-            describe("$bitDepth with precision $precision") {
-                it("should read the same sine") {
-                    evaluate(sine, bitDepth, file)
-                    val inputAsArray = sine.asSequence(sampleRate).toList().toTypedArray()
-                    assertThat(wave("file://${file.absolutePath}").asSequence(sampleRate).toList())
-                        .eachIndexed(expectedSize) { sample, idx ->
-                            sample.isCloseTo(inputAsArray[idx], precision)
-                        }
-                }
+        val bitrates = listOf(BIT_8 to 1e-2, BIT_16 to 1e-4, BIT_24 to 1e-6, BIT_32 to 1e-9)
+        context("should read the same sine") {
+            withData(bitrates) { (bitDepth, precision) ->
+                evaluate(sine, bitDepth, file.url)
+                val inputAsArray = sine.asSequence(sampleRate).toList().toTypedArray()
+                assertThat(wave(file.url).asSequence(sampleRate).toList())
+                    .eachIndexed(expectedSize) { sample, idx ->
+                        sample.isCloseTo(inputAsArray[idx], precision)
+                    }
+            }
+        }
 
-                it("should read the same sine when sampled with SampleVector") {
-                    evaluate(sine.window(64).map { sampleVectorOf(it) }, bitDepth, file)
-                    val inputAsArray = sine.asSequence(sampleRate).toList().toTypedArray()
-                    assertThat(wave("file://${file.absolutePath}").asSequence(sampleRate).toList())
-                        .eachIndexed(expectedSize) { sample, idx ->
-                            sample.isCloseTo(inputAsArray[idx], precision)
-                        }
-                }
+        context("should read the same sine when sampled with SampleVector") {
+            withData(bitrates) { (bitDepth, precision) ->
+                evaluate(sine.window(64).map { sampleVectorOf(it) }, bitDepth, file.url)
+                val inputAsArray = sine.asSequence(sampleRate).toList().toTypedArray()
+                assertThat(wave(file.url).asSequence(sampleRate).toList())
+                    .eachIndexed(expectedSize) { sample, idx ->
+                        sample.isCloseTo(inputAsArray[idx], precision)
+                    }
             }
         }
     }
@@ -88,7 +101,7 @@ class WavFileSpec : DescribeSpec({
                 val dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss-SSS")
                 "-${dtf.format(a?.first ?: ZonedDateTime.now())}-${a?.second ?: 0}"
             }
-            val uri = "file://${directory.absolutePath}/test.wav"
+            val uri = "test://${outputDir}/test.wav"
             val o = input
                 .merge(input { it.first }) { (sample, index) ->
                     checkNotNull(sample)
@@ -100,29 +113,30 @@ class WavFileSpec : DescribeSpec({
             evaluate(o, bitDepth, uri, suffix)
         }
 
-        listOf(BIT_8 to 1e-2, BIT_16 to 1e-4, BIT_24 to 1e-6/*, BIT_32 to 1e-9*/).forEach { (bitDepth, precision) ->
-            context("$bitDepth with precision $precision") {
-                val chunkSize = 384
-                val chunksCount = 5
-                val overallSize = 1920
-                val overallLengthMs = 10L
+        val bitrates = listOf(BIT_8 to 1e-2, BIT_16 to 1e-4, BIT_24 to 1e-6/*, BIT_32 to 1e-9*/)
+        val chunkSize = 384
+        val chunksCount = 5
+        val overallSize = 1920
+        val overallLengthMs = 10L
 
-                it("should read the same input out of 5 files one by one") {
-                    run(input, overallLengthMs, chunkSize, bitDepth)
-                    val expected = input.asSequence(sampleRate).take(chunkSize * chunksCount).toList()
-                    assertThat(outputFiles()).eachIndexed(chunksCount) { file, index ->
-                        file.prop("content") { wave("file://${it.absolutePath}").asSequence(sampleRate).toList() }
-                            .eachIndexed(chunkSize) { v, i -> v.isCloseTo(expected[chunkSize * index + i], precision) }
-                    }
+        context("should read the same input out of 5 files one by one") {
+            withData(bitrates) { (bitDepth, precision) ->
+                run(input, overallLengthMs, chunkSize, bitDepth)
+                val expected = input.asSequence(sampleRate).take(chunkSize * chunksCount).toList()
+                assertThat(outputFiles()).eachIndexed(chunksCount) { file, index ->
+                    file.prop("content") { wave(it.url).asSequence(sampleRate).toList() }
+                        .eachIndexed(chunkSize) { v, i -> v.isCloseTo(expected[chunkSize * index + i], precision) }
                 }
+            }
+        }
 
-                it("should read the same input out of 1 file as it wasn't flushed") {
-                    run(input, overallLengthMs, 0, bitDepth)
-                    val expected = input.asSequence(sampleRate).take(overallSize).toList()
-                    assertThat(outputFiles()).eachIndexed(1) { file, _ ->
-                        file.prop("content") { wave("file://${it.absolutePath}").asSequence(sampleRate).toList() }
-                            .eachIndexed(overallSize) { v, i -> v.isCloseTo(expected[i], precision) }
-                    }
+        context("should read the same input out of 1 file as it wasn't flushed") {
+            withData(bitrates) { (bitDepth, precision) ->
+                run(input, overallLengthMs, 0, bitDepth)
+                val expected = input.asSequence(sampleRate).take(overallSize).toList()
+                assertThat(outputFiles()).eachIndexed(1) { file, _ ->
+                    file.prop("content") { wave(it.url).asSequence(sampleRate).toList() }
+                        .eachIndexed(overallSize) { v, i -> v.isCloseTo(expected[i], precision) }
                 }
             }
         }
@@ -155,7 +169,7 @@ class WavFileSpec : DescribeSpec({
                 val dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss-SSS")
                 "-${dtf.format(a?.first ?: ZonedDateTime.now())}-${a?.second ?: 0}"
             }
-            val uri = "file://${directory.absolutePath}/test.wav"
+            val uri = "test://${outputDir}/test.wav"
             val o = input
                 .window(windowSize)
                 .map { sampleVectorOf(it) }
@@ -169,31 +183,32 @@ class WavFileSpec : DescribeSpec({
             evaluate(o, bitDepth, uri, suffix)
         }
 
-        listOf(BIT_8 to 1e-2, BIT_16 to 1e-4, BIT_24 to 1e-6/*, BIT_32 to 1e-9*/).forEach { (bitDepth, precision) ->
-            context("$bitDepth with precision $precision") {
-                val uberChunkSize = 3
-                val chunkSize = uberChunkSize * windowSize
-                val chunksCount = 5
-                val overallSize = 15 * windowSize
-                val overallLengthMs = 10L
+        val bitrates = listOf(BIT_8 to 1e-2, BIT_16 to 1e-4, BIT_24 to 1e-6/*, BIT_32 to 1e-9*/)
+        val uberChunkSize = 3
+        val chunkSize = uberChunkSize * windowSize
+        val chunksCount = 5
+        val overallSize = 15 * windowSize
+        val overallLengthMs = 10L
 
-                it("should read the same input out of 5 files one by one") {
-                    run(input, overallLengthMs, uberChunkSize, bitDepth)
-                    val expected = input.asSequence(sampleRate).take(chunkSize * chunksCount).toList()
-                    assertThat(outputFiles()).eachIndexed(chunksCount) { file, index ->
-                        file.prop("content") { wave("file://${it.absolutePath}").asSequence(sampleRate).toList() }
-                            .eachIndexed(chunkSize) { v, i ->
-                                v.isCloseTo(expected[chunkSize * index + i], precision)
-                            }
-                    }
+        context("should read the same input out of 5 files one by one") {
+            withData(bitrates) { (bitDepth, precision) ->
+                run(input, overallLengthMs, uberChunkSize, bitDepth)
+                val expected = input.asSequence(sampleRate).take(chunkSize * chunksCount).toList()
+                assertThat(outputFiles()).eachIndexed(chunksCount) { file, index ->
+                    file.prop("content") { wave(it.url).asSequence(sampleRate).toList() }
+                        .eachIndexed(chunkSize) { v, i ->
+                            v.isCloseTo(expected[chunkSize * index + i], precision)
+                        }
                 }
-                it("should read the same input out of 1 file as it wasn't flushed") {
-                    run(input, overallLengthMs, 0, bitDepth)
-                    val expected = input.asSequence(sampleRate).take(overallSize).toList()
-                    assertThat(outputFiles()).eachIndexed(1) { file, _ ->
-                        file.prop("content") { wave("file://${it.absolutePath}").asSequence(sampleRate).toList() }
-                            .eachIndexed(overallSize) { v, i -> v.isCloseTo(expected[i], precision) }
-                    }
+            }
+        }
+        context("should read the same input out of 1 file as it wasn't flushed") {
+            withData(bitrates) { (bitDepth, precision) ->
+                run(input, overallLengthMs, 0, bitDepth)
+                val expected = input.asSequence(sampleRate).take(overallSize).toList()
+                assertThat(outputFiles()).eachIndexed(1) { file, _ ->
+                    file.prop("content") { wave(it.url).asSequence(sampleRate).toList() }
+                        .eachIndexed(overallSize) { v, i -> v.isCloseTo(expected[i], precision) }
                 }
             }
         }
@@ -234,7 +249,7 @@ class WavFileSpec : DescribeSpec({
                 val dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss-SSS")
                 "-${dtf.format(a?.first ?: ZonedDateTime.now())}-${a?.second ?: 0}"
             }
-            val uri = "file://${directory.absolutePath}/test.wav"
+            val uri = "test://${outputDir}/test.wav"
             val o = input
                 .merge(input { it.first }) { (sample, index) ->
                     checkNotNull(sample)
@@ -246,34 +261,35 @@ class WavFileSpec : DescribeSpec({
             evaluate(o, bitDepth, uri, suffix)
         }
 
-        listOf(BIT_8 to 1e-2, BIT_16 to 1e-4, BIT_24 to 1e-6/*, BIT_32 to 1e-9*/).forEach { (bitDepth, precision) ->
-            describe("$bitDepth with precision $precision") {
-                val chunkSize = 384
-                val chunksCount = 5
-                val filesCount = 3
-                val overallSize = 1920
-                val overallLengthMs = 10L
+        val bitrates = listOf(BIT_8 to 1e-2, BIT_16 to 1e-4, BIT_24 to 1e-6/*, BIT_32 to 1e-9*/)
+        val chunkSize = 384
+        val chunksCount = 5
+        val filesCount = 3
+        val overallSize = 1920
+        val overallLengthMs = 10L
 
-                it("should read only even chunks out of 3 files") {
-                    run(input, overallLengthMs, chunkSize, bitDepth)
-                    val expected = input.asSequence(sampleRate).take(chunkSize * chunksCount).toList()
-                    assertThat(outputFiles()).eachIndexed(filesCount) { file, index ->
-                        file.prop("content") { wave("file://${it.absolutePath}").asSequence(sampleRate).toList() }
-                            .eachIndexed(chunkSize) { v, i ->
-                                v.isCloseTo(
-                                    expected[chunkSize * index * 2 + i],
-                                    precision
-                                )
-                            }
-                    }
+        context("should read only even chunks out of 3 files") {
+            withData(bitrates) { (bitDepth, precision) ->
+                run(input, overallLengthMs, chunkSize, bitDepth)
+                val expected = input.asSequence(sampleRate).take(chunkSize * chunksCount).toList()
+                assertThat(outputFiles()).eachIndexed(filesCount) { file, index ->
+                    file.prop("content") { wave(it.url).asSequence(sampleRate).toList() }
+                        .eachIndexed(chunkSize) { v, i ->
+                            v.isCloseTo(
+                                expected[chunkSize * index * 2 + i],
+                                precision
+                            )
+                        }
                 }
-                it("should read the same input out of 1 file as it wasn't flushed") {
-                    run(input, overallLengthMs, 0, bitDepth)
-                    val expected = input.asSequence(sampleRate).take(overallSize).toList()
-                    assertThat(outputFiles()).eachIndexed(1) { file, _ ->
-                        file.prop("content") { wave("file://${it.absolutePath}").asSequence(sampleRate).toList() }
-                            .eachIndexed(overallSize) { v, i -> v.isCloseTo(expected[i], precision) }
-                    }
+            }
+        }
+        context("should read the same input out of 1 file as it wasn't flushed") {
+            withData(bitrates) { (bitDepth, precision) ->
+                run(input, overallLengthMs, 0, bitDepth)
+                val expected = input.asSequence(sampleRate).take(overallSize).toList()
+                assertThat(outputFiles()).eachIndexed(1) { file, _ ->
+                    file.prop("content") { wave(it.url).asSequence(sampleRate).toList() }
+                        .eachIndexed(overallSize) { v, i -> v.isCloseTo(expected[i], precision) }
                 }
             }
         }
@@ -296,9 +312,15 @@ class WavFileSpec : DescribeSpec({
                     // the effect is the same as to send open/close gate signal on the very fisrt chunk
                     // and then sending noop in between.
                     return if (argument.index / cz % 2 == 0L)
-                        argument.sample.withOutputSignal(OpenGateOutputSignal, ZonedDateTime.now() to argument.index)
+                        argument.sample.withOutputSignal(
+                            OpenGateOutputSignal,
+                            ZonedDateTime.now() to argument.index
+                        )
                     else
-                        argument.sample.withOutputSignal(CloseGateOutputSignal, ZonedDateTime.now() to argument.index)
+                        argument.sample.withOutputSignal(
+                            CloseGateOutputSignal,
+                            ZonedDateTime.now() to argument.index
+                        )
                 }
             }
 
@@ -306,7 +328,7 @@ class WavFileSpec : DescribeSpec({
                 val dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss-SSS")
                 "-${dtf.format(a?.first ?: ZonedDateTime.now())}-${a?.second ?: 0}"
             }
-            val uri = "file://${directory.absolutePath}/test.wav"
+            val uri = "test://${outputDir}/test.wav"
             val o = input
                 .merge(input { it.first }) { (sample, index) ->
                     checkNotNull(sample)
@@ -318,25 +340,24 @@ class WavFileSpec : DescribeSpec({
             evaluate(o, bitDepth, uri, suffix)
         }
 
-        listOf(BIT_8 to 1e-2, BIT_16 to 1e-4, BIT_24 to 1e-6, BIT_32 to 1e-9).forEach { (bitDepth, precision) ->
-            describe("$bitDepth with precision $precision") {
-                val chunkSize = 384
-                val chunksCount = 5
-                val filesCount = 3
-                val overallLengthMs = 10L
+        val bitrates = listOf(BIT_8 to 1e-2, BIT_16 to 1e-4, BIT_24 to 1e-6, BIT_32 to 1e-9)
+        val chunkSize = 384
+        val chunksCount = 5
+        val filesCount = 3
+        val overallLengthMs = 10L
 
-                it("should read only even chunks out of 3 files") {
-                    run(input, overallLengthMs, chunkSize, bitDepth)
-                    val expected = input.asSequence(sampleRate).take(chunkSize * chunksCount).toList()
-                    assertThat(outputFiles()).eachIndexed(filesCount) { file, index ->
-                        file.prop("content") { wave("file://${it.absolutePath}").asSequence(sampleRate).toList() }
-                            .eachIndexed(chunkSize) { v, i ->
-                                v.isCloseTo(
-                                    expected[chunkSize * index * 2 + i],
-                                    precision
-                                )
-                            }
-                    }
+        context("should read only even chunks out of 3 files") {
+            withData(bitrates) { (bitDepth, precision) ->
+                run(input, overallLengthMs, chunkSize, bitDepth)
+                val expected = input.asSequence(sampleRate).take(chunkSize * chunksCount).toList()
+                assertThat(outputFiles()).eachIndexed(filesCount) { file, index ->
+                    file.prop("content") { wave(it.url).asSequence(sampleRate).toList() }
+                        .eachIndexed(chunkSize) { v, i ->
+                            v.isCloseTo(
+                                expected[chunkSize * index * 2 + i],
+                                precision
+                            )
+                        }
                 }
             }
         }
@@ -394,7 +415,7 @@ class WavFileSpec : DescribeSpec({
             }
 
             val suffix: (Long?) -> String = { a -> "-${a ?: 0L}" }
-            val uri = "file://${directory.absolutePath}/test.wav"
+            val uri = "test://${outputDir}/test.wav"
             val o = input
                 .merge(input { it.first }) { (sample, index) ->
                     checkNotNull(sample)
@@ -406,33 +427,31 @@ class WavFileSpec : DescribeSpec({
             evaluate(o, bitDepth, uri, suffix)
         }
 
-        listOf(BIT_8 to 1e-2, BIT_16 to 1e-4, BIT_24 to 1e-6, BIT_32 to 1e-9).forEach { (bitDepth, precision) ->
-            describe("$bitDepth with precision $precision") {
-                it("should read only even chunks out of 3 files") {
-                    run(input, bitDepth)
-                    fun expected(range: IntRange) = input.asSequence(sampleRate)
-                        .drop(range.first * chunkSize)
-                        .take(chunkSize * range.count())
-                        .toList()
-                    assertThat(outputFiles()).eachIndexed(filesCount) { file, index ->
-                        val (suffix, elements) = when (index) {
-                            0 -> "-0" to expected(0..1)
-                            1 -> "-5" to expected(5..5)
-                            2 -> "-6" to expected(6..10)
-                            else -> throw UnsupportedOperationException("$index")
-                        }
-                        file.prop("name") { it.name }.isEqualTo("test$suffix.wav")
-                        file.prop("content") { wave("file://${it.absolutePath}").asSequence(sampleRate).toList() }
-                            .eachIndexed(elements.size) { v, i -> v.isCloseTo(elements[i], precision) }
+        val bitrates = listOf(BIT_8 to 1e-2, BIT_16 to 1e-4, BIT_24 to 1e-6, BIT_32 to 1e-9)
+        context("should read only even chunks out of 3 files") {
+            withData(bitrates) { (bitDepth, precision) ->
+                run(input, bitDepth)
+                fun expected(range: IntRange) = input.asSequence(sampleRate)
+                    .drop(range.first * chunkSize)
+                    .take(chunkSize * range.count())
+                    .toList()
+                assertThat(outputFiles()).eachIndexed(filesCount) { file, index ->
+                    val (suffix, elements) = when (index) {
+                        0 -> "-0" to expected(0..1)
+                        1 -> "-5" to expected(5..5)
+                        2 -> "-6" to expected(6..10)
+                        else -> throw UnsupportedOperationException("$index")
                     }
+                    file.prop("url") { it.url }.endsWith("test$suffix.wav")
+                    file.prop("content") { wave(it.url).asSequence(sampleRate).toList() }
+                        .eachIndexed(elements.size) { v, i -> v.isCloseTo(elements[i], precision) }
                 }
             }
         }
     }
 })
 
-private inline fun <reified T : Any> evaluate(input: BeanStream<T>, bitDepth: BitDepth, file: File) {
-    val uri = "file://${file.absolutePath}"
+private inline fun <reified T : Any> evaluate(input: BeanStream<T>, bitDepth: BitDepth, uri: String) {
     val o = when (bitDepth) {
         BIT_8 -> input.toMono8bitWav(uri)
         BIT_16 -> input.toMono16bitWav(uri)

@@ -1,7 +1,7 @@
 package io.wavebeans.fs.local
 
-import io.wavebeans.fs.core.WbFile
-import io.wavebeans.fs.core.WbFileDriver
+import io.wavebeans.lib.io.WbFile
+import io.wavebeans.lib.io.WbFileDriver
 import io.wavebeans.lib.URI
 import java.io.File
 

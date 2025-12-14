@@ -8,6 +8,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.math.max
 import kotlin.reflect.KClass
 
 
@@ -114,7 +115,7 @@ actual class InMemoryTimeseriesTableDriver<T : Any> actual constructor(
         if (isStreamFinished()) throw IllegalStateException("[$this] The stream is already finished, you can't put any more data in it")
         val peekLast = _table.peekLast()
         if (peekLast != null && time < peekLast.timeMarker)
-            throw IllegalStateException("[$this] Can't put item with time=$time, as older one exists: $peekLast")
+            throw IllegalStateException("[$this] Can't put item with time=$time, as newer one exists: $peekLast")
         _table += Item(time, value)
     }
 
@@ -159,13 +160,20 @@ actual class InMemoryTimeseriesTableDriver<T : Any> actual constructor(
     }
 
     internal actual val table: Deque<Item<T>> = object : Deque<Item<T>> {
-        override fun peekFirst(): Item<T> = _table.peekFirst()
+        override fun peekFirst(): Item<T>? = _table.peekFirst()
 
-        override fun peekLast(): Item<T> = _table.peekLast()
+        override fun peekLast(): Item<T>? = _table.peekLast()
 
         override val size: Int
             get() = _table.size
 
         override fun iterator(): Iterator<Item<T>> = _table.iterator()
+
+        override fun toString(): String {
+            return "Deque(size=$size)" +
+                    "First 10: " + _table.take(10).joinToString(prefix = "[", postfix = "]") +
+                    "Last 10: " + _table.drop(max(0, size - 10)).take(10).joinToString(prefix = "[", postfix = "]")
+
+        }
     }
 }

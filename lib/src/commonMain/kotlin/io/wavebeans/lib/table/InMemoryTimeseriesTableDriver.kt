@@ -6,8 +6,8 @@ import kotlin.reflect.KClass
 internal data class Item<T : Any>(val timeMarker: TimeMeasure, val value: T)
 
 interface Deque<T> {
-    fun peekFirst(): T
-    fun peekLast() :T
+    fun peekFirst(): T?
+    fun peekLast() : T?
     val size: Int
     fun iterator(): Iterator<T>
 

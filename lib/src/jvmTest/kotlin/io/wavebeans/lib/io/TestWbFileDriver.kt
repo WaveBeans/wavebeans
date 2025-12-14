@@ -1,7 +1,7 @@
 package io.wavebeans.lib.io
 
-import io.wavebeans.fs.core.WbFile
-import io.wavebeans.fs.core.WbFileDriver
+import io.wavebeans.lib.io.WbFile
+import io.wavebeans.lib.io.WbFileDriver
 import io.wavebeans.lib.URI
 import io.wavebeans.lib.io.TestWbFileDriver.Companion.driver
 import io.wavebeans.lib.table.ConcurrentHashMap
@@ -17,6 +17,8 @@ data class TestFile(val url: String) {
     fun readText(): String? {
         return driver.fs[url]?.decodeToString()
     }
+
+    fun toURI(): URI = URI(url)
 }
 
 class TestWbFileDriver(val fs: MutableMap<String, ByteArray>) : WbFileDriver {
@@ -46,7 +48,7 @@ class TestWbFileDriver(val fs: MutableMap<String, ByteArray>) : WbFileDriver {
 
         fun listFiles(dir: String): List<TestFile> {
             return driver.fs.keys
-                    .filter { it.startsWith("test:///${dir.trimEnd('/')}/") }
+                    .filter { it.startsWith("test://${dir.trimEnd('/')}/") }
                     .map { TestFile(it) }
         }
 

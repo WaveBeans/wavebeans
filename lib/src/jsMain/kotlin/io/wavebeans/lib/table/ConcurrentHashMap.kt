@@ -1,6 +1,6 @@
 package io.wavebeans.lib.table
 
-actual class ConcurrentHashMap<K, V> : MutableMap<K, V> {
+actual class ConcurrentHashMap<K : Any, V : Any> : MutableMap<K, V> {
     private val map = hashMapOf<K, V>()
 
     actual override val entries: MutableSet<MutableMap.MutableEntry<K, V>>

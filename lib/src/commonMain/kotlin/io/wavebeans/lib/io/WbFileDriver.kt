@@ -1,7 +1,7 @@
-package io.wavebeans.fs.core
+package io.wavebeans.lib.io
 
-import io.wavebeans.fs.core.WbFileDriver.Companion.instance
-import io.wavebeans.fs.core.WbFileDriver.Companion.registerDriver
+import io.wavebeans.lib.io.WbFileDriver.Companion.instance
+import io.wavebeans.lib.io.WbFileDriver.Companion.registerDriver
 import io.wavebeans.lib.URI
 import io.wavebeans.lib.table.ConcurrentHashMap
 
@@ -52,7 +52,7 @@ interface WbFileDriver {
          */
         fun instance(scheme: String): WbFileDriver =
                 registry[scheme.lowercase()]
-                        ?: throw IllegalArgumentException("Scheme $scheme can be found among registered $registry")
+                        ?: throw IllegalArgumentException("Scheme `$scheme` is not found among registered $registry")
 
         /**
          * Creates the file based on the scheme from URI [URI.scheme].

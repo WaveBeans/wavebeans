@@ -12,7 +12,7 @@ interface Bean<T : Any> {
     val parameters: BeanParams
 
     val type: String
-        get() = this::class.simpleName!!
+        get() = this::class.className()
 
 }
 

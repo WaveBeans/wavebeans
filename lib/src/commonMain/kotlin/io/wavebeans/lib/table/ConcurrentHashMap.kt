@@ -1,6 +1,6 @@
 package io.wavebeans.lib.table
 
-expect class ConcurrentHashMap<K, V>() : MutableMap<K, V> {
+expect class ConcurrentHashMap<K: Any, V: Any>() : MutableMap<K, V> {
     fun putIfAbsent(k: K, v: V): V?
     override val keys: MutableSet<K>
     override val values: MutableCollection<V>

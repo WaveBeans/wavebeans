@@ -77,12 +77,11 @@ class WavInput(
     private var cnt: Content? = null
 
     private fun readContent(): Content {
-        TODO()
-//        val source = WbFileDriver.createFile(URI(params.uri)).createWbFileInputStream()
-//        val (descriptor, buf) = WavFileReader(source).read()
-//        val content = Content(descriptor.dataSize, descriptor.bitDepth, buf, descriptor.sampleRate)
-//        cnt = content
-//        return content
+        val source = WbFileDriver.createFile(URI(params.uri)).createWbFileInputStream()
+        val (descriptor, buf) = WavFileReader(source).read()
+        val content = Content(descriptor.dataSize, descriptor.bitDepth, buf, descriptor.sampleRate)
+        cnt = content
+        return content
     }
 
     override val desiredSampleRate: Float? by lazy {

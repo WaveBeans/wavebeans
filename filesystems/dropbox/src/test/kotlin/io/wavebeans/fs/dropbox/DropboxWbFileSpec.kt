@@ -5,10 +5,9 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import io.kotest.common.ExperimentalKotest
 import io.kotest.core.spec.style.DescribeSpec
-import io.wavebeans.fs.core.WbFileDriver
+import io.wavebeans.lib.io.WbFileDriver
 import io.wavebeans.lib.URI
 import io.wavebeans.lib.io.bufferedReader
-import io.wavebeans.lib.io.use
 
 @OptIn(ExperimentalKotest::class)
 class DropboxWbFileSpec : DescribeSpec({

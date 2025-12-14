@@ -11,26 +11,15 @@ plugins {
 }
 
 allprojects {
-
     repositories {
         mavenCentral()
     }
 }
 
-//kotlin {
-//    jvmToolchain(11)
-//    jvm {
-//        compilerOptions {
-//            freeCompilerArgs.add("-Xlambdas=class")
-//        }
-//    }
-//    js { browser { } }
-//}
-
 subprojects {
 
     if (name == "lib") {
-        apply(plugin = "kotlin-multiplatform")
+        // it's a multiplatform project and defined independently
         return@subprojects
     }
 
