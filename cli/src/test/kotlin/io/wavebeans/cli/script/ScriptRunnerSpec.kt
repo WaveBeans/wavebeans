@@ -114,7 +114,7 @@ class ScriptRunnerSpec : DescribeSpec({
                     assertThat(runner.interrupt(true), "there was something to interrupt")
                         .isTrue()
 
-                    assertThat { runner.awaitForResult(timeout = 100) }
+                    assertThat(runCatching { runner.awaitForResult(timeout = 100) })
                         .isFailure()
                         .isInstanceOf(CancellationException::class)
 
@@ -132,7 +132,7 @@ class ScriptRunnerSpec : DescribeSpec({
                         noSuchMethod()
                     """.trimIndent()
 
-                assertThat { mode.eval(script) }
+                assertThat(runCatching { mode.eval(script) })
                     .isFailure()
                     .message().isNotNull().contains("noSuchMethod")
             }

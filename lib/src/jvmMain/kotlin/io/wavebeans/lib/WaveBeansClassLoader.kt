@@ -28,7 +28,7 @@ actual object WaveBeansClassLoader {
 
     actual fun addClassLoader(classLoader: ClassLoader) {
         if (!classLoaders.contains(classLoader)) {
-            log.debug {
+            log.trace {
                 "Setting new class loader $classLoader from:\n" +
                         Thread.currentThread().stackTrace
                             .drop(1)

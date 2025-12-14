@@ -10,7 +10,8 @@ import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.*
 
 fun <T : Any, R : Any> BeanStream<T>.map(transform: (T) -> R): BeanStream<R> = this.map(wrap(transform))
-fun <T : Any, R : Any> BeanStream<T>.map(transform: Fn<T, R>): BeanStream<R> = MapStream(this, MapStreamParams(transform))
+fun <T : Any, R : Any> BeanStream<T>.map(transform: Fn<T, R>): BeanStream<R> =
+    MapStream(this, MapStreamParams(transform))
 
 object MapStreamParamsSerializer : KSerializer<MapStreamParams<*, *>> {
 
@@ -38,15 +39,14 @@ object MapStreamParamsSerializer : KSerializer<MapStreamParams<*, *>> {
             encodeSerializableElement(descriptor, 0, FnSerializer, value.transform)
         }
     }
-
 }
 
 @Serializable(with = MapStreamParamsSerializer::class)
 data class MapStreamParams<T : Any, R : Any>(val transform: Fn<T, R>) : BeanParams
 
 class MapStream<T : Any, R : Any>(
-        override val input: BeanStream<T>,
-        override val parameters: MapStreamParams<T, R>
+    override val input: BeanStream<T>,
+    override val parameters: MapStreamParams<T, R>
 ) : AbstractOperationBeanStream<T, R>(input), AlterBean<T, R> {
 
     companion object {

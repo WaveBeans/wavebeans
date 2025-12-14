@@ -112,13 +112,10 @@ inline fun <reified S : BeanStream<T>, T : Any> S.resample(
 ): S {
     val streamType = this
     return when(streamType) {
-        is BeanStream<*> ->
-            ResampleBeanStream(this, ResampleStreamParams(to, resampleFn)) as S
-
         is FiniteStream<*> ->
             ResampleFiniteStream(this as FiniteStream<T>, ResampleStreamParams(to, resampleFn)) as S
-
-        else -> throw UnsupportedOperationException("Type $streamType is not supported for resampling")
+        is BeanStream<*> ->
+            ResampleBeanStream(this, ResampleStreamParams(to, resampleFn)) as S
     }
 }
 
