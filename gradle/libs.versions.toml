@@ -61,6 +61,8 @@ dropbox-core-sdk = { module = "com.dropbox.core:dropbox-core-sdk", version.ref =
 javax-annotation-api = { module = "javax.annotation:javax.annotation-api", version.ref = "javax-annotation" }
 
 kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
+kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
+kotest-framework-engine = { module = "io.kotest:kotest-framework-engine", version.ref = "kotest" }
 
 protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "protobuf" }
 protobuf-java-util = { module = "com.google.protobuf:protobuf-java-util", version.ref = "protobuf" }

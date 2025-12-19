@@ -6,18 +6,27 @@ plugins {
 
 kotlin {
     jvm { }
-    js(IR) { browser() }
+    js(IR) {
+        nodejs {
+            testTask {
+                useMocha()
+            }
+        }
+        browser { testTask { useKarma { useChromeHeadless() } } }
+    }
     compilerOptions {
         freeCompilerArgs.add("-Xexpect-actual-classes")
         freeCompilerArgs.add("-Xlambdas=class")
     }
 
-    tasks.withType<Test> {
-        useJUnitPlatform()
+    tasks.withType<AbstractTestTask> {
         testLogging {
             events("passed", "skipped", "failed")
             showStandardStreams = true
         }
+    }
+    tasks.withType<Test> {
+        useJUnitPlatform()
         // that attempts to fix flaky tests once and for all
         retry {
             maxRetries.set(3)
@@ -41,6 +50,17 @@ kotlin {
         }
         commonTest {
         }
+        jsMain {
+            dependencies {
+                implementation(libs.kotlin.stdlib)
+            }
+        }
+        jsTest {
+            dependencies {
+                // Use kotlin.test for JS
+                implementation(kotlin("test-js"))
+            }
+        }
         jvmMain {
             dependencies {
                 implementation(libs.kotlin.stdlib.jdk8)
@@ -55,15 +75,6 @@ kotlin {
                 implementation(libs.assertk)
                 implementation(libs.mockito.kotlin)
                 implementation(libs.kotlinx.coroutines.test)
-            }
-        }
-        jsMain {
-            dependencies {
-                implementation(libs.kotlin.stdlib)
-            }
-        }
-        jsTest {
-            dependencies {
             }
         }
     }
