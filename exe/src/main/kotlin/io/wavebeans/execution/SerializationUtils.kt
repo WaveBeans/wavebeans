@@ -2,6 +2,7 @@ package io.wavebeans.execution
 
 import io.wavebeans.execution.distributed.AnySerializer
 import io.wavebeans.execution.serializer.InputParamsSerializer
+import io.wavebeans.execution.serializer.MapStreamParamsSerializer
 import io.wavebeans.lib.BeanParams
 import io.wavebeans.lib.NoParams
 import io.wavebeans.lib.io.*

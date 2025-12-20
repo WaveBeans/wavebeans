@@ -85,6 +85,12 @@ fun SerializersModuleBuilder.beanParams() {
 }
 ```
 
+#### Technical Debt
+
+The following items are temporary measures introduced during the migration and should be resolved once the migration is complete:
+
+- [ ] Remove deprecated `BeanStream<T>.map(transform: Fn<T, R>)` in `MapStream.kt`. It is currently kept for compatibility with components not yet migrated (e.g., `ChangeAmplitudeSampleStream`).
+
 #### Classes to Migrate
 
 - [ ] `io.wavebeans.lib.stream.SincResampleFn`
@@ -106,7 +112,8 @@ fun SerializersModuleBuilder.beanParams() {
 - [ ] `io.wavebeans.lib.stream.FlattenWindowStream`
 - [ ] `io.wavebeans.lib.stream.FunctionMergedStreamParams`
 - [ ] `io.wavebeans.lib.stream.FunctionMergedStream`
-- [ ] `io.wavebeans.lib.stream.MapStreamParams`
+- [x] `io.wavebeans.lib.stream.MapStreamParams`
+- [x] `io.wavebeans.lib.stream.MapStream`
 - [ ] `io.wavebeans.lib.io.WavFileOutputParams`
 - [ ] `io.wavebeans.lib.io.WavFileOutput`
 - [ ] `io.wavebeans.lib.io.WavPartialFileOutput`
