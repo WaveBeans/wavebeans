@@ -126,7 +126,7 @@ class ResampleStreamSpec : DescribeSpec({
                 if (i < 5) (i * 10).toInt() else null
             }
 
-            val mix = resampled.merge(generator) { (a, b) -> requireNotNull(a); requireNotNull(b); a + b }
+            val mix = resampled.merge(generator) { a, b -> requireNotNull(a); requireNotNull(b); a + b }
             assertThat(mix.toList(1000.0f)).isListOf(
                 0 * 2 + 0 * 2 + 0,
                 1 * 2 + 1 * 2 + 10,

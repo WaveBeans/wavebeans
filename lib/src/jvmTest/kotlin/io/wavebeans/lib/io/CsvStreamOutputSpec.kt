@@ -126,7 +126,7 @@ class CsvStreamOutputSpec : DescribeSpec({
                     )
 
                 seqStream()
-                    .merge(input { x, _ -> x }) { (s, i) -> requireNotNull(s); requireNotNull(i); IndexedSample(s, i) }
+                    .merge(input { x, _ -> x }) { s, i -> requireNotNull(s); requireNotNull(i); IndexedSample(s, i) }
                     .map {
                         if (it.index > 0 && it.index % 100 == 0L) {
                             it.sample.withOutputSignal(FlushOutputSignal, it.index / 100)
@@ -167,7 +167,7 @@ class CsvStreamOutputSpec : DescribeSpec({
                     )
 
                 seqStream()
-                    .merge(input { x, _ -> x }) { (s, i) -> requireNotNull(s); requireNotNull(i); IndexedSample(s, i) }
+                    .merge(input { x, _ -> x }) { s, i -> requireNotNull(s); requireNotNull(i); IndexedSample(s, i) }
                     .map {
                         if (it.index > 0 && it.index % 100 == 0L) {
                             val chunkIdx = it.index / 100

@@ -13,7 +13,17 @@ Modify the classes in the `lib` module to use standard Kotlin functional interfa
 - Change constructor parameters and properties from `Fn<T, R>` to `(T) -> R` (or appropriate functional type).
 - Update the implementation to call the lambda directly instead of using `.apply()`.
 - Keep the `BeanParams` classes and other structures, but update their properties to use lambdas.
+- If the component needs to access parameters from the environment (e.g., multiplier in `changeAmplitude`), it should use `ExecutionScope`.
+- `ExecutionScope` should be added to the `BeanParams` class and passed to the lambda as a receiver: `ExecutionScope.(T) -> R`.
 - If the `BeanParams` had a custom serializer within the `lib` module, it should be moved or replaced by a more general approach, as lambdas cannot be directly serialized by `kotlinx.serialization` without extra help.
+
+Example with `ExecutionScope` (`MapStreamParams` in `io.wavebeans.lib.stream.MapStream`):
+```kotlin
+class MapStreamParams<T : Any, R : Any>(
+    val scope: ExecutionScope,
+    val transform: ExecutionScope.(T) -> R
+) : BeanParams
+```
 
 Example (`InputParams` in `io.wavebeans.lib.io.FunctionInput`):
 ```kotlin
@@ -35,8 +45,43 @@ class InputParams<T : Any>(
 Since lambdas are not serializable, create a custom `KSerializer` in the `exe` module (typically under `io.wavebeans.execution.serializer`) that wraps the lambda into an `Fn` during serialization and unwraps it during deserialization.
 
 - The `serialize` method should use `io.wavebeans.lib.wrap()` to convert the lambda to an `Fn`.
+- If using `ExecutionScope`, ensure it is also serialized (using `ExecutionScope.serializer()`) and passed to `wrap()` if necessary, or handled in the lambda returned by `deserialize`.
 - The `deserialize` method should decode the `Fn` and then return a lambda that calls `fn.apply()`.
 - Use `FnSerializer` to handle the actual serialization/deserialization of the wrapped `Fn`.
+
+Example with `ExecutionScope` (`MapStreamParamsSerializer` in `io.wavebeans.execution.serializer`):
+```kotlin
+object MapStreamParamsSerializer : KSerializer<MapStreamParams<*, *>> {
+
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(MapStreamParams::class.className()) {
+        element("scope", ExecutionScope.serializer().descriptor)
+        element("transformFn", FnSerializer.descriptor)
+    }
+
+    override fun deserialize(decoder: Decoder): MapStreamParams<*, *> {
+        return decoder.decodeStructure(descriptor) {
+            lateinit var fn: Fn<Any, Any>
+            lateinit var scope: ExecutionScope
+            loop@ while (true) {
+                when (val i = decodeElementIndex(descriptor)) {
+                    CompositeDecoder.DECODE_DONE -> break@loop
+                    0 -> scope = decodeSerializableElement(descriptor, i, ExecutionScope.serializer())
+                    1 -> fn = decodeSerializableElement(descriptor, i, FnSerializer) as Fn<Any, Any>
+                    else -> throw SerializationException("Unknown index $i")
+                }
+            }
+            MapStreamParams<Any, Any>(scope) { fn.apply(it) }
+        }
+    }
+
+    override fun serialize(encoder: Encoder, value: MapStreamParams<*, *>) {
+        encoder.encodeStructure(descriptor) {
+            encodeSerializableElement(descriptor, 0, ExecutionScope.serializer(), value.scope)
+            encodeSerializableElement(descriptor, 1, FnSerializer, wrap(value.transform))
+        }
+    }
+}
+```
 
 Example (`InputParamsSerializer` in `io.wavebeans.execution.serializer`):
 ```kotlin
@@ -110,8 +155,9 @@ The following items are temporary measures introduced during the migration and s
 - [ ] `io.wavebeans.lib.stream.FlattenStream`
 - [ ] `io.wavebeans.lib.stream.FlattenWindowStreamsParams` (in `io.wavebeans.lib.stream.FlattenWindowStream`)
 - [ ] `io.wavebeans.lib.stream.FlattenWindowStream`
-- [ ] `io.wavebeans.lib.stream.FunctionMergedStreamParams`
-- [ ] `io.wavebeans.lib.stream.FunctionMergedStream`
+- [x] `io.wavebeans.lib.stream.FunctionMergedStreamParams`
+- [x] `io.wavebeans.lib.stream.FunctionMergedStream`
+- [x] Support `ExecutionScope` in `map`, `merge`, `FunctionMergedStream` and `MapStream`.
 - [x] `io.wavebeans.lib.stream.MapStreamParams`
 - [x] `io.wavebeans.lib.stream.MapStream`
 - [ ] `io.wavebeans.lib.io.WavFileOutputParams`

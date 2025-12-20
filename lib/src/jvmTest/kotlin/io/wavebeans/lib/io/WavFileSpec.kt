@@ -97,7 +97,7 @@ class WavFileSpec : DescribeSpec({
             }
             val uri = "test://${outputDir}/test.wav"
             val o = input
-                .merge(input { x, _ -> x }) { (sample, index) ->
+                .merge(input { x, _ -> x }) { sample, index ->
                     checkNotNull(sample)
                     checkNotNull(index)
                     IndexedSample(sample, index)
@@ -164,7 +164,7 @@ class WavFileSpec : DescribeSpec({
             val o = input
                 .window(windowSize)
                 .map { sampleVectorOf(it) }
-                .merge(input { x, _ -> x }) { (sampleVector, index) ->
+                .merge(input { x, _ -> x }) { sampleVector, index ->
                     checkNotNull(sampleVector)
                     checkNotNull(index)
                     IndexedSampleVector(sampleVector, index)
@@ -238,7 +238,7 @@ class WavFileSpec : DescribeSpec({
             }
             val uri = "test://${outputDir}/test.wav"
             val o = input
-                .merge(input { x, _ -> x }) { (sample, index) ->
+                .merge(input { x, _ -> x }) { sample, index ->
                     checkNotNull(sample)
                     checkNotNull(index)
                     IndexedSample(sample, index)
@@ -313,7 +313,7 @@ class WavFileSpec : DescribeSpec({
             }
             val uri = "test://${outputDir}/test.wav"
             val o = input
-                .merge(input { x, _ -> x }) { (sample, index) ->
+                .merge(input { x, _ -> x }) { sample, index ->
                     checkNotNull(sample)
                     checkNotNull(index)
                     IndexedSample(sample, index)
@@ -396,7 +396,7 @@ class WavFileSpec : DescribeSpec({
             val suffix: (Long?) -> String = { a -> "-${a ?: 0L}" }
             val uri = "test://${outputDir}/test.wav"
             val o = input
-                .merge(input { x, _ -> x }) { (sample, index) ->
+                .merge(input { x, _ -> x }) { sample, index ->
                     checkNotNull(sample)
                     checkNotNull(index)
                     IndexedSample(sample, index)

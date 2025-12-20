@@ -125,7 +125,7 @@ class DistributedOverseerSpec : DescribeSpec({
                 val input = 440.sine().map { MySample(InnerSample(abs(it))) }
                     .merge(
                         with = 880.sine()
-                            .map { MySample(InnerSample(it)) }) { (a, b) -> MySample(InnerSample(a?.v?.v + b?.v?.v)) }
+                            .map { MySample(InnerSample(it)) }) { a, b -> MySample(InnerSample(a?.v?.v + b?.v?.v)) }
                 val output1 = input
                     .trim(500)
                     .toCsv(

@@ -190,11 +190,8 @@ class TopologySerializerSpec : DescribeSpec({
 
         val factor = 2 + 2 * 2
 
-        class MergeFn(initParams: FnInitParameters) : Fn<Pair<Sample?, Sample?>, Sample?>(initParams) {
-            override fun apply(argument: Pair<Sample?, Sample?>): Sample? {
-                val f = initParams["factor"]?.toInt()!!
-                return argument.first ?: (ZeroSample * f + argument.second)
-            }
+        fun merge(f: Int, argument: Pair<Sample?, Sample?>): Sample? {
+            return argument.first ?: (ZeroSample * f + argument.second)
         }
 
         val functions = mapOf(
@@ -202,14 +199,14 @@ class TopologySerializerSpec : DescribeSpec({
                 input<Sample> { _, _ -> fail("unreachable") }
                     .merge(
                         with = input<Sample> { _, _ -> fail("unreachable") }
-                    ) { (x, y) -> x ?: (ZeroSample + y) }
+                    ) { x, y -> x ?: (ZeroSample + y) }
                     .toDevNull()
             ),
             "Sample merge with Fn and using outside data" to listOf(
                 input<Sample> { _, _ -> fail("unreachable") }
                     .merge(
                         with = input { _, _ -> fail("unreachable") },
-                        merge = MergeFn(FnInitParameters().add("factor", factor.toString()))
+                        merge = { x, y -> merge(factor, x to y) }
                     )
                     .toDevNull()
             ),

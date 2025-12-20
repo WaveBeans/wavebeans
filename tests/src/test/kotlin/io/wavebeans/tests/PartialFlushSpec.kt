@@ -87,7 +87,7 @@ class PartialFlushSpec : DescribeSpec({
                     val timeStreamMs = input { i, sampleRate -> i / (sampleRate / 1000.0).toLong() }
                     val input = 440.sine()
                     val o = input
-                        .merge(timeStreamMs) { (signal, time) ->
+                        .merge(timeStreamMs) { signal, time ->
                             checkNotNull(signal)
                             checkNotNull(time)
                             signal to time
@@ -111,7 +111,7 @@ class PartialFlushSpec : DescribeSpec({
                     evaluate(o, sampleRate, locateFacilitators())
 
                     assertThat(flushCounter.collect())
-                        .prop("flushesCount") { v -> v.map { it.value }.sum() }
+                        .prop("flushesCount") { v -> v.sumOf { it.value } }
                         .isCloseTo(19.0, 1e-16)
 
                     assertThat(gateState.collect(), "At the end the gate is closed")
@@ -173,7 +173,7 @@ class PartialFlushSpec : DescribeSpec({
                     val windowSize = 10
                     val o = (sample1..silence1..sample2..silence2..sample3)
                         .window(windowSize)
-                        .merge(input { x, _ -> x }.trim(1800L / windowSize)) { (window, index) ->
+                        .merge(input { x, _ -> x }.trim(1800L / windowSize)) { window, index ->
                             checkNotNull(index)
                             window to index
                         }
@@ -348,7 +348,7 @@ class PartialFlushSpec : DescribeSpec({
                     val windowSize = 10
                     val o = (sample1..silence1..sample2..silence2..sample3)
                         .window(windowSize)
-                        .merge(input { x, _ -> x }.trim(1800L / windowSize)) { (window, index) ->
+                        .merge(input { x, _ -> x }.trim(1800L / windowSize)) { window, index ->
                             checkNotNull(index)
                             window to index
                         }

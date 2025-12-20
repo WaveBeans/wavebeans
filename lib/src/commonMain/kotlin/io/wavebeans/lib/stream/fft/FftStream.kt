@@ -18,7 +18,7 @@ import kotlinx.serialization.Serializable
  */
 fun BeanStream<Window<Sample>>.fft(binCount: Int): BeanStream<FftSample> =
     FftStream(
-        this.merge(input { x, _ -> x }) { (window, index) ->
+        this.merge(input { x, _ -> x }) { window, index ->
             requireNotNull(index)
             window?.let { index to it }
         },

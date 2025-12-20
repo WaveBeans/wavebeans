@@ -233,7 +233,7 @@ class MultiPartitionCorrectnessSpec : DescribeSpec({
             val timeTickInput = input { x, sampleRate -> sampleOf(x.toDouble() / sampleRate) }
             val o = listOf(
                 220.sine()
-                    .merge(with = timeTickInput) { (x, y) ->
+                    .merge(with = timeTickInput) { x, y ->
                         x + sampleOf(1.0 * sin((y ?: ZeroSample) * 2.0 * PI * 440.0))
                     }
                     .trim(100)

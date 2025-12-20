@@ -1,62 +1,23 @@
 package io.wavebeans.lib.stream
 
 import io.wavebeans.lib.*
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationException
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.descriptors.buildClassSerialDescriptor
-import kotlinx.serialization.encoding.*
-import io.wavebeans.lib.AnyBean
-import io.wavebeans.lib.BeanParams
-import io.wavebeans.lib.BeanStream
-import io.wavebeans.lib.Fn
-import io.wavebeans.lib.MultiAlterBean
-import io.wavebeans.lib.SinglePartitionBean
-import io.wavebeans.lib.wrap
-
-fun <T1 : Any, T2 : Any, R : Any> BeanStream<T1>.merge(with: BeanStream<T2>, merge: (Pair<T1?, T2?>) -> R?): BeanStream<R> =
-        this.merge(with, wrap(merge))
 
 fun <T1 : Any, T2 : Any, R : Any> BeanStream<T1>.merge(
     with: BeanStream<T2>,
-    merge: Fn<Pair<T1?, T2?>, R?>
+    merge: ExecutionScope.(T1?, T2?) -> R?
 ): BeanStream<R> =
-    FunctionMergedStream(this, with, FunctionMergedStreamParams(merge))
+    FunctionMergedStream(this, with, FunctionMergedStreamParams(EmptyScope) { (a, b) -> merge(a, b) })
 
+fun <T1 : Any, T2 : Any, R : Any> BeanStream<T1>.merge(
+    with: BeanStream<T2>,
+    scope: ExecutionScope,
+    merge: ExecutionScope.(T1?, T2?) -> R?
+): BeanStream<R> =
+    FunctionMergedStream(this, with, FunctionMergedStreamParams(scope) { (a, b) -> merge(a, b) })
 
-object FunctionMergedStreamParamsSerializer : KSerializer<FunctionMergedStreamParams<*, *, *>> {
-
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor(FunctionMergedStreamParams::class.className()) {
-            element("mergeFn", FnSerializer.descriptor)
-        }
-
-    override fun deserialize(decoder: Decoder): FunctionMergedStreamParams<*, *, *> {
-        return decoder.decodeStructure(descriptor) {
-            lateinit var fn: Fn<*, *>
-            loop@ while (true) {
-                when (val i = decodeElementIndex(descriptor)) {
-                    CompositeDecoder.DECODE_DONE -> break@loop
-                    0 -> fn = decodeSerializableElement(descriptor, i, FnSerializer)
-                    else -> throw SerializationException("Unknown index $i")
-                }
-            }
-            @Suppress("UNCHECKED_CAST")
-            FunctionMergedStreamParams(fn as Fn<Pair<Any?, Any?>, Any?>)
-        }
-    }
-
-    override fun serialize(encoder: Encoder, value: FunctionMergedStreamParams<*, *, *>) {
-        encoder.encodeStructure(descriptor) {
-            encodeSerializableElement(descriptor, 0, FnSerializer, value.merge)
-        }
-    }
-}
-
-//@Serializable(with = FunctionMergedStreamParamsSerializer::class)
 class FunctionMergedStreamParams<T1 : Any, T2 : Any, R : Any>(
-    val merge: Fn<Pair<T1?, T2?>, R?>
+    val scope: ExecutionScope,
+    val merge: ExecutionScope.(Pair<T1?, T2?>) -> R?
 ) : BeanParams
 
 @Suppress("UNCHECKED_CAST")
@@ -99,7 +60,7 @@ class FunctionMergedStream<T1 : Any, T2 : Any, R : Any>(
                 if (nextEl == null) {
                     val s = if (sourceIterator.hasNext()) sourceIterator.next() else null
                     val m = if (mergeIterator.hasNext()) mergeIterator.next() else null
-                    nextEl = parameters.merge.apply(Pair(s as T1?, m as T2?))
+                    nextEl = parameters.merge.invoke(parameters.scope, Pair(s as T1?, m as T2?))
                 }
             }
         }.asSequence()
