@@ -2,20 +2,17 @@ package io.wavebeans.lib.stream
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.wavebeans.lib.*
-import kotlinx.serialization.Serializable
 
-fun <T : Any, R : Any> BeanStream<T>.map(transform: (T) -> R): BeanStream<R> =
-    MapStream(this, MapStreamParams(transform))
+fun <T : Any, R : Any> BeanStream<T>.map(transform: ExecutionScope.(T) -> R): BeanStream<R> =
+    MapStream(this, MapStreamParams(EmptyScope, transform))
 
-@Deprecated(
-    message = "Use map(transform: (T) -> R) instead. This will be removed once all components are migrated off Fn.",
-    replaceWith = ReplaceWith("this.map { transform.apply(it) }")
-)
-fun <T : Any, R : Any> BeanStream<T>.map(transform: Fn<T, R>): BeanStream<R> =
-    this.map { transform.apply(it) }
+fun <T : Any, R : Any> BeanStream<T>.map(scope: ExecutionScope, transform: ExecutionScope.(T) -> R): BeanStream<R> =
+    MapStream(this, MapStreamParams(scope, transform))
 
-@Serializable
-data class MapStreamParams<T : Any, R : Any>(val transform: (T) -> R) : BeanParams
+data class MapStreamParams<T : Any, R : Any>(
+    val scope: ExecutionScope,
+    val transform: ExecutionScope.(T) -> R
+) : BeanParams
 
 class MapStream<T : Any, R : Any>(
     override val input: BeanStream<T>,
@@ -28,7 +25,7 @@ class MapStream<T : Any, R : Any>(
 
     override fun operationSequence(input: Sequence<T>, sampleRate: Float): Sequence<R> {
         log.trace { "[$this] Initiating sequence Map(input = $input,parameters = $parameters)" }
-        return input.map { parameters.transform.invoke(it) }
+        return input.map { parameters.transform.invoke(parameters.scope, it) }
     }
 
 }

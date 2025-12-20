@@ -28,7 +28,8 @@ interface BeanStream<T : Any> : Bean<T> {
      * Measures the length in the sequence
      * **Caution: it reads the whole stream, do not expect execution to end on infinite streams**
      */
-    fun length(sampleRate: Float, timeUnit: TimeUnit = TimeUnit.MILLISECONDS): Long = samplesCountToLength(samplesCount(sampleRate), sampleRate, timeUnit)
+    fun length(sampleRate: Float, timeUnit: TimeUnit = TimeUnit.MILLISECONDS): Long =
+        samplesCountToLength(samplesCount(sampleRate), sampleRate, timeUnit)
 
     /**
      * Defines the sample rate the bean desires to stream in, or `null` if it doesn't matter, it can work with any.

@@ -7,6 +7,7 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.prop
 import assertk.fail
 import io.kotest.core.spec.style.DescribeSpec
+import io.wavebeans.fs.local.LocalWbFileDriver
 import io.wavebeans.lib.*
 import io.wavebeans.lib.io.*
 import io.wavebeans.lib.stream.map
@@ -38,6 +39,7 @@ class PartialFlushSpec : DescribeSpec({
     }
 
     beforeSpec {
+        WbFileDriver.registerDriver("file", LocalWbFileDriver)
         Thread { startFacilitator(ports[0]) }.start()
         Thread { startFacilitator(ports[1]) }.start()
         waitForFacilitatorToStart("localhost:${ports[0]}")
@@ -47,6 +49,7 @@ class PartialFlushSpec : DescribeSpec({
     afterSpec {
         terminateFacilitator("localhost:${ports[0]}")
         terminateFacilitator("localhost:${ports[1]}")
+        WbFileDriver.unregisterDriver("file")
     }
 
     data class Param(
@@ -81,7 +84,7 @@ class PartialFlushSpec : DescribeSpec({
                         bytesProcessedOnOutputMetric.collector(locateFacilitators(), 0, 1000).attachAndRegister()
 
                     val sampleRate = 5000.0f
-                    val timeStreamMs = input { (i, sampleRate) -> i / (sampleRate / 1000.0).toLong() }
+                    val timeStreamMs = input { i, sampleRate -> i / (sampleRate / 1000.0).toLong() }
                     val input = 440.sine()
                     val o = input
                         .merge(timeStreamMs) { (signal, time) ->
@@ -161,8 +164,8 @@ class PartialFlushSpec : DescribeSpec({
                         bytesProcessedOnOutputMetric.collector(locateFacilitators(), 0, 1000).attachAndRegister()
 
                     val sampleRate = 500.0f
-                    val silence1 = input { ZeroSample }.trim(100)
-                    val silence2 = input { ZeroSample }.trim(200)
+                    val silence1 = input { _, _ -> ZeroSample }.trim(100)
+                    val silence2 = input { _, _ -> ZeroSample }.trim(200)
                     val sample1 = 40.sine().trim(500)
                     val sample2 = 20.sine().trim(500)
                     val sample3 = 80.sine().trim(500)
@@ -170,13 +173,13 @@ class PartialFlushSpec : DescribeSpec({
                     val windowSize = 10
                     val o = (sample1..silence1..sample2..silence2..sample3)
                         .window(windowSize)
-                        .merge(input { it.first }.trim(1800L / windowSize)) { (window, index) ->
+                        .merge(input { x, _ -> x }.trim(1800L / windowSize)) { (window, index) ->
                             checkNotNull(index)
                             window to index
                         }
                         .map {
                             val noiseLevel = 1e-2
-                            val signal = if (it.first?.elements?.map(::abs)?.average() ?: 0.0 < noiseLevel) {
+                            val signal = if ((it.first?.elements?.map(::abs)?.average() ?: 0.0) < noiseLevel) {
                                 CloseGateOutputSignal
                             } else {
                                 OpenGateOutputSignal
@@ -236,37 +239,35 @@ class PartialFlushSpec : DescribeSpec({
         }
 
         describe("End the stream on specific sample sequence") {
-            class SequenceDetectFn(initParameters: FnInitParameters) :
-                Fn<Window<Sample>, Managed<OutputSignal, Unit, SampleVector>>(initParameters) {
-
-                constructor(endSequence: List<Sample>) : this(FnInitParameters().addDoubles("endSequence", endSequence))
-
-                override fun apply(argument: Window<Sample>): Managed<OutputSignal, Unit, SampleVector> {
-                    val es = initParams.doubles("endSequence")
-                    val ei = argument.elements.iterator()
-                    var ai = es.iterator()
-                    var startedAt = -1
-                    var i = 0
-                    while (ei.hasNext() && ai.hasNext()) {
-                        val e = ei.next()
-                        val a = ai.next()
-                        if (a != e) {
-                            ai = es.iterator()
-                            startedAt = -1
-                        } else if (startedAt == -1) {
-                            startedAt = i
-                        }
-                        i++
+            fun sequenceDetectFun(
+                endSequence: List<Sample>,
+                argument: Window<Sample>
+            ): Managed<OutputSignal, Unit, SampleVector> {
+                val es = endSequence
+                val ei = argument.elements.iterator()
+                var ai = es.iterator()
+                var startedAt = -1
+                var i = 0
+                while (ei.hasNext() && ai.hasNext()) {
+                    val e = ei.next()
+                    val a = ai.next()
+                    if (a != e) {
+                        ai = es.iterator()
+                        startedAt = -1
+                    } else if (startedAt == -1) {
+                        startedAt = i
                     }
-
-                    if (ai.hasNext()) startedAt = -1
-
-                    return if (startedAt == -1) {
-                        sampleVectorOf(argument).withOutputSignal(NoopOutputSignal)
-                    } else {
-                        sampleVectorOf(argument.elements.subList(0, startedAt)).withOutputSignal(CloseOutputSignal)
-                    }
+                    i++
                 }
+
+                if (ai.hasNext()) startedAt = -1
+
+                return if (startedAt == -1) {
+                    sampleVectorOf(argument).withOutputSignal(NoopOutputSignal)
+                } else {
+                    sampleVectorOf(argument.elements.subList(0, startedAt)).withOutputSignal(CloseOutputSignal)
+                }
+
             }
 
             modes.forEach { (mode, locateFacilitators, evaluate) ->
@@ -280,11 +281,11 @@ class PartialFlushSpec : DescribeSpec({
                     val endSequence = listOf(1.5, 1.5, 1.5)
                     val endSignal = endSequence.input()
                     val signal = 80.sine().trim(1000)
-                    val noise = input { sampleOf(Random.nextInt()) }.trim(1000)
+                    val noise = input { _, _ -> sampleOf(Random.nextInt()) }.trim(1000)
 
                     val o = (signal..endSignal..noise)
                         .window(64)
-                        .map(SequenceDetectFn(endSequence))
+                        .map { sequenceDetectFun(endSequence, it) }
                         .toMono16bitWav("file://${outputDir.absolutePath}/sine.wav") {
                             "-${
                                 Random.nextInt().toString(36)
@@ -338,8 +339,8 @@ class PartialFlushSpec : DescribeSpec({
                         samplesSkippedOnOutputMetric.collector(locateFacilitators(), 0, 10).attachAndRegister()
 
                     val sampleRate = 500.0f
-                    val silence1 = input { ZeroSample }.trim(100)
-                    val silence2 = input { ZeroSample }.trim(200)
+                    val silence1 = input { _, _ -> ZeroSample }.trim(100)
+                    val silence2 = input { _, _ -> ZeroSample }.trim(200)
                     val sample1 = 40.sine().trim(500)
                     val sample2 = 20.sine().trim(500)
                     val sample3 = 80.sine().trim(500)
@@ -347,7 +348,7 @@ class PartialFlushSpec : DescribeSpec({
                     val windowSize = 10
                     val o = (sample1..silence1..sample2..silence2..sample3)
                         .window(windowSize)
-                        .merge(input { it.first }.trim(1800L / windowSize)) { (window, index) ->
+                        .merge(input { x, _ -> x }.trim(1800L / windowSize)) { (window, index) ->
                             checkNotNull(index)
                             window to index
                         }

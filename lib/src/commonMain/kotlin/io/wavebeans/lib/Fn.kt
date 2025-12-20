@@ -37,6 +37,7 @@ var fnWrapper: FnWrapper<Any?, Any?> = object : FnWrapper<Any?, Any?> {
 
     override fun wrap(fn: (Any?) -> Any?): Fn<Any?, Any?> {
         val id = idGenerator.incrementAndGet()
+        lambdaRegistry[id] = fn
         return AnyFn(id)
     }
 

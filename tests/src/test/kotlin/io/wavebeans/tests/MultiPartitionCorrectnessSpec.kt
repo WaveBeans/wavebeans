@@ -29,25 +29,25 @@ private val log = KotlinLogging.logger {}
 class MultiPartitionCorrectnessSpec : DescribeSpec({
 
     fun runInParallel(
-            outputs: List<StreamOutput<out Any>>,
-            threads: Int = 2,
-            partitions: Int = 2,
-            sampleRate: Float = 44100.0f
+        outputs: List<StreamOutput<out Any>>,
+        threads: Int = 2,
+        partitions: Int = 2,
+        sampleRate: Float = 44100.0f
     ): Long {
 
         val runTime = measureTimeMillis {
             MultiThreadedOverseer(outputs, threads, partitions).use { overseer ->
                 assertThat(
-                        overseer.eval(sampleRate)
-                                .map { it.get() }
-                                .also {
-                                    it
-                                            .mapNotNull { it.exception }
-                                            .map { log.error(it) { "Error during evaluation" }; it }
-                                            .firstOrNull()
-                                            ?.let { throw it }
-                                }
-                                .all { it.finished }
+                    overseer.eval(sampleRate)
+                        .map { it.get() }
+                        .also {
+                            it
+                                .mapNotNull { it.exception }
+                                .map { log.error(it) { "Error during evaluation" }; it }
+                                .firstOrNull()
+                                ?.let { throw it }
+                        }
+                        .all { it.finished }
                 ).isTrue()
             }
         }
@@ -56,22 +56,22 @@ class MultiPartitionCorrectnessSpec : DescribeSpec({
     }
 
     fun runLocally(
-            outputs: List<StreamOutput<out Any>>,
-            sampleRate: Float = 44100.0f
+        outputs: List<StreamOutput<out Any>>,
+        sampleRate: Float = 44100.0f
     ): Long {
         val runTime = measureTimeMillis {
             SingleThreadedOverseer(outputs).use { overseer ->
                 assertThat(
-                        overseer.eval(sampleRate)
-                                .map { it.get() }
-                                .also {
-                                    it
-                                            .mapNotNull { it.exception }
-                                            .map { log.error(it) { "Error during evaluation" }; it }
-                                            .firstOrNull()
-                                            ?.let { throw it }
-                                }
-                                .all { it.finished }
+                    overseer.eval(sampleRate)
+                        .map { it.get() }
+                        .also {
+                            it
+                                .mapNotNull { it.exception }
+                                .map { log.error(it) { "Error during evaluation" }; it }
+                                .firstOrNull()
+                                ?.let { throw it }
+                        }
+                        .all { it.finished }
                 ).isTrue()
             }
         }
@@ -94,17 +94,17 @@ class MultiPartitionCorrectnessSpec : DescribeSpec({
         val p2 = i2.changeAmplitude(0.0)
 
         val o1 = p1
-                .trim(length)
-                .toCsv("file://${f1.absolutePath}")
+            .trim(length)
+            .toCsv("file://${f1.absolutePath}")
         val pp = p1 + p2
         val o2 = pp
-                .trim(length)
-                .toCsv("file://${f2.absolutePath}")
+            .trim(length)
+            .toCsv("file://${f2.absolutePath}")
         val fft = pp
-                .trim(length)
-                .window(401)
-                .hamming()
-                .fft(512)
+            .trim(length)
+            .window(401)
+            .hamming()
+            .fft(512)
         val o3 = fft.magnitudeToCsv("file://${f3.absolutePath}")
         val o4 = fft.phaseToCsv("file://${f4.absolutePath}")
 
@@ -143,10 +143,10 @@ class MultiPartitionCorrectnessSpec : DescribeSpec({
         describe("Sample to Sample mapping") {
             val file = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
             val o = listOf(
-                    seqStream()
-                            .map { it * 2 }
-                            .trim(100)
-                            .toCsv("file://${file.absolutePath}")
+                seqStream()
+                    .map { it * 2 }
+                    .trim(100)
+                    .toCsv("file://${file.absolutePath}")
             )
 
             runInParallel(o)
@@ -164,11 +164,11 @@ class MultiPartitionCorrectnessSpec : DescribeSpec({
         describe("Window<Sample> to Sample mapping") {
             val file = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
             val o = listOf(
-                    seqStream()
-                            .window(10)
-                            .map { w -> w.elements.last() }
-                            .trim(100)
-                            .toCsv("file://${file.absolutePath}")
+                seqStream()
+                    .window(10)
+                    .map { w -> w.elements.last() }
+                    .trim(100)
+                    .toCsv("file://${file.absolutePath}")
             )
 
             runInParallel(o)
@@ -186,11 +186,11 @@ class MultiPartitionCorrectnessSpec : DescribeSpec({
         describe("Sample to Window<Sample> and back mapping") {
             val file = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
             val o = listOf(
-                    seqStream()
-                            .map { sample -> Window.ofSamples(10, 10, (0..9).map { sample }) }
-                            .map { window -> window.elements.first() }
-                            .trim(100)
-                            .toCsv("file://${file.absolutePath}")
+                seqStream()
+                    .map { sample -> Window.ofSamples(10, 10, (0..9).map { sample }) }
+                    .map { window -> window.elements.first() }
+                    .trim(100)
+                    .toCsv("file://${file.absolutePath}")
             )
 
             runInParallel(o)
@@ -210,9 +210,9 @@ class MultiPartitionCorrectnessSpec : DescribeSpec({
         describe("generating sinusoid") {
             val file = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
             val o = listOf(
-                    input { (x, sampleRate) -> sampleOf(1.0 * cos(x / sampleRate * 2.0 * PI * 440.0)) }
-                            .trim(100)
-                            .toCsv("file://${file.absolutePath}")
+                input { x, sampleRate -> sampleOf(1.0 * cos(x / sampleRate * 2.0 * PI * 440.0)) }
+                    .trim(100)
+                    .toCsv("file://${file.absolutePath}")
             )
 
             runInParallel(o)
@@ -230,14 +230,14 @@ class MultiPartitionCorrectnessSpec : DescribeSpec({
     describe("Function Merge") {
         describe("generating sinusoid and merging it with another function") {
             val file = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
-            val timeTickInput = input { (x, sampleRate) -> sampleOf(x.toDouble() / sampleRate) }
+            val timeTickInput = input { x, sampleRate -> sampleOf(x.toDouble() / sampleRate) }
             val o = listOf(
-                    220.sine()
-                            .merge(with = timeTickInput) { (x, y) ->
-                                x + sampleOf(1.0 * sin((y ?: ZeroSample) * 2.0 * PI * 440.0))
-                            }
-                            .trim(100)
-                            .toCsv("file://${file.absolutePath}")
+                220.sine()
+                    .merge(with = timeTickInput) { (x, y) ->
+                        x + sampleOf(1.0 * sin((y ?: ZeroSample) * 2.0 * PI * 440.0))
+                    }
+                    .trim(100)
+                    .toCsv("file://${file.absolutePath}")
             )
 
             runInParallel(o)
@@ -256,15 +256,15 @@ class MultiPartitionCorrectnessSpec : DescribeSpec({
         describe("generating sinusoid and storing it to csv") {
             val file = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
             val o = listOf(
-                    220.sine()
-                            .trim(100)
-                            .toCsv(
-                                    "file://${file.absolutePath}",
-                                    header = listOf("sample index", "sample value"),
-                                    elementSerializer = { (idx, _, sample) ->
-                                        listOf(idx.toString(), String.format("%.10f", sample))
-                                    }
-                            )
+                220.sine()
+                    .trim(100)
+                    .toCsv(
+                        "file://${file.absolutePath}",
+                        header = listOf("sample index", "sample value"),
+                        elementSerializer = { (idx, _, sample) ->
+                            listOf(idx.toString(), String.format("%.10f", sample))
+                        }
+                    )
             )
 
             runInParallel(o)
@@ -283,14 +283,14 @@ class MultiPartitionCorrectnessSpec : DescribeSpec({
         describe("generating list of samples and storing it to csv") {
             val file = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
             val o = listOf(
-                    listOf(1, 2, 3, 4).map { sampleOf(it) }.input()
-                            .toCsv(
-                                    "file://${file.absolutePath}",
-                                    header = listOf("sample index", "sample value"),
-                                    elementSerializer = { (idx, _, sample) ->
-                                        listOf(idx.toString(), String.format("%.10f", sample))
-                                    }
-                            )
+                listOf(1, 2, 3, 4).map { sampleOf(it) }.input()
+                    .toCsv(
+                        "file://${file.absolutePath}",
+                        header = listOf("sample index", "sample value"),
+                        elementSerializer = { (idx, _, sample) ->
+                            listOf(idx.toString(), String.format("%.10f", sample))
+                        }
+                    )
             )
 
             runInParallel(o)
@@ -310,9 +310,9 @@ class MultiPartitionCorrectnessSpec : DescribeSpec({
 
         val run1 = seqStream().trim(1000).toTable("t1")
         val run2 = TableRegistry.default.byName<Sample>("t1")
-                .last(2000.ms)
-                .map { it * 2 }
-                .toCsv("file://${file.absolutePath}")
+            .last(2000.ms)
+            .map { it * 2 }
+            .toCsv("file://${file.absolutePath}")
 
         runInParallel(listOf(run1))
 
@@ -349,24 +349,24 @@ class MultiPartitionCorrectnessSpec : DescribeSpec({
         val file = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
 
         val run1 = seqStream()
-                .window(401)
-                .fft(512)
-                .trim(10)
-                .toTable("t2", 10.s)
+            .window(401)
+            .fft(512)
+            .trim(10)
+            .toTable("t2", 10.s)
 
         val run2 = TableRegistry.default.byName<FftSample>("t2")
-                .last(2000.ms)
-                .map { it.magnitude().toList() }
-                .toCsv(
-                        uri = "file://${file.absolutePath}",
-                        header = listOf("index", "magnitudes"),
-                        elementSerializer = { (idx, _, magnitudes) ->
-                            listOf(
-                                    idx.toString(),
-                                    magnitudes.joinToString(",")
-                            )
-                        }
-                )
+            .last(2000.ms)
+            .map { it.magnitude().toList() }
+            .toCsv(
+                uri = "file://${file.absolutePath}",
+                header = listOf("index", "magnitudes"),
+                elementSerializer = { (idx, _, magnitudes) ->
+                    listOf(
+                        idx.toString(),
+                        magnitudes.joinToString(",")
+                    )
+                }
+            )
 
         runInParallel(listOf(run1))
 
@@ -411,8 +411,8 @@ class MultiPartitionCorrectnessSpec : DescribeSpec({
             val stream1 = seqStream().trim(1000)
             val stream2 = seqStream()
             val concatenation = (stream1..stream2)
-                    .trim(5000)
-                    .toCsv("file://${file.absolutePath}")
+                .trim(5000)
+                .toCsv("file://${file.absolutePath}")
 
             runInParallel(listOf(concatenation), partitions = 2)
 
@@ -431,15 +431,15 @@ class MultiPartitionCorrectnessSpec : DescribeSpec({
         it("should have the same output as local") {
             val file = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
             val stream = seqStream()
-                    .trim(1000)
-                    .window(128)
-                    .map {
-                        it.elements
-                                .zip(it.elements)
-                                .flatMap { listOf(it.first, it.second) }
-                    }
-                    .flatten()
-                    .toCsv("file://${file.absolutePath}")
+                .trim(1000)
+                .window(128)
+                .map {
+                    it.elements
+                        .zip(it.elements)
+                        .flatMap { listOf(it.first, it.second) }
+                }
+                .flatten()
+                .toCsv("file://${file.absolutePath}")
 
             runInParallel(listOf(stream), partitions = 2)
             val fileContent = file.readLines()
@@ -463,20 +463,20 @@ class MultiPartitionCorrectnessSpec : DescribeSpec({
             val input = (
                     120.sine().trim(100)..440.sine() +
                             (100..110).sineSweep(0.5, 20.0) +
-                            input { sampleOf((it.first % 10000L) * 10000L) } +
+                            input { x, _ -> sampleOf((x % 10000L) * 10000L) } +
                             listOf(0.5, 0.3, 0.5, 0.2).input() +
                             wavFileStream
                     ) * 0.2
             val stream = input
-                    .trim(1000)
-                    .resample(to = sampleRate * 2.0f)
-                    .window(1001)
-                    .hamming()
-                    .fft(1024)
-                    .inverseFft()
-                    .flatten()
-                    .resample()
-                    .toCsv("file://${file.absolutePath}")
+                .trim(1000)
+                .resample(to = sampleRate * 2.0f)
+                .window(1001)
+                .hamming()
+                .fft(1024)
+                .inverseFft()
+                .flatten()
+                .resample()
+                .toCsv("file://${file.absolutePath}")
 
             runInParallel(listOf(stream), partitions = 2, sampleRate = sampleRate)
             val fileContent = file.readLines()
@@ -490,10 +490,10 @@ class MultiPartitionCorrectnessSpec : DescribeSpec({
 
     describe("Output as a function") {
         class NewLineDelimiterFile(
-                file: String,
-                duration: Double,
+            file: String,
+            duration: Double,
         ) : Fn<WriteFunctionArgument<Sample>, Boolean>(
-                FnInitParameters().add("file", file).add("duration", duration)
+            FnInitParameters().add("file", file).add("duration", duration)
         ) {
 
             private val duration by lazy { initParams.double("duration") }
@@ -515,7 +515,7 @@ class MultiPartitionCorrectnessSpec : DescribeSpec({
         it("should have the same output as local") {
             val file = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
             val stream = seqStream()
-                    .out(NewLineDelimiterFile(file.absolutePath, 0.1))
+                .out(NewLineDelimiterFile(file.absolutePath, 0.1))
 
             runInParallel(listOf(stream))
             val fileContent = file.readLines()

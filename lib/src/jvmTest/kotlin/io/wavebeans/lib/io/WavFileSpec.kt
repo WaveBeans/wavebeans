@@ -83,17 +83,11 @@ class WavFileSpec : DescribeSpec({
         )
 
         fun run(input: BeanStream<Sample>, durationMs: Long, chunkSize: Int, bitDepth: BitDepth) {
-            class FlushController(params: FnInitParameters) :
-                Fn<IndexedSample, Managed<OutputSignal, Pair<TemporalAccessor, Long>, Sample>>(params) {
-                constructor(chunkSize: Int) : this(FnInitParameters().add("chunkSize", chunkSize))
-
-                override fun apply(argument: IndexedSample): Managed<OutputSignal, Pair<TemporalAccessor, Long>, Sample> {
-                    val cz = initParams.int("chunkSize")
-                    return if (cz > 0 && argument.index > 0 && argument.index % cz == 0L) {
-                        argument.sample.withOutputSignal(FlushOutputSignal, ZonedDateTime.now() to argument.index)
-                    } else {
-                        argument.sample.withOutputSignal(NoopOutputSignal, null)
-                    }
+            fun flushController(argument: IndexedSample): Managed<OutputSignal, Pair<TemporalAccessor, Long>, Sample> {
+                return if (chunkSize > 0 && argument.index > 0 && argument.index % chunkSize == 0L) {
+                    argument.sample.withOutputSignal(FlushOutputSignal, ZonedDateTime.now() to argument.index)
+                } else {
+                    argument.sample.withOutputSignal(NoopOutputSignal, null)
                 }
             }
 
@@ -108,8 +102,9 @@ class WavFileSpec : DescribeSpec({
                     checkNotNull(index)
                     IndexedSample(sample, index)
                 }
-                .map(FlushController(chunkSize))
+                .map { flushController(it) }
                 .trim(durationMs)
+
             evaluate(o, bitDepth, uri, suffix)
         }
 
@@ -151,13 +146,9 @@ class WavFileSpec : DescribeSpec({
         val windowSize = 128
 
         fun run(input: BeanStream<Sample>, durationMs: Long, chunkSize: Int, bitDepth: BitDepth) {
-            class FlushController(params: FnInitParameters) :
-                Fn<IndexedSampleVector, Managed<OutputSignal, Pair<TemporalAccessor, Long>, SampleVector>>(params) {
-                constructor(chunkSize: Int) : this(FnInitParameters().add("chunkSize", chunkSize))
-
-                override fun apply(argument: IndexedSampleVector): Managed<OutputSignal, Pair<TemporalAccessor, Long>, SampleVector> {
-                    val cz = initParams.int("chunkSize")
-                    return if (cz > 0 && argument.index > 0 && argument.index % cz == 0L) {
+            fun flushController(chunkSize: Int): (IndexedSampleVector) -> Managed<OutputSignal, Pair<TemporalAccessor, Long>, SampleVector> {
+                return { argument ->
+                    if (chunkSize > 0 && argument.index > 0 && argument.index % chunkSize == 0L) {
                         argument.sample.withOutputSignal(FlushOutputSignal, ZonedDateTime.now() to argument.index)
                     } else {
                         argument.sample.withOutputSignal(NoopOutputSignal, null)
@@ -178,7 +169,7 @@ class WavFileSpec : DescribeSpec({
                     checkNotNull(index)
                     IndexedSampleVector(sampleVector, index)
                 }
-                .map(FlushController(chunkSize))
+                .map { flushController(chunkSize)(it) }
                 .trim(durationMs)
             evaluate(o, bitDepth, uri, suffix)
         }
@@ -221,15 +212,11 @@ class WavFileSpec : DescribeSpec({
         )
 
         fun run(input: BeanStream<Sample>, durationMs: Long, chunkSize: Int, bitDepth: BitDepth) {
-            class FlushController(params: FnInitParameters) :
-                Fn<IndexedSample, Managed<OutputSignal, Pair<TemporalAccessor, Long>, Sample>>(params) {
-                constructor(chunkSize: Int) : this(FnInitParameters().add("chunkSize", chunkSize))
-
-                override fun apply(argument: IndexedSample): Managed<OutputSignal, Pair<TemporalAccessor, Long>, Sample> {
-                    val cz = initParams.int("chunkSize")
-                    return if (cz > 0 && argument.index > 0 && argument.index % cz == 0L) {
+            fun flushController(chunkSize: Int): (IndexedSample) -> Managed<OutputSignal, Pair<TemporalAccessor, Long>, Sample> {
+                return { argument ->
+                    if (chunkSize > 0 && argument.index > 0 && argument.index % chunkSize == 0L) {
                         // we'll write only even chunks
-                        if (argument.index / cz % 2 == 1L)
+                        if (argument.index / chunkSize % 2 == 1L)
                             argument.sample.withOutputSignal(
                                 CloseGateOutputSignal,
                                 ZonedDateTime.now() to argument.index
@@ -256,7 +243,7 @@ class WavFileSpec : DescribeSpec({
                     checkNotNull(index)
                     IndexedSample(sample, index)
                 }
-                .map(FlushController(chunkSize))
+                .map { flushController(chunkSize)(it) }
                 .trim(durationMs)
             evaluate(o, bitDepth, uri, suffix)
         }
@@ -302,16 +289,12 @@ class WavFileSpec : DescribeSpec({
         )
 
         fun run(input: BeanStream<Sample>, durationMs: Long, chunkSize: Int, bitDepth: BitDepth) {
-            class FlushController(params: FnInitParameters) :
-                Fn<IndexedSample, Managed<OutputSignal, Pair<TemporalAccessor, Long>, Sample>>(params) {
-                constructor(chunkSize: Int) : this(FnInitParameters().add("chunkSize", chunkSize))
-
-                override fun apply(argument: IndexedSample): Managed<OutputSignal, Pair<TemporalAccessor, Long>, Sample> {
-                    val cz = initParams.int("chunkSize")
+            fun flushController(chunkSize: Int): (IndexedSample) -> Managed<OutputSignal, Pair<TemporalAccessor, Long>, Sample> {
+                return { argument ->
                     // close or open gate is sent with each sample, but only the first one actually makes difference
                     // the effect is the same as to send open/close gate signal on the very fisrt chunk
                     // and then sending noop in between.
-                    return if (argument.index / cz % 2 == 0L)
+                    if (argument.index / chunkSize % 2 == 0L)
                         argument.sample.withOutputSignal(
                             OpenGateOutputSignal,
                             ZonedDateTime.now() to argument.index
@@ -335,7 +318,7 @@ class WavFileSpec : DescribeSpec({
                     checkNotNull(index)
                     IndexedSample(sample, index)
                 }
-                .map(FlushController(chunkSize))
+                .map { flushController(chunkSize)(it) }
                 .trim(durationMs)
             evaluate(o, bitDepth, uri, suffix)
         }
@@ -388,14 +371,10 @@ class WavFileSpec : DescribeSpec({
          *                           -> nothing extra stored
          */
         fun run(input: BeanStream<Sample>, bitDepth: BitDepth) {
-            class FlushController(params: FnInitParameters) :
-                Fn<IndexedSample, Managed<OutputSignal, Long, Sample>>(params) {
-                constructor(chunkSize: Int) : this(FnInitParameters().add("chunkSize", chunkSize))
-
-                override fun apply(argument: IndexedSample): Managed<OutputSignal, Long, Sample> {
-                    val cz = initParams.int("chunkSize")
-                    val chunkNumber = argument.index / cz
-                    return if (argument.index % cz == 0L) {
+            fun flushController(chunkSize: Int): (IndexedSample) -> Managed<OutputSignal, Long, Sample> {
+                return { argument ->
+                    val chunkNumber = argument.index / chunkSize
+                    if (argument.index % chunkSize == 0L) {
                         log.debug { "Detected next chunk chunkNumber=$chunkNumber argument.index=${argument.index}" }
                         when (chunkNumber) {
                             0L, 1L -> argument.sample.withOutputSignal(NoopOutputSignal)
@@ -422,7 +401,7 @@ class WavFileSpec : DescribeSpec({
                     checkNotNull(index)
                     IndexedSample(sample, index)
                 }
-                .map(FlushController(chunkSize))
+                .map { flushController(chunkSize)(it) }
                 .trim(overallLengthMs)
             evaluate(o, bitDepth, uri, suffix)
         }
@@ -481,4 +460,3 @@ private inline fun <A : Any, reified T : Any> evaluate(
         it.writeAll()
     }
 }
-

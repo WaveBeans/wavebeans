@@ -97,7 +97,7 @@ The following items are temporary measures introduced during the migration and s
 - [ ] `io.wavebeans.lib.io.CsvStreamOutput`
 - [ ] `io.wavebeans.lib.io.CsvStreamOutputParams`
 - [ ] `io.wavebeans.lib.io.CsvPartialStreamOutput`
-- [ ] `io.wavebeans.lib.stream.window.MapWindowFn`
+- [x] `io.wavebeans.lib.stream.window.MapWindowFn`
 - [ ] `io.wavebeans.lib.stream.ResampleStreamParams`
 - [ ] `io.wavebeans.lib.stream.ResampleBeanStream`
 - [ ] `io.wavebeans.lib.stream.ResampleFiniteStream`
@@ -125,5 +125,5 @@ The following items are temporary measures introduced during the migration and s
 - [ ] `io.wavebeans.lib.io.SampleCsvFn` (in `io.wavebeans.lib.io.CsvSampleStreamOutput`)
 - [ ] `io.wavebeans.lib.io.WavInputParams`
 - [ ] `io.wavebeans.lib.io.WavInput`
-- [ ] `io.wavebeans.lib.stream.ChangeAmplitudeFn` (in `io.wavebeans.lib.stream.ChangeAmplitudeSampleStream`)
-- [ ] `io.wavebeans.lib.stream.window.ScalarSampleWindowOpFn` (in `io.wavebeans.lib.stream.window.SampleScalarWindowStream`)
+- [x] `io.wavebeans.lib.stream.ChangeAmplitudeFn` (in `io.wavebeans.lib.stream.ChangeAmplitudeSampleStream`)
+- [x] `io.wavebeans.lib.stream.window.ScalarSampleWindowOpFn` (in `io.wavebeans.lib.stream.window.SampleScalarWindowStream`)

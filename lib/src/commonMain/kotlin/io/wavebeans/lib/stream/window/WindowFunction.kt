@@ -15,13 +15,13 @@ import kotlin.math.cos
  * **Window function**
  *
  * The window function is intended to generate the window based on the source window size and has the following arguments:
- *  * Input type is `Pair<Int, Int>`, the first is the current index of the value, the second is the overall number of samples in the window.
+ *  * Input type is `(Int, Int)`, the first is the current index of the value, the second is the overall number of samples in the window.
  *  * Output type is `T`, is the value of the window on the specified index.
  *
  * **Multiply function**
  *
- * The multiply function defines how tow multiply two values coming from the stream and the window:
- *  * The input type is `Pair<T, T>`, which is a pair of sample to multiply, the first is coming from the stream, the second is coming from the window function.
+ * The multiply function defines how to multiply two values coming from the stream and the window:
+ *  * The input type is `(T, T)`, which is a pair of sample to multiply, the first is coming from the stream, the second is coming from the window function.
  *  * The output type if `T` which is the result of multiplication.
  *
  * Example of functions:
@@ -29,7 +29,7 @@ import kotlin.math.cos
  * ```kotlin
  * // working with Sample type
  *
- * val windowFunction: Fn<Pair<Int, Int>, Sample> = Fn.wrap { (i, n) ->
+ * val windowFunction: (Int, Int) -> Sample = { (i, n) ->
  *     // triangular window function
  *     val halfN = n / 2.0
  *     sampleOf(1.0 - abs((i - halfN) / halfN))
@@ -42,95 +42,31 @@ import kotlin.math.cos
  *
  * @param T the type of the sample
  */
-class MapWindowFn<T : Any>(initParameters: FnInitParameters) : Fn<Window<T>, Window<T>>(initParameters) {
-
-    /**
-     * Creates an instance of [MapWindowFn].
-     * @param windowFunction populates [MapWindowFn.windowFunction]
-     * @param multiplyFn populates [MapWindowFn.multiplyFn]
-     */
-    constructor(windowFunction: Fn<Pair<Int, Int>, T>, multiplyFn: Fn<Pair<T, T>, T>) : this(FnInitParameters()
-            .add("fn", windowFunction)
-            .add("multiplyFn", multiplyFn)
-    )
-
-    /**
-     * Function to be used to generate the values. Has two values:
-     *  1. the current index to generate for and
-     *  2. overall amount of sample-entities will be asked to generate.
-     */
-    val windowFunction = initParams.fn<Pair<Int, Int>, T>("fn")
-
-    /**
-     * Function to be used to multiply the corresponding sample-entities while applying the window function.
-     */
-    val multiplyFn = initParams.fn<Pair<T, T>, T>("multiplyFn")
-
-    override fun apply(argument: Window<T>): Window<T> {
-        val windowSize = argument.elements.size
-
+fun <T : Any> BeanStream<Window<T>>.windowFunction(
+    func: (Int, Int) -> T,
+    multiplyFn: (T, T) -> T
+): BeanStream<Window<T>> {
+    return this.map { window ->
+        val windowSize = window.elements.size
         val windowFunction = (0 until windowSize).asSequence()
-                .map { index -> windowFunction.apply(Pair(index, windowSize)) }
-        return argument.copy(
-                elements = argument.elements.asSequence()
-                        .zip(windowFunction)
-                        .map { multiplyFn.apply(it) }
-                        .toList()
+            .map { index -> func(index, windowSize) }
+        window.copy(
+            elements = window.elements.asSequence()
+                .zip(windowFunction)
+                .map { multiplyFn(it.first, it.second) }
+                .toList()
         )
     }
 }
 
-/**
- * Applies [MapWindowFn] with [map] operation specifying [func] as a [MapWindowFn.windowFunction] and
- * [multiplyFn] as a [MapWindowFn.multiplyFn]
- *
- * @param func populates [MapWindowFn.windowFunction]
- * @param multiplyFn populates [MapWindowFn.multiplyFn]
- * @param T the non-nullable type of the windowed sample.
- *
- * @return the stream of windowed [T]
- */
-fun <T : Any> BeanStream<Window<T>>.windowFunction(
-        func: Fn<Pair<Int, Int>, T>,
-        multiplyFn: Fn<Pair<T, T>, T>
-): BeanStream<Window<T>> {
-    return this.map(MapWindowFn(func, multiplyFn))
-}
-
-/**
- * Applies [MapWindowFn] with [map] operation specifying [func] as a [MapWindowFn.windowFunction] and
- * [multiplyFn] as a [MapWindowFn.multiplyFn]
- *
- * @param func populates [MapWindowFn.windowFunction]
- * @param multiplyFn populates [MapWindowFn.multiplyFn]
- * @param T the non-nullable type of the windowed sample.
- *
- * @return the stream of windowed [T]
- */
-fun <T : Any> BeanStream<Window<T>>.windowFunction(
-        func: (Pair<Int, Int>) -> T,
-        multiplyFn: (Pair<T, T>) -> T
-): BeanStream<Window<T>> {
-    return this.windowFunction(wrap(func), wrap(multiplyFn))
-}
-
 
 /**
  * Applies [MapWindowFn] with specified function as a window function over the stream of windowed samples.
  *
  * @param func the function to multiply window by.
  */
-fun BeanStream<Window<Sample>>.windowFunction(func: Fn<Pair<Int, Int>, Sample>): BeanStream<Window<Sample>> {
-    return this.windowFunction(func, wrap { it.first * it.second })
-}
-
-/**
- * Applies [MapWindowFn] with specified function as a window function over the stream of windowed samples.
- *
- * @param func the function to multiply window by.
- */
-fun BeanStream<Window<Sample>>.windowFunction(func: (Pair<Int, Int>) -> Sample): BeanStream<Window<Sample>> {
-    return this.windowFunction(wrap(func))
+fun BeanStream<Window<Sample>>.windowFunction(func: (Int, Int) -> Sample): BeanStream<Window<Sample>> {
+    return this.windowFunction(func) { x, y -> x * y }
 }
 
 /**
@@ -138,7 +74,7 @@ fun BeanStream<Window<Sample>>.windowFunction(func: (Pair<Int, Int>) -> Sample):
  * as a window function over the stream of windowed samples.
  */
 fun BeanStream<Window<Sample>>.rectangle(): BeanStream<Window<Sample>> {
-    return this.windowFunction { sampleOf(rectangleFunc()) }
+    return this.windowFunction { _, _ -> sampleOf(rectangleFunc()) }
 }
 
 /**
@@ -167,7 +103,7 @@ fun rectangleFunc(): Double = 1.0
  * as a window function over the stream of windowed samples.
  */
 fun BeanStream<Window<Sample>>.triangular(): BeanStream<Window<Sample>> {
-    return this.windowFunction { (i, n) -> sampleOf(triangularFunc(i, n)) }
+    return this.windowFunction { i, n -> sampleOf(triangularFunc(i, n)) }
 }
 
 /**
@@ -199,7 +135,7 @@ fun triangularFunc(i: Int, n: Int): Double {
  * as a window function over the stream of windowed samples.
  */
 fun BeanStream<Window<Sample>>.blackman(): BeanStream<Window<Sample>> {
-    return this.windowFunction { (i, n) -> sampleOf(blackmanFunc(i, n)) }
+    return this.windowFunction { i, n -> sampleOf(blackmanFunc(i, n)) }
 }
 
 /**
@@ -229,11 +165,11 @@ fun blackmanFunc(i: Int, n: Int): Double {
 }
 
 /**
- * Applies [MapWindowFn] with [hamming](https://en.wikipedia.org/wiki/Window_function#Hann_and_Hamming_windows)
+ * Applies [windowFunction] with [hamming](https://en.wikipedia.org/wiki/Window_function#Hann_and_Hamming_windows)
  * as a window function over the stream of windowed samples.
  */
 fun BeanStream<Window<Sample>>.hamming(): BeanStream<Window<Sample>> {
-    return this.windowFunction { (i, n) -> sampleOf(hammingFunc(i, n)) }
+    return this.windowFunction { i, n -> sampleOf(hammingFunc(i, n)) }
 }
 
 /**

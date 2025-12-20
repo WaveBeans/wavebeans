@@ -165,7 +165,7 @@ class WindowFunctionSpec : DescribeSpec({
     describe("Custom window function") {
         val w = seqStream()
                 .window(10)
-                .windowFunction { sampleOf(2.0) }
+                .windowFunction { _, _ -> sampleOf(2.0) }
                 .asSequence(1.0f)
                 .take(2)
                 .toList()
@@ -186,8 +186,8 @@ class WindowFunctionSpec : DescribeSpec({
         val w = input { i, _ -> i }
                 .window(5) { 0 }
                 .windowFunction(
-                        func = { 2 },
-                        multiplyFn = { (a, b) -> a * b }
+                        func = { _, _ -> 2 },
+                        multiplyFn = { a, b -> a * b }
                 )
                 .asSequence(1.0f)
                 .take(2)
