@@ -38,7 +38,7 @@ class FunctionStreamOutputSpec : DescribeSpec({
             IntStorage.reset()
         }
 
-        val input = input { it.first.toInt() }.trim(100)
+        val input = input { x, _ -> x.toInt() }.trim(100)
 
         it("should write till the end of the stream") {
             input.out {

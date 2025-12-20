@@ -78,7 +78,7 @@ class WindowFunctionSpec : DescribeSpec({
 
         it("should return all blackman values inside windows") {
             val tries = 3
-            val w = input { sampleOf(1.0) }
+            val w = input { _,_ -> sampleOf(1.0) }
                     .window(n)
                     .triangular()
                     .asSequence(1.0f)
@@ -110,7 +110,7 @@ class WindowFunctionSpec : DescribeSpec({
 
         it("should return all blackman values inside windows") {
             val tries = 3
-            val w = input { sampleOf(1.0) }
+            val w = input { _,_ -> sampleOf(1.0) }
                     .window(n)
                     .blackman()
                     .asSequence(1.0f)
@@ -141,7 +141,7 @@ class WindowFunctionSpec : DescribeSpec({
 
         it("should return all blackman values inside windows") {
             val tries = 3
-            val w = input { sampleOf(1.0) }
+            val w = input { _,_ -> sampleOf(1.0) }
                     .window(n)
                     .hamming()
                     .asSequence(1.0f)
@@ -183,7 +183,7 @@ class WindowFunctionSpec : DescribeSpec({
     }
 
     describe("Custom type window function") {
-        val w = input { (i, _) -> i }
+        val w = input { i, _ -> i }
                 .window(5) { 0 }
                 .windowFunction(
                         func = { 2 },

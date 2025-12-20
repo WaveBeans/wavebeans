@@ -107,7 +107,7 @@ object FunctionMergedStreamSpec : DescribeSpec({
         }
 
         describe("merged with the infinite size stream") {
-            val merging = input { (i, _) -> sampleOf((i + 10).toInt()) }
+            val merging = input { i, _ -> sampleOf((i + 10).toInt()) }
 
             it("should return valid sum") {
                 assertThat(source.merge(with = merging) { (x, y) -> x + y }.toListInt(take = 20))
@@ -144,8 +144,8 @@ object FunctionMergedStreamSpec : DescribeSpec({
     }
 
     describe("Int and float stream") {
-        val stream = input { (idx, _) -> idx.toInt() }
-                .merge(input { (idx, _) -> idx.toFloat() }) { (a, b) ->
+        val stream = input { idx, _ -> idx.toInt() }
+                .merge(input { idx, _ -> idx.toFloat() }) { (a, b) ->
                     requireNotNull(a)
                     requireNotNull(b)
                     a.toLong() + b.toLong()
@@ -158,9 +158,9 @@ object FunctionMergedStreamSpec : DescribeSpec({
     }
 
     describe("Int and Window<Int> stream") {
-        val stream = input { (idx, _) -> idx.toInt() }
+        val stream = input { idx, _ -> idx.toInt() }
                 .window(2) { 0 }
-                .merge(input { (idx, _) -> idx.toInt() }) { (window, a) ->
+                .merge(input { idx, _ -> idx.toInt() }) { (window, a) ->
                     requireNotNull(window)
                     requireNotNull(a)
                     window.elements.first().toLong() + a.toLong()

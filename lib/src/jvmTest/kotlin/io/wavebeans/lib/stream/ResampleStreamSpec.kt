@@ -4,21 +4,15 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
 import assertk.fail
-import io.wavebeans.lib.Managed
-import io.wavebeans.lib.BeanStream
-import io.wavebeans.lib.Sample
+import io.kotest.core.spec.style.DescribeSpec
+import io.wavebeans.lib.*
 import io.wavebeans.lib.io.*
-import io.wavebeans.lib.isListOf
 import io.wavebeans.lib.stream.fft.fft
 import io.wavebeans.lib.stream.fft.inverseFft
 import io.wavebeans.lib.stream.window.window
 import io.wavebeans.tests.evaluate
 import io.wavebeans.tests.isContainedBy
 import io.wavebeans.tests.toList
-import io.kotest.core.spec.style.DescribeSpec
-import io.wavebeans.lib.JvmFnWrapper
-import io.wavebeans.lib.fnWrapper
-import java.io.File
 import kotlin.math.abs
 
 class ResampleStreamSpec : DescribeSpec({
@@ -36,7 +30,7 @@ class ResampleStreamSpec : DescribeSpec({
     describe("Resampling the input to match the output") {
 
         it("should upsample") {
-            val resampled = inputWithSampleRate(1000.0f) { (i, fs) ->
+            val resampled = inputWithSampleRate(1000.0f) { i, fs ->
                 require(fs == 1000.0f) { "Non 1000Hz sample rate is not supported" }
                 if (i < 5) i.toInt() else null
             }.resample()
@@ -45,7 +39,7 @@ class ResampleStreamSpec : DescribeSpec({
         }
 
         it("should downsample") {
-            val resampled = inputWithSampleRate(1000.0f) { (i, fs) ->
+            val resampled = inputWithSampleRate(1000.0f) { i, fs ->
                 require(fs == 1000.0f) { "Non 1000Hz sample rate is not supported" }
                 if (i < 5) i.toInt() else null
             }.resample(resampleFn = SimpleResampleFn { it.sum() })
@@ -58,7 +52,7 @@ class ResampleStreamSpec : DescribeSpec({
                 return a.inputSequence.map { listOf(it, -1) }.flatten()
             }
 
-            val resampled = inputWithSampleRate(1000.0f) { (i, fs) ->
+            val resampled = inputWithSampleRate(1000.0f) { i, fs ->
                 require(fs == 1000.0f) { "Non 1000Hz sample rate is not supported" }
                 if (i < 5) i.toInt() else null
             }.resample(resampleFn = ::resample)
@@ -69,7 +63,7 @@ class ResampleStreamSpec : DescribeSpec({
 
     describe("Resampling the input to reprocess and then to match the output") {
         it("should upsample") {
-            val resampled = inputWithSampleRate(1000.0f) { (i, fs) ->
+            val resampled = inputWithSampleRate(1000.0f) { i, fs ->
                 require(fs == 1000.0f) { "Non 1000Hz sample rate is not supported" }
                 if (i < 5) i.toInt() else null
             }
@@ -81,7 +75,7 @@ class ResampleStreamSpec : DescribeSpec({
         }
 
         it("should downsample") {
-            val resampled = inputWithSampleRate(1000.0f) { (i, fs) ->
+            val resampled = inputWithSampleRate(1000.0f) { i, fs ->
                 require(fs == 1000.0f) { "Non 1000Hz sample rate is not supported" }
                 if (i < 5) i.toInt() else null
             }
@@ -101,7 +95,7 @@ class ResampleStreamSpec : DescribeSpec({
                     a.inputSequence.map { listOf(it, -3) }.flatten()
             }
 
-            val resampled = inputWithSampleRate(1000.0f) { (i, fs) ->
+            val resampled = inputWithSampleRate(1000.0f) { i, fs ->
                 require(fs == 1000.0f) { "Non 1000Hz sample rate is not supported" }
                 if (i < 5) i.toInt() else null
             }
@@ -119,7 +113,7 @@ class ResampleStreamSpec : DescribeSpec({
         }
 
         it("should resample and then mix in another generator") {
-            val resampled = inputWithSampleRate(1000.0f) { (i, fs) ->
+            val resampled = inputWithSampleRate(1000.0f) { i, fs ->
                 require(fs == 1000.0f) { "Non 1000Hz sample rate is not supported" }
                 if (i < 5) i.toInt() else null
             }
@@ -127,7 +121,7 @@ class ResampleStreamSpec : DescribeSpec({
                 .map { it * 2 }
                 .resample(resampleFn = SimpleResampleFn { it.sum() })
 
-            val generator = input { (i, fs) ->
+            val generator = input { i, fs ->
                 require(fs == 1000.0f) { "Non 1000Hz sample rate is not supported" }
                 if (i < 5) (i * 10).toInt() else null
             }

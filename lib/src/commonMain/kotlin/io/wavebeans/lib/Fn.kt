@@ -51,9 +51,7 @@ var fnWrapper: FnWrapper<Any?, Any?> = object : FnWrapper<Any?, Any?> {
     override fun fromString(s: String): Fn<Any?, Any?> {
         val (fnClazzStr, idStr) = s.split("|")
         require(fnClazzStr == fnClazz) { "Can't deserialize function with class $fnClazzStr" }
-        val fn = fnRegistry.remove(idStr.toLong())
-        require(fn != null) { "Function with id $idStr is already removed" }
-        return fn
+        return fnRegistry.getValue(idStr.toLong())
     }
 
     override fun instantiate(clazz: KClass<out Fn<Any?, Any?>>, initParams: FnInitParameters): Fn<Any?, Any?> {
@@ -76,6 +74,12 @@ var fnWrapper: FnWrapper<Any?, Any?> = object : FnWrapper<Any?, Any?> {
 @Suppress("UNCHECKED_CAST")
 fun <T, R> wrap(fn: (T) -> R): Fn<T, R> = fnWrapper.wrap(fn as (Any?) -> Any?) as Fn<T, R>
 
+@Suppress("UNCHECKED_CAST")
+fun <T1, T2, R> wrap(fn: (T1, T2) -> R): Fn<Pair<T1, T2>, R> =
+    fnWrapper.wrap { a ->
+        val p = a as Pair<Any?, Any?>
+        fn.invoke(p.first as T1, p.second as T2)
+    } as Fn<Pair<T1, T2>, R>
 
 @Suppress("UNCHECKED_CAST")
 fun <T, R> instantiate(

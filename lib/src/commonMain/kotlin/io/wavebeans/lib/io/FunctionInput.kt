@@ -17,16 +17,7 @@ import kotlinx.serialization.encoding.*
  * @param generator generator function of two parameters: the 0-based index and sample rate the input
  *                  expected to be evaluated.
  */
-fun <T : Any> input(generator: (Pair<Long, Float>) -> T?): BeanStream<T> = input(wrap(generator))
-
-/**
- * Creates an input from provided function. The function has two parameters: the 0-based index and sample rate the input
- * expected to be evaluated.
- *
- * @param generator generator function as [Fn] of two parameters: the 0-based index and sample rate the input
- *                  expected to be evaluated.
- */
-fun <T : Any> input(generator: Fn<Pair<Long, Float>, T?>): BeanStream<T> = Input(InputParams(generator))
+fun <T : Any> input(generator: (Long, Float) -> T?): BeanStream<T> = Input(InputParams(generator))
 
 /**
  * Creates an input from provided function. The function has two parameters: the 0-based index and sample rate the input
@@ -36,57 +27,8 @@ fun <T : Any> input(generator: Fn<Pair<Long, Float>, T?>): BeanStream<T> = Input
  * @param generator generator function of two parameters: the 0-based index and sample rate the input
  *                  expected to be evaluated.
  */
-fun <T : Any> inputWithSampleRate(sampleRate: Float, generator: (Pair<Long, Float>) -> T?): BeanStream<T> =
-    input(sampleRate, wrap(generator))
-
-/**
- * Creates an input from provided function. The function has two parameters: the 0-based index and sample rate the input
- * expected to be evaluated.
- *
- * @param sampleRate the sample rate that input supports.
- * @param generator generator function as [Fn] of two parameters: the 0-based index and sample rate the input
- *                  expected to be evaluated.
- */
-fun <T : Any> input(sampleRate: Float, generator: Fn<Pair<Long, Float>, T?>): BeanStream<T> =
+fun <T : Any> inputWithSampleRate(sampleRate: Float, generator: (Long, Float) -> T?): BeanStream<T> =
     Input(InputParams(generator, sampleRate))
-
-/**
- * Serializer for [InputParams]
- */
-object InputParamsSerializer : KSerializer<InputParams<*>> {
-
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(InputParams::class.className()) {
-        element("generateFn", FnSerializer.descriptor)
-        element("sampleRate", Float.serializer().nullable.descriptor)
-    }
-
-    override fun deserialize(decoder: Decoder): InputParams<*> {
-        return decoder.decodeStructure(descriptor) {
-            var sampleRate: Float? = null
-            lateinit var func: Fn<Pair<Long, Float>, Any?>
-            @Suppress("UNCHECKED_CAST")
-            loop@ while (true) {
-                when (val i = decodeElementIndex(descriptor)) {
-                    CompositeDecoder.DECODE_DONE -> break@loop
-                    0 -> func =
-                        decodeSerializableElement(descriptor, i, FnSerializer) as Fn<Pair<Long, Float>, Any?>
-
-                    1 -> sampleRate = decodeNullableSerializableElement(descriptor, i, Float.serializer().nullable)
-                    else -> throw SerializationException("Unknown index $i")
-                }
-            }
-            InputParams(func, sampleRate)
-        }
-    }
-
-    override fun serialize(encoder: Encoder, value: InputParams<*>) {
-        encoder.encodeStructure(descriptor) {
-            encodeSerializableElement(descriptor, 0, FnSerializer, value.generator)
-            encodeNullableSerializableElement(descriptor, 1, Float.serializer().nullable, value.sampleRate)
-        }
-    }
-
-}
 
 /**
  * Tuning parameters for [Input].
@@ -94,9 +36,8 @@ object InputParamsSerializer : KSerializer<InputParams<*>> {
  * [generator] is a function as [Fn] of two parameters: the 0-based index and sample rate the input expected to be evaluated.
  * [sampleRate] is the sample rate that input supports, or null if it'll automatically adapt.
  */
-@Serializable(with = InputParamsSerializer::class)
 class InputParams<T : Any>(
-    val generator: Fn<Pair<Long, Float>, T?>,
+    val generator: (Long, Float) -> T?,
     val sampleRate: Float? = null
 ) : BeanParams
 
@@ -119,7 +60,7 @@ class Input<T : Any>(
 
     override fun inputSequence(sampleRate: Float): Sequence<T> {
         return (0..Long.MAX_VALUE).asSequence()
-            .map { parameters.generator.apply(Pair(it, sampleRate)) }
+            .map { parameters.generator.invoke(it, sampleRate) }
             .takeWhile { it != null }
             .map { it!! }
 //                .map { samplesProcessed.increment(); it!! }

@@ -34,7 +34,7 @@ class TableOutputSpec : DescribeSpec({
         )
 
         val output = TableOutput(
-            input { (i, _) -> if (i < 2000) 1e-10 * i else null }
+            input { i, _ -> if (i < 2000) 1e-10 * i else null }
                 .window(1024)
                 .map { sampleVectorOf(it) },
             params

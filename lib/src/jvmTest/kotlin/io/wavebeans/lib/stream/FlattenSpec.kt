@@ -15,7 +15,7 @@ import io.kotest.core.spec.style.DescribeSpec
 class FlattenSpec : DescribeSpec({
     describe("Flatten list of integers") {
         it("should flatten the stream of lists") {
-            val l = input { (i, _) ->
+            val l = input { i, _ ->
                 when (i) {
                     0L -> listOf(1, 2, 3)
                     1L -> listOf(4)
@@ -36,7 +36,7 @@ class FlattenSpec : DescribeSpec({
         }
 
         it("should flatten the stream of lists with duplicates") {
-            val l = input { (i, _) ->
+            val l = input { i, _ ->
                 when (i) {
                     0L -> listOf(1, 2, 3, 3, 4)
                     1L -> listOf(4)
@@ -57,7 +57,7 @@ class FlattenSpec : DescribeSpec({
         }
 
         it("should flatten the empty stream of lists") {
-            val l = input<List<Int>> { null }
+            val l = input<List<Int>> { _, _ -> null }
                     .flatten()
                     .asSequence(1.0f)
                     .toList()
@@ -65,7 +65,7 @@ class FlattenSpec : DescribeSpec({
         }
 
         it("should flatten the stream of empty lists") {
-            val l = input<List<Int>> { (i, _) ->
+            val l = input<List<Int>> { i, _ ->
                 when (i) {
                     0L -> listOf()
                     1L -> listOf()
@@ -86,7 +86,7 @@ class FlattenSpec : DescribeSpec({
         }
 
         it("should flatten the stream of lists but containing only even values") {
-            val l = input { (i, _) ->
+            val l = input { i, _ ->
                 when (i) {
                     0L -> listOf(1, 2, 3)
                     1L -> listOf(4)
@@ -109,7 +109,7 @@ class FlattenSpec : DescribeSpec({
 
     describe("Flatten stream of sample vectors") {
         it("should flatten the stream of lists") {
-            val l = input { (i, _) ->
+            val l = input { i, _ ->
                 when (i) {
                     0L -> listOf(1, 2, 3)
                     1L -> listOf(4)
@@ -144,7 +144,7 @@ class FlattenSpec : DescribeSpec({
     describe("Flatten windowed stream") {
         describe("Stream of ints") {
             it("should flatten windows if step == size") {
-                val l = input { (i, _) -> if (i < 10) i.toInt() else null }
+                val l = input { i, _ -> if (i < 10) i.toInt() else null }
                         .window(2) { 0 }
                         .flatten()
                         .asSequence(1.0f)
@@ -153,7 +153,7 @@ class FlattenSpec : DescribeSpec({
                 assertThat(l).isListOf(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
             }
             it("should flatten windows with various sizes if step == size") {
-                val l = input { (i, _) ->
+                val l = input { i, _ ->
                     when (i) {
                         0L -> Window(3, 3, listOf(0, 1, 2)) { 0 }
                         1L -> Window(2, 2, listOf(3, 4)) { 0 }
@@ -169,7 +169,7 @@ class FlattenSpec : DescribeSpec({
                 assertThat(l).isListOf(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
             }
             it("should flatten windows if step < size") {
-                val l = input { (i, _) -> if (i < 10) i.toInt() else null }
+                val l = input { i, _ -> if (i < 10) i.toInt() else null }
                         .window(3, 2) { -1 }
                         .flatten { (a, b) -> a + b }
                         .asSequence(1.0f)
@@ -186,7 +186,7 @@ class FlattenSpec : DescribeSpec({
                  * --------------
                  * 0 1 5 9 6 16 18
                  */
-                val l = input { (i, _) ->
+                val l = input { i, _ ->
                     when (i) {
                         0L -> Window(3, 2, listOf(0, 1, 2)) { 0 }
                         1L -> Window(2, 1, listOf(3, 4)) { 0 }
@@ -202,7 +202,7 @@ class FlattenSpec : DescribeSpec({
                 assertThat(l).isListOf(0, 1, 5, 9, 6, 16, 18)
             }
             it("should flatten windows if step > size") {
-                val l = input { (i, _) -> if (i < 10) i.toInt() else null }
+                val l = input { i, _ -> if (i < 10) i.toInt() else null }
                         .window(3, 4) { -1 }
                         .flatten()
                         .asSequence(1.0f)
@@ -211,7 +211,7 @@ class FlattenSpec : DescribeSpec({
                 assertThat(l).isListOf(0, 1, 2, -1, 4, 5, 6, -1, 8, 9, -1, -1)
             }
             it("should flatten windows with various sizes if step > size") {
-                val l = input { (i, _) ->
+                val l = input { i, _ ->
                     when (i) {
                         0L -> Window(3, 4, listOf(0, 1, 2)) { -1 }
                         1L -> Window(2, 3, listOf(3, 4)) { -1 }
@@ -241,7 +241,7 @@ class FlattenSpec : DescribeSpec({
             }
 
             it("should flatten windows with step < size") {
-                val l = input { (i, _) -> if (i < 10) sampleOf(1e-9 * (i + 1)) else null }
+                val l = input { i, _ -> if (i < 10) sampleOf(1e-9 * (i + 1)) else null }
                         .window(3, 2)
                         .flatten()
                         .asSequence(1.0f)
@@ -293,7 +293,7 @@ class FlattenSpec : DescribeSpec({
                 assertThat(l).isEqualTo(seqStream().asSequence(1.0f).take(40).toList())
             }
             it("should flatten window with step < size") {
-                val l = input { (i, _) -> if (i < 12) sampleOf(1e-9 * (i + 1)) else null }
+                val l = input { i, _ -> if (i < 12) sampleOf(1e-9 * (i + 1)) else null }
                         .window(2).map { sampleVectorOf(it).also { println(it.contentToString()) } }
                         .window(3, 2) { EmptySampleVector }
                         .flatten()
@@ -318,7 +318,7 @@ class FlattenSpec : DescribeSpec({
                 }
             }
             it("should flatten window with step > size") {
-                val l = input { (i, _) -> if (i < 12) sampleOf(1e-9 * (i + 1)) else null }
+                val l = input { i, _ -> if (i < 12) sampleOf(1e-9 * (i + 1)) else null }
                         .window(2).map { sampleVectorOf(it).also { println(it.contentToString()) } }
                         .window(3, 4) { EmptySampleVector }
                         .flatten()
