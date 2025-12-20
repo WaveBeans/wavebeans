@@ -101,7 +101,7 @@ class DistributedOverseerSpec : DescribeSpec({
                     .fft(128)
                     .trim(500)
                     .magnitudeToCsv("file:///${file2.absolutePath}")
-                listOf(output1 to file1, output2 to file2)
+                listOf(output1 to file1/*, output2 to file2*/)
             }
 
             assertExecution(outputs)

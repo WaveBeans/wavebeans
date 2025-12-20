@@ -1,5 +1,6 @@
 package io.wavebeans.lib
 
+import kotlinx.atomicfu.atomic
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
@@ -21,25 +22,45 @@ interface FnWrapper<T, R> {
     fun instantiate(clazz: KClass<out Fn<T, R>>, initParams: FnInitParameters = FnInitParameters()): Fn<T, R>
 }
 
+private val idGenerator = atomic(0L)
+private val fnRegistry = hashMapOf<Long, Fn<Any?, Any?>>()
+private val lambdaRegistry = hashMapOf<Long, (Any?) -> Any?>()
+
+class AnyFn(id: Long) : Fn<Any?, Any?>(FnInitParameters().add("functionId", id)) {
+    override fun apply(argument: Any?): Any? {
+        val fid = this.initParams.long("functionId")
+        return lambdaRegistry.getValue(fid).invoke(argument)
+    }
+}
+
 var fnWrapper: FnWrapper<Any?, Any?> = object : FnWrapper<Any?, Any?> {
-    override fun wrap(fn: (Any?) -> Any?): Fn<Any?, Any?> = object : Fn<Any?, Any?>(FnInitParameters()) {
-        override fun apply(argument: Any?): Any? {
-            return fn(argument)
-        }
+
+    override fun wrap(fn: (Any?) -> Any?): Fn<Any?, Any?> {
+        val id = idGenerator.incrementAndGet()
+        return AnyFn(id)
     }
 
     override fun asString(
         fn: Fn<Any?, Any?>
     ): String {
-        TODO("Not yet implemented")
+        val id = idGenerator.incrementAndGet()
+        fnRegistry[id] = fn
+        return "$fnClazz|$id"
     }
 
     override fun fromString(s: String): Fn<Any?, Any?> {
-        TODO("Not yet implemented")
+        val (fnClazzStr, idStr) = s.split("|")
+        require(fnClazzStr == fnClazz) { "Can't deserialize function with class $fnClazzStr" }
+        val fn = fnRegistry.remove(idStr.toLong())
+        require(fn != null) { "Function with id $idStr is already removed" }
+        return fn
     }
 
-    override fun instantiate(clazz: KClass<out Fn<Any?, Any?>>, initParams: FnInitParameters): Fn<Any?, Any?> =
-        throw UnsupportedOperationException("Not supported in this mode")
+    override fun instantiate(clazz: KClass<out Fn<Any?, Any?>>, initParams: FnInitParameters): Fn<Any?, Any?> {
+        require(clazz == AnyFn::class) { "Can't instantiate $clazz" }
+        val id = initParams.long("functionId")
+        return AnyFn(id)
+    }
 
 }
 

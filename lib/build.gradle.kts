@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.retry)
+    alias(libs.plugins.atomicfu)
 }
 
 kotlin {
@@ -46,6 +47,7 @@ kotlin {
                 implementation(libs.kotlin.stdlib)
                 implementation(libs.kotlin.logging)
                 implementation(libs.kotlinx.serialization.json)
+                implementation(libs.kotlinx.atomicfu)
             }
         }
         commonTest {
@@ -58,7 +60,7 @@ kotlin {
         jsTest {
             dependencies {
                 // Use kotlin.test for JS
-                implementation(kotlin("test-js"))
+                implementation(libs.kotlin.test.js)
             }
         }
         jvmMain {

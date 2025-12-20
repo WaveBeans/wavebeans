@@ -4,6 +4,7 @@ kotlin = "2.2.20"
 kotlinx-serialization = "1.9.0"
 kotlin-logging = "7.0.13"
 kotlinx-coroutines = "1.7.3"
+kotlinx-atomicfu = "0.30.0-beta"
 # fs compile scope
 dropbox = "7.0.0"
 # exe compile scope
@@ -36,10 +37,12 @@ kotlin-scripting-jvm-host = { module = "org.jetbrains.kotlin:kotlin-scripting-jv
 kotlin-scripting-common = { module = "org.jetbrains.kotlin:kotlin-scripting-common", version.ref = "kotlin" }
 kotlin-scripting-compiler-embeddable = { module = "org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable", version.ref = "kotlin" }
 kotlin-compiler-embeddable = { module = "org.jetbrains.kotlin:kotlin-compiler-embeddable", version.ref = "kotlin" }
+kotlin-test-js = { module = "org.jetbrains.kotlin:kotlin-test-js", version.ref = "kotlin" }
 kotlin-main-kts = { module = "org.jetbrains.kotlin:kotlin-main-kts", version.ref = "kotlin" }
 
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 kotlinx-serialization-protobuf = { module = "org.jetbrains.kotlinx:kotlinx-serialization-protobuf", version.ref = "kotlinx-serialization" }
+kotlinx-atomicfu = { module = "org.jetbrains.kotlinx:atomicfu" , version.ref = "kotlinx-atomicfu"}
 
 kotlin-logging = { module = "io.github.oshai:kotlin-logging", version.ref = "kotlin-logging" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
@@ -61,8 +64,6 @@ dropbox-core-sdk = { module = "com.dropbox.core:dropbox-core-sdk", version.ref =
 javax-annotation-api = { module = "javax.annotation:javax.annotation-api", version.ref = "javax-annotation" }
 
 kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
-kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
-kotest-framework-engine = { module = "io.kotest:kotest-framework-engine", version.ref = "kotest" }
 
 protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "protobuf" }
 protobuf-java-util = { module = "com.google.protobuf:protobuf-java-util", version.ref = "protobuf" }
@@ -82,3 +83,4 @@ kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", versi
 osdetector = { id = "com.google.osdetector", version.ref = "osdetector" }
 retry = { id = "org.gradle.test-retry", version.ref = "test-retry" }
 protobuf = { id = "com.google.protobuf", version.ref = "gradle-protobuf-plugin" }
+atomicfu = { id = "org.jetbrains.kotlinx.atomicfu", version.ref = "kotlinx-atomicfu" }
