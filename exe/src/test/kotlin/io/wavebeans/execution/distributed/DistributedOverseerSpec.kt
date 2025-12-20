@@ -131,7 +131,7 @@ class DistributedOverseerSpec : DescribeSpec({
                     .toCsv(
                         uri = "file:///${file1.absolutePath}",
                         header = listOf("index", "value"),
-                        elementSerializer = { (i, _, v) ->
+                        elementSerializer = { i, _, v ->
                             listOf(i.toString(), v.v.v.toString())
                         }
                     )

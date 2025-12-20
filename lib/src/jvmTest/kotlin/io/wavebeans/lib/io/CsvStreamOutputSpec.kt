@@ -34,7 +34,7 @@ class CsvStreamOutputSpec : DescribeSpec({
                 .toCsv(
                     file.url,
                     header = listOf("time ms", "sample value"),
-                    elementSerializer = { (idx, sampleRate, sample) ->
+                    elementSerializer = { idx, sampleRate, sample ->
                         val sampleTime = samplesCountToLength(idx, sampleRate, TimeUnit.MILLISECONDS)
                         listOf(sampleTime.toString(), String.format("%.10f", sample))
                     }
@@ -60,7 +60,7 @@ class CsvStreamOutputSpec : DescribeSpec({
                 .toCsv(
                     file.url,
                     header = listOf("time ms") + (0..1).map { "sample#$it" },
-                    elementSerializer = { (idx, sampleRate, window) ->
+                    elementSerializer = { idx, sampleRate, window ->
                         val sampleTime = samplesCountToLength(idx, sampleRate, TimeUnit.MILLISECONDS)
                         listOf(sampleTime.toString()) + window.elements.map { String.format("%.10f", it) }
                     }
@@ -85,7 +85,7 @@ class CsvStreamOutputSpec : DescribeSpec({
                 .toCsv(
                     file.url,
                     header = listOf("time ms") + (0..1).map { "value#$it" },
-                    elementSerializer = { (idx, sampleRate, pair) ->
+                    elementSerializer = { idx, sampleRate, pair ->
                         val sampleTime = samplesCountToLength(idx, sampleRate, TimeUnit.MILLISECONDS)
                         listOf(
                             sampleTime.toString(),
@@ -119,7 +119,7 @@ class CsvStreamOutputSpec : DescribeSpec({
                     this.toCsv(
                         uri = "test://$${outputDir}/test.csv",
                         header = listOf("number", "value"),
-                        elementSerializer = { (i, _, sample) ->
+                        elementSerializer = { i, _, sample ->
                             listOf("$i", String.format("%.10f", sample))
                         },
                         suffix = { "-${it ?: 0}" }
@@ -160,7 +160,7 @@ class CsvStreamOutputSpec : DescribeSpec({
                     this.toCsv(
                         uri = "test://${outputDir}/test.csv",
                         header = listOf("number", "value"),
-                        elementSerializer = { (i, _, sample) ->
+                        elementSerializer = { i, _, sample ->
                             listOf("$i", String.format("%.10f", sample))
                         },
                         suffix = { "-${it ?: 0}" }

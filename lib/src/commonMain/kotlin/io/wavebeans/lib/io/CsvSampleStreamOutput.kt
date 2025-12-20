@@ -24,10 +24,11 @@ fun BeanStream<Sample>.toCsv(
         timeUnit: TimeUnit = TimeUnit.MILLISECONDS,
         encoding: String = "UTF-8"
 ): StreamOutput<Sample> {
+    val sampleCsvFn = SampleCsvFn(timeUnit)
     return toCsv(
             uri = uri,
             header = listOf("time ${timeUnit.abbreviation()}", "value"),
-            elementSerializer = SampleCsvFn(timeUnit),
+            elementSerializer = { l, f, s -> sampleCsvFn.apply(Triple(l, f, s)) },
             encoding = encoding
     )
 }
@@ -58,11 +59,12 @@ fun <A : Any> BeanStream<Managed<OutputSignal, A, Sample>>.toCsv(
         timeUnit: TimeUnit = TimeUnit.MILLISECONDS,
         encoding: String = "UTF-8"
 ): StreamOutput<Managed<OutputSignal, A, Sample>> {
+    val sampleCsvFn = SampleCsvFn(timeUnit)
     return toCsv(
             uri = uri,
             header = listOf("time ${timeUnit.abbreviation()}", "value"),
-            elementSerializer = SampleCsvFn(timeUnit),
-            suffix = wrap(suffix),
+            elementSerializer = { l, f, s -> sampleCsvFn.apply(Triple(l, f, s)) },
+            suffix = suffix,
             encoding = encoding
     )
 }
@@ -87,6 +89,10 @@ fun <A : Any> BeanStream<Managed<OutputSignal, A, Sample>>.toCsv(
  *
  * @return [StreamOutput] to run the further processing on.
  */
+@Deprecated(
+    message = "Use toCsv with lambda suffix instead",
+    replaceWith = ReplaceWith("toCsv(uri, { suffix.apply(it) }, timeUnit, encoding)")
+)
 fun <A : Any> BeanStream<Managed<OutputSignal, A, Sample>>.toCsv(
         uri: String,
         suffix: Fn<A?, String>,
@@ -95,9 +101,8 @@ fun <A : Any> BeanStream<Managed<OutputSignal, A, Sample>>.toCsv(
 ): StreamOutput<Managed<OutputSignal, A, Sample>> {
     return toCsv(
             uri = uri,
-            header = listOf("time ${timeUnit.abbreviation()}", "value"),
-            elementSerializer = SampleCsvFn(timeUnit),
-            suffix = suffix,
+            suffix = { suffix.apply(it) },
+            timeUnit = timeUnit,
             encoding = encoding
     )
 }

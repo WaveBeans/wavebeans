@@ -18,7 +18,7 @@ class JsonBeanStreamReaderSpec : DescribeSpec({
     fun elementRegex(valueRegex: String) = Regex("\\{\"offset\":\\d+,\"value\":$valueRegex}")
 
     describe("Sequence of samples") {
-        val seq = input { (i, _) -> sampleOf(i) }.trim(50, TimeUnit.SECONDS)
+        val seq = input { i, _ -> sampleOf(i) }.trim(50, TimeUnit.SECONDS)
 
         it("should have 50 doubles") {
             val lines = JsonBeanStreamReader(seq, 1.0f).bufferedReader().use { it.readLines() }
@@ -35,7 +35,7 @@ class JsonBeanStreamReaderSpec : DescribeSpec({
 
         SampleCountMeasurement.registerType(S::class) { 1 }
 
-        val seq = input { (i, _) -> S(i) }.trim(50, TimeUnit.SECONDS)
+        val seq = input { i, _ -> S(i) }.trim(50, TimeUnit.SECONDS)
 
         it("should have 50 objects as json") {
             val lines = JsonBeanStreamReader(seq, 1.0f).bufferedReader().use { it.readLines() }
@@ -52,7 +52,7 @@ class JsonBeanStreamReaderSpec : DescribeSpec({
 
         SampleCountMeasurement.registerType(N::class) { 1 }
 
-        val seq = input { (i, _) -> N(i) }.trim(50, TimeUnit.SECONDS)
+        val seq = input { i, _ -> N(i) }.trim(50, TimeUnit.SECONDS)
 
         it("should throw an exception") {
             assertThat {

@@ -1,14 +1,6 @@
 package io.wavebeans.lib.io
 
 import io.wavebeans.lib.*
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationException
-import kotlinx.serialization.builtins.nullable
-import kotlinx.serialization.builtins.serializer
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.descriptors.buildClassSerialDescriptor
-import kotlinx.serialization.encoding.*
 
 /**
  * Creates an input from provided function. The function has two parameters: the 0-based index and sample rate the input

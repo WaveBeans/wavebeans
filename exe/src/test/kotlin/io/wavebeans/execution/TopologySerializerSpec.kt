@@ -75,16 +75,10 @@ class TopologySerializerSpec : DescribeSpec({
 
     describe("Input function") {
 
-        val i1 = input { (x, _) -> sampleOf(x) }
+        val i1 = input { x, _ -> sampleOf(x) }
 
-        class InputFn(initParameters: FnInitParameters) : Fn<Pair<Long, Float>, Sample?>(initParameters) {
-            override fun apply(argument: Pair<Long, Float>): Sample? {
-                return sampleOf(argument.first) * initParams.int("factor")
-            }
-        }
-
-        val inputParameter = 2
-        val i2 = input(InputFn(FnInitParameters().add("factor", inputParameter)))
+        val factor = 2
+        val i2 = input { x, _ -> sampleOf(x) * factor }
 
         val o1 = i1
             .trim(5000)
@@ -199,34 +193,34 @@ class TopologySerializerSpec : DescribeSpec({
         class MergeFn(initParams: FnInitParameters) : Fn<Pair<Sample?, Sample?>, Sample?>(initParams) {
             override fun apply(argument: Pair<Sample?, Sample?>): Sample? {
                 val f = initParams["factor"]?.toInt()!!
-                return argument.first ?: ZeroSample * f + argument.second
+                return argument.first ?: (ZeroSample * f + argument.second)
             }
         }
 
         val functions = mapOf(
             "Sample merge with Lambda" to listOf(
-                input<Sample> { fail("unreachable") }
+                input<Sample> { _, _ -> fail("unreachable") }
                     .merge(
-                        with = input<Sample> { fail("unreachable") }
-                    ) { (x, y) -> x ?: ZeroSample + y }
+                        with = input<Sample> { _, _ -> fail("unreachable") }
+                    ) { (x, y) -> x ?: (ZeroSample + y) }
                     .toDevNull()
             ),
             "Sample merge with Fn and using outside data" to listOf(
-                input<Sample> { fail("unreachable") }
+                input<Sample> { _, _ -> fail("unreachable") }
                     .merge(
-                        with = input<Sample> { fail("unreachable") },
+                        with = input { _, _ -> fail("unreachable") },
                         merge = MergeFn(FnInitParameters().add("factor", factor.toString()))
                     )
                     .toDevNull()
             ),
             "Window<Sample>.plus()" to listOf(
-                input<Sample> { fail("unreachable") }.window(2)
-                    .plus(input<Sample> { fail("unreachable") }.window(2))
+                input<Sample> { _, _ -> fail("unreachable") }.window(2)
+                    .plus(input<Sample> { _, _ -> fail("unreachable") }.window(2))
                     .toDevNull()
             ),
             "Sample.plus()" to listOf(
-                input<Sample> { fail("unreachable") }
-                    .plus(input<Sample> { fail("unreachable") })
+                input<Sample> { _, _ -> fail("unreachable") }
+                    .plus(input<Sample> { _, _ -> fail("unreachable") })
                     .toDevNull()
             )
         )
@@ -324,7 +318,7 @@ class TopologySerializerSpec : DescribeSpec({
     }
 
     describe("Table sink") {
-        val o = input<Sample> { fail("unreachable") }.toTable("table1")
+        val o = input<Sample> { _, _ -> fail("unreachable") }.toTable("table1")
         val q = TableRegistry.default.byName<Sample>("table1").last(2000.ms).toCsv("file:///path/to.csv")
 
         val topology = listOf(o, q).buildTopology()

@@ -35,7 +35,7 @@ class TableServiceSpec : DescribeSpec({
         whenever(tableRegistry.exists(eq("table"))).thenReturn(true)
         whenever(tableRegistry.byName<Int>("table")).thenReturn(tableDriver)
         whenever(tableDriver.sampleRate).thenReturn(100.0f)
-        whenever(tableDriver.last(100.ms)).thenReturn(input { (i, sampleRate) -> if (i < sampleRate * 0.1) i.toInt() else null })
+        whenever(tableDriver.last(100.ms)).thenReturn(input { i, sampleRate -> if (i < sampleRate * 0.1) i.toInt() else null })
 
         val service = TableService(tableRegistry)
 
@@ -55,7 +55,7 @@ class TableServiceSpec : DescribeSpec({
         whenever(tableRegistry.exists(eq("table"))).thenReturn(true)
         whenever(tableRegistry.byName<Int>("table")).thenReturn(tableDriver)
         whenever(tableDriver.sampleRate).thenReturn(100.0f)
-        whenever(tableDriver.timeRange(0.ms, 100.ms)).thenReturn(input { (i, sampleRate) -> if (i < sampleRate * 0.1) i.toInt() else null })
+        whenever(tableDriver.timeRange(0.ms, 100.ms)).thenReturn(input { i, sampleRate -> if (i < sampleRate * 0.1) i.toInt() else null })
 
         val service = TableService(tableRegistry)
 

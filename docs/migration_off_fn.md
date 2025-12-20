@@ -94,9 +94,9 @@ The following items are temporary measures introduced during the migration and s
 #### Classes to Migrate
 
 - [ ] `io.wavebeans.lib.stream.SincResampleFn`
-- [ ] `io.wavebeans.lib.io.CsvStreamOutput`
-- [ ] `io.wavebeans.lib.io.CsvStreamOutputParams`
-- [ ] `io.wavebeans.lib.io.CsvPartialStreamOutput`
+- [x] `io.wavebeans.lib.io.CsvStreamOutput`
+- [x] `io.wavebeans.lib.io.CsvStreamOutputParams`
+- [x] `io.wavebeans.lib.io.CsvPartialStreamOutput`
 - [x] `io.wavebeans.lib.stream.window.MapWindowFn`
 - [ ] `io.wavebeans.lib.stream.ResampleStreamParams`
 - [ ] `io.wavebeans.lib.stream.ResampleBeanStream`
@@ -122,7 +122,7 @@ The following items are temporary measures introduced during the migration and s
 - [ ] `io.wavebeans.lib.stream.window.WindowStream`
 - [ ] `io.wavebeans.lib.table.TableOutputParams`
 - [ ] `io.wavebeans.lib.table.TableOutput`
-- [ ] `io.wavebeans.lib.io.SampleCsvFn` (in `io.wavebeans.lib.io.CsvSampleStreamOutput`)
+- [x] `io.wavebeans.lib.io.SampleCsvFn` (in `io.wavebeans.lib.io.CsvSampleStreamOutput`)
 - [ ] `io.wavebeans.lib.io.WavInputParams`
 - [ ] `io.wavebeans.lib.io.WavInput`
 - [x] `io.wavebeans.lib.stream.ChangeAmplitudeFn` (in `io.wavebeans.lib.stream.ChangeAmplitudeSampleStream`)

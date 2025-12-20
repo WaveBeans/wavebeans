@@ -366,7 +366,7 @@ class PartialFlushSpec : DescribeSpec({
                         .toCsv(
                             uri = "file://${outputDir.absolutePath}/sine.wav",
                             header = listOf("#") + (0 until windowSize).map { "sample#$it" },
-                            elementSerializer = { (index, _, sampleVector) ->
+                            elementSerializer = { index, _, sampleVector ->
                                 listOf("$index") + sampleVector.map { String.format("%.10f", it) }
                             },
                             suffix = { "-${(it ?: 0).toString().padStart(2, '0')}" }

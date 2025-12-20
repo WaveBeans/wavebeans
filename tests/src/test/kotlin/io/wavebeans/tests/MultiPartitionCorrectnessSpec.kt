@@ -261,7 +261,7 @@ class MultiPartitionCorrectnessSpec : DescribeSpec({
                     .toCsv(
                         "file://${file.absolutePath}",
                         header = listOf("sample index", "sample value"),
-                        elementSerializer = { (idx, _, sample) ->
+                        elementSerializer = { idx, _, sample ->
                             listOf(idx.toString(), String.format("%.10f", sample))
                         }
                     )
@@ -287,7 +287,7 @@ class MultiPartitionCorrectnessSpec : DescribeSpec({
                     .toCsv(
                         "file://${file.absolutePath}",
                         header = listOf("sample index", "sample value"),
-                        elementSerializer = { (idx, _, sample) ->
+                        elementSerializer = { idx, _, sample ->
                             listOf(idx.toString(), String.format("%.10f", sample))
                         }
                     )
@@ -360,7 +360,7 @@ class MultiPartitionCorrectnessSpec : DescribeSpec({
             .toCsv(
                 uri = "file://${file.absolutePath}",
                 header = listOf("index", "magnitudes"),
-                elementSerializer = { (idx, _, magnitudes) ->
+                elementSerializer = { idx, _, magnitudes ->
                     listOf(
                         idx.toString(),
                         magnitudes.joinToString(",")
