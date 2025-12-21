@@ -1,10 +1,10 @@
 package io.wavebeans.execution.distributed
 
-import io.wavebeans.lib.Fn
-import io.wavebeans.lib.FnSerializer
+import io.wavebeans.execution.serializer.Fn
+import io.wavebeans.execution.serializer.FnSerializer
 import io.wavebeans.lib.stream.fft.FftSample
 import io.wavebeans.lib.stream.window.Window
-import io.wavebeans.lib.wrap
+import io.wavebeans.execution.serializer.wrap
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor

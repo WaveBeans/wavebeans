@@ -20,7 +20,6 @@ class ResampleStreamSpec : DescribeSpec({
     beforeSpec {
         TestWbFileDriver.register()
         WbFileDriver.defaultLocalFileScheme = "test"
-        fnWrapper = JvmFnWrapper()
     }
 
     afterSpec {

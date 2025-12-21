@@ -6,10 +6,10 @@ import assertk.assertions.isFailure
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import io.kotest.core.spec.style.DescribeSpec
-import io.wavebeans.lib.Fn
-import io.wavebeans.lib.FnInitParameters
-import io.wavebeans.lib.instantiate
-import io.wavebeans.lib.wrap
+import io.wavebeans.execution.serializer.Fn
+import io.wavebeans.execution.serializer.instantiate
+import io.wavebeans.execution.serializer.wrap
+import io.wavebeans.lib.ScopeParameters
 
 class FnSpec : DescribeSpec({
 
@@ -43,10 +43,10 @@ class FnSpec : DescribeSpec({
     describe("Define Fn") {
 
         describe("No outer closure dependencies") {
-            class AFn(initParameters: FnInitParameters) : Fn<Int, Long>(initParameters) {
+            class AFn(initParameters: ScopeParameters) : Fn<Int, Long>(initParameters) {
 
                 constructor(a: Int, b: Long, c: String) : this(
-                    FnInitParameters()
+                    ScopeParameters()
                         .add("a", a)
                         .add("b", b)
                         .add("c", c)
@@ -73,7 +73,7 @@ class FnSpec : DescribeSpec({
                 assertThat(
                     instantiate(
                         AFn::class,
-                        FnInitParameters().add("a", 1).add("b", 1L).add("c", "withInt")
+                        ScopeParameters().add("a", 1).add("b", 1L).add("c", "withInt")
                     ).apply(1)
                 )
                     .isEqualTo(1L)
@@ -83,7 +83,7 @@ class FnSpec : DescribeSpec({
         describe("Outer closure dependency") {
             val dependentValue = 1L
 
-            class AFn(initParameters: FnInitParameters) : Fn<Int, Long>(initParameters) {
+            class AFn(initParameters: ScopeParameters) : Fn<Int, Long>(initParameters) {
                 override fun apply(argument: Int): Long = dependentValue
             }
 
@@ -117,7 +117,7 @@ class FnSpec : DescribeSpec({
                 val string: String
             )
 
-            class Afn(initParameters: FnInitParameters) : Fn<Int, Result>(initParameters) {
+            class Afn(initParameters: ScopeParameters) : Fn<Int, Result>(initParameters) {
                 override fun apply(argument: Int): Result {
                     val long = initParams.long("long")
                     val int = initParams.int("int")
@@ -132,7 +132,7 @@ class FnSpec : DescribeSpec({
                 assertThat(
                     instantiate(
                         Afn::class,
-                        FnInitParameters()
+                        ScopeParameters()
                             .add("long", 1L)
                             .add("int", 2)
                             .add("float", 3.0f)
@@ -161,7 +161,7 @@ class FnSpec : DescribeSpec({
                 val string: String?
             )
 
-            class Afn(initParameters: FnInitParameters) : Fn<Int, Result>(initParameters) {
+            class Afn(initParameters: ScopeParameters) : Fn<Int, Result>(initParameters) {
                 override fun apply(argument: Int): Result {
                     val long = initParams.longOrNull("long")
                     val int = initParams.intOrNull("int")
@@ -176,7 +176,7 @@ class FnSpec : DescribeSpec({
                 assertThat(
                     instantiate(
                         Afn::class,
-                        FnInitParameters()
+                        ScopeParameters()
                     ).apply(1)
                 ).isEqualTo(
                     Result(
@@ -200,7 +200,7 @@ class FnSpec : DescribeSpec({
                 val stringList: List<String>
             )
 
-            class Afn(initParameters: FnInitParameters) : Fn<Int, Result>(initParameters) {
+            class Afn(initParameters: ScopeParameters) : Fn<Int, Result>(initParameters) {
                 override fun apply(argument: Int): Result {
                     val longs = initParams.longs("long")
                     val ints = initParams.ints("int")
@@ -215,7 +215,7 @@ class FnSpec : DescribeSpec({
                 assertThat(
                     instantiate(
                         Afn::class,
-                        FnInitParameters()
+                        ScopeParameters()
                             .addLongs("long", listOf(1L, 10L))
                             .addInts("int", listOf(2, 20))
                             .addFloats("float", listOf(3.0f, 30.0f))
@@ -244,7 +244,7 @@ class FnSpec : DescribeSpec({
                 val stringList: List<String>?
             )
 
-            class Afn(initParameters: FnInitParameters) : Fn<Int, Result>(initParameters) {
+            class Afn(initParameters: ScopeParameters) : Fn<Int, Result>(initParameters) {
                 override fun apply(argument: Int): Result {
                     val longs = initParams.longsOrNull("long")
                     val ints = initParams.intsOrNull("int")
@@ -259,7 +259,7 @@ class FnSpec : DescribeSpec({
                 assertThat(
                     instantiate(
                         Afn::class,
-                        FnInitParameters()
+                        ScopeParameters()
                     ).apply(1)
                 ).isEqualTo(
                     Result(
@@ -280,7 +280,7 @@ class FnSpec : DescribeSpec({
                 val int: Int
             )
 
-            class Afn(initParameters: FnInitParameters) : Fn<Int, CustomType>(initParameters) {
+            class Afn(initParameters: ScopeParameters) : Fn<Int, CustomType>(initParameters) {
                 override fun apply(argument: Int): CustomType {
                     return initParams.obj("obj") {
                         val (long, int) = it.split("|")
@@ -293,7 +293,7 @@ class FnSpec : DescribeSpec({
                 assertThat(
                     instantiate(
                         Afn::class,
-                        FnInitParameters()
+                        ScopeParameters()
                             .addObj("obj", CustomType(1L, 2)) { "${it.long}|${it.int}" }
                     ).apply(1)
                 ).isEqualTo(CustomType(1L, 2))
@@ -305,20 +305,22 @@ class FnSpec : DescribeSpec({
             describe("As lambda") {
                 val fn = wrap<Int, Int> { it * 42 }
 
-                class Afn(initParameters: FnInitParameters) : Fn<Int, Int>(initParameters) {
+                class Afn(initParameters: ScopeParameters) : Fn<Int, Int>(initParameters) {
                     override fun apply(argument: Int): Int {
-                        val f = initParams.fn<Int, Int>("fn")
-                        return f.apply(argument)
+                        TODO()
+//                        val f = initParams.fn<Int, Int>("fn")
+//                        return f.apply(argument)
                     }
                 }
 
                 it("should be indirectly instantiated and executed") {
-                    assertThat(
-                        instantiate(
-                            Afn::class,
-                            FnInitParameters().add("fn", fn)
-                        ).apply(1)
-                    ).isEqualTo(1 * 42)
+                    TODO()
+//                    assertThat(
+//                        instantiate(
+//                            Afn::class,
+//                            ScopeParameters().add("fn", fn)
+//                        ).apply(1)
+//                    ).isEqualTo(1 * 42)
 
                 }
             }
@@ -330,20 +332,22 @@ class FnSpec : DescribeSpec({
                     }
                 }
 
-                class Afn(initParameters: FnInitParameters) : Fn<Int, Int>(initParameters) {
+                class Afn(initParameters: ScopeParameters) : Fn<Int, Int>(initParameters) {
                     override fun apply(argument: Int): Int {
-                        val f = initParams.fn<Int, Int>("fn")
-                        return f.apply(argument)
+                        TODO()
+//                        val f = initParams.fn<Int, Int>("fn")
+//                        return f.apply(argument)
                     }
                 }
 
                 it("should be indirectly instantiated and executed") {
-                    assertThat(
-                        instantiate(
-                            Afn::class,
-                            FnInitParameters().add("fn", TheAnswerFn())
-                        ).apply(1)
-                    ).isEqualTo(1 * 42)
+                    TODO()
+//                    assertThat(
+//                        instantiate(
+//                            Afn::class,
+//                            ScopeParameters().add("fn", TheAnswerFn())
+//                        ).apply(1)
+//                    ).isEqualTo(1 * 42)
 
                 }
             }
@@ -355,7 +359,7 @@ class FnSpec : DescribeSpec({
                 val int: Int
             )
 
-            class Afn(initParameters: FnInitParameters) : Fn<Int, CustomType?>(initParameters) {
+            class Afn(initParameters: ScopeParameters) : Fn<Int, CustomType?>(initParameters) {
                 override fun apply(argument: Int): CustomType? {
                     return initParams.objOrNull("obj") {
                         throw UnsupportedOperationException("shouldn't be reachable")
@@ -367,7 +371,7 @@ class FnSpec : DescribeSpec({
                 assertThat(
                     instantiate(
                         Afn::class,
-                        FnInitParameters()
+                        ScopeParameters()
                     ).apply(1)
                 ).isEqualTo(null)
 
@@ -380,7 +384,7 @@ class FnSpec : DescribeSpec({
                 val int: Int
             )
 
-            class Afn(initParameters: FnInitParameters) : Fn<Int, List<CustomType>>(initParameters) {
+            class Afn(initParameters: ScopeParameters) : Fn<Int, List<CustomType>>(initParameters) {
                 override fun apply(argument: Int): List<CustomType> {
                     return initParams.list("objs") {
                         val (long, int) = it.split("|")
@@ -393,7 +397,7 @@ class FnSpec : DescribeSpec({
                 assertThat(
                     instantiate(
                         Afn::class,
-                        FnInitParameters()
+                        ScopeParameters()
                             .add("objs", listOf(CustomType(1L, 2), CustomType(3L, 4))) { "${it.long}|${it.int}" }
                     ).apply(1)
                 ).isEqualTo(listOf(CustomType(1L, 2), CustomType(3L, 4)))
@@ -407,7 +411,7 @@ class FnSpec : DescribeSpec({
                 val int: Int
             )
 
-            class Afn(initParameters: FnInitParameters) : Fn<Int, List<CustomType>?>(initParameters) {
+            class Afn(initParameters: ScopeParameters) : Fn<Int, List<CustomType>?>(initParameters) {
                 override fun apply(argument: Int): List<CustomType>? {
                     return initParams.listOrNull("objs") {
                         throw UnsupportedOperationException("shouldn't be reachable")
@@ -419,7 +423,7 @@ class FnSpec : DescribeSpec({
                 assertThat(
                     instantiate(
                         Afn::class,
-                        FnInitParameters()
+                        ScopeParameters()
                     ).apply(1)
                 ).isEqualTo(null)
 

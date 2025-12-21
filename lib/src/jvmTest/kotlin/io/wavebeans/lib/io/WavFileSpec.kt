@@ -31,7 +31,6 @@ class WavFileSpec : DescribeSpec({
 
     beforeSpec {
         TestWbFileDriver.register()
-        fnWrapper = JvmFnWrapper()
         WbFileDriver.defaultLocalFileScheme = "test"
     }
 
