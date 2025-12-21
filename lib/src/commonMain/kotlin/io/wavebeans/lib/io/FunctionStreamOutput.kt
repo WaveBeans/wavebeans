@@ -77,7 +77,7 @@ enum class WriteFunctionPhase {
  *
  * [sampleClazz] The class of the sample.
  *
- * [writeFunction] -- The function as [Fn] to invoke, has [WriteFunctionArgument] as an argument. Return the value of `Boolean`
+ * [writeFunction] -- The function to invoke, has [WriteFunctionArgument] as an argument. Return the value of `Boolean`
  * type, that controls the output writer behavior:
  *  * In the [WriteFunctionPhase.WRITE] phase if the function returns `true` the writer will continue processing the input,
  *    if it returns `false` the writer will stop processing, but anyway [WriteFunctionPhase.CLOSE] phase will be initiated.

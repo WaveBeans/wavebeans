@@ -25,7 +25,7 @@ fun <T : Any> inputWithSampleRate(sampleRate: Float, generator: (Long, Float) ->
 /**
  * Tuning parameters for [Input].
  *
- * [generator] is a function as [Fn] of two parameters: the 0-based index and sample rate the input expected to be evaluated.
+ * [generator] is a function of two parameters: the 0-based index and sample rate the input expected to be evaluated.
  * [sampleRate] is the sample rate that input supports, or null if it'll automatically adapt.
  */
 class InputParams<T : Any>(
@@ -39,7 +39,7 @@ class InputParams<T : Any>(
  *
  * @param parameters the tuning parameters:
  *  * [InputParams.sampleRate] -- the sample rate that input supports.
- *  * [InputParams.generator] function as [Fn] of two parameters: the 0-based index and sample rate the input
+ *  * [InputParams.generator] function of two parameters: the 0-based index and sample rate the input
  *                  expected to be evaluated.
  */
 class Input<T : Any>(
