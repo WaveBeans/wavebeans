@@ -80,23 +80,20 @@ Using as a class
 ----------
 
 When the function needs some arguments to be bypassed outside, or you just want to avoid defining the function in inline-style as the code of the function is too complex, you may define the merge function as a class. First of all please follow [functions documentation](../functions.md).
- 
+
 As mentioned above the signature of the merge function is input type `Pair<T1?,T2?>` and the output type is `R`. Let's create an operation that sums two streams but keeps the value not more than specified value.
 
 The class operation looks like this:
 
 ```kotlin
-class SumSamplesSafeFn(initParameters: FnInitParameters) : Fn<Pair<Sample?, Sample?>, Sample?>(initParameters) {
+class SumSamplesSafeFn(val maxValue: Double) {
 
-    constructor(maxValue: Sample) : this(FnInitParameters().add("maxValue", abs(maxValue.asDouble())))
-
-    override fun apply(argument: Pair<Sample?, Sample?>): Sample? {
-        val maxValue = sampleOf(initParams.double("maxValue"))
+    operator fun invoke(argument: Pair<Sample?, Sample?>): Sample? {
         val (a, b) = argument
         val sum = a + b
         return when {
-            sum > maxValue -> maxValue
-            sum < -maxValue -> -maxValue
+            sum > sampleOf(maxValue) -> sampleOf(maxValue)
+            sum < -sampleOf(maxValue) -> -sampleOf(maxValue)
             else -> sum
         }
     }
@@ -106,8 +103,9 @@ class SumSamplesSafeFn(initParameters: FnInitParameters) : Fn<Pair<Sample?, Samp
 And this is how it's called:
 
 ```kotlin
+val sumSafe = SumSamplesSafeFn(1.0)
 440.sine()
-        .merge(880.sine(), SumSamplesSafeFn(sampleOf(1.0)))
+        .merge(880.sine()) { sumSafe(it) }
 ```
 
 This class uses helper function `sampleOf()` which converts any numeric type to internal representation of sample, please read more about in [types section](../#types)

@@ -490,18 +490,15 @@ class MultiPartitionCorrectnessSpec : DescribeSpec({
 
     describe("Output as a function") {
         class NewLineDelimiterFile(
-            file: String,
-            duration: Double,
-        ) : Fn<WriteFunctionArgument<Sample>, Boolean>(
-            FnInitParameters().add("file", file).add("duration", duration)
+            private val filePath: String,
+            private val duration: Double,
         ) {
 
-            private val duration by lazy { initParams.double("duration") }
             private var file: OutputStream? = null
 
-            override fun apply(argument: WriteFunctionArgument<Sample>): Boolean {
+            operator fun invoke(argument: WriteFunctionArgument<Sample>): Boolean {
                 if (file == null) {
-                    file = File(initParams.string("file")).outputStream().buffered()
+                    file = File(filePath).outputStream().buffered()
                 }
                 if (argument.phase == WriteFunctionPhase.WRITE) {
                     file!!.write(String.format("%.10f\n", argument.sample!!.asDouble()).toByteArray())
@@ -514,8 +511,9 @@ class MultiPartitionCorrectnessSpec : DescribeSpec({
         }
         it("should have the same output as local") {
             val file = File.createTempFile("test", ".csv").also { it.deleteOnExit() }
+            val delimiterFile = NewLineDelimiterFile(file.absolutePath, 0.1)
             val stream = seqStream()
-                .out(NewLineDelimiterFile(file.absolutePath, 0.1))
+                .out { delimiterFile(it) }
 
             runInParallel(listOf(stream))
             val fileContent = file.readLines()

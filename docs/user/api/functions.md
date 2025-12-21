@@ -34,7 +34,7 @@ For example within lambda expression:
 To use within class definition:
 
 ```kotlin
-fun apply(argument: Pair<Sample, Double>): Sample { // `argument` type is specified explicitly 
+operator fun invoke(argument: Pair<Sample, Double>): Sample { // `argument` type is specified explicitly 
     val (sample, multiplier) = argument             // destruct it
     return sample * multiplier                      // apply the operation by using variable proper naming
 }
@@ -60,51 +60,38 @@ This way is very compact and most of the time parameters contain everything that
  
 ## Function as class
 
-This is the most cumbersome way to define the function but at the same time the most flexible. You can define a function as a class, but keep in mind that shouldn't be the inner class or anonymous class. Also, to bypass parameters you would need to be able to serialize them into string representation. There are functions defined for primitive types, for your own classes you would need to do it on your own 
-
-So, to define function as class you need to extend `Fn<T,R>` abstract class. That class has `initParameters` as constructor parameter, which is used to bypass parameters into the function body during execution. The class must have at least one constructor defined with no parameters -- meaning no parameters required, or with `initParameters` with type `io.wavebeans.lib.FnInitParameters`. However for convenience and readability it is recommended to provide second constructor that has parameters you want to bypass into execution runtime.
+This is the most flexible way to define a function. You can define a function as a regular class and use it within lambdas passed to operations.
 
 As an example let's define a [map function](operations/map-operation.md) that changes an amplitude of the audio stream by defined value:
 
 ```kotlin
-class ChangeAmplitudeFn(parameters: FnInitParameters)  // there should be at least one constructor defined this way
-: Fn<Sample, Sample>(parameters) {                     // extend Fn<T,R> class, Sample is input (T) and output (R) 
-                                                       // types of the function.
+class ChangeAmplitudeFn(val factor: Double) {
 
-    constructor(factor: Double)                        // for convenience let's define  proper constructor
-      : this(FnInitParameters().add("factor", factor)) // and build parameters for our function 
-
-    private val factor = initParams.double("factor")   // extracting the double value of the factor parameter,
-                                                       // it is better to do once
-
-    override fun apply(argument: Sample): Sample {     // here is the body of the function
+    operator fun invoke(argument: Sample): Sample {     // here is the body of the function
         return argument * factor                       // and simply multiply sample by the specified factor,
                                                        // that changes its amplitude.
     }
 }
 
 // apply created function on the stream.
-stream.map(ChangeAmplitudeFn(2.0))
+val changeAmplitude = ChangeAmplitudeFn(2.0)
+stream.map { changeAmplitude(it) }
 ```
 
 ### Extracting parameters
 
-As [FnInitParameters](#fninitparameters) are being used to transfer the function arguments, it is not convenient to use that class every time you need something, so it's better to extract them as a variable or class properties. You always can extract them inside `apply()` method body, though from perfomance perspective it might be expensive in some cases. In this case class properties are preferrable way to do it.
+If you are using `FnInitParameters` (e.g. when implementing custom components or for backward compatibility), it is better to extract them as a variable or class properties once.
 
 ```kotlin
-class ChangeAmplitudeFn(parameters: FnInitParameters): Fn<Sample, Sample>(parameters) {
-
-    constructor(factor: Double): this(FnInitParameters().add("factor", factor))
+class ChangeAmplitudeFn(parameters: FnInitParameters) {
 
     // good way to extract the `factor`
-    private val factor = initParams.double("factor")
+    private val factor = parameters.double("factor")
 
-    override fun apply(argument: Sample): Sample {
-        val factor = initParams.double("factor") // bad way to extract the `factor`
+    operator fun invoke(argument: Sample): Sample {
         return argument * factor
     }
 }
-
 ```
 
 ### FnInitParameters
@@ -152,19 +139,19 @@ To read parameters you would need to specify explicitly what you want get. Keep 
 
 Primitive types:
 ```kotlin
-val double = initParams.double("double") // get non-nullable double value
-val doubleOrNull = initParams.doubleOrNull("double") // get nullable double value
-val doubles = initParams.doubles("doubles") // get non-nullable list of doubles 
-val doublesOrNull = initParams.doublesOrNull("doubles") // get nullable list of doubles
+val double = parameters.double("double") // get non-nullable double value
+val doubleOrNull = parameters.doubleOrNull("double") // get nullable double value
+val doubles = parameters.doubles("doubles") // get non-nullable list of doubles 
+val doublesOrNull = parameters.doublesOrNull("doubles") // get nullable list of doubles
 ```
 It works similar for float, int and long.
 
 For getting an object, similar way to specifying stringifier you would need to specify objectifier that parses the value. You may get an object as nullable or not as well:
 ```kotlin
-val timeUnit = initParams.obj("timeUnit") { TimeUnit.valueOf(it) }
-val pairOfLongs = initParams.objOrNull("pairOfLongs") {
+val timeUnit = parameters.obj("timeUnit") { TimeUnit.valueOf(it) }
+val pairOfLongs = parameters.objOrNull("pairOfLongs") {
     val (first, second) = it.split(":").map { it.toLong() }.take(2)
     Pair(first, second)
 }
-val myListOfInts = initParams.obj("myListOfInts") { it.split(",").map { it.toInt() } }
+val myListOfInts = parameters.obj("myListOfInts") { it.split(",").map { it.toInt() } }
 ```

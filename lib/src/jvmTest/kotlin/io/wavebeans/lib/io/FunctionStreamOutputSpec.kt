@@ -106,47 +106,6 @@ class FunctionStreamOutputSpec : DescribeSpec({
 
     describe("Writing encoded samples") {
 
-        class FileEncoderFn<T : Any>(file: String) : Fn<WriteFunctionArgument<T>, Boolean>(
-            FnInitParameters().add("file", file)
-        ) {
-
-            private val file by lazy { File(initParams.string("file")).outputStream().buffered() }
-            private val bytesPerSample = BitDepth.BIT_32.bytesPerSample
-            private val bitDepth = BitDepth.BIT_32
-
-            override fun apply(argument: WriteFunctionArgument<T>): Boolean {
-                when (argument.phase) {
-                    WRITE -> {
-                        when (argument.sampleClazz) {
-                            Sample::class -> {
-                                val element = argument.sample!! as Sample
-                                val buffer = ByteArray(bytesPerSample)
-                                buffer.encodeSampleLEBytes(0, element, bitDepth)
-                                file.write(buffer)
-                            }
-
-                            SampleVector::class -> {
-                                val element = argument.sample!! as SampleVector
-                                val buffer = ByteArray(bytesPerSample * element.size)
-                                for (i in element.indices) {
-                                    buffer.encodeSampleLEBytes(i * bytesPerSample, element[i], bitDepth)
-                                }
-                                file.write(buffer)
-                            }
-
-                            else -> fail("Unsupported $argument")
-                        }
-                    }
-
-                    CLOSE -> file.close()
-                    END -> {
-                        /** nothing to do */
-                    }
-                }
-                return true
-            }
-        }
-
         fun <T : Any> streamEncoder(stream: java.io.OutputStream, argument: WriteFunctionArgument<T>): Boolean {
             val bytesPerSample = BitDepth.BIT_32.bytesPerSample
             val bitDepth = BitDepth.BIT_32

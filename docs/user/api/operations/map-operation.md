@@ -55,29 +55,25 @@ Using as class
 
 When the function needs some arguments to be bypassed outside, or you just want to avoid defining the function in inline-style as the code of the function is too complex, you may define the map function as a class. First of all please follow [functions documentation](../functions.md).
 
-Map operation converts some value `T` to some value `R`, so the type arguments of the class `Fn` correspond one-to-one with the map function.
+Map operation converts some value `T` to some value `R`.
 
 Let's create a function that similar to example with lambda function above returns the sign of the sample, however ,instead of returning 1 or -1, applies the multiplier we provide, basically return some `value` with plus or minus sign. The class would look like this:
 
 ```kotlin
-class SignFn(initParameters: FnInitParameters) : Fn<Sample, Int>(initParameters) {
+class SignFn(val value: Int) {
 
-    constructor(value: Int) : this(FnInitParameters().add("value", value))
-
-    override fun apply(argument: Sample): Int {
-        val value = initParams.int("value")
+    operator fun invoke(argument: Sample): Int {
         return if (argument > 0) value else -value
     }
 }
 ```
 
-For the sake of convenience, as suggested in [functions reference](../functions.md), the secondary constructor defined to encapsulate logic of serialization of parameters to string inside the class.
-
 Right now, to use that function within stream it as simple as instantiating the class with specific parameters using `map()` operation:
 
 ```kotlin
+    val signFn = SignFn(42)
     440.sine()
-            .map(SignFn(42))
+            .map { signFn(it) }
 ```
 
 *Note: when trying to run that examples do not forget to [trim](trim-operation.md) the stream and define the output.*

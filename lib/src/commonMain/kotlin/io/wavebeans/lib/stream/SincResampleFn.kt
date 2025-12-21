@@ -15,7 +15,7 @@ import kotlin.math.truncate
 fun sincResampleFunc(windowSize: Int = 32): SincResampleFn<Sample, SampleVector> {
     return SincResampleFn(
             windowSize = windowSize,
-            createVectorFn = { (size, iterator) ->
+            createVectorFn = { size, iterator ->
                 sampleVectorOf(size) { _, _ ->
                     if (iterator.hasNext()) iterator.next() else ZeroSample
                 }
@@ -36,7 +36,7 @@ fun sincResampleFunc(windowSize: Int = 32): SincResampleFn<Sample, SampleVector>
                 }.let { if (!hasData) it[0] = Double.NaN; it }
             },
             isNotEmptyFn = { vector -> !vector[0].isNaN() },
-            applyFn = { (x, h) -> (h * x).sum() }
+            applyFn = { x, h -> (h * x).sum() }
     )
 }
 
@@ -87,89 +87,15 @@ fun sincResampleFunc(windowSize: Int = 32): SincResampleFn<Sample, SampleVector>
  * @param L the type of the container of [T].
  *
  */
-class SincResampleFn<T : Any, L : Any>(initParameters: FnInitParameters) : Fn<ResamplingArgument<T>, Sequence<T>>(initParameters) {
+class SincResampleFn<T : Any, L : Any>(
+        private val windowSize: Int,
+        private val createVectorFn: (Int, Iterator<T>) -> L,
+        private val extractNextVectorFn: (ExtractNextVectorFnArgument<T, L>) -> L,
+        private val isNotEmptyFn: (L) -> Boolean,
+        private val applyFn: (L, DoubleArray) -> T
+) {
 
-    /**
-     * Creates an instance of [SincResampleFn] with type-specific functions as instances of [Fn].
-     *
-     * @param windowSize the size of the windows to use to calculate the [sinc](https://en.wikipedia.org/wiki/Sinc_function) functions filter.
-     * @param createVectorFn function of two parameters that create a container of type [L] of desired size (1) out of iterator
-     *            with elements of type [T] (2). The function called only once when the initial window is being read from
-     *            the input sequence.
-     * @param extractNextVectorFn function of one argument of type [ExtractNextVectorFnArgument] to extract next container of
-     *            type [L] out of provided window. The function is called every time the [ExtractNextVectorFnArgument.offset]
-     *            is changed.
-     * @param isNotEmptyFn checks if the container is not empty. The current container is provided via the argument. Returns
-     *            `true` if the container is not empty which lead to continue processing the stream, otherwise if `false`
-     *            the stream will end.
-     * @param applyFn function convolve the filter `h` which is a sum of corresponding `sinc` functions values in time
-     *            markers of each sample of the window. Expected to return the sum of elements of vector of type [L] as
-     *            singular element of type [T], i.e. if `x` is a vector, `h` is a filter, and `*` is convolution operation,
-     *            the result expected to be: `(h * x).sum()`
-     */
-    constructor(
-            windowSize: Int,
-            createVectorFn: Fn<Pair<Int, Iterator<T>>, L>,
-            extractNextVectorFn: Fn<ExtractNextVectorFnArgument<T, L>, L>,
-            isNotEmptyFn: Fn<L, Boolean>,
-            applyFn: Fn<Pair<L, DoubleArray>, T>
-    ) : this(FnInitParameters()
-            .add("windowSize", windowSize)
-            .add("createVectorFn", createVectorFn)
-            .add("extractNextVectorFn", extractNextVectorFn)
-            .add("isNotEmptyFn", isNotEmptyFn)
-            .add("applyFn", applyFn)
-    )
-
-    /**
-     * Creates an instance of [SincResampleFn] with type-specific functions as lambda functions.
-     *
-     * @param windowSize the size of the windows to use to calculate the [sinc](https://en.wikipedia.org/wiki/Sinc_function) functions filter.
-     * @param createVectorFn function of two parameters that create a container of type [L] of desired size (1) out of iterator
-     *            with elements of type [T] (2). The function called only once when the initial window is being read from
-     *            the input sequence.
-     * @param extractNextVectorFn function of one argument of type [ExtractNextVectorFnArgument] to extract next container of
-     *            type [L] out of provided window. The function is called every time the [ExtractNextVectorFnArgument.offset]
-     *            is changed.
-     * @param isNotEmptyFn checks if the container is not empty. The current container is provided via the argument. Returns
-     *            `true` if the container is not empty which lead to continue processing the stream, otherwise if `false`
-     *            the stream will end.
-     * @param applyFn function convolve the filter `h` which is a sum of corresponding `sinc` functions values in time
-     *            markers of each sample of the window. Expected to return the sum of elements of vector of type [L] as
-     *            singular element of type [T], i.e. if `x` is a vector, `h` is a filter, and `*` is convolution operation,
-     *            the result expected to be: `(h * x).sum()`
-     */
-    constructor(
-            windowSize: Int,
-            createVectorFn: (Pair<Int, Iterator<T>>) -> L,
-            extractNextVectorFn: (ExtractNextVectorFnArgument<T, L>) -> L,
-            isNotEmptyFn: (L) -> Boolean,
-            applyFn: (Pair<L, DoubleArray>) -> T
-    ) : this(
-            windowSize,
-            wrap(createVectorFn),
-            wrap(extractNextVectorFn),
-            wrap(isNotEmptyFn),
-            wrap(applyFn),
-    )
-
-    private val windowSize: Int by lazy {
-        initParameters.int("windowSize")
-    }
-    private val createVectorFn: Fn<Pair<Int, Iterator<T>>, L> by lazy {
-        initParameters.fn<Pair<Int, Iterator<T>>, L>("createVectorFn")
-    }
-    private val extractNextVectorFn: Fn<ExtractNextVectorFnArgument<T, L>, L> by lazy {
-        initParameters.fn<ExtractNextVectorFnArgument<T, L>, L>("extractNextVectorFn")
-    }
-    private val isNotEmptyFn: Fn<L, Boolean> by lazy {
-        initParameters.fn<L, Boolean>("isNotEmptyFn")
-    }
-    private val applyFn: Fn<Pair<L, DoubleArray>, T> by lazy {
-        initParameters.fn<Pair<L, DoubleArray>, T>("applyFn")
-    }
-
-    override fun apply(argument: ResamplingArgument<T>): Sequence<T> {
+    operator fun invoke(argument: ResamplingArgument<T>): Sequence<T> {
         fun sinc(t: Double) = if (t == 0.0) 1.0 else sin(PI * t) / (PI * t)
 
         require(windowSize > 0) { "Window is too small: windowSize=$windowSize" }
@@ -183,12 +109,12 @@ class SincResampleFn<T : Any, L : Any>(initParameters: FnInitParameters) : Fn<Re
 
         fun extractWindow(on: Double): L {
             if (window == null) {
-                window = createVector(windowSize, streamIterator)
+                window = createVectorFn(windowSize, streamIterator)
             } else {
                 val startIndex = windowStartIndex.toDouble()
                 val offset = (on - startIndex).toInt()
                 if (offset > 0) {
-                    window = extractNextVector(windowSize, offset, window!!, streamIterator)
+                    window = extractNextVectorFn(ExtractNextVectorFnArgument(windowSize, offset, window!!, streamIterator))
                     windowStartIndex += offset
                 }
             }
@@ -207,26 +133,17 @@ class SincResampleFn<T : Any, L : Any>(initParameters: FnInitParameters) : Fn<Re
         var timeMarker = 0.0
         val d = 1.0 / nfs
         return object : Iterator<T> {
-            override fun hasNext(): Boolean = isNotEmpty(extractWindow(timeMarker))
+            override fun hasNext(): Boolean = isNotEmptyFn(extractWindow(timeMarker))
 
             override fun next(): T {
                 val sourceTimeMarker = (truncate(timeMarker * fs)) / fs // in seconds
                 val x = extractWindow(sourceTimeMarker * fs)
                 val h = h(timeMarker, sourceTimeMarker)
                 timeMarker += d
-                return apply(x, h)
+                return applyFn(x, h)
             }
         }.asSequence()
     }
-
-    private fun createVector(size: Int, iterator: Iterator<T>): L = createVectorFn.apply(Pair(size, iterator))
-
-    private fun extractNextVector(size: Int, offset: Int, vector: L, iterator: Iterator<T>): L =
-            extractNextVectorFn.apply(ExtractNextVectorFnArgument(size, offset, vector, iterator))
-
-    private fun isNotEmpty(vector: L): Boolean = isNotEmptyFn.apply(vector)
-
-    private fun apply(vector: L, filter: DoubleArray): T = applyFn.apply(Pair(vector, filter))
 }
 
 /**

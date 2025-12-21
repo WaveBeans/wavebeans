@@ -33,7 +33,7 @@ import kotlin.reflect.typeOf
 @JvmName("resample")
 @JsName("resample")
 inline fun <reified S : BeanStream<T>, T : Any> S.resample(
-    noinline resampleFn: (ResamplingArgument<T>) -> Sequence<T> = { SimpleResampleFn<T>().apply(it) },
+    noinline resampleFn: (ResamplingArgument<T>) -> Sequence<T> = { SimpleResampleFn<T> { it.first() }(it) },
     to: Float? = null,
 ): S {
     val streamType = this
@@ -50,7 +50,7 @@ inline fun <reified S : BeanStream<T>, T : Any> S.resample(
 @JvmName("resampleSample")
 @JsName("resampleSample")
 inline fun <reified S : BeanStream<Sample>> S.resample(
-    noinline resampleFn: (ResamplingArgument<Sample>) -> Sequence<Sample> = { sincResampleFunc(32).apply(it) },
+    noinline resampleFn: (ResamplingArgument<Sample>) -> Sequence<Sample> = { sincResampleFunc(32)(it) },
     to: Float? = null,
 ): S {
     val streamType = this

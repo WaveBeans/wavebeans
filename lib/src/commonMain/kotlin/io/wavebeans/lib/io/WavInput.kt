@@ -18,7 +18,7 @@ const val sincResampleFuncDefaultWindowSize = 64
  */
 fun wave(
         uri: String,
-        resampleFn: ((ResamplingArgument<Sample>) -> Sequence<Sample>)? = { sincResampleFunc().apply(it) },
+        resampleFn: ((ResamplingArgument<Sample>) -> Sequence<Sample>)? = { sincResampleFunc()(it) },
 ): FiniteStream<Sample> = WavInput(WavInputParams(uri)).let { input ->
     resampleFn?.let { input.resample<FiniteStream<Sample>, Sample>(resampleFn = resampleFn) } ?: input
 }
@@ -38,7 +38,7 @@ fun wave(
 fun wave(
         uri: String,
         converter: FiniteToStream<Sample>,
-        resampleFn: (ResamplingArgument<Sample>) -> Sequence<Sample> = { sincResampleFunc().apply(it) },
+        resampleFn: (ResamplingArgument<Sample>) -> Sequence<Sample> = { sincResampleFunc()(it) },
 ): BeanStream<Sample> = wave(uri, resampleFn).stream(converter)
 
 /**

@@ -28,7 +28,7 @@ fun BeanStream<Sample>.toCsv(
     return toCsv(
             uri = uri,
             header = listOf("time ${timeUnit.abbreviation()}", "value"),
-            elementSerializer = { l, f, s -> sampleCsvFn.apply(Triple(l, f, s)) },
+            elementSerializer = { l, f, s -> sampleCsvFn(l, f, s) },
             encoding = encoding
     )
 }
@@ -63,7 +63,7 @@ fun <A : Any> BeanStream<Managed<OutputSignal, A, Sample>>.toCsv(
     return toCsv(
             uri = uri,
             header = listOf("time ${timeUnit.abbreviation()}", "value"),
-            elementSerializer = { l, f, s -> sampleCsvFn.apply(Triple(l, f, s)) },
+            elementSerializer = { l, f, s -> sampleCsvFn(l, f, s) },
             suffix = suffix,
             encoding = encoding
     )
@@ -108,21 +108,17 @@ fun <A : Any> BeanStream<Managed<OutputSignal, A, Sample>>.toCsv(
 }
 
 /**
- * The [Fn] the converts [Sample] stream to its CSV presentation:
+ * The function converts [Sample] stream to its CSV presentation:
  *
  * The output looks like this:
  * ```csv
  * 1,0.000000002
  * ```
  */
-class SampleCsvFn(parameters: FnInitParameters) : Fn<Triple<Long, Float, Sample>, List<String>>(parameters) {
+class SampleCsvFn(val timeUnit: TimeUnit) {
 
-    constructor(timeUnit: TimeUnit) : this(FnInitParameters().addObj("timeUnit", timeUnit) { it.name })
-
-    override fun apply(argument: Triple<Long, Float, Sample>): List<String> {
-        val (idx, sampleRate, sample) = argument
-        val tu = initParams.obj("timeUnit") { TimeUnit.valueOf(it) }
-        val time = samplesCountToLength(idx, sampleRate, tu)
+    operator fun invoke(idx: Long, sampleRate: Float, sample: Sample): List<String> {
+        val time = samplesCountToLength(idx, sampleRate, timeUnit)
         return listOf(time.toString(), sample.toString())
     }
 }

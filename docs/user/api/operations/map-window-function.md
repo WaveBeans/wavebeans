@@ -30,7 +30,7 @@ For convenience it is implemented for `Sample` type, but it can be used with any
 
 ## Stream of `Sample` type
 
-To multiply the source windowed stream with window function you need to use `.windowFunction()` on the stream which was already windowed. It gets either as a parameter lambda function `{ (i, n) -> sampleOf(...) }` or a class `Fn<Pair<Int, Int>, Sample>`, what are the the differences and limitations of both approaches please follow [functions documentation](../functions.md).
+To multiply the source windowed stream with window function you need to use `.windowFunction()` on the stream which was already windowed. It gets either as a parameter lambda function `{ (i, n) -> sampleOf(...) }` or a regular class with `invoke` operator, what are the the differences and limitations of both approaches please follow [functions documentation](../functions.md).
 
 The arguments of the generation function are:
 1. The index of the sample in the window (`Int`)
@@ -46,8 +46,8 @@ The arguments of the generation function are:
         }
 
 // via class definition
-class TriangularFn: Fn<Pair<Int, Int>, Sample>() {
-    override fun apply(argument: Pair<Int, Int>): Sample {
+class TriangularFn {
+    operator fun invoke(argument: Pair<Int, Int>): Sample {
         val (i, n) = argument
         val halfN = n / 2.0
         return sampleOf(1.0 - abs((i - halfN) / halfN))
@@ -56,7 +56,7 @@ class TriangularFn: Fn<Pair<Int, Int>, Sample>() {
 
 440.sine()
         .window(401)
-        .windowFunction(TriangularFn())
+        .windowFunction { TriangularFn()(it) }
 ```
 
 Or there is a few predefined window functions:
@@ -138,13 +138,13 @@ The multiply function defines how tow multiply two values coming from the stream
 Example of functions (working with `Sample` type):
 
 ```kotlin
-val windowFunction: Fn<Pair<Int, Int>, Sample> = Fn.wrap { (i, n) ->
+val windowFunction: (Pair<Int, Int>) -> Sample = { (i, n) ->
     // triangular window function
     val halfN = n / 2.0
     sampleOf(1.0 - abs((i - halfN) / halfN))
 }
 
-val multiplyFn: Fn<Pair<Sample, Sample>, Sample> = Fn.wrap { (a, b) ->
+val multiplyFn: (Pair<Sample, Sample>) -> Sample = { (a, b) ->
     a * b
 }
 ```
@@ -154,5 +154,5 @@ Thus the usage of them is as simple as calling it via [`.map()`](map-operation.m
 ```kotlin
 440.sine()
     .window(401)
-    .map(MapWindowFn(windowFunction, multiplyFn))
+    .map { MapWindowFn(windowFunction, multiplyFn)(it) }
 ```

@@ -57,19 +57,16 @@ class FunctionStreamOutputSpec : DescribeSpec({
 
     describe("Writing encoded samples") {
 
-        class FileEncoderFn<T : Any>(initParameters: FnInitParameters) :
-            Fn<WriteFunctionArgument<T>, Boolean>(initParameters) {
-
-            constructor(file: String) : this(FnInitParameters().add("file", file))
+        class FileEncoderFn<T : Any>(private val filePath: String) {
 
             private val file by lazy {
-                WbFileDriver.createFile(uri(initParams.string("file")))
+                WbFileDriver.createFile(uri(filePath))
                     .createWbFileOutputStream()
             }
             private val bytesPerSample = BitDepth.BIT_32.bytesPerSample
             private val bitDepth = BitDepth.BIT_32
 
-            override fun apply(argument: WriteFunctionArgument<T>): Boolean {
+            operator fun invoke(argument: WriteFunctionArgument<T>): Boolean {
                 when (argument.phase) {
                     WRITE -> {
                         when (argument.sampleClazz) {
@@ -120,7 +117,8 @@ class FunctionStreamOutputSpec : DescribeSpec({
 
         context("should store sample bytes as LE into a file") {
             withData(modes) { (mode, locateFacilitators, evaluate) ->
-                val o = input.out(FileEncoderFn("file://${outputFile.absolutePath}"))
+                val encoder = FileEncoderFn<Sample>("file://${outputFile.absolutePath}")
+                val o = input.out { encoder(it) }
                 evaluate(o, sampleRate, locateFacilitators())
 
                 assertThat(generated).isContainedBy(input.toList(sampleRate)) { a, b -> abs(a - b) < 1e-8 }
@@ -128,9 +126,10 @@ class FunctionStreamOutputSpec : DescribeSpec({
         }
         context("should store sample vector bytes as LE into a file") {
             withData(modes) { (mode, locateFacilitators, evaluate) ->
+                val encoder = FileEncoderFn<SampleVector>("file://${outputFile.absolutePath}")
                 val o = input
                     .window(64).map { sampleVectorOf(it) }
-                    .out(FileEncoderFn("file://${outputFile.absolutePath}"))
+                    .out { encoder(it) }
                 evaluate(o, sampleRate, locateFacilitators())
 
                 assertThat(generated).isContainedBy(input.toList(sampleRate)) { a, b -> abs(a - b) < 1e-8 }

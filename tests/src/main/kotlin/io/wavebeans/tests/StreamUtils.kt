@@ -16,11 +16,11 @@ fun seqStream() = input { x, _ -> sampleOf(x * 1e-10) }
 
 private val log = KotlinLogging.logger { }
 
-class StoreToMemoryFn<T : Any> : Fn<WriteFunctionArgument<T>, Boolean>() {
+class StoreToMemoryFn<T : Any> {
 
     private val list = ArrayList<T>()
 
-    override fun apply(argument: WriteFunctionArgument<T>): Boolean {
+    operator fun invoke(argument: WriteFunctionArgument<T>): Boolean {
         if (argument.phase == WriteFunctionPhase.WRITE)
             list += argument.sample!!
         return true
@@ -36,7 +36,7 @@ inline fun <reified T : Any> BeanStream<T>.toList(
     drop: Int = 0
 ): List<T> {
     val writeFunction = StoreToMemoryFn<T>()
-    this.out { writeFunction.apply(it) }.evaluate(sampleRate)
+    this.out { writeFunction(it) }.evaluate(sampleRate)
     return writeFunction.list().drop(drop).take(take)
 }
 

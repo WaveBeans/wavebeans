@@ -190,27 +190,6 @@ class ScriptRunnerSpec : DescribeSpec({
             }
         }
 
-        context("Defining function as class") {
-            withData(modes) { mode ->
-                val script = """
-                        class InputFn: Fn<Pair<Long, Float>, Sample?>() {
-                            override fun apply(argument: Pair<Long, Float>): Sample? {
-                                return sampleOf(argument.first)
-                            }
-                        }
-
-                        input(InputFn())
-                          .map { it }
-                          .trim(1)
-                          .toDevNull()
-                          .out()
-                    """.trimIndent()
-
-                assertThat(mode.eval(script)).isNull()
-            }
-
-        }
-
         context("Defining function as lambda") {
             withData(modes) { mode ->
                 val script = """

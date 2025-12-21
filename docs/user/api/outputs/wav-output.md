@@ -191,21 +191,18 @@ val endSignal = endSequence.input()
 val signal = 440.sine().trim(1000)
 val noise = input { sampleOf(Random.nextInt()) }
 
-class SequenceDetectFn(initParameters: FnInitParameters) : Fn<Window<Sample>, Managed<OutputSignal, Unit, SampleVector>>(initParameters) {
+class SequenceDetectFn(val endSequence: List<Sample>) {
 
-    constructor(endSequence: List<Sample>) : this(FnInitParameters().addDoubles("endSequence", endSequence))
-
-    override fun apply(argument: Window<Sample>): Managed<OutputSignal, Unit, SampleVector> {
-        val es = initParams.doubles("endSequence")
+    operator fun invoke(argument: Window<Sample>): Managed<OutputSignal, Unit, SampleVector> {
         val ei = argument.elements.iterator()
-        var ai = es.iterator()
+        var ai = endSequence.iterator()
         var startedAt = -1
         var i = 0
         while (ei.hasNext() && ai.hasNext()) {
             val e = ei.next()
             val a = ai.next()
             if (a != e) {
-                ai = es.iterator()
+                ai = endSequence.iterator()
                 startedAt = -1
             } else if (startedAt == -1) {
                 startedAt = i
@@ -223,9 +220,11 @@ class SequenceDetectFn(initParameters: FnInitParameters) : Fn<Window<Sample>, Ma
     }
 }
 
+val sequenceDetect = SequenceDetectFn(endSequence)
+
 (signal..endSignal..noise)
         .window(endSequence.size * 10)
-        .map(SequenceDetectFn(endSequence))
+        .map { sequenceDetect(it) }
         .toMono16bitWav("file:///home/user/sine.wav") { "-${Random.nextInt().toString(36)}" }
 ```
 
