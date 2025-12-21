@@ -1,3 +1,5 @@
+@file:Suppress("UNCHECKED_CAST")
+
 package io.wavebeans.execution.serializer
 
 import io.wavebeans.lib.*

@@ -29,6 +29,7 @@ import kotlin.reflect.typeOf
  *
  * @return the stream that will be resampled to desired sample rate.
  */
+@Suppress("UNCHECKED_CAST")
 @JvmName("resample")
 @JsName("resample")
 inline fun <reified S : BeanStream<T>, T : Any> S.resample(
@@ -45,6 +46,7 @@ inline fun <reified S : BeanStream<T>, T : Any> S.resample(
     }
 }
 
+@Suppress("UNCHECKED_CAST")
 @JvmName("resampleSample")
 @JsName("resampleSample")
 inline fun <reified S : BeanStream<Sample>> S.resample(

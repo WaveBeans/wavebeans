@@ -16,6 +16,7 @@ import kotlinx.serialization.encoding.*
 /**
  * Serializer for [CsvStreamOutputParams].
  */
+@Suppress("UNCHECKED_CAST")
 object CsvStreamOutputParamsSerializer : KSerializer<CsvStreamOutputParams<*, *>> {
 
     override val descriptor: SerialDescriptor =

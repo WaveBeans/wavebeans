@@ -17,6 +17,7 @@ import kotlin.properties.Delegates.notNull
 /**
  * Serializer for [WindowStreamParams].
  */
+@Suppress("UNCHECKED_CAST")
 object WindowStreamParamsSerializer : KSerializer<WindowStreamParams<*>> {
 
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor(WindowStreamParams::class.className()) {
