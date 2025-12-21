@@ -26,14 +26,6 @@ inline fun <reified T : Any> BeanStream<T>.out(
     noinline writeFunction: ExecutionScope.(WriteFunctionArgument<T>) -> Boolean
 ): StreamOutput<T> = FunctionStreamOutput(this, FunctionStreamOutputParams(T::class, scope, writeFunction))
 
-@Deprecated(
-    message = "Use out with lambda instead",
-    replaceWith = ReplaceWith("out { it }")
-)
-inline fun <reified T : Any> BeanStream<T>.out(
-    writeFunction: Fn<WriteFunctionArgument<T>, Boolean>
-): StreamOutput<T> = this.out(EmptyScope) { writeFunction.apply(it) }
-
 inline fun <reified T : Any> BeanStream<T>.out(
     noinline writeFunction: (WriteFunctionArgument<T>) -> Boolean
 ): StreamOutput<T> = this.out(EmptyScope) { writeFunction(it) }

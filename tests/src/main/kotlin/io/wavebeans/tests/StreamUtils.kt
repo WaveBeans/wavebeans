@@ -36,7 +36,7 @@ inline fun <reified T : Any> BeanStream<T>.toList(
     drop: Int = 0
 ): List<T> {
     val writeFunction = StoreToMemoryFn<T>()
-    this.out(writeFunction).evaluate(sampleRate)
+    this.out { writeFunction.apply(it) }.evaluate(sampleRate)
     return writeFunction.list().drop(drop).take(take)
 }
 

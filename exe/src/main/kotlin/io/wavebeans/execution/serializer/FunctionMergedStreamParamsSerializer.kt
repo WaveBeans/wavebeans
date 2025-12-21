@@ -15,6 +15,7 @@ import kotlinx.serialization.encoding.encodeStructure
 /**
  * Serializer for [FunctionMergedStreamParams]
  */
+@Suppress("UNCHECKED_CAST")
 object FunctionMergedStreamParamsSerializer : KSerializer<FunctionMergedStreamParams<*, *, *>> {
 
     override val descriptor: SerialDescriptor =

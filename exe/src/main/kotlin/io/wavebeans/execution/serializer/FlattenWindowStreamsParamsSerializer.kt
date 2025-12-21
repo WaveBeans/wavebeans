@@ -15,6 +15,7 @@ import kotlinx.serialization.encoding.encodeStructure
 /**
  * Serializer for [FlattenWindowStreamsParams].
  */
+@Suppress("UNCHECKED_CAST")
 object FlattenWindowStreamsParamsSerializer : KSerializer<FlattenWindowStreamsParams<*>> {
     override val descriptor: SerialDescriptor =
         buildClassSerialDescriptor(FlattenWindowStreamsParams::class.className()) {
