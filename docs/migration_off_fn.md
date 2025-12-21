@@ -150,8 +150,8 @@ The following items are temporary measures introduced during the migration and s
 - [x] `io.wavebeans.lib.stream.AbstractResampleStream`
 - [x] `io.wavebeans.lib.io.InputParams` (in `io.wavebeans.lib.io.FunctionInput`)
 - [x] `io.wavebeans.lib.io.Input` (in `io.wavebeans.lib.io.FunctionInput`)
-- [ ] `io.wavebeans.lib.io.FunctionStreamOutput`
-- [ ] `io.wavebeans.lib.io.FunctionStreamOutputParams`
+- [x] `io.wavebeans.lib.io.FunctionStreamOutput`
+- [x] `io.wavebeans.lib.io.FunctionStreamOutputParams`
 - [ ] `io.wavebeans.lib.stream.FlattenStreamsParams` (in `io.wavebeans.lib.stream.FlattenStream`)
 - [ ] `io.wavebeans.lib.stream.FlattenStream`
 - [ ] `io.wavebeans.lib.stream.FlattenWindowStreamsParams` (in `io.wavebeans.lib.stream.FlattenWindowStream`)

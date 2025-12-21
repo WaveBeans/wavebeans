@@ -22,22 +22,21 @@ import kotlin.reflect.KClass
  * * It doesn't affect anything in other phases.
  */
 inline fun <reified T : Any> BeanStream<T>.out(
-    writeFunction: Fn<WriteFunctionArgument<T>, Boolean>
-): StreamOutput<T> = FunctionStreamOutput(this, FunctionStreamOutputParams(T::class, writeFunction))
+    scope: ExecutionScope,
+    noinline writeFunction: ExecutionScope.(WriteFunctionArgument<T>) -> Boolean
+): StreamOutput<T> = FunctionStreamOutput(this, FunctionStreamOutputParams(T::class, scope, writeFunction))
 
-/**
- * Output as a function. Invokes the specified function on each sample during writing via [Writer].
- *
- * @param writeFunction the function as [Fn] to invoke, has [WriteFunctionArgument] as an argument.
- *
- * @return the value of `Boolean` type, that controls the output writer behavior:
- * * In the [WriteFunctionPhase.WRITE] phase if the function returns `true` the writer will continue processing the input,
- *   if it returns `false` the writer will stop processing, but anyway [WriteFunctionPhase.CLOSE] phase will be initiated.
- * * It doesn't affect anything in other phases.
- */
+@Deprecated(
+    message = "Use out with lambda instead",
+    replaceWith = ReplaceWith("out { it }")
+)
+inline fun <reified T : Any> BeanStream<T>.out(
+    writeFunction: Fn<WriteFunctionArgument<T>, Boolean>
+): StreamOutput<T> = this.out(EmptyScope) { writeFunction.apply(it) }
+
 inline fun <reified T : Any> BeanStream<T>.out(
     noinline writeFunction: (WriteFunctionArgument<T>) -> Boolean
-): StreamOutput<T> = this.out(wrap(writeFunction))
+): StreamOutput<T> = this.out(EmptyScope) { writeFunction(it) }
 
 /**
  * The argument of the output as a function routine.
@@ -92,64 +91,24 @@ enum class WriteFunctionPhase {
  *    if it returns `false` the writer will stop processing, but anyway [WriteFunctionPhase.CLOSE] phase will be initiated.
  *  * It doesn't affect anything in other phases.
  */
-@Serializable(with = FunctionStreamOutputParamsSerializer::class)
 data class FunctionStreamOutputParams<T : Any>(
     /**
      * The class of the sample.
      */
     val sampleClazz: KClass<T>,
     /**
-     * The function as [Fn] to invoke, has [WriteFunctionArgument] as an argument. Return the value of `Boolean`
+     * The execution scope.
+     */
+    val scope: ExecutionScope,
+    /**
+     * The function to invoke, has [WriteFunctionArgument] as an argument. Return the value of `Boolean`
      * type, that controls the output writer behavior:
      *  * In the [WriteFunctionPhase.WRITE] phase if the function returns `true` the writer will continue processing the input,
      *    if it returns `false` the writer will stop processing, but anyway [WriteFunctionPhase.CLOSE] phase will be initiated.
      *  * It doesn't affect anything in other phases.
      */
-    val writeFunction: Fn<WriteFunctionArgument<T>, Boolean>
+    val writeFunction: ExecutionScope.(WriteFunctionArgument<T>) -> Boolean
 ) : BeanParams
-
-/**
- * Serializer for [FunctionStreamOutputParams].
- */
-object FunctionStreamOutputParamsSerializer : KSerializer<FunctionStreamOutputParams<*>> {
-
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor(FunctionStreamOutputParams::class.className()) {
-            element("sampleClazz", String.serializer().descriptor)
-            element("writeFunction", FnSerializer.descriptor)
-        }
-
-    override fun deserialize(decoder: Decoder): FunctionStreamOutputParams<*> {
-        return decoder.decodeStructure(descriptor) {
-            lateinit var sampleClazz: KClass<Any>
-            lateinit var writeFunction: Fn<WriteFunctionArgument<Any>, Boolean>
-            @Suppress("UNCHECKED_CAST")
-            loop@ while (true) {
-                when (val i = decodeElementIndex(descriptor)) {
-                    CompositeDecoder.DECODE_DONE -> break@loop
-                    0 -> sampleClazz =
-                        WaveBeansClassLoader.classForName(decodeStringElement(descriptor, i)) as KClass<Any>
-
-                    1 -> writeFunction = decodeSerializableElement(
-                        descriptor,
-                        i,
-                        FnSerializer
-                    ) as Fn<WriteFunctionArgument<Any>, Boolean>
-
-                    else -> throw SerializationException("Unknown index $i")
-                }
-            }
-            FunctionStreamOutputParams(sampleClazz, writeFunction)
-        }
-    }
-
-    override fun serialize(encoder: Encoder, value: FunctionStreamOutputParams<*>) {
-        encoder.encodeStructure(descriptor) {
-            encodeSerializableElement(descriptor, 0, String.serializer(), value.sampleClazz.className())
-            encodeSerializableElement(descriptor, 1, FnSerializer, value.writeFunction)
-        }
-    }
-}
 
 /**
  * Output as a function. Invokes the specified function on each sample during writing via [Writer].
@@ -174,7 +133,8 @@ class FunctionStreamOutput<T : Any>(
             override fun write(): Boolean {
                 return if (sampleIterator.hasNext()) {
                     val sample = sampleIterator.next()
-                    if (!parameters.writeFunction.apply(
+                    if (!parameters.writeFunction.invoke(
+                            parameters.scope,
                             WriteFunctionArgument(
                                 parameters.sampleClazz,
                                 sampleCounter,
@@ -188,7 +148,8 @@ class FunctionStreamOutput<T : Any>(
 //                    samplesProcessed.increment()
                     true
                 } else {
-                    parameters.writeFunction.apply(
+                    parameters.writeFunction.invoke(
+                        parameters.scope,
                         WriteFunctionArgument(
                             parameters.sampleClazz,
                             sampleCounter,
@@ -203,7 +164,8 @@ class FunctionStreamOutput<T : Any>(
 
             override fun close() {
                 log.debug { "Closing. Written $sampleCounter samples" }
-                parameters.writeFunction.apply(
+                parameters.writeFunction.invoke(
+                    parameters.scope,
                     WriteFunctionArgument(
                         parameters.sampleClazz,
                         sampleCounter,
