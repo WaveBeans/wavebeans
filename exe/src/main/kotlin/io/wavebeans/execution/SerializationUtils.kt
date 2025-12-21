@@ -6,6 +6,7 @@ import io.wavebeans.lib.BeanParams
 import io.wavebeans.lib.NoParams
 import io.wavebeans.lib.io.*
 import io.wavebeans.lib.stream.*
+import io.wavebeans.lib.stream.window.WindowStreamParams
 import io.wavebeans.lib.table.*
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
@@ -60,12 +61,12 @@ fun SerializersModuleBuilder.beanParams() {
         subclass(BeanGroupParams::class, BeanGroupParams.serializer())
         subclass(CsvFftStreamOutputParams::class, CsvFftStreamOutputParams.serializer())
 //        subclass(FftStreamParams::class, FftStreamParams.serializer())
-//        subclass(WindowStreamParams::class, WindowStreamParamsSerializer)
+        subclass(WindowStreamParams::class, WindowStreamParamsSerializer)
         subclass(ProjectionBeanStreamParams::class, ProjectionBeanStreamParams.serializer())
         subclass(MapStreamParams::class, MapStreamParamsSerializer)
         subclass(InputParams::class, InputParamsSerializer)
         subclass(FunctionMergedStreamParams::class, FunctionMergedStreamParamsSerializer)
-//        subclass(ListAsInputParams::class, ListAsInputParamsSerializer)
+        subclass(ListAsInputParams::class, ListAsInputParamsSerializer)
         subclass(TableOutputParams::class, TableOutputParamsSerializer)
         subclass(TableDriverStreamParams::class, TableDriverStreamParams.serializer())
         subclass(WavFileOutputParams::class, WavFileOutputParamsSerializer)

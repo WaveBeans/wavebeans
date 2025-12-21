@@ -152,10 +152,10 @@ The following items are temporary measures introduced during the migration and s
 - [x] `io.wavebeans.lib.io.Input` (in `io.wavebeans.lib.io.FunctionInput`)
 - [x] `io.wavebeans.lib.io.FunctionStreamOutput`
 - [x] `io.wavebeans.lib.io.FunctionStreamOutputParams`
-- [ ] `io.wavebeans.lib.stream.FlattenStreamsParams` (in `io.wavebeans.lib.stream.FlattenStream`)
-- [ ] `io.wavebeans.lib.stream.FlattenStream`
-- [ ] `io.wavebeans.lib.stream.FlattenWindowStreamsParams` (in `io.wavebeans.lib.stream.FlattenWindowStream`)
-- [ ] `io.wavebeans.lib.stream.FlattenWindowStream`
+- [x] `io.wavebeans.lib.stream.FlattenStreamsParams` (in `io.wavebeans.lib.stream.FlattenStream`)
+- [x] `io.wavebeans.lib.stream.FlattenStream`
+- [x] `io.wavebeans.lib.stream.FlattenWindowStreamsParams` (in `io.wavebeans.lib.stream.FlattenWindowStream`)
+- [x] `io.wavebeans.lib.stream.FlattenWindowStream`
 - [x] `io.wavebeans.lib.stream.FunctionMergedStreamParams`
 - [x] `io.wavebeans.lib.stream.FunctionMergedStream`
 - [x] Support `ExecutionScope` in `map`, `merge`, `FunctionMergedStream` and `MapStream`.
@@ -165,10 +165,10 @@ The following items are temporary measures introduced during the migration and s
 - [x] `io.wavebeans.lib.io.WavFileOutput`
 - [x] `io.wavebeans.lib.io.WavPartialFileOutput`
 - [ ] `io.wavebeans.lib.stream.SimpleResampleFn`
-- [ ] `io.wavebeans.lib.stream.window.WindowStreamParams`
-- [ ] `io.wavebeans.lib.stream.window.WindowStream`
-- [ ] `io.wavebeans.lib.table.TableOutputParams`
-- [ ] `io.wavebeans.lib.table.TableOutput`
+- [x] `io.wavebeans.lib.stream.window.WindowStreamParams`
+- [x] `io.wavebeans.lib.stream.window.WindowStream`
+- [x] `io.wavebeans.lib.table.TableOutputParams`
+- [x] `io.wavebeans.lib.table.TableOutput`
 - [x] `io.wavebeans.lib.io.SampleCsvFn` (in `io.wavebeans.lib.io.CsvSampleStreamOutput`)
 - [x] `io.wavebeans.lib.io.WavInputParams`
 - [x] `io.wavebeans.lib.io.WavInput`

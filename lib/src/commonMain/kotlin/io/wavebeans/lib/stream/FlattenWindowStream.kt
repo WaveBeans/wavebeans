@@ -19,7 +19,7 @@ import kotlin.jvm.JvmName
  * as a sum of their corresponding elements, if you need to change the behaviour consider specifying it explicitly
  * via [overlapResolve] parameter.
  *
- * @param overlapResolve the function as [Fn] that resolves the conflict of overlapping elements while flattening
+ * @param overlapResolve the function that resolves the conflict of overlapping elements while flattening
  *                       the windows with step < size.
  * @param T the type of the resulted element.
  *
@@ -27,79 +27,58 @@ import kotlin.jvm.JvmName
  */
 @JvmName("flattenWindow")
 @JsName("flattenWindowFn")
-inline fun <reified T : Any> BeanStream<Window<T>>.flatten(overlapResolve: Fn<Pair<T, T>, T>? = null): BeanStream<T> =
-        FlattenWindowStream(
-                this,
-                FlattenWindowStreamsParams(
-                        overlapResolve ?: when (T::class) {
-                            Sample::class -> wrap { (a, b) -> (a as Sample + b as Sample) as T }
-                            SampleVector::class -> wrap { (a, b) -> (a as SampleVector + b as SampleVector) as T }
-                            else -> wrap { throw IllegalStateException("Overlap resolve function should be specified") }
-                        }
-                )
-        )
+inline fun <reified T : Any> BeanStream<Window<T>>.flatten(
+    noinline overlapResolve: (ExecutionScope.(Pair<T, T>) -> T)? = null
+): BeanStream<T> = this.flatten(EmptyScope, overlapResolve)
 
 /**
  * Flattens the windowed stream of any type [T]. Flatten is a process that extracts a single stream of all elements to
  * the continuous stream of [T].
  *
- * @param overlapResolve the function that resolves the conflict of overlapping elements while flattening the windows
- *                       with step < size.
+ * It provides the default [FlattenStreamsParams#overlapResolve] function implementation for [Sample] and [SampleVector]
+ * as a sum of their corresponding elements, if you need to change the behaviour consider specifying it explicitly
+ * via [overlapResolve] parameter.
+ *
+ * @param scope the execution scope to use.
+ * @param overlapResolve the function that resolves the conflict of overlapping elements while flattening
+ *                       the windows with step < size.
  * @param T the type of the resulted element.
  *
  * @return the flattened stream of [T].
  */
 @JvmName("flattenWindow")
-@JsName("flattenWindow")
-inline fun <reified T : Any> BeanStream<Window<T>>.flatten(noinline overlapResolve: (Pair<T, T>) -> T): BeanStream<T> =
-        this.flatten(wrap(overlapResolve))
+@JsName("flattenWindowFnWithScope")
+inline fun <reified T : Any> BeanStream<Window<T>>.flatten(
+    scope: ExecutionScope,
+    noinline overlapResolve: (ExecutionScope.(Pair<T, T>) -> T)? = null
+): BeanStream<T> =
+    FlattenWindowStream(
+        this,
+        FlattenWindowStreamsParams(
+            scope,
+            overlapResolve ?: when (T::class) {
+                Sample::class -> { { (a, b) -> (a as Sample + b as Sample) as T } }
+                SampleVector::class -> { { (a, b) -> (a as SampleVector + b as SampleVector) as T } }
+                else -> { { throw IllegalStateException("Overlap resolve function should be specified") } }
+            }
+        )
+    )
 
 /**
  * Parameters to use with [FlattenWindowStream].
  *
  * @param T the type of the resulted element.
  */
-@Serializable(with = FlattenWindowStreamsParamsSerializer::class)
 class FlattenWindowStreamsParams<T : Any>(
     /**
-     * The function as [Fn] that resolves the conflict of overlapping elements while flattening the windows with step < size.
+     * The execution scope.
      */
-    val overlapResolve: Fn<Pair<T, T>, T>
+    val scope: ExecutionScope,
+    /**
+     * The function that resolves the conflict of overlapping elements while flattening the windows with step < size.
+     */
+    val overlapResolve: ExecutionScope.(Pair<T, T>) -> T
 ) : BeanParams
-
-/**
- * Serializer for [FlattenWindowStreamsParams].
- */
-object FlattenWindowStreamsParamsSerializer : KSerializer<FlattenWindowStreamsParams<*>> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor(FlattenWindowStreamsParams::class.className()) {
-            element("overlapResolve", FnSerializer.descriptor)
-        }
-
-    override fun deserialize(decoder: Decoder): FlattenWindowStreamsParams<*> {
-        return decoder.decodeStructure(descriptor) {
-            lateinit var overlapResolve: Fn<*, *>
-            loop@ while (true) {
-                when (val i = decodeElementIndex(descriptor)) {
-                    CompositeDecoder.DECODE_DONE -> break@loop
-                    0 -> overlapResolve = decodeSerializableElement(descriptor, i, FnSerializer)
-                    else -> throw SerializationException("Unknown index $i")
-                }
-            }
-            @Suppress("UNCHECKED_CAST")
-            FlattenWindowStreamsParams(
-                overlapResolve as Fn<Pair<Any, Any>, Any>
-            )
-        }
-    }
-
-    override fun serialize(encoder: Encoder, value: FlattenWindowStreamsParams<*>) {
-        encoder.encodeStructure(descriptor) {
-            encodeSerializableElement(descriptor, 0, FnSerializer, value.overlapResolve)
-        }
-    }
-
-}
 
 /**
  * Flattens the windowed stream of any type [T]. Flatten is a process that extracts a single stream of all elements to
@@ -220,7 +199,7 @@ class FlattenWindowStream<T : Any>(
                     null
                 }
                 val el = c[c.index++]
-                return overlapEl?.let { parameters.overlapResolve.apply(it to el) } ?: el
+                return overlapEl?.let { parameters.overlapResolve.invoke(parameters.scope, it to el) } ?: el
 
             }
         }.asSequence()
