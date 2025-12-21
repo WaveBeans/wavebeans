@@ -1,6 +1,5 @@
 package io.wavebeans.lib.io
 
-//import io.wavebeans.fs.core.WbFileDriver
 import io.wavebeans.lib.*
 import io.wavebeans.lib.stream.*
 import kotlinx.serialization.Serializable
@@ -19,9 +18,9 @@ const val sincResampleFuncDefaultWindowSize = 64
  */
 fun wave(
         uri: String,
-        resampleFn: Fn<ResamplingArgument<Sample>, Sequence<Sample>>? = sincResampleFunc(sincResampleFuncDefaultWindowSize),
+        resampleFn: ((ResamplingArgument<Sample>) -> Sequence<Sample>)? = { sincResampleFunc().apply(it) },
 ): FiniteStream<Sample> = WavInput(WavInputParams(uri)).let { input ->
-    resampleFn?.let { input.resample<FiniteStream<Sample>>(resampleFn = resampleFn) } ?: input
+    resampleFn?.let { input.resample<FiniteStream<Sample>, Sample>(resampleFn = resampleFn) } ?: input
 }
 
 /**
@@ -39,7 +38,7 @@ fun wave(
 fun wave(
         uri: String,
         converter: FiniteToStream<Sample>,
-        resampleFn: Fn<ResamplingArgument<Sample>, Sequence<Sample>> = sincResampleFunc(sincResampleFuncDefaultWindowSize),
+        resampleFn: (ResamplingArgument<Sample>) -> Sequence<Sample> = { sincResampleFunc().apply(it) },
 ): BeanStream<Sample> = wave(uri, resampleFn).stream(converter)
 
 /**

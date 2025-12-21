@@ -73,7 +73,7 @@ class ResampleSpec : DescribeSpec({
             it("should perform in $mode mode") {
                 val stream = wavFile.resample(to = 44100.0f)
                     .map { it } // add pointless map-operation to make sure the bean is partitioned
-                    .resample(resampleFn = sincResampleFunc(128))
+                    .resample(resampleFn = { sincResampleFunc(128).apply(it) })
                     .toMono16bitWav("file://${outputFile.absolutePath}")
 
                 evaluate(stream, targetSampleRate, locateFacilitators())

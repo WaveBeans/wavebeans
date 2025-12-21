@@ -185,7 +185,7 @@ inline fun <R : Any, A : Any, reified T : Any> BeanStream<R>.toWav(
         (T::class == Sample::class || T::class == SampleVector::class) && suffix != null -> {
             return WavPartialFileOutput(
                 this as BeanStream<Managed<OutputSignal, A, Any>>,
-                WavFileOutputParams(uri, bitDepth, numberOfChannels, wrap(suffix))
+                WavFileOutputParams(uri, bitDepth, numberOfChannels, suffix)
             ) as StreamOutput<R>
         }
 
@@ -208,7 +208,6 @@ inline fun <R : Any, A : Any, reified T : Any> BeanStream<R>.toWav(
  *
  * @param [A] if the [suffix] function is used, then the type of its argument, otherwise you mau use [Unit].
  */
-@Serializable(with = WavFileOutputParamsSerializer::class)
 data class WavFileOutputParams<A : Any>(
     /**
      * The URI to stream to, i.e. `file:///home/user/my.wav`.
@@ -223,55 +222,12 @@ data class WavFileOutputParams<A : Any>(
      */
     val numberOfChannels: Int,
     /**
-     * [Fn] function to generate suffix is applicable for the stream.
+     * The function that is based on argument of type [A] which is obtained from the moment the
+     * [FlushOutputSignal] or [OpenGateOutputSignal] was generated. The suffix inserted after the name and
+     * before the extension: `file:///home/user/my${suffix}.wav`
      */
-    val suffix: Fn<A?, String> = wrap { "" },
+    val suffix: (A?) -> String = { "" },
 ) : BeanParams
-
-object WavFileOutputParamsSerializer : KSerializer<WavFileOutputParams<*>> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor(WavFileOutputParams::class.className()) {
-        element("uri", String.serializer().descriptor)
-        element("bitDepth", Int.serializer().descriptor)
-        element("numberOfChannels", Int.serializer().descriptor)
-        element("suffix", FnSerializer.descriptor)
-    }
-
-    override fun deserialize(decoder: Decoder): WavFileOutputParams<*> {
-        return decoder.decodeStructure(descriptor) {
-            lateinit var uri: String
-            var bitDepth by notNull<Int>()
-            var numberOfChannels by notNull<Int>()
-            lateinit var suffix: Fn<*, *>
-            loop@ while (true) {
-                when (val i = decodeElementIndex(descriptor)) {
-                    CompositeDecoder.DECODE_DONE -> break@loop
-                    0 -> uri = decodeStringElement(descriptor, i)
-                    1 -> bitDepth = decodeIntElement(descriptor, i)
-                    2 -> numberOfChannels = decodeIntElement(descriptor, i)
-                    3 -> suffix = decodeSerializableElement(descriptor, i, FnSerializer)
-                    else -> throw SerializationException("Unknown index $i")
-                }
-            }
-            @Suppress("UNCHECKED_CAST")
-            WavFileOutputParams(
-                uri,
-                BitDepth.of(bitDepth),
-                numberOfChannels,
-                suffix as Fn<Any?, String>
-            )
-        }
-    }
-
-    override fun serialize(encoder: Encoder, value: WavFileOutputParams<*>) {
-        encoder.encodeStructure(descriptor) {
-            encodeStringElement(descriptor, 0, value.uri)
-            encodeSerializableElement(descriptor, 1, Int.serializer(), value.bitDepth.bits)
-            encodeSerializableElement(descriptor, 2, Int.serializer(), value.numberOfChannels)
-            encodeSerializableElement(descriptor, 3, FnSerializer, value.suffix)
-        }
-    }
-
-}
 
 /**
  * Performs the output of the [stream] to a single wav-file. Uses [WavWriter] ot perform the actual writing.
@@ -322,7 +278,7 @@ class WavPartialFileOutput<A : Any>(
             parameters.bitDepth,
             sampleRate,
             parameters.numberOfChannels,
-            suffixedFileWriterDelegate(parameters.uri) { parameters.suffix.apply(it) },
+            suffixedFileWriterDelegate(parameters.uri) { parameters.suffix(it) },
             WavPartialFileOutput::class
         )
 }

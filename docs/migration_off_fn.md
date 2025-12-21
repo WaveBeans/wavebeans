@@ -134,7 +134,8 @@ fun SerializersModuleBuilder.beanParams() {
 
 The following items are temporary measures introduced during the migration and should be resolved once the migration is complete:
 
-- [ ] Remove deprecated `BeanStream<T>.map(transform: Fn<T, R>)` in `MapStream.kt`. It is currently kept for compatibility with components not yet migrated (e.g., `ChangeAmplitudeSampleStream`).
+- [ ] Migrate `sincResampleFunc` and `SincResampleFn` to use lambdas instead of `Fn`.
+- [ ] Migrate `SimpleResampleFn` to use lambdas instead of `Fn`.
 
 #### Classes to Migrate
 
@@ -143,10 +144,10 @@ The following items are temporary measures introduced during the migration and s
 - [x] `io.wavebeans.lib.io.CsvStreamOutputParams`
 - [x] `io.wavebeans.lib.io.CsvPartialStreamOutput`
 - [x] `io.wavebeans.lib.stream.window.MapWindowFn`
-- [ ] `io.wavebeans.lib.stream.ResampleStreamParams`
-- [ ] `io.wavebeans.lib.stream.ResampleBeanStream`
-- [ ] `io.wavebeans.lib.stream.ResampleFiniteStream`
-- [ ] `io.wavebeans.lib.stream.AbstractResampleStream`
+- [x] `io.wavebeans.lib.stream.ResampleStreamParams`
+- [x] `io.wavebeans.lib.stream.ResampleBeanStream`
+- [x] `io.wavebeans.lib.stream.ResampleFiniteStream`
+- [x] `io.wavebeans.lib.stream.AbstractResampleStream`
 - [x] `io.wavebeans.lib.io.InputParams` (in `io.wavebeans.lib.io.FunctionInput`)
 - [x] `io.wavebeans.lib.io.Input` (in `io.wavebeans.lib.io.FunctionInput`)
 - [ ] `io.wavebeans.lib.io.FunctionStreamOutput`
@@ -160,16 +161,16 @@ The following items are temporary measures introduced during the migration and s
 - [x] Support `ExecutionScope` in `map`, `merge`, `FunctionMergedStream` and `MapStream`.
 - [x] `io.wavebeans.lib.stream.MapStreamParams`
 - [x] `io.wavebeans.lib.stream.MapStream`
-- [ ] `io.wavebeans.lib.io.WavFileOutputParams`
-- [ ] `io.wavebeans.lib.io.WavFileOutput`
-- [ ] `io.wavebeans.lib.io.WavPartialFileOutput`
+- [x] `io.wavebeans.lib.io.WavFileOutputParams`
+- [x] `io.wavebeans.lib.io.WavFileOutput`
+- [x] `io.wavebeans.lib.io.WavPartialFileOutput`
 - [ ] `io.wavebeans.lib.stream.SimpleResampleFn`
 - [ ] `io.wavebeans.lib.stream.window.WindowStreamParams`
 - [ ] `io.wavebeans.lib.stream.window.WindowStream`
 - [ ] `io.wavebeans.lib.table.TableOutputParams`
 - [ ] `io.wavebeans.lib.table.TableOutput`
 - [x] `io.wavebeans.lib.io.SampleCsvFn` (in `io.wavebeans.lib.io.CsvSampleStreamOutput`)
-- [ ] `io.wavebeans.lib.io.WavInputParams`
-- [ ] `io.wavebeans.lib.io.WavInput`
+- [x] `io.wavebeans.lib.io.WavInputParams`
+- [x] `io.wavebeans.lib.io.WavInput`
 - [x] `io.wavebeans.lib.stream.ChangeAmplitudeFn` (in `io.wavebeans.lib.stream.ChangeAmplitudeSampleStream`)
 - [x] `io.wavebeans.lib.stream.window.ScalarSampleWindowOpFn` (in `io.wavebeans.lib.stream.window.SampleScalarWindowStream`)

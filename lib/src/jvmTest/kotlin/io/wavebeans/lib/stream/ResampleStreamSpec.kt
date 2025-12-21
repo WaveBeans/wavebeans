@@ -42,7 +42,7 @@ class ResampleStreamSpec : DescribeSpec({
             val resampled = inputWithSampleRate(1000.0f) { i, fs ->
                 require(fs == 1000.0f) { "Non 1000Hz sample rate is not supported" }
                 if (i < 5) i.toInt() else null
-            }.resample(resampleFn = SimpleResampleFn { it.sum() })
+            }.resample(resampleFn = { SimpleResampleFn<Int> { it.sum() }.apply(it) })
 
             assertThat(resampled.toList(500.0f)).isListOf(1, 5, 4)
         }
@@ -79,9 +79,9 @@ class ResampleStreamSpec : DescribeSpec({
                 require(fs == 1000.0f) { "Non 1000Hz sample rate is not supported" }
                 if (i < 5) i.toInt() else null
             }
-                .resample(to = 500.0f, resampleFn = SimpleResampleFn { it.sum() })
+                .resample(to = 500.0f, resampleFn = { SimpleResampleFn<Int> { it.sum() }.apply(it) })
                 .map { it * 2 }
-                .resample(resampleFn = SimpleResampleFn { it.sum() })
+                .resample(resampleFn = { SimpleResampleFn<Int> { it.sum() }.apply(it) })
 
             assertThat(resampled.toList(250.0f)).isListOf(12, 8)
         }
@@ -119,7 +119,7 @@ class ResampleStreamSpec : DescribeSpec({
             }
                 .resample(to = 2000.0f)
                 .map { it * 2 }
-                .resample(resampleFn = SimpleResampleFn { it.sum() })
+                .resample(resampleFn = { SimpleResampleFn<Int> { it.sum() }.apply(it) })
 
             val generator = input { i, fs ->
                 require(fs == 1000.0f) { "Non 1000Hz sample rate is not supported" }
