@@ -4,20 +4,14 @@ import io.wavebeans.lib.*
 
 fun <T1 : Any, T2 : Any, R : Any> BeanStream<T1>.merge(
     with: BeanStream<T2>,
+    scope: ExecutionScope = EmptyScope,
     merge: ExecutionScope.(T1?, T2?) -> R?
 ): BeanStream<R> =
-    FunctionMergedStream(this, with, FunctionMergedStreamParams(EmptyScope) { (a, b) -> merge(a, b) })
-
-fun <T1 : Any, T2 : Any, R : Any> BeanStream<T1>.merge(
-    with: BeanStream<T2>,
-    scope: ExecutionScope,
-    merge: ExecutionScope.(T1?, T2?) -> R?
-): BeanStream<R> =
-    FunctionMergedStream(this, with, FunctionMergedStreamParams(scope) { (a, b) -> merge(a, b) })
+    FunctionMergedStream(this, with, FunctionMergedStreamParams(scope, merge))
 
 class FunctionMergedStreamParams<T1 : Any, T2 : Any, R : Any>(
     val scope: ExecutionScope,
-    val merge: ExecutionScope.(Pair<T1?, T2?>) -> R?
+    val merge: ExecutionScope.(T1?, T2?) -> R?
 ) : BeanParams
 
 @Suppress("UNCHECKED_CAST")
@@ -60,7 +54,7 @@ class FunctionMergedStream<T1 : Any, T2 : Any, R : Any>(
                 if (nextEl == null) {
                     val s = if (sourceIterator.hasNext()) sourceIterator.next() else null
                     val m = if (mergeIterator.hasNext()) mergeIterator.next() else null
-                    nextEl = parameters.merge.invoke(parameters.scope, Pair(s as T1?, m as T2?))
+                    nextEl = parameters.merge.invoke(parameters.scope, s as T1?, m as T2?)
                 }
             }
         }.asSequence()

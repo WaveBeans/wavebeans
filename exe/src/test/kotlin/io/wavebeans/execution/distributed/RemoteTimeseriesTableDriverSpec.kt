@@ -27,9 +27,9 @@ class RemoteTimeseriesTableDriverSpec : DescribeSpec({
 
     val facilitator by lazy {
         Facilitator(
-            communicatorPort = communicatorPort,
             threadsNumber = 1,
-            onServerShutdownTimeoutMillis = 100
+            communicatorPort = communicatorPort,
+            onServerShutdownTimeoutMillis = 100,
         )
     }
 

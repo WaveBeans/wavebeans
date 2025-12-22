@@ -16,29 +16,29 @@ import kotlinx.serialization.encoding.encodeStructure
 /**
  * Serializer for [WavFileOutputParams]
  */
+@Suppress("UNCHECKED_CAST")
 object WavFileOutputParamsSerializer : KSerializer<WavFileOutputParams<*>> {
 
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor(WavFileOutputParams::class.className()) {
         element("uri", String.serializer().descriptor)
         element("bitDepth", Int.serializer().descriptor)
         element("numberOfChannels", Int.serializer().descriptor)
-        element("suffix", FnSerializer.descriptor)
+        element("suffix", String.serializer().descriptor)
     }
 
-    @Suppress("UNCHECKED_CAST")
     override fun deserialize(decoder: Decoder): WavFileOutputParams<*> {
         return decoder.decodeStructure(descriptor) {
             lateinit var uri: String
             var bitDepth: Int = 0
             var numberOfChannels: Int = 0
-            lateinit var suffixFn: Fn<Any?, String>
+            lateinit var suffixFn: String
             loop@ while (true) {
                 when (val i = decodeElementIndex(descriptor)) {
                     CompositeDecoder.DECODE_DONE -> break@loop
                     0 -> uri = decodeStringElement(descriptor, i)
                     1 -> bitDepth = decodeIntElement(descriptor, i)
                     2 -> numberOfChannels = decodeIntElement(descriptor, i)
-                    3 -> suffixFn = decodeSerializableElement(descriptor, i, FnSerializer) as Fn<Any?, String>
+                    3 -> suffixFn = decodeStringElement(descriptor, i)
                     else -> throw SerializationException("Unknown index $i")
                 }
             }
@@ -46,7 +46,7 @@ object WavFileOutputParamsSerializer : KSerializer<WavFileOutputParams<*>> {
                 uri,
                 BitDepth.of(bitDepth),
                 numberOfChannels,
-                { a -> suffixFn.apply(a) }
+                lambdaWrapper.deserialize<Any?, String>(suffixFn)
             )
         }
     }
@@ -56,7 +56,7 @@ object WavFileOutputParamsSerializer : KSerializer<WavFileOutputParams<*>> {
             encodeStringElement(descriptor, 0, value.uri)
             encodeSerializableElement(descriptor, 1, Int.serializer(), value.bitDepth.bits)
             encodeSerializableElement(descriptor, 2, Int.serializer(), value.numberOfChannels)
-            encodeSerializableElement(descriptor, 3, FnSerializer, wrap(value.suffix))
+            encodeStringElement(descriptor, 3, lambdaWrapper.serialize(value.suffix))
         }
     }
 }

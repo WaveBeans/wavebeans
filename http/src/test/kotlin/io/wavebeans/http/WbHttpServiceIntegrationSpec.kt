@@ -211,19 +211,19 @@ class WbHttpServiceIntegrationSpec : DescribeSpec({
 
         val facilitator1 by lazy {
             Facilitator(
-                communicatorPort = facilitatorPort1,
                 threadsNumber = 1,
+                communicatorPort = facilitatorPort1,
+                onServerShutdownTimeoutMillis = 100,
                 podDiscovery = object : PodDiscovery() {},
-                onServerShutdownTimeoutMillis = 100
             )
         }
 
         val facilitator2 by lazy {
             Facilitator(
-                communicatorPort = facilitatorPort2,
                 threadsNumber = 1,
+                communicatorPort = facilitatorPort2,
+                onServerShutdownTimeoutMillis = 100,
                 podDiscovery = object : PodDiscovery() {},
-                onServerShutdownTimeoutMillis = 100
             )
         }
 

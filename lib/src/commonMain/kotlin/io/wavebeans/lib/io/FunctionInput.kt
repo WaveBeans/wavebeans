@@ -9,7 +9,10 @@ import io.wavebeans.lib.*
  * @param generator generator function of two parameters: the 0-based index and sample rate the input
  *                  expected to be evaluated.
  */
-fun <T : Any> input(generator: (Long, Float) -> T?): BeanStream<T> = Input(InputParams(generator))
+fun <T : Any> input(
+    scope: ExecutionScope = EmptyScope,
+    generator: ExecutionScope.(Long, Float) -> T?,
+): BeanStream<T> = Input(InputParams(generator, scope))
 
 /**
  * Creates an input from provided function. The function has two parameters: the 0-based index and sample rate the input
@@ -19,8 +22,12 @@ fun <T : Any> input(generator: (Long, Float) -> T?): BeanStream<T> = Input(Input
  * @param generator generator function of two parameters: the 0-based index and sample rate the input
  *                  expected to be evaluated.
  */
-fun <T : Any> inputWithSampleRate(sampleRate: Float, generator: (Long, Float) -> T?): BeanStream<T> =
-    Input(InputParams(generator, sampleRate))
+fun <T : Any> inputWithSampleRate(
+    sampleRate: Float,
+    scope: ExecutionScope = EmptyScope,
+    generator: ExecutionScope.(Long, Float) -> T?,
+): BeanStream<T> =
+    Input(InputParams(generator, scope, sampleRate))
 
 /**
  * Tuning parameters for [Input].
@@ -29,7 +36,8 @@ fun <T : Any> inputWithSampleRate(sampleRate: Float, generator: (Long, Float) ->
  * [sampleRate] is the sample rate that input supports, or null if it'll automatically adapt.
  */
 class InputParams<T : Any>(
-    val generator: (Long, Float) -> T?,
+    val generator: ExecutionScope.(Long, Float) -> T?,
+    val scope: ExecutionScope,
     val sampleRate: Float? = null
 ) : BeanParams
 
@@ -52,7 +60,7 @@ class Input<T : Any>(
 
     override fun inputSequence(sampleRate: Float): Sequence<T> {
         return (0..Long.MAX_VALUE).asSequence()
-            .map { parameters.generator.invoke(it, sampleRate) }
+            .map { parameters.generator.invoke(parameters.scope, it, sampleRate) }
             .takeWhile { it != null }
             .map { it!! }
 //                .map { samplesProcessed.increment(); it!! }

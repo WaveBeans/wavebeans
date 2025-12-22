@@ -1,5 +1,6 @@
 package io.wavebeans.execution.serializer
 
+import io.wavebeans.lib.ExecutionScope
 import io.wavebeans.lib.className
 import io.wavebeans.lib.io.CsvStreamOutputParams
 import kotlinx.serialization.KSerializer
@@ -21,24 +22,27 @@ object CsvStreamOutputParamsSerializer : KSerializer<CsvStreamOutputParams<*, *>
             element("uri", String.serializer().descriptor)
             element("header", ListSerializer(String.serializer()).descriptor)
             element("encoding", String.serializer().descriptor)
-            element("elementSerializer", FnSerializer.descriptor)
-            element("suffix", FnSerializer.descriptor)
+            element("elementSerializer", String.serializer().descriptor)
+            element("suffix", String.serializer().descriptor)
+            element("scope", ExecutionScope.serializer().descriptor)
         }
 
     override fun deserialize(decoder: Decoder): CsvStreamOutputParams<*, *> {
         return decoder.decodeStructure(descriptor) {
             lateinit var uri: String
             lateinit var header: List<String>
-            lateinit var elementSerializer: Fn<Triple<Long, Float, Any>, List<String>>
+            lateinit var elementSerializer: String
             lateinit var encoding: String
-            lateinit var suffix: Fn<Any?, String>
+            lateinit var suffix: String
+            lateinit var scope: ExecutionScope
             loop@ while (true) {
                 when (val i = decodeElementIndex(descriptor)) {
                     0 -> uri = decodeStringElement(descriptor, i)
                     1 -> header = decodeSerializableElement(descriptor, i, ListSerializer(String.serializer()))
                     2 -> encoding = decodeStringElement(descriptor, i)
-                    3 -> elementSerializer = decodeSerializableElement(descriptor, i, FnSerializer) as Fn<Triple<Long, Float, Any>, List<String>>
-                    4 -> suffix = decodeSerializableElement(descriptor, i, FnSerializer) as Fn<Any?, String>
+                    3 -> elementSerializer = decodeStringElement(descriptor, i)
+                    4 -> suffix = decodeStringElement(descriptor, i)
+                    5 -> scope = decodeSerializableElement(descriptor, i, ExecutionScope.serializer())
                     CompositeDecoder.DECODE_DONE -> break@loop
                     else -> throw SerializationException("Unknown index $i")
                 }
@@ -46,9 +50,10 @@ object CsvStreamOutputParamsSerializer : KSerializer<CsvStreamOutputParams<*, *>
             CsvStreamOutputParams<Any, Any>(
                 uri,
                 header,
-                { l, f, t -> elementSerializer.apply(Triple(l, f, t)) },
+                lambdaWrapper.deserialize4(elementSerializer),
                 encoding,
-                { a -> suffix.apply(a) }
+                lambdaWrapper.deserialize2(suffix),
+                scope,
             )
         }
     }
@@ -58,22 +63,18 @@ object CsvStreamOutputParamsSerializer : KSerializer<CsvStreamOutputParams<*, *>
             encodeStringElement(descriptor, 0, value.uri)
             encodeSerializableElement(descriptor, 1, ListSerializer(String.serializer()), value.header)
             encodeStringElement(descriptor, 2, value.encoding)
-            @Suppress("UNCHECKED_CAST")
-            val elementSerializer = value.elementSerializer as (Long, Float, Any) -> List<String>
-            encodeSerializableElement(
+            encodeStringElement(
                 descriptor,
                 3,
-                FnSerializer,
-                wrap { t: Triple<Long, Float, Any> -> elementSerializer(t.first, t.second, t.third) } as Fn<Any?, Any?>
+                lambdaWrapper.serialize(value.elementSerializer)
             )
-            @Suppress("UNCHECKED_CAST")
-            val suffix = value.suffix as (Any?) -> String
-            encodeSerializableElement(
+            encodeStringElement(
                 descriptor,
                 4,
-                FnSerializer,
-                wrap { a: Any? -> suffix(a) } as Fn<Any?, Any?>
+                lambdaWrapper.serialize(value.suffix)
             )
+            encodeSerializableElement(descriptor, 5, ExecutionScope.serializer(), value.scope)
+
         }
     }
 

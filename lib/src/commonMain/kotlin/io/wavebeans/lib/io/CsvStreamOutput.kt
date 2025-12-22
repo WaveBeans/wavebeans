@@ -30,10 +30,19 @@ import kotlinx.serialization.encoding.*
 fun <T : Any> BeanStream<T>.toCsv(
     uri: String,
     header: List<String>,
-    elementSerializer: (Long, Float, T) -> List<String>,
-    encoding: String = "UTF-8"
+    elementSerializer: ExecutionScope.(Long, Float, T) -> List<String>,
+    encoding: String = "UTF-8",
+    scope: ExecutionScope = EmptyScope,
 ): StreamOutput<T> {
-    return CsvStreamOutput(this, CsvStreamOutputParams(uri, header, elementSerializer, encoding))
+    return CsvStreamOutput(
+        this, CsvStreamOutputParams(
+            uri = uri,
+            header = header,
+            elementSerializer = elementSerializer,
+            encoding = encoding,
+            scope = scope
+        )
+    )
 }
 
 /**
@@ -63,9 +72,10 @@ fun <T : Any> BeanStream<T>.toCsv(
 fun <A : Any, T : Any> BeanStream<Managed<OutputSignal, A, T>>.toCsv(
     uri: String,
     header: List<String>,
-    elementSerializer: (Long, Float, T) -> List<String>,
-    suffix: (A?) -> String,
+    elementSerializer: ExecutionScope.(Long, Float, T) -> List<String>,
+    suffix: ExecutionScope.(A?) -> String,
     encoding: String = "UTF-8",
+    scope: ExecutionScope = EmptyScope,
 ): StreamOutput<Managed<OutputSignal, A, T>> {
     return CsvPartialStreamOutput(
         this,
@@ -74,7 +84,8 @@ fun <A : Any, T : Any> BeanStream<Managed<OutputSignal, A, T>>.toCsv(
             header,
             elementSerializer,
             encoding,
-            suffix
+            suffix,
+            scope
         )
     )
 }
@@ -98,7 +109,7 @@ data class CsvStreamOutputParams<A : Any, T : Any>(
      *  2. The `Float` specifies the sample rate the stream is being processed with.
      *  3. The `T` keeps the sample to be converted to a row.
      */
-    val elementSerializer: (Long, Float, T) -> List<String>,
+    val elementSerializer: ExecutionScope.(Long, Float, T) -> List<String>,
     /**
      * Encoding to use to convert string to a byte array, by default `UTF-8`.
      */
@@ -108,7 +119,8 @@ data class CsvStreamOutputParams<A : Any, T : Any>(
      * [FlushOutputSignal] or [OpenGateOutputSignal] was generated. The suffix inserted after the name and
      * before the extension: `file:///home/user/my${suffix}.csv`
      */
-    val suffix: (A?) -> String = { "" },
+    val suffix: ExecutionScope.(A?) -> String = { "" },
+    val scope: ExecutionScope,
 ) : BeanParams
 
 /**
@@ -135,7 +147,7 @@ class CsvStreamOutput<T : Any>(
             override fun footer(): ByteArray? = null
 
             override fun serialize(element: T): ByteArray =
-                serializeCsvElement(sampleRate, element, parameters.elementSerializer) { offset++ }
+                serializeCsvElement(sampleRate, element, parameters.elementSerializer, parameters.scope) { offset++ }
         }
     }
 }
@@ -158,7 +170,7 @@ class CsvPartialStreamOutput<A : Any, T : Any>(
 
     override fun outputWriter(inputSequence: Sequence<Managed<OutputSignal, A, T>>, sampleRate: Float): Writer {
         var offset = 0L
-        val writer = suffixedFileWriterDelegate<A>(parameters.uri) { parameters.suffix.invoke(it) }
+        val writer = suffixedFileWriterDelegate<A>(parameters.uri) { parameters.suffix.invoke(parameters.scope, it) }
         return object : AbstractPartialWriter<T, A>(input, sampleRate, writer, CsvStreamOutput::class) {
 
             override fun header(): ByteArray? = csvHeader(parameters.header)
@@ -166,7 +178,7 @@ class CsvPartialStreamOutput<A : Any, T : Any>(
             override fun footer(): ByteArray? = null
 
             override fun serialize(element: T): ByteArray =
-                serializeCsvElement(sampleRate, element, parameters.elementSerializer) { offset++ }
+                serializeCsvElement(sampleRate, element, parameters.elementSerializer, parameters.scope) { offset++ }
 
             override fun skip(element: T) {
                 offset++
@@ -180,9 +192,10 @@ private fun csvHeader(header: List<String>): ByteArray = (header.joinToString(",
 private fun <T : Any> serializeCsvElement(
     sampleRate: Float,
     element: T,
-    elementSerializer: (Long, Float, T) -> List<String>,
-    getOffset: () -> Long
+    elementSerializer: ExecutionScope.(Long, Float, T) -> List<String>,
+    scope: ExecutionScope,
+    getOffset: () -> Long,
 ): ByteArray {
-    val seq = elementSerializer.invoke(getOffset(), sampleRate, element)
+    val seq = elementSerializer(scope, getOffset(), sampleRate, element)
     return (seq.joinToString(",") + "\n").encodeToByteArray()
 }

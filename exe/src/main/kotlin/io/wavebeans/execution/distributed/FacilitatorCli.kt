@@ -23,8 +23,8 @@ fun main(args: Array<String>) {
 }
 
 class FacilitatorCli(
-        private val printWriter: PrintStream,
-        private val args: Array<String>
+    private val printWriter: PrintStream,
+    private val args: Array<String>
 ) : Callable<Int> {
 
     companion object {
@@ -47,8 +47,10 @@ class FacilitatorCli(
 
     override fun call(): Int {
         if (args.isEmpty()) {
-            printWriter.println("Specify configuration file as a parameter or $configDescribeOption to see" +
-                    " configuration options or $printVersionOption to check the version.")
+            printWriter.println(
+                "Specify configuration file as a parameter or $configDescribeOption to see" +
+                        " configuration options or $printVersionOption to check the version."
+            )
             printWriter.flush()
             return 1
         }
@@ -56,31 +58,35 @@ class FacilitatorCli(
         lateinit var configFilePath: String
         when (args[0].lowercase()) {
             configDescribeOption -> {
-                printWriter.println("""
+                printWriter.println(
+                    """
                             |The following config attributes of `facilitatorConfig` are supported:
                             |${FacilitatorConfig.items.joinToString("\n") { it.string() }}
                             |Communicator confiuguration under `facilitatorConfig.communicatorConfig`:
                             |${FacilitatorConfig.CommunicatorConfig.items.joinToString("\n") { it.string() }}
-                    """.trimMargin("|"))
+                    """.trimMargin("|")
+                )
                 printWriter.flush()
                 return 0
             }
+
             printVersionOption -> {
                 val version = Thread.currentThread().contextClassLoader.getResources(JarFile.MANIFEST_NAME)
-                        .asSequence()
-                        .mapNotNull {
-                            it.openStream().use { stream ->
-                                val attributes = Manifest(stream).mainAttributes
-                                attributes.getValue("WaveBeans-Version")
-                            }
+                    .asSequence()
+                    .mapNotNull {
+                        it.openStream().use { stream ->
+                            val attributes = Manifest(stream).mainAttributes
+                            attributes.getValue("WaveBeans-Version")
                         }
-                        .firstOrNull()
-                        ?: "<NOT VERSIONED>"
+                    }
+                    .firstOrNull()
+                    ?: "<NOT VERSIONED>"
                 printWriter.println("Version $version")
                 printWriter.flush()
                 return 0
 
             }
+
             else -> {
                 configFilePath = args[0]
             }
@@ -102,12 +108,13 @@ class FacilitatorCli(
         }
 
         facilitator = Facilitator(
-                communicatorPort = config[FacilitatorConfig.communicatorPort],
-                threadsNumber = config[FacilitatorConfig.threadsNumber],
-                callTimeoutMillis = config[FacilitatorConfig.callTimeoutMillis],
-                onServerShutdownTimeoutMillis = config[FacilitatorConfig.onServerShutdownTimeoutMillis],
-                metricConnectorDescriptors = config[FacilitatorConfig.metricConnectors],
-                maxInboundMessage = config[FacilitatorConfig.CommunicatorConfig.maxInboundMessage],
+            communicatorPort = config[FacilitatorConfig.communicatorPort],
+            threadsNumber = config[FacilitatorConfig.threadsNumber],
+            callTimeoutMillis = config[FacilitatorConfig.callTimeoutMillis],
+            onServerShutdownTimeoutMillis = config[FacilitatorConfig.onServerShutdownTimeoutMillis],
+            metricConnectorDescriptors = config[FacilitatorConfig.metricConnectors],
+            maxInboundMessage = config[FacilitatorConfig.CommunicatorConfig.maxInboundMessage],
+            fileSystems = config[FacilitatorConfig.fileSystems.available],
         )
 
         facilitator!!.start()
@@ -123,5 +130,6 @@ class FacilitatorCli(
     }
 }
 
-private fun Item<*>.string(): String = "- ${name}: ${type} <${if (isRequired) "required" else "optional"}>. ${description}. " +
-        "Default value: ${if (isOptional) asOptionalItem.default?.toString() else "N/A"}"
+private fun Item<*>.string(): String =
+    "- ${name}: ${type} <${if (isRequired) "required" else "optional"}>. ${description}. " +
+            "Default value: ${if (isOptional) asOptionalItem.default?.toString() else "N/A"}"

@@ -24,7 +24,7 @@ object WindowStreamParamsSerializer : KSerializer<WindowStreamParams<*>> {
         element("scope", ExecutionScope.serializer().descriptor)
         element("windowSize", Int.serializer().descriptor)
         element("step", Int.serializer().descriptor)
-        element("zeroElFn", FnSerializer.descriptor)
+        element("zeroElFn", String.serializer().descriptor)
     }
 
     override fun deserialize(decoder: Decoder): WindowStreamParams<*> {
@@ -32,18 +32,18 @@ object WindowStreamParamsSerializer : KSerializer<WindowStreamParams<*>> {
             var scope: ExecutionScope = EmptyScope
             var windowSize by notNull<Int>()
             var step by notNull<Int>()
-            lateinit var zeroElFn: Fn<Unit, Any>
+            lateinit var zeroElFn: String
             loop@ while (true) {
                 when (val i = decodeElementIndex(descriptor)) {
                     CompositeDecoder.DECODE_DONE -> break@loop
                     0 -> scope = decodeSerializableElement(descriptor, i, ExecutionScope.serializer())
                     1 -> windowSize = decodeIntElement(descriptor, i)
                     2 -> step = decodeIntElement(descriptor, i)
-                    3 -> zeroElFn = decodeSerializableElement(descriptor, i, FnSerializer) as Fn<Unit, Any>
+                    3 -> zeroElFn = decodeStringElement(descriptor, i)
                     else -> throw SerializationException("Unknown index $i")
                 }
             }
-            WindowStreamParams<Any>(scope, windowSize, step) { zeroElFn.apply(it) }
+            WindowStreamParams(scope, windowSize, step, lambdaWrapper.deserialize2<Any, Any, Any>(zeroElFn))
         }
     }
 
@@ -52,7 +52,7 @@ object WindowStreamParamsSerializer : KSerializer<WindowStreamParams<*>> {
             encodeSerializableElement(descriptor, 0, ExecutionScope.serializer(), value.scope)
             encodeIntElement(descriptor, 1, value.windowSize)
             encodeIntElement(descriptor, 2, value.step)
-            encodeSerializableElement(descriptor, 3, FnSerializer, wrap(value.zeroElFn))
+            encodeStringElement(descriptor, 3, lambdaWrapper.serialize(value.zeroElFn))
         }
     }
 }

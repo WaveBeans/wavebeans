@@ -26,7 +26,7 @@ object TableOutputParamsSerializer : KSerializer<TableOutputParams<*>> {
         element("tableType", String.serializer().descriptor)
         element("maximumDataLength", TimeMeasure.serializer().descriptor)
         element("automaticCleanupEnabled", Boolean.serializer().descriptor)
-        element("tableDriverFactory", FnSerializer.descriptor)
+        element("tableDriverFactory", String.serializer().descriptor)
     }
 
     override fun deserialize(decoder: Decoder): TableOutputParams<*> {
@@ -35,7 +35,7 @@ object TableOutputParamsSerializer : KSerializer<TableOutputParams<*>> {
             lateinit var tableType: KClass<*>
             lateinit var maximumDataLength: TimeMeasure
             var automaticCleanupEnabled = true
-            lateinit var tableDriverFactory: Fn<TableOutputParams<Any>, TimeseriesTableDriver<Any>>
+            lateinit var tableDriverFactory: String
             @Suppress("UNCHECKED_CAST")
             loop@ while (true) {
                 when (val i = decodeElementIndex(descriptor)) {
@@ -44,8 +44,7 @@ object TableOutputParamsSerializer : KSerializer<TableOutputParams<*>> {
                     1 -> tableType = WaveBeansClassLoader.classForName(decodeStringElement(descriptor, i))
                     2 -> maximumDataLength = decodeSerializableElement(descriptor, i, TimeMeasure.serializer())
                     3 -> automaticCleanupEnabled = decodeBooleanElement(descriptor, i)
-                    4 -> tableDriverFactory = decodeSerializableElement(descriptor, i, FnSerializer)
-                            as Fn<TableOutputParams<Any>, TimeseriesTableDriver<Any>>
+                    4 -> tableDriverFactory = decodeStringElement(descriptor, i)
 
                     else -> throw SerializationException("Unknown index $i")
                 }
@@ -55,7 +54,8 @@ object TableOutputParamsSerializer : KSerializer<TableOutputParams<*>> {
                 tableType as KClass<Any>,
                 maximumDataLength,
                 automaticCleanupEnabled,
-            ) { tableDriverFactory.apply(it) }
+                tableDriverFactory = lambdaWrapper.deserialize<TableOutputParams<Any>, TimeseriesTableDriver<Any>>(tableDriverFactory)
+            )
         }
     }
 
@@ -65,7 +65,7 @@ object TableOutputParamsSerializer : KSerializer<TableOutputParams<*>> {
             encodeStringElement(descriptor, 1, value.tableType.className())
             encodeSerializableElement(descriptor, 2, TimeMeasure.serializer(), value.maximumDataLength)
             encodeSerializableElement(descriptor, 3, Boolean.serializer(), value.automaticCleanupEnabled)
-            encodeSerializableElement(descriptor, 4, FnSerializer, wrap(value.tableDriverFactory))
+            encodeStringElement(descriptor, 4, lambdaWrapper.serialize(value.tableDriverFactory))
         }
     }
 }

@@ -4,7 +4,9 @@ import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.LoggerContext
 import io.wavebeans.cli.script.RunMode
 import io.wavebeans.cli.script.ScriptRunner
+import io.wavebeans.fs.local.LocalWbFileDriver
 import io.wavebeans.http.WbHttpService
+import io.wavebeans.lib.io.WbFileDriver
 import io.wavebeans.lib.table.TableRegistry
 import io.wavebeans.lib.table.TableRegistryImpl
 import org.apache.commons.cli.CommandLine
@@ -87,6 +89,12 @@ class WaveBeansCli(
                     runOptions["httpLocations"] = cli.getRequired(httpCommunicator) { listOf("127.0.0.1:$it") }
                 }
             }
+
+            // register local file driver by default
+            try {
+                WbFileDriver.registerDriver("file", LocalWbFileDriver)
+            } catch (ignore: IllegalStateException) {}
+
             val sampleRate = cli.get(s) { it.toFloat() } ?: 44100.0f
 
             val httpWait = cli.get(httpWait) { it.toLong() } ?: 0

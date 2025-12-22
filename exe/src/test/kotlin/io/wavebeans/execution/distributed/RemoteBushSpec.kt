@@ -40,12 +40,12 @@ class RemoteBushSpec : DescribeSpec({
         }
 
     val facilitator = Facilitator(
-        communicatorPort = communicatorPort,
         threadsNumber = 1,
+        communicatorPort = communicatorPort,
         gardener = gardener,
         onServerShutdownTimeoutMillis = 100,
         podCallResultBuilder = podCallResultBuilder,
-        podDiscovery = podDiscovery
+        podDiscovery = podDiscovery,
     )
 
     beforeSpec {

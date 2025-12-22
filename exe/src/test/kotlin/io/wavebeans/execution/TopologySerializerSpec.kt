@@ -13,6 +13,7 @@ import io.wavebeans.lib.stream.window.WindowStream
 import io.wavebeans.lib.stream.window.WindowStreamParams
 import io.wavebeans.lib.stream.window.plus
 import io.wavebeans.lib.stream.window.window
+import io.wavebeans.lib.stream.window.Window
 import io.wavebeans.lib.table.*
 import kotlinx.serialization.Serializable
 
@@ -78,7 +79,12 @@ class TopologySerializerSpec : DescribeSpec({
         val i1 = input { x, _ -> sampleOf(x) }
 
         val factor = 2
-        val i2 = input { x, _ -> sampleOf(x) * factor }
+        val i2 = input(
+            executionScope { add("factor", factor) },
+        ) { x, _ ->
+            val factor = parameters.int("factor")
+            sampleOf(x) * factor
+        }
 
         val o1 = i1
             .trim(5000)
@@ -190,7 +196,7 @@ class TopologySerializerSpec : DescribeSpec({
 
         val factor = 2 + 2 * 2
 
-        fun merge(f: Int, argument: Pair<Sample?, Sample?>): Sample? {
+        fun merge(f: Int, argument: Pair<Sample?, Sample?>): Sample {
             return argument.first ?: (ZeroSample * f + argument.second)
         }
 
@@ -206,7 +212,11 @@ class TopologySerializerSpec : DescribeSpec({
                 input<Sample> { _, _ -> fail("unreachable") }
                     .merge(
                         with = input { _, _ -> fail("unreachable") },
-                        merge = { x, y -> merge(factor, x to y) }
+                        scope = executionScope { add("factor", factor) },
+                        merge = { x, y ->
+                            val factor = parameters.int("factor")
+                            merge(factor, x to y)
+                        }
                     )
                     .toDevNull()
             ),
@@ -344,6 +354,56 @@ class TopologySerializerSpec : DescribeSpec({
                             TableOutputParams::class,
                             TableDriverStreamParams::class,
                             CsvStreamOutputParams::class
+                        ).toTypedArray()
+                    )
+                }
+            }
+        }
+
+        it("has same links") {
+            assertThat(deserializedTopology.links).all {
+                size().isEqualTo(topology.links.size)
+                each {
+                    it.isIn(*topology.links.toTypedArray())
+                }
+            }
+        }
+    }
+
+    describe("Resample and FlattenWindow") {
+        val o = 440.sine(1.0)
+            .resample(to = 2.0f)
+            .window(100)
+            .flatten(EmptyScope)
+            .toDevNull()
+
+        val topology = listOf(o).buildTopology()
+        val deserializedTopology = with(TopologySerializer) {
+            val topologySerialized = serialize(topology).also { log.debug { it } }
+            deserialize(topologySerialized)
+        }
+
+        it("has same refs") {
+            assertThat(deserializedTopology.refs).all {
+                size().isEqualTo(topology.refs.size)
+                each { nodeRef ->
+                    nodeRef.prop("type") { it.type }.isIn(
+                        *listOf(
+                            SineGeneratedInput::class,
+                            ResampleBeanStream::class,
+                            WindowStream::class,
+                            FlattenWindowStream::class,
+                            DevNullStreamOutput::class
+                        ).map { it.qualifiedName }.toTypedArray()
+                    )
+
+                    nodeRef.prop("params") { it.params }.kClass().isIn(
+                        *listOf(
+                            SineGeneratedInputParams::class,
+                            ResampleStreamParams::class,
+                            WindowStreamParams::class,
+                            FlattenWindowStreamsParams::class,
+                            NoParams::class
                         ).toTypedArray()
                     )
                 }

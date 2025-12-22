@@ -33,10 +33,10 @@ class FacilitatorGrpcServiceSpec : DescribeSpec({
     val port1 = findFreePort()
     val port2 = findFreePort()
     val facilitator = Facilitator(
-        communicatorPort = port1,
         threadsNumber = 1,
+        communicatorPort = port1,
         gardener = gardener,
-        podDiscovery = podDiscovery
+        podDiscovery = podDiscovery,
     )
     val facilitatorApiClient by lazy { FacilitatorApiClient("127.0.0.1:$port1") }
 

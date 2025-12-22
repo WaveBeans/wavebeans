@@ -18,41 +18,38 @@ import kotlinx.serialization.encoding.encodeStructure
 /**
  * Serializer for [ResampleStreamParams].
  */
+@Suppress("UNCHECKED_CAST")
 object ResampleStreamParamsSerializer : KSerializer<ResampleStreamParams<*>> {
 
     override val descriptor: SerialDescriptor =
         buildClassSerialDescriptor(ResampleStreamParamsSerializer::class.className()) {
             element("to", Float.serializer().nullable.descriptor)
-            element("resampleFn", FnSerializer.descriptor)
+            element("resampleFn", String.serializer().descriptor)
         }
 
     override fun deserialize(decoder: Decoder): ResampleStreamParams<*> {
         return decoder.decodeStructure(descriptor) {
             var to: Float? = null
-            lateinit var resampleFn: Fn<ResamplingArgument<Any>, Sequence<Any>>
+            lateinit var resampleFn: String
             @Suppress("UNCHECKED_CAST")
             loop@ while (true) {
                 when (val i = decodeElementIndex(descriptor)) {
                     CompositeDecoder.DECODE_DONE -> break@loop
                     0 -> to = decodeNullableSerializableElement(descriptor, i, Float.serializer().nullable)
-                    1 -> resampleFn = decodeSerializableElement(
-                        descriptor,
-                        i,
-                        FnSerializer
-                    ) as Fn<ResamplingArgument<Any>, Sequence<Any>>
+                    1 -> resampleFn = decodeStringElement(descriptor, i)
 
                     else -> throw SerializationException("Unknown index $i")
                 }
             }
 
-            ResampleStreamParams(to) { resampleFn.apply(it) }
+            ResampleStreamParams(to, lambdaWrapper.deserialize<ResamplingArgument<Any>, Sequence<Any>>(resampleFn))
         }
     }
 
     override fun serialize(encoder: Encoder, value: ResampleStreamParams<*>) {
         encoder.encodeStructure(descriptor) {
             encodeNullableSerializableElement(descriptor, 0, Float.serializer().nullable, value.to)
-            encodeSerializableElement(descriptor, 1, FnSerializer, wrap(value.resampleFn))
+            encodeStringElement(descriptor, 1, lambdaWrapper.serialize(value.resampleFn))
         }
     }
 }

@@ -9,6 +9,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.execution.SingleThreadedOverseer
 import io.wavebeans.execution.eachIndexed
+import io.wavebeans.fs.local.LocalWbFileDriver
 import io.wavebeans.lib.Sample
 import io.wavebeans.lib.io.*
 import io.wavebeans.lib.plus
@@ -35,6 +36,7 @@ class DistributedOverseerSpec : DescribeSpec({
         pool.submit { startFacilitator(ports[1]) }
 
         facilitatorsLocations.forEach(::waitForFacilitatorToStart)
+        WbFileDriver.registerDriver("file", LocalWbFileDriver)
     }
 
     afterSpec {
@@ -95,12 +97,12 @@ class DistributedOverseerSpec : DescribeSpec({
                 val output1 = input
                     .trim(500)
                     .toCsv("file:///${file1.absolutePath}")
-                val output2 = input.trim(1000)
-                    .window(101, 25)
-                    .hamming()
-                    .fft(128)
-                    .trim(500)
-                    .magnitudeToCsv("file:///${file2.absolutePath}")
+//                val output2 = input.trim(1000)
+//                    .window(101, 25)
+//                    .hamming()
+//                    .fft(128)
+//                    .trim(500)
+//                    .magnitudeToCsv("file:///${file2.absolutePath}")
                 listOf(output1 to file1/*, output2 to file2*/)
             }
 

@@ -20,16 +20,16 @@ import io.wavebeans.lib.*
  * @return [StreamOutput] to run the further processing on.
  */
 fun BeanStream<Sample>.toCsv(
-        uri: String,
-        timeUnit: TimeUnit = TimeUnit.MILLISECONDS,
-        encoding: String = "UTF-8"
+    uri: String,
+    timeUnit: TimeUnit = TimeUnit.MILLISECONDS,
+    encoding: String = "UTF-8",
 ): StreamOutput<Sample> {
-    val sampleCsvFn = SampleCsvFn(timeUnit)
     return toCsv(
-            uri = uri,
-            header = listOf("time ${timeUnit.abbreviation()}", "value"),
-            elementSerializer = { l, f, s -> sampleCsvFn(l, f, s) },
-            encoding = encoding
+        uri = uri,
+        header = listOf("time ${timeUnit.abbreviation()}", "value"),
+        elementSerializer = sampleElementSerializer,
+        encoding = encoding,
+        scope = executionScope { add("timeUnit", timeUnit.toString()) }
     )
 }
 
@@ -54,34 +54,24 @@ fun BeanStream<Sample>.toCsv(
  * @return [StreamOutput] to run the further processing on.
  */
 fun <A : Any> BeanStream<Managed<OutputSignal, A, Sample>>.toCsv(
-        uri: String,
-        suffix: (A?) -> String,
-        timeUnit: TimeUnit = TimeUnit.MILLISECONDS,
-        encoding: String = "UTF-8"
+    uri: String,
+    suffix: ExecutionScope.(A?) -> String,
+    timeUnit: TimeUnit = TimeUnit.MILLISECONDS,
+    encoding: String = "UTF-8"
 ): StreamOutput<Managed<OutputSignal, A, Sample>> {
-    val sampleCsvFn = SampleCsvFn(timeUnit)
     return toCsv(
-            uri = uri,
-            header = listOf("time ${timeUnit.abbreviation()}", "value"),
-            elementSerializer = { l, f, s -> sampleCsvFn(l, f, s) },
-            suffix = suffix,
-            encoding = encoding
+        uri = uri,
+        header = listOf("time ${timeUnit.abbreviation()}", "value"),
+        elementSerializer = sampleElementSerializer,
+        suffix = suffix,
+        encoding = encoding,
+        scope = executionScope { add("timeUnit", timeUnit.toString()) }
     )
 }
 
-/**
- * The function converts [Sample] stream to its CSV presentation:
- *
- * The output looks like this:
- * ```csv
- * 1,0.000000002
- * ```
- */
-class SampleCsvFn(val timeUnit: TimeUnit) {
 
-    operator fun invoke(idx: Long, sampleRate: Float, sample: Sample): List<String> {
-        val time = samplesCountToLength(idx, sampleRate, timeUnit)
-        return listOf(time.toString(), sample.toString())
-    }
+val sampleElementSerializer: ExecutionScope.(Long, Float, Sample) -> List<String> = { idx, sampleRate, sample ->
+    val timeUnit = parameters.string("timeUnit").let { TimeUnit.valueOf(it) }
+    val time = samplesCountToLength(idx, sampleRate, timeUnit)
+    listOf(time.toString(), sample.toString())
 }
-

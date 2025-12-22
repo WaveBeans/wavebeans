@@ -18,20 +18,21 @@ import kotlin.reflect.KClass
 /**
  * Serializer for [FunctionStreamOutputParams].
  */
+@Suppress("UNCHECKED_CAST")
 object FunctionStreamOutputParamsSerializer : KSerializer<FunctionStreamOutputParams<*>> {
 
     override val descriptor: SerialDescriptor =
         buildClassSerialDescriptor(FunctionStreamOutputParams::class.className()) {
             element("sampleClazz", String.serializer().descriptor)
             element("scope", ExecutionScope.serializer().descriptor)
-            element("writeFunction", FnSerializer.descriptor)
+            element("writeFunction", String.serializer().descriptor)
         }
 
     override fun deserialize(decoder: Decoder): FunctionStreamOutputParams<*> {
         return decoder.decodeStructure(descriptor) {
             lateinit var sampleClazz: KClass<Any>
             lateinit var scope: ExecutionScope
-            lateinit var writeFunction: Fn<WriteFunctionArgument<Any>, Boolean>
+            lateinit var writeFunction: String
             @Suppress("UNCHECKED_CAST")
             loop@ while (true) {
                 when (val i = decodeElementIndex(descriptor)) {
@@ -41,16 +42,12 @@ object FunctionStreamOutputParamsSerializer : KSerializer<FunctionStreamOutputPa
 
                     1 -> scope = decodeSerializableElement(descriptor, i, ExecutionScope.serializer())
 
-                    2 -> writeFunction = decodeSerializableElement(
-                        descriptor,
-                        i,
-                        FnSerializer
-                    ) as Fn<WriteFunctionArgument<Any>, Boolean>
+                    2 -> writeFunction = decodeStringElement(descriptor, i)
 
                     else -> throw SerializationException("Unknown index $i")
                 }
             }
-            FunctionStreamOutputParams(sampleClazz, scope) { writeFunction.apply(it) }
+            FunctionStreamOutputParams(sampleClazz, scope, lambdaWrapper.deserialize2<ExecutionScope, WriteFunctionArgument<Any>, Boolean>(writeFunction))
         }
     }
 
@@ -58,7 +55,7 @@ object FunctionStreamOutputParamsSerializer : KSerializer<FunctionStreamOutputPa
         encoder.encodeStructure(descriptor) {
             encodeSerializableElement(descriptor, 0, String.serializer(), value.sampleClazz.className())
             encodeSerializableElement(descriptor, 1, ExecutionScope.serializer(), value.scope)
-            encodeSerializableElement(descriptor, 2, FnSerializer, wrap(value.writeFunction))
+            encodeStringElement(descriptor, 2, lambdaWrapper.serialize(value.writeFunction))
         }
     }
 }

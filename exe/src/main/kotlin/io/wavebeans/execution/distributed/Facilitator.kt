@@ -13,6 +13,7 @@ import io.wavebeans.execution.medium.MediumBuilder
 import io.wavebeans.execution.medium.PodCallResultBuilder
 import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.lib.WaveBeansClassLoader
+import io.wavebeans.lib.io.WbFileDriver
 import io.wavebeans.lib.table.TableRegistry
 import io.wavebeans.metrics.MetricConnectorDescriptor
 import io.wavebeans.metrics.collector.MetricGrpcService
@@ -42,7 +43,8 @@ class Facilitator(
     private val executionThreadPool: ExecutionThreadPool = MultiThreadedExecutionThreadPool(threadsNumber),
     private val podDiscovery: PodDiscovery = PodDiscovery.default,
     private val metricConnectorDescriptors: List<MetricConnectorDescriptor> = emptyList(),
-    private val maxInboundMessage: Int = 4 * 1024 * 1024
+    private val maxInboundMessage: Int = 4 * 1024 * 1024,
+    private val fileSystems: List<FacilitatorConfig.FileSystemDescriptor> = emptyList()
     // TODO probably inject table registry also
 ) : Closeable {
 
@@ -87,6 +89,12 @@ class Facilitator(
         ExecutionConfig.podCallResultBuilder(podCallResultBuilder)
         ExecutionConfig.mediumBuilder(mediumBuilder)
         ExecutionConfig.executionThreadPool(executionThreadPool)
+        fileSystems.forEach {
+            try {
+                WbFileDriver.registerDriver(it.type, Class.forName(it.driver).kotlin.objectInstance as WbFileDriver)
+            } catch (ignore: IllegalStateException) {
+            }
+        }
 
         tryStartCommunicator()
 
