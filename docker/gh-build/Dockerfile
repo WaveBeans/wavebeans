@@ -5,8 +5,7 @@ LABEL "com.github.actions.name"="JDK 11 with Kotlin 2.2.20"
 LABEL "com.github.actions.description"="Can run java app and uses Kotlin SDK, have Chromium installed for tests"
 
 RUN apt-get update &&\
-    apt-get install -y unzip chromium &&\
-    ln -s /usr/bin/chromium /usr/bin/chromium-browser
+    apt-get install -y unzip chromium
 
 ENV CHROME_BIN=/usr/bin/chromium-browser
 
