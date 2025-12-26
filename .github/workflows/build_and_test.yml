@@ -38,8 +38,8 @@ jobs:
 
       - name: JS (Browser/Node) Tests
         uses: ./docker/gh-build
-        run:
-          ./gradlew jsBrowserTest jsNodeTest --info --max-workers 1 --no-daemon
+        with:
+          args: ./gradlew jsBrowserTest jsNodeTest --info --max-workers 1 --no-daemon
 
       # Upload HTML test reports
       - name: Upload Test Reports
