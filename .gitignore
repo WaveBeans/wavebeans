@@ -9,3 +9,4 @@ ds
 logs/
 .kotlin/
 kotlin-js-store/
+.output.txt
