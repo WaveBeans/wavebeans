@@ -8,12 +8,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - uses: ./docker/gh-build
+
+      - name: Build
+        uses: ./docker/gh-build
         env:
           DBX_TEST_CLIENT_ID: ${{ secrets.DBX_TEST_CLIENT_ID }}
           DBX_TEST_ACCESS_TOKEN: ${{ secrets.DBX_TEST_ACCESS_TOKEN }}
         with:
-          args: ./gradlew build --info --max-workers 1 --no-daemon
+          args: ./gradlew clean build -x test -x jvmTest -x jsTest -x jsNodeTest -x jsBrowserTest --info --max-workers 1 --no-daemon
+
+      - name: JVM Tests
+        uses: ./docker/gh-build
+        env:
+          DBX_TEST_CLIENT_ID: ${{ secrets.DBX_TEST_CLIENT_ID }}
+          DBX_TEST_ACCESS_TOKEN: ${{ secrets.DBX_TEST_ACCESS_TOKEN }}
+        with:
+          args: ./gradlew test jvmTest --info --max-workers 1 --no-daemon
+
+      - name: JS (Browser/Node) Tests
+        uses: nanasess/setup-chromedriver@v1.0.7
+        with:
+          args: ./gradlew jsBrowserTest jsNodeTest --info --max-workers 1 --no-daemon
 
       # Upload HTML test reports
       - name: Upload Test Reports
