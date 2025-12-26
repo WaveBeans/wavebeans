@@ -2,15 +2,6 @@ package io.wavebeans.lib.stream.window
 
 import io.wavebeans.lib.*
 import io.wavebeans.lib.stream.AbstractOperationBeanStream
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationException
-import kotlinx.serialization.builtins.serializer
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.descriptors.buildClassSerialDescriptor
-import kotlinx.serialization.encoding.*
-import kotlin.properties.Delegates
-import kotlin.properties.Delegates.notNull
 
 /**
  * Creates a [BeanStream] of [Window] of type [Sample].
@@ -35,8 +26,12 @@ fun BeanStream<Sample>.window(size: Int, step: Int): BeanStream<Window<Sample>> 
  * @param size the size of the window. Must be more than 1.
  * @param zeroElFn function that creates zero element objects.
  */
-fun <T : Any> BeanStream<T>.window(size: Int, zeroElFn: ExecutionScope.(Unit) -> T): BeanStream<Window<T>> =
-    this.window(EmptyScope, size, size, zeroElFn)
+fun <T : Any> BeanStream<T>.window(
+    size: Int,
+    scope: ExecutionScope = EmptyScope,
+    zeroElFn: ExecutionScope.(Unit) -> T,
+): BeanStream<Window<T>> =
+    this.window(scope, size, size, zeroElFn)
 
 /**
  * Creates a [BeanStream] of [Window] of specified type.
@@ -45,8 +40,13 @@ fun <T : Any> BeanStream<T>.window(size: Int, zeroElFn: ExecutionScope.(Unit) ->
  * @param step the step to use for a sliding window. Must be more or equal to 1.
  * @param zeroElFn function that creates zero element objects.
  */
-fun <T : Any> BeanStream<T>.window(size: Int, step: Int, zeroElFn: ExecutionScope.(Unit) -> T): BeanStream<Window<T>> =
-    this.window(EmptyScope, size, step, zeroElFn)
+fun <T : Any> BeanStream<T>.window(
+    size: Int,
+    step: Int,
+    scope: ExecutionScope = EmptyScope,
+    zeroElFn: ExecutionScope.(Unit) -> T
+): BeanStream<Window<T>> =
+    this.window(scope, size, step, zeroElFn)
 
 /**
  * Creates a [BeanStream] of [Window] of specified type.
@@ -110,8 +110,9 @@ class WindowStream<T : Any>(
                 Window(
                     parameters.windowSize,
                     parameters.step,
-                    it
-                ) { parameters.zeroElFn.invoke(parameters.scope, Unit) }
+                    it,
+                    parameters.zeroElFn(parameters.scope, Unit)
+                )
             }
     }
 }

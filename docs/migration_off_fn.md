@@ -158,19 +158,8 @@ The following items are temporary measures introduced during the migration and s
 - [x] `io.wavebeans.lib.stream.FlattenWindowStream`
 - [x] `io.wavebeans.lib.stream.FunctionMergedStreamParams`
 - [x] `io.wavebeans.lib.stream.FunctionMergedStream`
-- [x] Support `ExecutionScope` in `map`, `merge`, `FunctionMergedStream` and `MapStream`.
-- [x] `io.wavebeans.lib.stream.MapStreamParams`
-- [x] `io.wavebeans.lib.stream.MapStream`
-- [x] `io.wavebeans.lib.io.WavFileOutputParams`
-- [x] `io.wavebeans.lib.io.WavFileOutput`
-- [x] `io.wavebeans.lib.io.WavPartialFileOutput`
-- [ ] `io.wavebeans.lib.stream.SimpleResampleFn`
-- [x] `io.wavebeans.lib.stream.window.WindowStreamParams`
-- [x] `io.wavebeans.lib.stream.window.WindowStream`
-- [x] `io.wavebeans.lib.table.TableOutputParams`
-- [x] `io.wavebeans.lib.table.TableOutput`
-- [x] `io.wavebeans.lib.io.SampleCsvFn` (in `io.wavebeans.lib.io.CsvSampleStreamOutput`)
-- [x] `io.wavebeans.lib.io.WavInputParams`
-- [x] `io.wavebeans.lib.io.WavInput`
-- [x] `io.wavebeans.lib.stream.ChangeAmplitudeFn` (in `io.wavebeans.lib.stream.ChangeAmplitudeSampleStream`)
-- [x] `io.wavebeans.lib.stream.window.ScalarSampleWindowOpFn` (in `io.wavebeans.lib.stream.window.SampleScalarWindowStream`)
+- [x] Identify areas for `ExecutionScope` documentation.
+- [x] Update `docs/user/api/functions.md` with `ExecutionScope` and `ScopeParameters`.
+- [x] Update operation-specific docs (`map`, `merge`, `input`, `out`) with `ExecutionScope` examples.
+- [x] Update `distributed-execution.md` with technical details of `ExecutionScope` serialization.
+- [x] Update `docs/user/api/readme.md` with `ExecutionScope` as a key concept.

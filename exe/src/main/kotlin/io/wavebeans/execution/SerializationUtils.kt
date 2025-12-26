@@ -6,6 +6,7 @@ import io.wavebeans.lib.BeanParams
 import io.wavebeans.lib.NoParams
 import io.wavebeans.lib.io.*
 import io.wavebeans.lib.stream.*
+import io.wavebeans.lib.stream.fft.FftStreamParams
 import io.wavebeans.lib.stream.window.WindowStreamParams
 import io.wavebeans.lib.table.*
 import kotlinx.serialization.KSerializer
@@ -60,7 +61,7 @@ fun SerializersModuleBuilder.beanParams() {
         subclass(CsvStreamOutputParams::class, CsvStreamOutputParamsSerializer)
         subclass(BeanGroupParams::class, BeanGroupParams.serializer())
         subclass(CsvFftStreamOutputParams::class, CsvFftStreamOutputParams.serializer())
-//        subclass(FftStreamParams::class, FftStreamParams.serializer())
+        subclass(FftStreamParams::class, FftStreamParams.serializer())
         subclass(WindowStreamParams::class, WindowStreamParamsSerializer)
         subclass(ProjectionBeanStreamParams::class, ProjectionBeanStreamParams.serializer())
         subclass(MapStreamParams::class, MapStreamParamsSerializer)

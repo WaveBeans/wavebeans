@@ -91,7 +91,7 @@ class RemoteBushSpec : DescribeSpec({
         }
 
         it("should fail on call") {
-            assertThat { remoteBush.call(PodKey(0, 0), "/answer").get() }
+            assertThat(runCatching { remoteBush.call(PodKey(0, 0), "/answer").get() })
                 .isFailure()
                 .isNotNull().isInstanceOf(ExecutionException::class)
                 .cause()

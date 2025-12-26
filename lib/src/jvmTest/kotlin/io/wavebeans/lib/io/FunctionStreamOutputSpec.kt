@@ -145,8 +145,15 @@ class FunctionStreamOutputSpec : DescribeSpec({
 
         it("should store sample bytes as LE into a file") {
             val outputFile = File.createTempFile("temp", ".raw").also { it.deleteOnExit() }
-            val stream = outputFile.outputStream().buffered()
-            input.out { streamEncoder(stream, it) }.evaluate(sampleRate)
+            input.out(
+                executionScope { add("fileName", outputFile.absolutePath) }
+            ) {
+                val stream = state("stream") {
+                    val outputFile = File(parameters.string("fileName"))
+                    outputFile.outputStream().buffered()
+                }
+                streamEncoder(stream, it)
+            }.evaluate(sampleRate)
 
             val generated = ByteArrayLittleEndianInput(
                 ByteArrayLittleEndianInputParams(

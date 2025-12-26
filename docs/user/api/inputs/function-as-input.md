@@ -43,33 +43,17 @@ Note: here we've used helper function `sampleOf()` which converts any numeric ty
 
 **Parameterized function**
 
-If you want to create an input that expect some parameters or data during runtime, you can define a class. Let's take a look at the example. Let's say you want to define the sine input but frequency and amplitude are defined by parameters.
-
-Let's define a class first:
-
-1. Define a class that accepts parameters in its constructor.
-2. The body of our function is the `invoke()` operator.
+If you want to create an input that expect some parameters or data during runtime, you should use `ExecutionScope`. Let's take a look at the example. Let's say you want to define the sine input but frequency and amplitude are defined by parameters.
 
 ```kotlin
-import kotlin.math.* // we're going to use some Kotlin SDK functionality
-
-class InputFn(val frequency: Double, val amplitude: Double) {
-
-    // implement a body of the function
-    operator fun invoke(sampleIndex: Long, sampleRate: Float): Sample? {
-        // do the computation, which is also regular double value
-        val sineX = amplitude * cos(sampleIndex / sampleRate * 2.0 * PI * frequency)
-        // return it as sample
-        return sampleOf(sineX)
-    }
+input(executionScope { 
+    add("freq", 440.0) 
+    add("amp", 1.0)
+}) { (sampleIndex, sampleRate) ->
+    val freq = parameters.double("freq")
+    val amplitude = parameters.double("amp")
+    sampleOf(amplitude * cos(sampleIndex / sampleRate * 2.0 * PI * freq))
 }
-```
-
-Then we can use that class at any place of the program like this:
-
-```kotlin
-val inputFn = InputFn(frequency = 440.0, amplitude = 1.0)
-input { (idx, fs) -> inputFn(idx, fs) }
 ``` 
 
 That approach is very flexible as you basically can do whatever you want and even call third party libraries methods.

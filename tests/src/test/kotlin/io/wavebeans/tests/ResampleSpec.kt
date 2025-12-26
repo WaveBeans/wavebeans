@@ -4,7 +4,10 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.isNotEmpty
 import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.datatest.withData
+import io.wavebeans.fs.local.LocalWbFileDriver
 import io.wavebeans.lib.io.StreamOutput
+import io.wavebeans.lib.io.WbFileDriver
 import io.wavebeans.lib.io.sine
 import io.wavebeans.lib.io.toMono16bitWav
 import io.wavebeans.lib.io.wave
@@ -23,6 +26,12 @@ class ResampleSpec : DescribeSpec({
     }
 
     beforeSpec {
+        WbFileDriver.registerDriver("file", LocalWbFileDriver)
+    }
+
+    afterSpec { WbFileDriver.unregisterDriver("file") }
+
+    beforeSpec {
         Thread { startFacilitator(ports[0]) }.start()
         Thread { startFacilitator(ports[1]) }.start()
         waitForFacilitatorToStart("localhost:${ports[0]}")
@@ -35,19 +44,18 @@ class ResampleSpec : DescribeSpec({
     }
 
     data class Param(
-        val mode: String,
         val locateFacilitators: () -> List<String>,
         val evaluate: (StreamOutput<*>, Float, List<String>) -> Unit
     )
 
-    val modes: List<Param> = listOf(
-        Param("local", { emptyList() }) { o, sampleRate, _ ->
+    val modes = mapOf(
+        "local" to Param({ emptyList() }) { o, sampleRate, _ ->
             o.evaluate(sampleRate)
         },
-        Param("multi-threaded", { emptyList() }) { o, sampleRate, _ ->
+        "multi-threaded" to Param({ emptyList() }) { o, sampleRate, _ ->
             o.evaluateInMultiThreadedMode(sampleRate)
         },
-        Param("distributed", { facilitatorLocations }) { o, sampleRate, facilitators ->
+        "distributed" to Param({ facilitatorLocations }) { o, sampleRate, facilitators ->
             o.evaluateInDistributedMode(sampleRate, facilitators)
         },
     )
@@ -69,20 +77,18 @@ class ResampleSpec : DescribeSpec({
             outputFile = File.createTempFile("resample", ".wav")
         }
 
-        modes.forEach { (mode, locateFacilitators, evaluate) ->
-            it("should perform in $mode mode") {
-                val stream = wavFile.resample(to = 44100.0f)
-                    .map { it } // add pointless map-operation to make sure the bean is partitioned
-                    .resample(resampleFn = { sincResampleFunc(128)(it) })
-                    .toMono16bitWav("file://${outputFile.absolutePath}")
+        withData(modes) { (locateFacilitators, evaluate) ->
+            val stream = wavFile.resample(to = 44100.0f)
+                .map { it } // add pointless map-operation to make sure the bean is partitioned
+                .resample(resampleFn = { sincResampleFunc(128)(it) })
+                .toMono16bitWav("file://${outputFile.absolutePath}")
 
-                evaluate(stream, targetSampleRate, locateFacilitators())
+            evaluate(stream, targetSampleRate, locateFacilitators())
 
-                val samples = input.toList(targetSampleRate)
-                assertThat(wave("file://${outputFile.absolutePath}").toList(targetSampleRate, take = 10000)).all {
-                    isNotEmpty()
-                    isContainedBy(samples) { a, b -> abs(a - b) < 1e-2 }
-                }
+            val samples = input.toList(targetSampleRate)
+            assertThat(wave("file://${outputFile.absolutePath}").toList(targetSampleRate, take = 10000)).all {
+                isNotEmpty()
+                isContainedBy(samples) { a, b -> abs(a - b) < 1e-2 }
             }
         }
     }

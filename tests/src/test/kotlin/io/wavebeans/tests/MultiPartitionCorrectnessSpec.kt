@@ -6,6 +6,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.kotest.core.spec.style.DescribeSpec
 import io.wavebeans.execution.MultiThreadedOverseer
 import io.wavebeans.execution.SingleThreadedOverseer
+import io.wavebeans.fs.local.LocalWbFileDriver
 import io.wavebeans.lib.*
 import io.wavebeans.lib.io.*
 import io.wavebeans.lib.stream.*
@@ -27,6 +28,14 @@ import kotlin.system.measureTimeMillis
 private val log = KotlinLogging.logger {}
 
 class MultiPartitionCorrectnessSpec : DescribeSpec({
+
+    beforeSpec {
+        WbFileDriver.registerDriver("file", LocalWbFileDriver)
+    }
+
+    afterSpec {
+        WbFileDriver.unregisterDriver("file")
+    }
 
     fun runInParallel(
         outputs: List<StreamOutput<out Any>>,
@@ -338,10 +347,10 @@ class MultiPartitionCorrectnessSpec : DescribeSpec({
         val run1 = seqStream().map { SomeUnknownClass(1) }.trim(100).toDevNull()
 
         it("should throw exception when run in parallel") {
-            assertThat { runInParallel(listOf(run1)) }.isFailure()
+            assertThat(runCatching { runInParallel(listOf(run1)) }).isFailure()
         }
         it("should  throw exception when run in single thread") {
-            assertThat { runLocally(listOf(run1)) }.isFailure()
+            assertThat(runCatching { runLocally(listOf(run1)) }).isFailure()
         }
     }
 

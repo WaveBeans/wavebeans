@@ -1,6 +1,9 @@
 package io.wavebeans.lib
 
+import io.wavebeans.lib.table.ConcurrentHashMap
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import kotlin.io.encoding.Base64
 
 /**
@@ -82,6 +85,19 @@ class ScopeParameters {
 fun executionScope(block: ScopeParameters.() -> ScopeParameters) = ExecutionScope(ScopeParameters().let(block))
 
 @Serializable
-data class ExecutionScope(val parameters: ScopeParameters)
+data class ExecutionScope(val parameters: ScopeParameters) {
+
+    @Transient
+    private val values = hashMapOf<String, Any>()
+
+    @Suppress("UNCHECKED_CAST")
+    fun <T: Any> state(name: String, provider: () -> T): T {
+        if (values.containsKey(name))
+            return values[name] as T
+        val newValue = provider()
+        values[name] = newValue
+        return newValue
+    }
+}
 
 val EmptyScope = ExecutionScope(ScopeParameters())

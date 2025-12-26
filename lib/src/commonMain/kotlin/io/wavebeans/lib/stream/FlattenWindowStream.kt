@@ -105,7 +105,7 @@ class FlattenWindowStream<T : Any>(
             return if (index >= 0 && index < window.elements.size)
                 window.elements[index]
             else
-                window.zeroEl(Unit)
+                window.zeroEl
         }
     }
 

@@ -188,10 +188,10 @@ class FlattenSpec : DescribeSpec({
                  */
                 val l = input { i, _ ->
                     when (i) {
-                        0L -> Window(3, 2, listOf(0, 1, 2)) { 0 }
-                        1L -> Window(2, 1, listOf(3, 4)) { 0 }
-                        2L -> Window(4, 2, listOf(5, 6, 7, 8)) { 0 }
-                        3L -> Window(2, 1, listOf(9, 10)) { 0 }
+                        0L -> Window(3, 2, listOf(0, 1, 2), 0)
+                        1L -> Window(2, 1, listOf(3, 4), 0)
+                        2L -> Window(4, 2, listOf(5, 6, 7, 8), 0)
+                        3L -> Window(2, 1, listOf(9, 10), 0)
                         else -> null
                     }
                 }
@@ -213,10 +213,10 @@ class FlattenSpec : DescribeSpec({
             it("should flatten windows with various sizes if step > size") {
                 val l = input { i, _ ->
                     when (i) {
-                        0L -> Window(3, 4, listOf(0, 1, 2)) { -1 }
-                        1L -> Window(2, 3, listOf(3, 4)) { -1 }
-                        2L -> Window(4, 6, listOf(5, 6, 7, 8)) { -1 }
-                        3L -> Window(2, 3, listOf(9, 10)) { -1 }
+                        0L -> Window(3, 4, listOf(0, 1, 2), -1)
+                        1L -> Window(2, 3, listOf(3, 4), -1)
+                        2L -> Window(4, 6, listOf(5, 6, 7, 8), -1)
+                        3L -> Window(2, 3, listOf(9, 10), -1)
                         else -> null
                     }
                 }

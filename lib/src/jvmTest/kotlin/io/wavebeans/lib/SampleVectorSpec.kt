@@ -32,7 +32,7 @@ class SampleVectorSpec : DescribeSpec({
             }
         }
         it("should be created of window of sample") {
-            val a = sampleVectorOf(Window(5, 5, listOf(1, 2, 3, 4, 5).map { sampleOf(it) }) { ZeroSample })
+            val a = sampleVectorOf(Window(5, 5, listOf(1, 2, 3, 4, 5).map { sampleOf(it) }, ZeroSample))
             assertThat(a).all {
                 size().isEqualTo(5)
                 prop("0") { it[0] }.isEqualTo(sampleOf(1))

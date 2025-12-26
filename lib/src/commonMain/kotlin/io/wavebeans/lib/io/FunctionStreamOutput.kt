@@ -22,13 +22,9 @@ import kotlin.reflect.KClass
  * * It doesn't affect anything in other phases.
  */
 inline fun <reified T : Any> BeanStream<T>.out(
-    scope: ExecutionScope,
+    scope: ExecutionScope = EmptyScope,
     noinline writeFunction: ExecutionScope.(WriteFunctionArgument<T>) -> Boolean
 ): StreamOutput<T> = FunctionStreamOutput(this, FunctionStreamOutputParams(T::class, scope, writeFunction))
-
-inline fun <reified T : Any> BeanStream<T>.out(
-    noinline writeFunction: (WriteFunctionArgument<T>) -> Boolean
-): StreamOutput<T> = this.out(EmptyScope) { writeFunction(it) }
 
 /**
  * The argument of the output as a function routine.

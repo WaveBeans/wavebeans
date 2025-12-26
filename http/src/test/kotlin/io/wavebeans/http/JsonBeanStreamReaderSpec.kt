@@ -11,7 +11,6 @@ import io.wavebeans.lib.stream.SampleCountMeasurement
 import io.wavebeans.lib.stream.trim
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
-import java.io.BufferedReader
 
 class JsonBeanStreamReaderSpec : DescribeSpec({
 
@@ -55,11 +54,11 @@ class JsonBeanStreamReaderSpec : DescribeSpec({
         val seq = input { i, _ -> N(i) }.trim(50, TimeUnit.SECONDS)
 
         it("should throw an exception") {
-            assertThat {
+            assertThat(runCatching {
                 JsonBeanStreamReader(seq, 1.0f).bufferedReader()
-                    .use<BufferedReader, List<String>> { it.readLines() }
-            }
-                    .isFailure()
+                    .use { it.readLines() }
+            })
+                .isFailure()
                     .all {
                         message().isNotNull().startsWith("Serializer for class 'N' is not found.\n" +
                                 "Please ensure that class is marked as '@Serializable' and that the serialization compiler plugin is applied.")

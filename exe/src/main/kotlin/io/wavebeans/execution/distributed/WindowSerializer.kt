@@ -1,6 +1,7 @@
 package io.wavebeans.execution.distributed
 
 import io.wavebeans.execution.serializer.lambdaWrapper
+import io.wavebeans.lib.WaveBeansClassLoader
 import io.wavebeans.lib.stream.fft.FftSample
 import io.wavebeans.lib.stream.window.Window
 import kotlinx.serialization.KSerializer
@@ -9,6 +10,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.*
 import kotlin.properties.Delegates.notNull
+import kotlin.reflect.KClass
 import kotlin.reflect.jvm.jvmName
 
 object WindowOfAnySerializer : KSerializer<Window<Any>> {
@@ -17,7 +19,8 @@ object WindowOfAnySerializer : KSerializer<Window<Any>> {
         element("size", Int.serializer().descriptor)
         element("step", Int.serializer().descriptor)
         element("elements", ListObjectSerializer.descriptor)
-        element("zeroElFn", String.serializer().descriptor)
+        element("zeroElClass", String.serializer().descriptor)
+        element("zeroEl", AnySerializer().descriptor)
     }
 
     override fun deserialize(decoder: Decoder): Window<Any> {
@@ -25,7 +28,8 @@ object WindowOfAnySerializer : KSerializer<Window<Any>> {
             var size by notNull<Int>()
             var step by notNull<Int>()
             lateinit var elements: List<Any>
-            lateinit var zeroEl: String
+            lateinit var zeroElClass: String
+            lateinit var zeroEl: Any
             @Suppress("UNCHECKED_CAST")
             loop@ while (true) {
                 when (val i = decodeElementIndex(descriptor)) {
@@ -33,10 +37,15 @@ object WindowOfAnySerializer : KSerializer<Window<Any>> {
                     0 -> size = decodeIntElement(descriptor, i)
                     1 -> step = decodeIntElement(descriptor, i)
                     2 -> elements = decodeSerializableElement(descriptor, i, ListObjectSerializer)
-                    3 -> zeroEl = decodeStringElement(descriptor, i)
+                    3 -> zeroElClass = decodeStringElement(descriptor, i)
+                    4 -> zeroEl = decodeSerializableElement(
+                        descriptor,
+                        i,
+                        AnySerializer(WaveBeansClassLoader.classForName(zeroElClass) as KClass<Any>)
+                    )
                 }
             }
-            Window(size, step, elements, lambdaWrapper.deserialize(zeroEl))
+            Window(size, step, elements, zeroEl)
         }
     }
 
@@ -45,7 +54,8 @@ object WindowOfAnySerializer : KSerializer<Window<Any>> {
             encodeIntElement(descriptor, 0, value.size)
             encodeIntElement(descriptor, 1, value.step)
             encodeSerializableElement(descriptor, 2, ListObjectSerializer, value.elements)
-            encodeStringElement(descriptor, 3, lambdaWrapper.serialize(value.zeroEl))
+            encodeStringElement(descriptor, 3, value.zeroEl::class.jvmName)
+            encodeSerializableElement(descriptor, 4, AnySerializer(), value.zeroEl)
         }
     }
 }

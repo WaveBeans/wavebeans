@@ -36,6 +36,9 @@ As an example, let's store one second of 440Hz sine into a file:
 ```kotlin
 import java.util.concurrent.TimeUnit.NANOSECONDS
 
+// Register the driver
+WbFileDriver.registerDriver("file", LocalWbFileDriver)
+
 440.sine()
    .trim(1000)
    .toCsv(
@@ -84,6 +87,9 @@ val fft = 440.sine()
         .trim(1000)
         .window(101)
         .fft(128)
+
+// Register the driver
+WbFileDriver.registerDriver("file", LocalWbFileDriver)
 
 fft.magnitudeToCsv(
         uri = "file:///path/to/file.magnitude.csv"
@@ -151,6 +157,9 @@ Using lambda it'll look like this:
 
 ```kotlin
 import java.util.concurrent.TimeUnit.MILLISECONDS
+
+// Register the driver
+WbFileDriver.registerDriver("file", LocalWbFileDriver)
 
 440.sine()
         .trim(1)

@@ -31,6 +31,9 @@ To store the stream into a wav-file you call one of the following function, each
 4. Mono 32 bit -- `toMono32bitWav("file:///path/to/file.wav")`
 
 ```kotlin
+// Register the driver
+WbFileDriver.registerDriver("file", LocalWbFileDriver)
+
 440.sine()
     .trim(1000)
     .toMono16bitWav("file:///path/to/file.wav")
@@ -55,10 +58,10 @@ int.withOutputSignal<Int, ArgumentType>(FlushOutputSignal, ArgumentType("some-va
 To be able to output `Managed` stream into wav-file you need to call one of the wav output functions (see above) specifying the suffix function that translates the argument into a string:
 
 ```kotlin
-managedStream.toMono8bitWav("file:///path/to/file.wav") { argument -> "-${format(argument)}" } 
+// Register the driver
+WbFileDriver.registerDriver("file", LocalWbFileDriver)
+
 managedStream.toMono16bitWav("file:///path/to/file.wav") { argument -> "-${format(argument)}" } 
-managedStream.toMono24bitWav("file:///path/to/file.wav") { argument -> "-${format(argument)}" } 
-managedStream.toMono32bitWav("file:///path/to/file.wav") { argument -> "-${format(argument)}" } 
 ```
 
 The argument is provided at the moment the signal is fired.

@@ -47,7 +47,7 @@ class RemoteTimeseriesTableDriverSpec : DescribeSpec({
 
     describe("Pointing to Facilitator") {
         it("should not return sample rate if not initialized") {
-            assertThat { remoteTableDriver.sampleRate }
+            assertThat(runCatching { remoteTableDriver.sampleRate })
                 .isFailure()
                 .isInstanceOf(IllegalStateException::class)
         }

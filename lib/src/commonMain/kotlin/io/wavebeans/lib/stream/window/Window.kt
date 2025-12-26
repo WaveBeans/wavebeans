@@ -23,10 +23,9 @@ data class Window<T : Any>(
          */
         val elements: List<T>,
         /**
-         * If [elements] has not enough element during some operations, it'll be replace by zero elements generated
-         * by this function.
+         * If [elements] has not enough element during some operations, it'll be replace by zero elements.
          */
-        val zeroEl: (Unit) -> T
+        val zeroEl: T
 ) : Measured {
 
     override fun measure(): Int = step * SampleCountMeasurement.samplesInObject(elements.first())
@@ -38,16 +37,16 @@ data class Window<T : Any>(
     }
 
     companion object {
-        fun ofSamples(size: Int, step: Int, elements: List<Sample>) = Window(size, step, elements) { ZeroSample }
+        fun ofSamples(size: Int, step: Int, elements: List<Sample>) = Window(size, step, elements, ZeroSample)
     }
 
     fun merge(other: Window<T>?, fn: (T, T) -> T): Window<T> {
         check(other == null || this.size == other.size && this.step == other.step) {
             "Can't merge with stream with different window size or step"
         }
-        val thisElements = this.elements + (0 until size - this.elements.size).map { zeroEl(Unit) }
+        val thisElements = this.elements + (0 until size - this.elements.size).map { zeroEl }
         val otherList = other?.elements ?: emptyList()
-        val otherElements = otherList + (0 until size - otherList.size).map { zeroEl(Unit) }
+        val otherElements = otherList + (0 until size - otherList.size).map { zeroEl }
         return Window(
                 size,
                 step,
