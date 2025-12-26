@@ -16,8 +16,7 @@ kotlin {
         browser {
             testTask {
                 useKarma {
-                    // Custom launcher is defined in lib/src/jsTest/resources/karma.config.d/chrome-no-sandbox.js
-                    // to support running in Docker as root.
+                    useChromeHeadless()
                 }
             }
         }

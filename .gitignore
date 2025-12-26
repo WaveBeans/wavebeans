@@ -10,3 +10,4 @@ logs/
 .kotlin/
 kotlin-js-store/
 .output.txt
+debug.log
