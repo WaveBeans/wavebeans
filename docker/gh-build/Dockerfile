@@ -25,8 +25,8 @@ ENV PATH=$PATH:/usr/lib/kotlinc/bin
 # That is a requirement for Chrome headless tests
 RUN groupadd -g 10001 app && \
     useradd -m -u 10001 -g 10001 -s /bin/bash app && \
-    mkdir -p /home/app/.cache /workspace && \
-    chown -R app:app /home/app /workspace
+    mkdir -p /home/app /github && \
+    chown -R app:app /home/app /github
 
 WORKDIR /workspace
 USER app
