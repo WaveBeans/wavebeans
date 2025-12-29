@@ -25,17 +25,6 @@ jobs:
         with:
           args: ./gradlew test jvmTest --info --max-workers 1 --no-daemon
 
-#      - name: Install Xvfb
-#        run: sudo apt-get install -y xvfb dbus-x11
-#
-#      - name: Run Xvfb
-#        run: |
-#          Xvfb :99 -ac -screen 0 1920x1080x24 &
-#          sudo service dbus start
-#
-#      - name: Set virtual display
-#        run: echo "DISPLAY=:99" >> $GITHUB_ENV
-
       - name: JS (Browser/Node) Tests
         uses: ./docker/gh-build
         with:
