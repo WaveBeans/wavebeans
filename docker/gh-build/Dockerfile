@@ -20,3 +20,13 @@ RUN cd /usr/lib && \
     rm kotlin-compiler-*.zip
 
 ENV PATH=$PATH:/usr/lib/kotlinc/bin
+
+# Run as non-root on GHA
+# That is a requirement for Chrome headless tests
+RUN groupadd -g 10001 app && \
+    useradd -m -u 10001 -g 10001 -s /bin/bash app && \
+    mkdir -p /home/app/.cache /workspace && \
+    chown -R app:app /home/app /workspace
+
+WORKDIR /workspace
+USER app
