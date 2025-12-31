@@ -2,9 +2,10 @@ package io.wavebeans.tests
 
 import assertk.assertThat
 import io.kotest.core.spec.style.DescribeSpec
-import io.kotest.datatest.WithDataTestName
 import io.kotest.datatest.withData
+import io.wavebeans.fs.local.LocalWbFileDriver
 import io.wavebeans.lib.io.StreamOutput
+import io.wavebeans.lib.io.WbFileDriver
 import io.wavebeans.lib.io.sine
 import io.wavebeans.lib.io.toMono16bitWav
 import io.wavebeans.lib.io.wave
@@ -32,35 +33,33 @@ class FlattenSpec : DescribeSpec({
         Thread { startFacilitator(ports[1]) }.start()
         waitForFacilitatorToStart("localhost:${ports[0]}")
         waitForFacilitatorToStart("localhost:${ports[1]}")
+        WbFileDriver.registerDriver("file", LocalWbFileDriver)
     }
 
     afterSpec {
         terminateFacilitator("localhost:${ports[0]}")
         terminateFacilitator("localhost:${ports[1]}")
+        WbFileDriver.unregisterDriver("file")
     }
 
     data class Param(
-        val mode: String,
         val locateFacilitators: () -> List<String>,
         val evaluate: (StreamOutput<*>, Float, List<String>) -> Unit
-    ): WithDataTestName {
-        override fun dataTestName(): String = mode
-    }
+    )
 
-    val modes: List<Param> = listOf(
-        Param("local", { emptyList() }) { o, sampleRate, _ ->
+    val modes: Map<String, Param> = mapOf(
+        "local" to Param({ emptyList() }) { o, sampleRate, _ ->
             o.evaluate(sampleRate)
         },
-        Param("multi-threaded", { emptyList() }) { o, sampleRate, _ ->
+        "multi-threaded" to Param({ emptyList() }) { o, sampleRate, _ ->
             o.evaluateInMultiThreadedMode(sampleRate)
         },
-        Param("distributed", { facilitatorLocations }) { o, sampleRate, facilitators ->
+        "distributed" to Param({ facilitatorLocations }) { o, sampleRate, facilitators ->
             o.evaluateInDistributedMode(sampleRate, facilitators)
         },
     )
-
     describe("Using FFT to tune the signal and restoring back after the processing") {
-        withData(modes) { (mode, locateFacilitators, evaluate) ->
+        withData(modes) { (locateFacilitators, evaluate) ->
             val lengthMs = 1000L
             val sampleRate = 44100.0f
 
@@ -83,34 +82,32 @@ class FlattenSpec : DescribeSpec({
     }
 
     describe("Smoothing the signal") {
-        modes.forEach { (mode, locateFacilitators, evaluate) ->
-            it("should perform in $mode mode") {
-                val lengthMs = 100L
-                val sampleRate = 400.0f
+        withData(modes) { (locateFacilitators, evaluate) ->
+            val lengthMs = 100L
+            val sampleRate = 400.0f
 
-                val input = (120.sine() + 40.sine() + 80.sine()) * 0.2
-                val o = input.trim(lengthMs * 2)
-                    .window(4)
-                    .map {
-                        val a = it.elements.average()
-                        (0 until it.size).map { a }
-                    }
-                    .flatten()
-                    .trim(lengthMs)
-                    .toMono16bitWav("file://${outputFile.absolutePath}")
+            val input = (120.sine() + 40.sine() + 80.sine()) * 0.2
+            val o = input.trim(lengthMs * 2)
+                .window(4)
+                .map {
+                    val a = it.elements.average()
+                    (0 until it.size).map { a }
+                }
+                .flatten()
+                .trim(lengthMs)
+                .toMono16bitWav("file://${outputFile.absolutePath}")
 
-                evaluate(o, sampleRate, locateFacilitators())
+            evaluate(o, sampleRate, locateFacilitators())
 
-                val expected = input.trim(lengthMs).asSequence(sampleRate)
-                    .windowed(4, 4, partialWindows = true)
-                    .flatMap {
-                        val a = it.average()
-                        it.map { a }
-                    }
-                    .toList()
-                val actual = (wave("file://${outputFile.absolutePath}")).asSequence(sampleRate).toList()
-                assertThat(actual).isContainedBy(expected) { a, b -> abs(a - b) < 1e-4 }
-            }
+            val expected = input.trim(lengthMs).asSequence(sampleRate)
+                .windowed(4, 4, partialWindows = true)
+                .flatMap {
+                    val a = it.average()
+                    it.map { a }
+                }
+                .toList()
+            val actual = (wave("file://${outputFile.absolutePath}")).asSequence(sampleRate).toList()
+            assertThat(actual).isContainedBy(expected) { a, b -> abs(a - b) < 1e-4 }
         }
     }
 })

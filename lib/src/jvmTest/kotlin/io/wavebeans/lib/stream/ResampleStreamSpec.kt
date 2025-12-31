@@ -4,21 +4,15 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
 import assertk.fail
-import io.wavebeans.lib.Managed
-import io.wavebeans.lib.BeanStream
-import io.wavebeans.lib.Sample
+import io.kotest.core.spec.style.DescribeSpec
+import io.wavebeans.lib.*
 import io.wavebeans.lib.io.*
-import io.wavebeans.lib.isListOf
 import io.wavebeans.lib.stream.fft.fft
 import io.wavebeans.lib.stream.fft.inverseFft
 import io.wavebeans.lib.stream.window.window
 import io.wavebeans.tests.evaluate
 import io.wavebeans.tests.isContainedBy
 import io.wavebeans.tests.toList
-import io.kotest.core.spec.style.DescribeSpec
-import io.wavebeans.lib.JvmFnWrapper
-import io.wavebeans.lib.fnWrapper
-import java.io.File
 import kotlin.math.abs
 
 class ResampleStreamSpec : DescribeSpec({
@@ -26,7 +20,6 @@ class ResampleStreamSpec : DescribeSpec({
     beforeSpec {
         TestWbFileDriver.register()
         WbFileDriver.defaultLocalFileScheme = "test"
-        fnWrapper = JvmFnWrapper()
     }
 
     afterSpec {
@@ -36,19 +29,19 @@ class ResampleStreamSpec : DescribeSpec({
     describe("Resampling the input to match the output") {
 
         it("should upsample") {
-            val resampled = inputWithSampleRate(1000.0f) { (i, fs) ->
+            val resampled = inputWithSampleRate(1000.0f) { i, fs ->
                 require(fs == 1000.0f) { "Non 1000Hz sample rate is not supported" }
                 if (i < 5) i.toInt() else null
-            }.resample()
+            }.resample(resampleFn = { SimpleResampleFn<Int> { it.first() }(it) })
 
             assertThat(resampled.toList(2000.0f)).isListOf(0, 0, 1, 1, 2, 2, 3, 3, 4, 4)
         }
 
         it("should downsample") {
-            val resampled = inputWithSampleRate(1000.0f) { (i, fs) ->
+            val resampled = inputWithSampleRate(1000.0f) { i, fs ->
                 require(fs == 1000.0f) { "Non 1000Hz sample rate is not supported" }
                 if (i < 5) i.toInt() else null
-            }.resample(resampleFn = SimpleResampleFn { it.sum() })
+            }.resample(resampleFn = { SimpleResampleFn<Int> { it.sum() }(it) })
 
             assertThat(resampled.toList(500.0f)).isListOf(1, 5, 4)
         }
@@ -58,7 +51,7 @@ class ResampleStreamSpec : DescribeSpec({
                 return a.inputSequence.map { listOf(it, -1) }.flatten()
             }
 
-            val resampled = inputWithSampleRate(1000.0f) { (i, fs) ->
+            val resampled = inputWithSampleRate(1000.0f) { i, fs ->
                 require(fs == 1000.0f) { "Non 1000Hz sample rate is not supported" }
                 if (i < 5) i.toInt() else null
             }.resample(resampleFn = ::resample)
@@ -69,25 +62,25 @@ class ResampleStreamSpec : DescribeSpec({
 
     describe("Resampling the input to reprocess and then to match the output") {
         it("should upsample") {
-            val resampled = inputWithSampleRate(1000.0f) { (i, fs) ->
+            val resampled = inputWithSampleRate(1000.0f) { i, fs ->
                 require(fs == 1000.0f) { "Non 1000Hz sample rate is not supported" }
                 if (i < 5) i.toInt() else null
             }
-                .resample(to = 2000.0f)
+                .resample(to = 2000.0f, resampleFn = { SimpleResampleFn<Int> { it.first() }(it) })
                 .map { it * 2 }
-                .resample()
+                .resample(resampleFn = { SimpleResampleFn<Int> { it.first() }(it) })
 
             assertThat(resampled.toList(4000.0f)).isListOf(0, 0, 0, 0, 2, 2, 2, 2, 4, 4, 4, 4, 6, 6, 6, 6, 8, 8, 8, 8)
         }
 
         it("should downsample") {
-            val resampled = inputWithSampleRate(1000.0f) { (i, fs) ->
+            val resampled = inputWithSampleRate(1000.0f) { i, fs ->
                 require(fs == 1000.0f) { "Non 1000Hz sample rate is not supported" }
                 if (i < 5) i.toInt() else null
             }
-                .resample(to = 500.0f, resampleFn = SimpleResampleFn { it.sum() })
+                .resample(to = 500.0f, resampleFn = { SimpleResampleFn<Int> { it.sum() }(it) })
                 .map { it * 2 }
-                .resample(resampleFn = SimpleResampleFn { it.sum() })
+                .resample(resampleFn = { SimpleResampleFn<Int> { it.sum() }(it) })
 
             assertThat(resampled.toList(250.0f)).isListOf(12, 8)
         }
@@ -101,7 +94,7 @@ class ResampleStreamSpec : DescribeSpec({
                     a.inputSequence.map { listOf(it, -3) }.flatten()
             }
 
-            val resampled = inputWithSampleRate(1000.0f) { (i, fs) ->
+            val resampled = inputWithSampleRate(1000.0f) { i, fs ->
                 require(fs == 1000.0f) { "Non 1000Hz sample rate is not supported" }
                 if (i < 5) i.toInt() else null
             }
@@ -119,20 +112,20 @@ class ResampleStreamSpec : DescribeSpec({
         }
 
         it("should resample and then mix in another generator") {
-            val resampled = inputWithSampleRate(1000.0f) { (i, fs) ->
+            val resampled = inputWithSampleRate(1000.0f) { i, fs ->
                 require(fs == 1000.0f) { "Non 1000Hz sample rate is not supported" }
                 if (i < 5) i.toInt() else null
             }
-                .resample(to = 2000.0f)
+                .resample(to = 2000.0f, resampleFn = { SimpleResampleFn<Int> { it.first() }(it) })
                 .map { it * 2 }
-                .resample(resampleFn = SimpleResampleFn { it.sum() })
+                .resample(resampleFn = { SimpleResampleFn<Int> { it.sum() }(it) })
 
-            val generator = input { (i, fs) ->
+            val generator = input { i, fs ->
                 require(fs == 1000.0f) { "Non 1000Hz sample rate is not supported" }
                 if (i < 5) (i * 10).toInt() else null
             }
 
-            val mix = resampled.merge(generator) { (a, b) -> requireNotNull(a); requireNotNull(b); a + b }
+            val mix = resampled.merge(generator) { a, b -> requireNotNull(a); requireNotNull(b); a + b }
             assertThat(mix.toList(1000.0f)).isListOf(
                 0 * 2 + 0 * 2 + 0,
                 1 * 2 + 1 * 2 + 10,

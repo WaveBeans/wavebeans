@@ -25,16 +25,12 @@ class TableOutputSpec : DescribeSpec({
             tableName = "test" + Random.nextLong().absoluteValue.toString(36),
             tableType = SampleVector::class,
             maximumDataLength = 1.m,
-            tableDriverFactory = object : Fn<TableOutputParams<SampleVector>, TimeseriesTableDriver<SampleVector>>() {
-                override fun apply(argument: TableOutputParams<SampleVector>): TimeseriesTableDriver<SampleVector> {
-                    return driver
-                }
-            },
+            tableDriverFactory = { driver },
             automaticCleanupEnabled = true
         )
 
         val output = TableOutput(
-            input { (i, _) -> if (i < 2000) 1e-10 * i else null }
+            input { i, _ -> if (i < 2000) 1e-10 * i else null }
                 .window(1024)
                 .map { sampleVectorOf(it) },
             params

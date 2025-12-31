@@ -13,6 +13,7 @@
   - [Registering Bush Endpoints](#registering-bush-endpoints)
   - [Starting job and tracking its progress](#starting-job-and-tracking-its-progress)
 - [Pods distribution](#pods-distribution)
+  - [Lambda Serialization and ExecutionScope](#lambda-serialization-and-executionscope)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -139,6 +140,14 @@ The provided list of outputs are transformed to a [Topology](definitions.md#topo
 Distributed overseer, while created, provided with the list of [Facilitators](definitions.md#facilitator) it required to be distributed over. The actual planning performs the Distribution Planner. You can use built-in or provide your own. The distributed overseer has optional constructor parameter `distributionPlanner`. That parameters allows to specify the implementation of interface `io.wavebeans.execution.distributed.DistributionPlanner`. Currently there is one planner implemented that just distributed all pods evenly `io.wavebeans.execution.distributed.EvenDistributionPlanner`.
 
 The idea behind this planner is to be able to distribute based on Facilitator states, i.e. taking into account current capacity and assignments, as well as Bean aware deployment like, for example, inputs and outputs are better spread across different overseers as they may have high IO, or even requires special types of the nodes. All this things Planner can fetch upon start and make a better judgement what to deploy where. And the overseer will blindly follow the lead.
+
+### Lambda Serialization and ExecutionScope
+
+In distributed mode, the topology is serialized into JSON. Functional beans (like `MapStream`) use `LambdaSerializer` to handle the serialization of Kotlin lambdas. 
+
+Since Kotlin lambdas are not natively serializable across different JVM processes without the exact same context, WaveBeans wraps them into an internal `Fn` representation during serialization. 
+
+The `ExecutionScope` is serialized alongside the functional bean parameters. When the pod is instantiated on a worker node, the `ExecutionScope` is reconstructed, and the lambda is invoked with this scope as its receiver. This ensures that parameters passed via `executionScope { ... }` are available on all worker nodes.
 
 
 

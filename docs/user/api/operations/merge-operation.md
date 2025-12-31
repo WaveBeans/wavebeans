@@ -8,7 +8,7 @@ Merge operation
 - [Overview](#overview)
 - [Handling streams of different lengths](#handling-streams-of-different-lengths)
 - [Using with two different input types](#using-with-two-different-input-types)
-- [Using as a class](#using-as-a-class)
+- [Using with parameters (Distributed Mode)](#using-with-parameters-distributed-mode)
 - [Running in distributed or multi-threaded mode](#running-in-distributed-or-multi-threaded-mode)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -66,9 +66,9 @@ Using with two different input types
 As was mentioned the merge operation may have two arguments if the types which are different. In the following example two streams are merged together which results in the third type. Schematically it may look like: `BeanStream<Int> + BeanStream<Float> -> BeanStream<Long>`.
 
 ```kotlin
-input { (idx, _) -> idx.toInt() } // -> BeanStream<Int>
+input { idx, _ -> idx.toInt() } // -> BeanStream<Int>
         .merge(
-            input { (idx, _) -> idx.toFloat() } // -> BeanStream<Float>
+            input { idx, _ -> idx.toFloat() } // -> BeanStream<Float>
         ) { (a, b) ->
             requireNotNull(a)
             requireNotNull(b)
@@ -76,43 +76,18 @@ input { (idx, _) -> idx.toInt() } // -> BeanStream<Int>
         } // -> BeanStream<Long>
 ```
 
-Using as a class
-----------
+## Using with parameters (Distributed Mode)
 
-When the function needs some arguments to be bypassed outside, or you just want to avoid defining the function in inline-style as the code of the function is too complex, you may define the merge function as a class. First of all please follow [functions documentation](../functions.md).
- 
-As mentioned above the signature of the merge function is input type `Pair<T1?,T2?>` and the output type is `R`. Let's create an operation that sums two streams but keeps the value not more than specified value.
-
-The class operation looks like this:
+If your merge operation requires external parameters and you intend to run in distributed mode, you should use `ExecutionScope`.
 
 ```kotlin
-class SumSamplesSafeFn(initParameters: FnInitParameters) : Fn<Pair<Sample?, Sample?>, Sample?>(initParameters) {
-
-    constructor(maxValue: Sample) : this(FnInitParameters().add("maxValue", abs(maxValue.asDouble())))
-
-    override fun apply(argument: Pair<Sample?, Sample?>): Sample? {
-        val maxValue = sampleOf(initParams.double("maxValue"))
-        val (a, b) = argument
-        val sum = a + b
-        return when {
-            sum > maxValue -> maxValue
-            sum < -maxValue -> -maxValue
-            else -> sum
-        }
-    }
+val threshold = 1.0
+stream1.merge(stream2, executionScope { add("threshold", threshold) }) { a, b ->
+    val limit = parameters.double("threshold")
+    val sum = a + b
+    if (sum > limit) limit else sum
 }
 ```
-
-And this is how it's called:
-
-```kotlin
-440.sine()
-        .merge(880.sine(), SumSamplesSafeFn(sampleOf(1.0)))
-```
-
-This class uses helper function `sampleOf()` which converts any numeric type to internal representation of sample, please read more about in [types section](../#types)
-
-*Note: when trying to run that examples do not forget to [trim](trim-operation.md) the stream and define the output.*
 
 Running in distributed or multi-threaded mode
 ---------

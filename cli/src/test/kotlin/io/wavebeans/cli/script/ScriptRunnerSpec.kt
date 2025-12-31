@@ -7,7 +7,10 @@ import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.datatest.withData
 import io.wavebeans.execution.PodDiscovery
 import io.wavebeans.execution.distributed.Facilitator
+import io.wavebeans.execution.distributed.FacilitatorConfig
+import io.wavebeans.fs.local.LocalWbFileDriver
 import io.wavebeans.lib.WaveBeansClassLoader
+import io.wavebeans.lib.io.WbFileDriver
 import io.wavebeans.tests.createPorts
 import java.io.File
 import java.lang.Thread.sleep
@@ -20,10 +23,13 @@ class ScriptRunnerSpec : DescribeSpec({
     val facilitators = portRange
         .map {
             Facilitator(
-                communicatorPort = it,
                 threadsNumber = 2,
+                communicatorPort = it,
                 onServerShutdownTimeoutMillis = 100,
-                podDiscovery = object : PodDiscovery() {}
+                podDiscovery = object : PodDiscovery() {},
+                fileSystems = listOf(
+                    FacilitatorConfig.FileSystemDescriptor("file", LocalWbFileDriver::class.java.canonicalName),
+                )
             )
         }
 
@@ -190,31 +196,10 @@ class ScriptRunnerSpec : DescribeSpec({
             }
         }
 
-        context("Defining function as class") {
-            withData(modes) { mode ->
-                val script = """
-                        class InputFn: Fn<Pair<Long, Float>, Sample?>() {
-                            override fun apply(argument: Pair<Long, Float>): Sample? {
-                                return sampleOf(argument.first)
-                            }
-                        }
-
-                        input(InputFn())
-                          .map { it }
-                          .trim(1)
-                          .toDevNull()
-                          .out()
-                    """.trimIndent()
-
-                assertThat(mode.eval(script)).isNull()
-            }
-
-        }
-
         context("Defining function as lambda") {
             withData(modes) { mode ->
                 val script = """
-                        input { (i, _) -> sampleOf(i) }
+                        input { i, _ -> sampleOf(i) }
                           .map { it }
                           .trim(1)
                           .toDevNull()

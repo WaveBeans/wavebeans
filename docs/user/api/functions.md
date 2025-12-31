@@ -6,9 +6,11 @@
 
 - [Function input and output type](#function-input-and-output-type)
 - [Lambda function](#lambda-function)
-- [Function as class](#function-as-class)
-  - [Extracting parameters](#extracting-parameters)
-  - [FnInitParameters](#fninitparameters)
+- [ExecutionScope and Parameters](#executionscope-and-parameters)
+  - [Passing Parameters](#passing-parameters)
+  - [ScopeParameters](#scopeparameters)
+  - [Maintaining State](#maintaining-state)
+  - [Why not just use closures?](#why-not-just-use-closures)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -34,7 +36,7 @@ For example within lambda expression:
 To use within class definition:
 
 ```kotlin
-fun apply(argument: Pair<Sample, Double>): Sample { // `argument` type is specified explicitly 
+operator fun invoke(argument: Pair<Sample, Double>): Sample { // `argument` type is specified explicitly 
     val (sample, multiplier) = argument             // destruct it
     return sample * multiplier                      // apply the operation by using variable proper naming
 }
@@ -53,118 +55,83 @@ For example to define [map function](operations/map-operation.md):
         .map { sample -> sample / 2 } // or you may define operand name explicitly 
 ```
 
+> **Note:** When running in distributed mode, lambdas cannot capture variables from their outer scope if those variables are not serializable or if they are defined only on the driver node. In such cases, you must use `ExecutionScope` to pass parameters.
+
 In this case if you'll try to bypass parameter outside of the lambda expression and try to execute the stream, you'll get an exception with message like
 `Wrapping function $clazzName failed, perhaps it is implemented as inner class and should be wrapped manually`. That'll highlight that you can't define the function that way and you need to define [proper class](#class-function).
 
 This way is very compact and most of the time parameters contain everything that is required to perform the operation.
  
-## Function as class
+## ExecutionScope and Parameters
 
-This is the most cumbersome way to define the function but at the same time the most flexible. You can define a function as a class, but keep in mind that shouldn't be the inner class or anonymous class. Also, to bypass parameters you would need to be able to serialize them into string representation. There are functions defined for primitive types, for your own classes you would need to do it on your own 
+When your function needs parameters from the configuration runtime or needs to maintain state across invocations (especially in distributed mode), you use `ExecutionScope`.
 
-So, to define function as class you need to extend `Fn<T,R>` abstract class. That class has `initParameters` as constructor parameter, which is used to bypass parameters into the function body during execution. The class must have at least one constructor defined with no parameters -- meaning no parameters required, or with `initParameters` with type `io.wavebeans.lib.FnInitParameters`. However for convenience and readability it is recommended to provide second constructor that has parameters you want to bypass into execution runtime.
+The `ExecutionScope` provides:
+1.  **Parameters**: A way to pass serializable parameters to your function.
+2.  **State**: A way to initialize and maintain objects across calls to your function.
 
-As an example let's define a [map function](operations/map-operation.md) that changes an amplitude of the audio stream by defined value:
+### Passing Parameters
+
+To pass parameters, use the `executionScope { ... }` builder when calling an operation like `map`:
 
 ```kotlin
-class ChangeAmplitudeFn(parameters: FnInitParameters)  // there should be at least one constructor defined this way
-: Fn<Sample, Sample>(parameters) {                     // extend Fn<T,R> class, Sample is input (T) and output (R) 
-                                                       // types of the function.
-
-    constructor(factor: Double)                        // for convenience let's define  proper constructor
-      : this(FnInitParameters().add("factor", factor)) // and build parameters for our function 
-
-    private val factor = initParams.double("factor")   // extracting the double value of the factor parameter,
-                                                       // it is better to do once
-
-    override fun apply(argument: Sample): Sample {     // here is the body of the function
-        return argument * factor                       // and simply multiply sample by the specified factor,
-                                                       // that changes its amplitude.
+val stream = 440.sine()
+    .map(executionScope { add("factor", 2.0) }) { sample ->
+        val factor = parameters.double("factor")
+        sample * factor
     }
-}
-
-// apply created function on the stream.
-stream.map(ChangeAmplitudeFn(2.0))
 ```
 
-### Extracting parameters
+Inside the lambda, `parameters` is available to retrieve the values you added to the scope.
 
-As [FnInitParameters](#fninitparameters) are being used to transfer the function arguments, it is not convenient to use that class every time you need something, so it's better to extract them as a variable or class properties. You always can extract them inside `apply()` method body, though from perfomance perspective it might be expensive in some cases. In this case class properties are preferrable way to do it.
+### ScopeParameters
+
+`ScopeParameters` is used to bypass data from configuration runtime to execution runtime. All values are internally stored as strings.
+
+Available API for handling types:
+```kotlin
+executionScope {
+    add("double", 1.0)
+    add("int", 123)
+    add("string", "some_string")
+    addStrings("strings", listOf("string1", "string2"))
+    addDoubles("doubles", listOf(1.0, 2.0))
+    // ... similarly for long and float
+    addObj("complex", myObj) { it.serializeToString() }
+}
+```
+
+To read parameters within the lambda:
+```kotlin
+val d = parameters.double("double")
+val i = parameters.intOrNull("int")
+val s = parameters.strings("strings")
+val obj = parameters.obj("complex") { MyObj.deserialize(it) }
+```
+
+### Maintaining State
+
+If your function needs a complex object that should be initialized only once (e.g., a heavy-weight processor or a non-serializable object), use the `state` method:
 
 ```kotlin
-class ChangeAmplitudeFn(parameters: FnInitParameters): Fn<Sample, Sample>(parameters) {
-
-    constructor(factor: Double): this(FnInitParameters().add("factor", factor))
-
-    // good way to extract the `factor`
-    private val factor = initParams.double("factor")
-
-    override fun apply(argument: Sample): Sample {
-        val factor = initParams.double("factor") // bad way to extract the `factor`
-        return argument * factor
+stream.map(executionScope { add("config", "...") }) { sample ->
+    val processor = state("myProcessor") {
+        val config = parameters.string("config")
+        HeavyProcessor(config)
     }
+    processor.process(sample)
 }
-
 ```
 
-### FnInitParameters
+The `state` method ensures that the initialization block is called only once per execution unit (pod) and the result is cached for subsequent calls.
 
-Type `io.wavebeans.lib.FnInitParameters` is the specific class that is used to bypass parameters from configuration runtime to execution runtime. For transferring all values should be serialized into strings.
+### Why not just use closures?
 
-There is an API for handling primitive types and their collections:
-```kotlin
-FnInitParameters()
-    .add("double", 1.0) // will be stored as double string "1.0"
-    .add("int", 123) // will be stored as int string "123"
-    .add("string", "some_string") // will be stored as is
-    .addStrings("strings", listOf("string1", "string2")) // will be stored as comma-separated strings "string1,string2"
-    .addDoubles("doubles", listOf(1.0, 2.0)) // will be stored as comma separated double string "1.0,2.0"
-    .addInts("ints", listOf(1, 2)) // will be stored as comma separated double string "1,2"
-```
-And it works similar wth floats and longs.
-
-To store an object or any other type you would need to specify the stringifier that converts an object to a string.
+In local or multi-threaded mode, you can use regular Kotlin closures:
 
 ```kotlin
-FnInitParameters()
-    .addObj("timeUnit", TimeUnit.MILLISECONDS) { it.name } // stringifying simple but different type
-    .addObj("pairOfLongs", Pair(1L, 2L)) { "${it.first}:${it.second}" } // stringifying complex type
-    .addObj("myListOfInts", listOf(1, 2, 3)) { it.joinToString(",") { it.toString() } } // stringifying collections your way
+val factor = 2.0
+stream.map { it * factor } // Works in local mode
 ```
 
-As you probably noticed, API of parameters allows you to specify parameters one by one without storing the result in interim variable, so these coding styles has same result:
-
-```kotlin
-// defining parameters with storing in interim variable
-val p = FnInitParameters()
-p.add("timeValue", 1)
-p.addObj("timeUnit", TimeUnit.MILLISECONDS) { it.name }
-MyFn(p)
-
-// specifying parameters sequentially
-MyFn(FnInitParameters()
-    .add("timeValue", 1)
-    .addObj("timeUnit", TimeUnit.MILLISECONDS) { it.name }
-)
-```
-
-To read parameters you would need to specify explicitly what you want get. Keep in mind, some of the methods may work for different values stored as they are interchangeable in some sense (i.e. you can get int as double). All parameters are nullable, but you can ask for non-nullable value, you would need to specify it explicitly.
-
-Primitive types:
-```kotlin
-val double = initParams.double("double") // get non-nullable double value
-val doubleOrNull = initParams.doubleOrNull("double") // get nullable double value
-val doubles = initParams.doubles("doubles") // get non-nullable list of doubles 
-val doublesOrNull = initParams.doublesOrNull("doubles") // get nullable list of doubles
-```
-It works similar for float, int and long.
-
-For getting an object, similar way to specifying stringifier you would need to specify objectifier that parses the value. You may get an object as nullable or not as well:
-```kotlin
-val timeUnit = initParams.obj("timeUnit") { TimeUnit.valueOf(it) }
-val pairOfLongs = initParams.objOrNull("pairOfLongs") {
-    val (first, second) = it.split(":").map { it.toLong() }.take(2)
-    Pair(first, second)
-}
-val myListOfInts = initParams.obj("myListOfInts") { it.split(",").map { it.toInt() } }
-```
+However, **this will fail in distributed mode**. The execution engine needs to serialize the lambda and send it to worker nodes. Kotlin lambdas do not automatically serialize their captured variables unless they are specifically designed to do so and all captured objects are serializable. `ExecutionScope` provides a robust, framework-supported way to handle this.

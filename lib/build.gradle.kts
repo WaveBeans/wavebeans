@@ -13,7 +13,13 @@ kotlin {
                 useMocha()
             }
         }
-        browser { testTask { useKarma { useChromeHeadless() } } }
+        browser {
+            testTask {
+                useKarma {
+                    useChromeHeadlessNoSandbox()
+                }
+            }
+        }
     }
     compilerOptions {
         freeCompilerArgs.add("-Xexpect-actual-classes")

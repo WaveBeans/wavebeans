@@ -26,6 +26,9 @@ WaveBeans provides the one atomic entity called a Bean which may perform some op
 2. A `Bean`, which can have one or more input or outputs. This basically are operator that allows you perform an operation on sample, convert sample to something else, alter the stream, or merge different streams together. One operation at once, though the operation may do a lot of computations at once, not just one.
 3. `SinkBean` -- the bean has no outputs, this is the ones that dumps the audio samples onto disk or something like this, so called [outputs](#outputs)
 
+Also, there's a key concept for distributed execution:
+* **ExecutionScope**: A mechanism to pass parameters and manage state within lambdas, required for distributed execution.
+
 The samples are starting their life in SourceBean then by following a mesh of other Beans which changes them are getting stored or distributed by SinkBean.
 
 WaveBeans uses declarative way to represent the stream, so you first define the way the samples are being altered or analyzed, then it's being executed in most efficient way. That means, that effectively SinkBean are pulling data out of the stream, and all computations are happened on demand at the time they are needed. Such stream is called `BeanStream<T>`, it has a type parameters which represent what is inside the stream, i.e. `BeanStream<Sample>` is the stream of samples. The type `T` is non-nullable.

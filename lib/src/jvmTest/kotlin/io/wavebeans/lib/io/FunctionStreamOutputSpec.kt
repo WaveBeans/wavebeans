@@ -38,7 +38,7 @@ class FunctionStreamOutputSpec : DescribeSpec({
             IntStorage.reset()
         }
 
-        val input = input { it.first.toInt() }.trim(100)
+        val input = input { x, _ -> x.toInt() }.trim(100)
 
         it("should write till the end of the stream") {
             input.out {
@@ -106,45 +106,38 @@ class FunctionStreamOutputSpec : DescribeSpec({
 
     describe("Writing encoded samples") {
 
-        class FileEncoderFn<T : Any>(file: String) : Fn<WriteFunctionArgument<T>, Boolean>(
-            FnInitParameters().add("file", file)
-        ) {
-
-            private val file by lazy { File(initParams.string("file")).outputStream().buffered() }
-            private val bytesPerSample = BitDepth.BIT_32.bytesPerSample
-            private val bitDepth = BitDepth.BIT_32
-
-            override fun apply(argument: WriteFunctionArgument<T>): Boolean {
-                when (argument.phase) {
-                    WRITE -> {
-                        when (argument.sampleClazz) {
-                            Sample::class -> {
-                                val element = argument.sample!! as Sample
-                                val buffer = ByteArray(bytesPerSample)
-                                buffer.encodeSampleLEBytes(0, element, bitDepth)
-                                file.write(buffer)
-                            }
-
-                            SampleVector::class -> {
-                                val element = argument.sample!! as SampleVector
-                                val buffer = ByteArray(bytesPerSample * element.size)
-                                for (i in element.indices) {
-                                    buffer.encodeSampleLEBytes(i * bytesPerSample, element[i], bitDepth)
-                                }
-                                file.write(buffer)
-                            }
-
-                            else -> fail("Unsupported $argument")
+        fun <T : Any> streamEncoder(stream: java.io.OutputStream, argument: WriteFunctionArgument<T>): Boolean {
+            val bytesPerSample = BitDepth.BIT_32.bytesPerSample
+            val bitDepth = BitDepth.BIT_32
+            when (argument.phase) {
+                WRITE -> {
+                    when (argument.sampleClazz) {
+                        Sample::class -> {
+                            val element = argument.sample!! as Sample
+                            val buffer = ByteArray(bytesPerSample)
+                            buffer.encodeSampleLEBytes(0, element, bitDepth)
+                            stream.write(buffer)
                         }
-                    }
 
-                    CLOSE -> file.close()
-                    END -> {
-                        /** nothing to do */
+                        SampleVector::class -> {
+                            val element = argument.sample!! as SampleVector
+                            val buffer = ByteArray(bytesPerSample * element.size)
+                            for (i in element.indices) {
+                                buffer.encodeSampleLEBytes(i * bytesPerSample, element[i], bitDepth)
+                            }
+                            stream.write(buffer)
+                        }
+
+                        else -> fail("Unsupported $argument")
                     }
                 }
-                return true
+
+                CLOSE -> stream.close()
+                END -> {
+                    /** nothing to do */
+                }
             }
+            return true
         }
 
         val input = 440.sine().trim(10)
@@ -152,7 +145,15 @@ class FunctionStreamOutputSpec : DescribeSpec({
 
         it("should store sample bytes as LE into a file") {
             val outputFile = File.createTempFile("temp", ".raw").also { it.deleteOnExit() }
-            input.out(FileEncoderFn<Sample>(outputFile.absolutePath)).evaluate(sampleRate)
+            input.out(
+                executionScope { add("fileName", outputFile.absolutePath) }
+            ) {
+                val stream = state("stream") {
+                    val outputFile = File(parameters.string("fileName"))
+                    outputFile.outputStream().buffered()
+                }
+                streamEncoder(stream, it)
+            }.evaluate(sampleRate)
 
             val generated = ByteArrayLittleEndianInput(
                 ByteArrayLittleEndianInputParams(
@@ -166,7 +167,10 @@ class FunctionStreamOutputSpec : DescribeSpec({
         }
         it("should store sample vector bytes as LE into a file") {
             val outputFile = File.createTempFile("temp", ".raw").also { it.deleteOnExit() }
-            input.window(64).map { sampleVectorOf(it) }.out(FileEncoderFn<SampleVector>(outputFile.absolutePath))
+            val stream = outputFile.outputStream().buffered()
+            input.window(64)
+                .map { sampleVectorOf(it) }
+                .out { streamEncoder(stream, it) }
                 .evaluate(sampleRate)
 
             val generated = ByteArrayLittleEndianInput(

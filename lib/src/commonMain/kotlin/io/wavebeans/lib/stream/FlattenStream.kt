@@ -18,7 +18,7 @@ import kotlinx.serialization.encoding.*
  */
 @JvmName("flattenSampleVector")
 @JsName("flattenSampleVector")
-fun BeanStream<SampleVector>.flatten(): BeanStream<Sample> = this.flatMap { it.asList() }
+fun BeanStream<SampleVector>.flatten(): BeanStream<Sample> = this.flatMap { it.asIterable() }
 
 /**
  * Flattens the stream of any type [T] from the iterable type [I]. Flatten is a process that extracts a single stream
@@ -43,13 +43,15 @@ fun <T : Any, I : Iterable<T>> BeanStream<I>.flatten(): BeanStream<T> = this.fla
  *
  * @return the flattened stream of [T].
  */
-fun <T : Any, I : Any> BeanStream<I>.flatMap(map: (I) -> Iterable<T>): BeanStream<T> = this.flatMap(wrap(map))
+fun <T : Any, I : Any> BeanStream<I>.flatMap(map: ExecutionScope.(I) -> Iterable<T>): BeanStream<T> =
+    this.flatMap(EmptyScope, map)
 
 /**
  * Flattens the stream of any type [T] from the any type [I] with help of extract function [map]. Flatten is a process
  * that extracts a single stream of all elements to the continuous stream of [T].
  *
- * @param map the function as [Fn] to extract the iterable type out of [I]. The argument is the one that was read out of
+ * @param scope the execution scope to use.
+ * @param map the function to extract the iterable type out of [I]. The argument is the one that was read out of
  *            stream on the iteration, the result is expected to be empty or non-empty iterable of [T].
  *
  * @param T the type of the resulted element.
@@ -57,8 +59,11 @@ fun <T : Any, I : Any> BeanStream<I>.flatMap(map: (I) -> Iterable<T>): BeanStrea
  *
  * @return the flattened stream of [T].
  */
-fun <T : Any, I : Any> BeanStream<I>.flatMap(map: Fn<I, Iterable<T>>): BeanStream<T> =
-    FlattenStream(this, FlattenStreamsParams(map))
+fun <T : Any, I : Any> BeanStream<I>.flatMap(
+    scope: ExecutionScope,
+    map: ExecutionScope.(I) -> Iterable<T>
+): BeanStream<T> = FlattenStream(this, FlattenStreamsParams(scope, map))
+
 
 /**
  * Parameters to use with [FlattenStream].
@@ -66,47 +71,17 @@ fun <T : Any, I : Any> BeanStream<I>.flatMap(map: Fn<I, Iterable<T>>): BeanStrea
  * @param I the input type of the [map] function.
  * @param T the output type of operation.
  */
-//@Serializable(with = FlattenStreamsParamsSerializer::class)
 class FlattenStreamsParams<I : Any, T : Any>(
     /**
-     * the function as [Fn] to extract the iterable type out of [I]. The argument is the one that was read out of
+     * The execution scope.
+     */
+    val scope: ExecutionScope,
+    /**
+     * the function to extract the iterable type out of [I]. The argument is the one that was read out of
      * stream on the iteration, the result is expected to be empty or non-empty iterable of [T].
      */
-    val map: Fn<I, Iterable<T>>
+    val map: ExecutionScope.(I) -> Iterable<T>
 ) : BeanParams
-
-/**
- * The serializer for [FlattenStreamsParams].
- */
-object FlattenStreamsParamsSerializer : KSerializer<FlattenStreamsParams<*, *>> {
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor(FlattenStreamsParams::class.className()) {
-            element("map", FnSerializer.descriptor)
-        }
-
-    override fun deserialize(decoder: Decoder): FlattenStreamsParams<*, *> {
-        return decoder.decodeStructure(descriptor) {
-            lateinit var map: Fn<*, *>
-            loop@ while (true) {
-                when (val i = decodeElementIndex(descriptor)) {
-                    CompositeDecoder.DECODE_DONE -> break@loop
-                    0 -> map = decodeSerializableElement(descriptor, i, FnSerializer)
-                    else -> throw SerializationException("Unknown index $i")
-                }
-            }
-            @Suppress("UNCHECKED_CAST")
-            FlattenStreamsParams(
-                map as Fn<Any, Iterable<Any>>
-            )
-        }
-    }
-
-    override fun serialize(encoder: Encoder, value: FlattenStreamsParams<*, *>) {
-        encoder.encodeStructure(descriptor) {
-            encodeSerializableElement(descriptor, 0, FnSerializer, value.map)
-        }
-    }
-}
 
 /**
  * Flattens the stream of any type [T] from the any type [I] with help of extract function [map]. Flatten is a process
@@ -134,7 +109,7 @@ class FlattenStream<I : Any, T : Any>(
                         return true
                     }
                     if ((current == null || !current!!.hasNext()) && iterator.hasNext()) {
-                        current = parameters.map.apply(iterator.next()).iterator()
+                        current = parameters.map.invoke(parameters.scope, iterator.next()).iterator()
                     } else {
                         return false
                     }
@@ -147,7 +122,7 @@ class FlattenStream<I : Any, T : Any>(
                         break
                     }
                     if (current == null && iterator.hasNext()) {
-                        current = parameters.map.apply(iterator.next()).iterator()
+                        current = parameters.map.invoke(parameters.scope, iterator.next()).iterator()
                     } else {
                         throw NoSuchElementException("No elements left")
                     }

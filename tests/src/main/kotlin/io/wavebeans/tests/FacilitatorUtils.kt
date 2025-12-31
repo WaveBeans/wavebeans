@@ -9,9 +9,9 @@ import java.io.File
 private val log = KotlinLogging.logger { }
 
 fun startFacilitator(
-        port: Int,
-        threadsNumber: Int = 1,
-        facilitatorLogLevel: String = "INFO"
+    port: Int,
+    threadsNumber: Int = 1,
+    facilitatorLogLevel: String = "INFO"
 ) {
     log.info { "Starting facilitator on port=$port, threadsNumber=$threadsNumber, facilitatorLogLevel=$facilitatorLogLevel" }
     val customLoggingConfig = """
@@ -32,12 +32,22 @@ fun startFacilitator(
                 </configuration>
             """.trimIndent()
     val confFile = File.createTempFile("facilitator-config", ".conf").also { it.deleteOnExit() }
-    confFile.writeText("""
+    confFile.writeText(
+        """
         facilitatorConfig {
             communicatorPort: $port
             threadsNumber: $threadsNumber
+            fileSystems {
+                available = [
+                    {
+                        type =  "file",
+                        driver = "io.wavebeans.fs.local.LocalWbFileDriver"
+                    }
+                ]
+            }
         }
-    """.trimIndent())
+    """.trimIndent()
+    )
 
     val loggingFile = customLoggingConfig.let {
         val logFile = File.createTempFile("log-config", ".xml").also { it.deleteOnExit() }
@@ -46,12 +56,12 @@ fun startFacilitator(
     }
 
     val runner = CommandRunner(
-            javaCmd(),
-            *(listOf(
-                    "-Dlogback.configurationFile=$loggingFile",
-                    "-cp", System.getProperty("java.class.path"),
-                    "io.wavebeans.execution.distributed.FacilitatorCliKt", confFile.absolutePath
-            )).toTypedArray()
+        javaCmd(),
+        *(listOf(
+            "-Dlogback.configurationFile=$loggingFile",
+            "-cp", System.getProperty("java.class.path"),
+            "io.wavebeans.execution.distributed.FacilitatorCliKt", confFile.absolutePath
+        )).toTypedArray()
     )
     val runCall = runner.run()
 
@@ -96,9 +106,9 @@ fun terminateFacilitator(location: String, timeoutMs: Int = 30000) {
                         e is StatusRuntimeException &&
                         e.status.code == Status.UNAVAILABLE.code
             if (!isUnavailable(e)
-                    && !isUnavailable(e.cause)
-                    && !isUnavailable(e.cause?.cause)
-                    && !isUnavailable(e.cause?.cause?.cause)
+                && !isUnavailable(e.cause)
+                && !isUnavailable(e.cause?.cause)
+                && !isUnavailable(e.cause?.cause?.cause)
             ) {
                 throw e
             }

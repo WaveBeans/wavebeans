@@ -36,6 +36,9 @@ As an example, let's store one second of 440Hz sine into a file:
 ```kotlin
 import java.util.concurrent.TimeUnit.NANOSECONDS
 
+// Register the driver
+WbFileDriver.registerDriver("file", LocalWbFileDriver)
+
 440.sine()
    .trim(1000)
    .toCsv(
@@ -84,6 +87,9 @@ val fft = 440.sine()
         .trim(1000)
         .window(101)
         .fft(128)
+
+// Register the driver
+WbFileDriver.registerDriver("file", LocalWbFileDriver)
 
 fft.magnitudeToCsv(
         uri = "file:///path/to/file.magnitude.csv"
@@ -141,7 +147,7 @@ The function has 3 parameters:
 
 There are two main approaches of defining a function for the output:
 1. Lambda function for the cases where it is not dependent on outside parameters, and the only parameters it needs are function parameters
-2. Class extending `Fn` with input type parameter `T=Triple<Long, Float, Sample>` and output type parameter `R=List<String>`.
+2. Class with `invoke` operator with input type parameter `T=Triple<Long, Float, Sample>` and output type parameter `R=List<String>`.
 
 For more information regarding defining function follow appropriate [functions section](../functions.md).
 
@@ -152,13 +158,16 @@ Using lambda it'll look like this:
 ```kotlin
 import java.util.concurrent.TimeUnit.MILLISECONDS
 
+// Register the driver
+WbFileDriver.registerDriver("file", LocalWbFileDriver)
+
 440.sine()
         .trim(1)
         .window(2)
         .toCsv(
                 uri = "file:///path/to/file.csv",
                 header = listOf("time ms", "sample#1", "sample#2"),
-                elementSerializer = { (idx, sampleRate, window) ->
+                elementSerializer = { idx, sampleRate, window ->
                     listOf(
                             samplesCountToLength(idx, sampleRate, MILLISECONDS).toString(),
                             String.format("%.10f", window.elements.first()),
@@ -174,15 +183,11 @@ Let's image we want to bypass the time unit of the output as a parameter and mod
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.MILLISECONDS
 
-class CsvFn(parameters: FnInitParameters) : Fn<Triple<Long, Float, Window<Sample>>, List<String>>(parameters) {
+class CsvFn(val timeUnit: TimeUnit) {
 
-    constructor(timeUnit: TimeUnit) : this(FnInitParameters().addObj("timeUnit", timeUnit) { it.name })
-
-    override fun apply(argument: Triple<Long, Float, Window<Sample>>): List<String> {
-        val (idx, sampleRate, window) = argument
-        val tu = initParams.obj("timeUnit") { TimeUnit.valueOf(it) }
+    operator fun invoke(idx: Long, sampleRate: Float, window: Window<Sample>): List<String> {
         return listOf(
-                samplesCountToLength(idx, sampleRate, tu).toString(),
+                samplesCountToLength(idx, sampleRate, timeUnit).toString(),
                 String.format("%.10f", window.elements.first()),
                 String.format("%.10f", window.elements.drop(1).first())
         )
@@ -190,6 +195,7 @@ class CsvFn(parameters: FnInitParameters) : Fn<Triple<Long, Float, Window<Sample
 }
 
 val timeUnit = MILLISECONDS
+val csvFn = CsvFn(timeUnit)
 
 440.sine()
         .trim(1)
@@ -197,7 +203,7 @@ val timeUnit = MILLISECONDS
         .toCsv(
                 uri = "file:///path/to/file.csv",
                 header = listOf("time ${timeUnit.abbreviation()}", "sample#1", "sample#2"),
-                elementSerializer = CsvFn(timeUnit)
+                elementSerializer = { idx, sampleRate, window -> csvFn(idx, sampleRate, window) }
         )
 
 ```

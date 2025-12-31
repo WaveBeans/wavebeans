@@ -7,7 +7,7 @@ import io.wavebeans.lib.stream.rangeProjection
 import io.wavebeans.lib.TimeUnit.MILLISECONDS
 import io.wavebeans.tests.eachIndexed
 
-object SineSweepGeneratedInputSpec : DescribeSpec({
+class SineSweepGeneratedInputSpec : DescribeSpec({
     describe("Constant sine sweep of A=1.0, f1=10.0, f2=10.0, phi=1.0, fs=50.0 and t=0.1") {
         val generator = (10..10).sineSweep(
                 1.0,
@@ -33,7 +33,7 @@ object SineSweepGeneratedInputSpec : DescribeSpec({
             }
         }
 
-        xdescribe("projects a range 0..20ms") {
+        describe("projects a range 0..20ms") {
             val seq = generator.rangeProjection(0, 20, MILLISECONDS).asSequence(50.0f).take(1).toList()
 
             it("should be 1 sample array") {
@@ -44,7 +44,7 @@ object SineSweepGeneratedInputSpec : DescribeSpec({
             }
         }
 
-        xdescribe("projects a range 0..100ms") {
+        describe("projects a range 0..100ms") {
             val seq = generator.rangeProjection(0, 100, MILLISECONDS).asSequence(50.0f).take(5).toList()
 
             it("should be 5 sample array") {
@@ -55,7 +55,7 @@ object SineSweepGeneratedInputSpec : DescribeSpec({
             }
         }
 
-        xdescribe("projects a range -20..20ms") {
+        describe("projects a range -20..20ms") {
             val seq = generator.rangeProjection(-20, 20, MILLISECONDS).asSequence(50.0f).take(1).toList()
 
             it("should be 1 sample array") {
@@ -66,7 +66,7 @@ object SineSweepGeneratedInputSpec : DescribeSpec({
             }
         }
 
-        xdescribe("projects a range 20..40ms") {
+        describe("projects a range 20..40ms") {
             val seq = generator.rangeProjection(20, 40, MILLISECONDS).asSequence(50.0f).take(1).toList()
 
             it("should be 1 sample array") {
@@ -77,7 +77,7 @@ object SineSweepGeneratedInputSpec : DescribeSpec({
             }
         }
 
-        xdescribe("projects a range 80..120ms") {
+        describe("projects a range 80..120ms") {
             val seq = generator.rangeProjection(80, 120, MILLISECONDS).asSequence(50.0f).take(1).toList()
 
             it("should be 1 sample array") {

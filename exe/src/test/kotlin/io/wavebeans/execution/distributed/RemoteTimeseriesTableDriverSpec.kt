@@ -27,9 +27,9 @@ class RemoteTimeseriesTableDriverSpec : DescribeSpec({
 
     val facilitator by lazy {
         Facilitator(
-            communicatorPort = communicatorPort,
             threadsNumber = 1,
-            onServerShutdownTimeoutMillis = 100
+            communicatorPort = communicatorPort,
+            onServerShutdownTimeoutMillis = 100,
         )
     }
 
@@ -47,7 +47,7 @@ class RemoteTimeseriesTableDriverSpec : DescribeSpec({
 
     describe("Pointing to Facilitator") {
         it("should not return sample rate if not initialized") {
-            assertThat { remoteTableDriver.sampleRate }
+            assertThat(runCatching { remoteTableDriver.sampleRate })
                 .isFailure()
                 .isInstanceOf(IllegalStateException::class)
         }

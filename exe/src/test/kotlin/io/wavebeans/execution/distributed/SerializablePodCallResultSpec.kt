@@ -234,7 +234,7 @@ class SerializablePodCallResultSpec : DescribeSpec({
 
         describe("windows") {
 
-            val obj = Window(6, 2, listOf(1, 2, 3, 4, 5, 6)) { 0 }
+            val obj = Window(6, 2, listOf(1, 2, 3, 4, 5, 6), 0)
 
             val result by lazy { result(obj) }
 

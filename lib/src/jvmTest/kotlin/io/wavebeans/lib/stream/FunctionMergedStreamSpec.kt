@@ -17,12 +17,12 @@ object FunctionMergedStreamSpec : DescribeSpec({
             val merging = (10..19).stream()
 
             it("should return valid sum") {
-                assertThat(source.merge(with = merging) { (x, y) -> x + y }.toListInt())
+                assertThat(source.merge(with = merging) { x, y -> x + y }.toListInt())
                         .isEqualTo((10..28 step 2).toList())
             }
 
             it("should return valid windows") {
-                assertThat(source.merge(with = merging) { (x, y) -> windowOf(x, y) }.toListWindowInt())
+                assertThat(source.merge(with = merging) { x, y -> windowOf(x, y) }.toListWindowInt())
                         .isListOf(
                                 listOf(0, 10),
                                 listOf(1, 11),
@@ -41,8 +41,8 @@ object FunctionMergedStreamSpec : DescribeSpec({
             it("should return valid values after summing up of 3 streams consequently") {
                 val anotherMerging = (20..29).stream()
                 assertThat(source
-                        .merge(with = merging) { (x, y) -> x + y }
-                        .merge(with = anotherMerging) { (x, y) -> x + y }
+                        .merge(with = merging) { x, y -> x + y }
+                        .merge(with = anotherMerging) { x, y -> x + y }
                         .toListInt()
                 ).isEqualTo((30..58 step 3).toList())
             }
@@ -52,13 +52,13 @@ object FunctionMergedStreamSpec : DescribeSpec({
             val merging = (10..15).stream()
 
             it("should return valid sum") {
-                assertThat(source.merge(with = merging) { (x, y) -> x + y }.toListInt())
+                assertThat(source.merge(with = merging) { x, y -> x + y }.toListInt())
                         .isEqualTo((10..20 step 2).toList() + (6..9))
 
             }
 
             it("should return valid windows") {
-                assertThat(source.merge(with = merging) { (x, y) -> windowOf(x, y) }.toListWindowInt())
+                assertThat(source.merge(with = merging) { x, y -> windowOf(x, y) }.toListWindowInt())
                         .isListOf(
                                 listOf(0, 10),
                                 listOf(1, 11),
@@ -78,13 +78,13 @@ object FunctionMergedStreamSpec : DescribeSpec({
             val merging = (10..25).stream()
 
             it("should return valid sum") {
-                assertThat(source.merge(with = merging) { (x, y) -> x + y }.toListInt())
+                assertThat(source.merge(with = merging) { x, y -> x + y }.toListInt())
                         .isEqualTo((10..28 step 2).toList() + (20..25))
 
             }
 
             it("should return valid windows") {
-                assertThat(source.merge(with = merging) { (x, y) -> windowOf(x, y) }.toListWindowInt())
+                assertThat(source.merge(with = merging) { x, y -> windowOf(x, y) }.toListWindowInt())
                         .isListOf(
                                 listOf(0, 10),
                                 listOf(1, 11),
@@ -107,16 +107,16 @@ object FunctionMergedStreamSpec : DescribeSpec({
         }
 
         describe("merged with the infinite size stream") {
-            val merging = input { (i, _) -> sampleOf((i + 10).toInt()) }
+            val merging = input { i, _ -> sampleOf((i + 10).toInt()) }
 
             it("should return valid sum") {
-                assertThat(source.merge(with = merging) { (x, y) -> x + y }.toListInt(take = 20))
+                assertThat(source.merge(with = merging) { x, y -> x + y }.toListInt(take = 20))
                         .isEqualTo((10..28 step 2).toList() + (20..29))
 
             }
 
             it("should return valid windows") {
-                assertThat(source.merge(with = merging) { (x, y) -> windowOf(x, y) }.toListWindowInt(take = 20))
+                assertThat(source.merge(with = merging) { x, y -> windowOf(x, y) }.toListWindowInt(take = 20))
                         .isListOf(
                                 listOf(0, 10),
                                 listOf(1, 11),
@@ -144,8 +144,8 @@ object FunctionMergedStreamSpec : DescribeSpec({
     }
 
     describe("Int and float stream") {
-        val stream = input { (idx, _) -> idx.toInt() }
-                .merge(input { (idx, _) -> idx.toFloat() }) { (a, b) ->
+        val stream = input { idx, _ -> idx.toInt() }
+                .merge(input { idx, _ -> idx.toFloat() }) { a, b ->
                     requireNotNull(a)
                     requireNotNull(b)
                     a.toLong() + b.toLong()
@@ -158,9 +158,9 @@ object FunctionMergedStreamSpec : DescribeSpec({
     }
 
     describe("Int and Window<Int> stream") {
-        val stream = input { (idx, _) -> idx.toInt() }
+        val stream = input { idx, _ -> idx.toInt() }
                 .window(2) { 0 }
-                .merge(input { (idx, _) -> idx.toInt() }) { (window, a) ->
+                .merge(input { idx, _ -> idx.toInt() }) { window, a ->
                     requireNotNull(window)
                     requireNotNull(a)
                     window.elements.first().toLong() + a.toLong()

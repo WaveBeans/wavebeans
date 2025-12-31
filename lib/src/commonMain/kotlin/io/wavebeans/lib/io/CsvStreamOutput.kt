@@ -16,32 +16,6 @@ import kotlinx.serialization.encoding.*
  *
  * @param uri the URI the stream file to, i.e. `file:///home/user/output.csv`.
  * @param header the list of entries to put on the first row.
- * @param elementSerializer the function as instance of [Fn] of three arguments to convert it to a row (`List<String>`):
- *                          1. The `Long` specifies the offset of the row, always start at 0 and grows for any sample
- *                             being processed and passed through the output.
- *                          2. The `Float` specifies the sample rate the stream is being processed with.
- *                          3. The `T` keeps the sample to be converted to a row.
- * @param encoding encoding to use to convert string to a byte array, by default `UTF-8`.
- *
- * @param T the type of the sample in the stream, non-nullable.
- *
- * @return [StreamOutput] to run the further processing on.
- */
-fun <T : Any> BeanStream<T>.toCsv(
-    uri: String,
-    header: List<String>,
-    elementSerializer: Fn<Triple<Long, Float, T>, List<String>>,
-    encoding: String = "UTF-8"
-): StreamOutput<T> {
-    return CsvStreamOutput(this, CsvStreamOutputParams(uri, header, elementSerializer, encoding))
-}
-
-/**
- * Streams the sample of any type into a CSV file by specified [uri]. The [header] is specified separately and added
- * as a first row. [elementSerializer] defines how you the rows are going to be stored.
- *
- * @param uri the URI the stream file to, i.e. `file:///home/user/output.csv`.
- * @param header the list of entries to put on the first row.
  * @param elementSerializer the function of three arguments to convert it to a row (`List<String>`):
  *                          1. The `Long` specifies the offset of the row, always start at 0 and grows for any sample
  *                             being processed and passed through the output.
@@ -56,56 +30,17 @@ fun <T : Any> BeanStream<T>.toCsv(
 fun <T : Any> BeanStream<T>.toCsv(
     uri: String,
     header: List<String>,
-    elementSerializer: (Triple<Long, Float, T>) -> List<String>,
-    encoding: String = "UTF-8"
-): StreamOutput<T> {
-    return this.toCsv(
-        uri,
-        header,
-        wrap(elementSerializer),
-        encoding
-    )
-}
-
-/**
- * Streams the [Managed] sample of any type into a CSV file by specified [uri]. The [header] is specified separately and added
- * as a first row. [elementSerializer] defines how you the rows are going to be stored.
- *
- * The managing signal is of type [OutputSignal].
- *
- * @param uri the URI the stream file to, i.e. `file:///home/user/output.csv`.
- * @param header the list of entries to put on the first row.
- * @param elementSerializer the function as instance of [Fn] of three arguments to convert it to a row (`List<String>`):
- *                          1. The `Long` specifies the offset of the row, always start at 0 and grows for any sample
- *                             being processed and passed through the output.
- *                          2. The `Float` specifies the sample rate the stream is being processed with.
- *                          3. The `T` keeps the sample to be converted to a row.
- * @param suffix the function as instance of [Fn] that is based on argument of type [A] which is obtained from the moment the
- *               [FlushOutputSignal] or [OpenGateOutputSignal] was generated. The suffix inserted after the name and
- *               before the extension: `file:///home/user/my${suffix}.csv`
- * @param encoding encoding to use to convert string to a byte array, by default `UTF-8`.
- *
- * @param A      the type of the argument, use [Unit] if it's not applicable. Bear in mind that the [A] should be
- *               [Serializable] for some cases. Argument may be null if it wasn't specified, or on the very first run.
- * @param T      the type of the sample in the stream, non-nullable.
- *
- * @return [StreamOutput] to run the further processing on.
- */
-fun <A : Any, T : Any> BeanStream<Managed<OutputSignal, A, T>>.toCsv(
-    uri: String,
-    header: List<String>,
-    elementSerializer: Fn<Triple<Long, Float, T>, List<String>>,
-    suffix: Fn<A?, String>,
+    elementSerializer: ExecutionScope.(Long, Float, T) -> List<String>,
     encoding: String = "UTF-8",
-): StreamOutput<Managed<OutputSignal, A, T>> {
-    return CsvPartialStreamOutput(
-        this,
-        CsvStreamOutputParams(
-            uri,
-            header,
-            elementSerializer,
-            encoding,
-            suffix
+    scope: ExecutionScope = EmptyScope,
+): StreamOutput<T> {
+    return CsvStreamOutput(
+        this, CsvStreamOutputParams(
+            uri = uri,
+            header = header,
+            elementSerializer = elementSerializer,
+            encoding = encoding,
+            scope = scope
         )
     )
 }
@@ -125,7 +60,7 @@ fun <A : Any, T : Any> BeanStream<Managed<OutputSignal, A, T>>.toCsv(
  *                          3. The `T` keeps the sample to be converted to a row.
  * @param suffix the function that is based on argument of type [A] which is obtained from the moment the
  *               [FlushOutputSignal] or [OpenGateOutputSignal] was generated. The suffix inserted after the name and
- *               before the extension: `file:///home/user/my${suffix}.cwv`
+ *               before the extension: `file:///home/user/my${suffix}.csv`
  * @param encoding encoding to use to convert string to a byte array, by default `UTF-8`.
  *
  * @param A      the type of the argument, use [Unit] if it's not applicable. Bear in mind that the [A] should be
@@ -137,78 +72,27 @@ fun <A : Any, T : Any> BeanStream<Managed<OutputSignal, A, T>>.toCsv(
 fun <A : Any, T : Any> BeanStream<Managed<OutputSignal, A, T>>.toCsv(
     uri: String,
     header: List<String>,
-    elementSerializer: (Triple<Long, Float, T>) -> List<String>,
-    suffix: (A?) -> String,
+    elementSerializer: ExecutionScope.(Long, Float, T) -> List<String>,
+    suffix: ExecutionScope.(A?) -> String,
     encoding: String = "UTF-8",
+    scope: ExecutionScope = EmptyScope,
 ): StreamOutput<Managed<OutputSignal, A, T>> {
-    return this.toCsv(
-        uri,
-        header,
-        wrap(elementSerializer),
-        wrap(suffix),
-        encoding
+    return CsvPartialStreamOutput(
+        this,
+        CsvStreamOutputParams(
+            uri,
+            header,
+            elementSerializer,
+            encoding,
+            suffix,
+            scope
+        )
     )
-}
-
-/**
- * Serializer for [CsvStreamOutputParams].
- */
-object CsvStreamOutputParamsSerializer : KSerializer<CsvStreamOutputParams<*, *>> {
-
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor(CsvStreamOutputParams::class.className()) {
-            element("uri", String.serializer().descriptor)
-            element("header", ListSerializer(String.serializer()).descriptor)
-            element("encoding", String.serializer().descriptor)
-            element("elementSerializer", FnSerializer.descriptor)
-            element("suffix", FnSerializer.descriptor)
-        }
-
-    override fun deserialize(decoder: Decoder): CsvStreamOutputParams<*, *> {
-        return decoder.decodeStructure(descriptor) {
-            lateinit var uri: String
-            lateinit var header: List<String>
-            lateinit var elementSerializer: Fn<*, *>
-            lateinit var encoding: String
-            lateinit var suffix: Fn<*, *>
-            while (true) {
-                when (val i = decodeElementIndex(descriptor)) {
-                    0 -> uri = decodeStringElement(descriptor, i)
-                    1 -> header = decodeSerializableElement(descriptor, i, ListSerializer(String.serializer()))
-                    2 -> encoding = decodeStringElement(descriptor, i)
-                    3 -> elementSerializer = decodeSerializableElement(descriptor, i, FnSerializer)
-                    4 -> suffix = decodeSerializableElement(descriptor, i, FnSerializer)
-                    CompositeDecoder.DECODE_DONE -> break
-                    else -> throw SerializationException("Unknown index $i")
-                }
-            }
-            @Suppress("UNCHECKED_CAST")
-            CsvStreamOutputParams(
-                uri,
-                header,
-                elementSerializer as Fn<Triple<Long, Float, Any>, List<String>>,
-                encoding,
-                suffix as Fn<Any?, String>
-            )
-        }
-    }
-
-    override fun serialize(encoder: Encoder, value: CsvStreamOutputParams<*, *>) {
-        encoder.encodeStructure(descriptor) {
-            encodeStringElement(descriptor, 0, value.uri)
-            encodeSerializableElement(descriptor, 1, ListSerializer(String.serializer()), value.header)
-            encodeStringElement(descriptor, 2, value.encoding)
-            encodeSerializableElement(descriptor, 3, FnSerializer, value.elementSerializer)
-            encodeSerializableElement(descriptor, 4, FnSerializer, value.suffix)
-        }
-    }
-
 }
 
 /**
  * Parameters class for the [CsvStreamOutput] bean.
  */
-@Serializable(with = CsvStreamOutputParamsSerializer::class)
 data class CsvStreamOutputParams<A : Any, T : Any>(
     /**
      * The URI to stream to, i.e. `file:///home/user/my.csv`.
@@ -225,7 +109,7 @@ data class CsvStreamOutputParams<A : Any, T : Any>(
      *  2. The `Float` specifies the sample rate the stream is being processed with.
      *  3. The `T` keeps the sample to be converted to a row.
      */
-    val elementSerializer: Fn<Triple<Long, Float, T>, List<String>>,
+    val elementSerializer: ExecutionScope.(Long, Float, T) -> List<String>,
     /**
      * Encoding to use to convert string to a byte array, by default `UTF-8`.
      */
@@ -235,7 +119,8 @@ data class CsvStreamOutputParams<A : Any, T : Any>(
      * [FlushOutputSignal] or [OpenGateOutputSignal] was generated. The suffix inserted after the name and
      * before the extension: `file:///home/user/my${suffix}.csv`
      */
-    val suffix: Fn<A?, String> = wrap { "" },
+    val suffix: ExecutionScope.(A?) -> String = { "" },
+    val scope: ExecutionScope,
 ) : BeanParams
 
 /**
@@ -262,7 +147,7 @@ class CsvStreamOutput<T : Any>(
             override fun footer(): ByteArray? = null
 
             override fun serialize(element: T): ByteArray =
-                serializeCsvElement(sampleRate, element, parameters.elementSerializer) { offset++ }
+                serializeCsvElement(sampleRate, element, parameters.elementSerializer, parameters.scope) { offset++ }
         }
     }
 }
@@ -285,7 +170,7 @@ class CsvPartialStreamOutput<A : Any, T : Any>(
 
     override fun outputWriter(inputSequence: Sequence<Managed<OutputSignal, A, T>>, sampleRate: Float): Writer {
         var offset = 0L
-        val writer = suffixedFileWriterDelegate<A>(parameters.uri) { parameters.suffix.apply(it) }
+        val writer = suffixedFileWriterDelegate<A>(parameters.uri) { parameters.suffix.invoke(parameters.scope, it) }
         return object : AbstractPartialWriter<T, A>(input, sampleRate, writer, CsvStreamOutput::class) {
 
             override fun header(): ByteArray? = csvHeader(parameters.header)
@@ -293,7 +178,7 @@ class CsvPartialStreamOutput<A : Any, T : Any>(
             override fun footer(): ByteArray? = null
 
             override fun serialize(element: T): ByteArray =
-                serializeCsvElement(sampleRate, element, parameters.elementSerializer) { offset++ }
+                serializeCsvElement(sampleRate, element, parameters.elementSerializer, parameters.scope) { offset++ }
 
             override fun skip(element: T) {
                 offset++
@@ -307,9 +192,10 @@ private fun csvHeader(header: List<String>): ByteArray = (header.joinToString(",
 private fun <T : Any> serializeCsvElement(
     sampleRate: Float,
     element: T,
-    elementSerializer: Fn<Triple<Long, Float, T>, List<String>>,
-    getOffset: () -> Long
+    elementSerializer: ExecutionScope.(Long, Float, T) -> List<String>,
+    scope: ExecutionScope,
+    getOffset: () -> Long,
 ): ByteArray {
-    val seq = elementSerializer.apply(Triple(getOffset(), sampleRate, element))
+    val seq = elementSerializer(scope, getOffset(), sampleRate, element)
     return (seq.joinToString(",") + "\n").encodeToByteArray()
 }

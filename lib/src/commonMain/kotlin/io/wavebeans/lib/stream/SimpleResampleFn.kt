@@ -1,8 +1,5 @@
 package io.wavebeans.lib.stream
 
-import io.wavebeans.lib.Fn
-import io.wavebeans.lib.FnInitParameters
-import io.wavebeans.lib.wrap
 import kotlin.math.truncate
 
 /**
@@ -25,34 +22,13 @@ import kotlin.math.truncate
  * ```
  *
  * @param [T] the of the element being resampled.
+ * @param reduceFn reduce function is called only during downsamping and should convert the List<[T]> to the singular value [T].
  */
-class SimpleResampleFn<T : Any>(initParameters: FnInitParameters) : Fn<ResamplingArgument<T>, Sequence<T>>(initParameters) {
+class SimpleResampleFn<T : Any>(
+        private val reduceFn: (List<T>) -> T
+) {
 
-    /**
-     * Creates an instance of [SimpleResampleFn].
-     *
-     * @param reduceFn reduce function as an instance if [Fn] is called only during downsamping and should convert the List<[T]> to the singular value [T].
-     */
-    constructor(reduceFn: Fn<List<T>, T>) : this(FnInitParameters().add("reduceFn", reduceFn))
-
-    /**
-     * Creates an instance of [SimpleResampleFn].
-     *
-     * @param reduceFn reduce function is called only during downsamping and should convert the List<[T]> to the singular value [T].
-     */
-    constructor(reduceFn: (List<T>) -> T) : this(wrap(reduceFn))
-
-    /**
-     * Creates an instance of [SimpleResampleFn] without reduce function.
-     */
-    constructor() : this(wrap {
-        throw IllegalStateException("Using ${SimpleResampleFn::class} as a " +
-                "resample function, but reduce function is not defined")
-    })
-
-    private val reduceFn: Fn<List<T>, T> by lazy { initParameters.fn<List<T>, T>("reduceFn") }
-
-    override fun apply(argument: ResamplingArgument<T>): Sequence<T> {
+    operator fun invoke(argument: ResamplingArgument<T>): Sequence<T> {
         val reverseFactor = 1.0f / argument.resamplingFactor
 
         return if (argument.resamplingFactor == truncate(argument.resamplingFactor) || reverseFactor == truncate(reverseFactor)) {
@@ -62,7 +38,7 @@ class SimpleResampleFn<T : Any>(initParameters: FnInitParameters) : Fn<Resamplin
                         .flatten()
                 argument.resamplingFactor < 1 -> argument.inputSequence
                         .windowed(reverseFactor.toInt(), reverseFactor.toInt(), partialWindows = true)
-                        .map { samples -> reduceFn.apply(samples) }
+                        .map { samples -> reduceFn(samples) }
                 else -> argument.inputSequence
             }
         } else {

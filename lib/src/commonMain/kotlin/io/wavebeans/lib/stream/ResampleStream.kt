@@ -16,109 +16,53 @@ import kotlin.properties.Delegates.notNull
 import kotlin.reflect.typeOf
 
 /**
- * Resamples the stream of [Sample]s to match the output stream sample rate unless the [to] argument is specified explicitly.
- * The resampling is performed with the [resampleFn].
- * If the sampling rate is not changed the resampling function is not called at all.
- *
- * @param to if specified used as a target sample rate, otherwise specified as a derivative from downstream output
- *           or another resample bean.
- * @param resampleFn the resampling function. Takes [ResamplingArgument] as an argument and returns [Sequence] of
- *        samples that are expected to be resampled to desired sample rate, and are treated accordingly.
- *
- * @return the stream that will be resampled to desired sample rate.
- */
-@JvmName("resampleSampleStream")
-@JsName("resampleSampleStream")
-inline fun <reified S : BeanStream<Sample>> S.resample(
-    to: Float? = null,
-    noinline resampleFn: (ResamplingArgument<Sample>) -> Sequence<Sample>,
-): S {
-    return this.resample(to, wrap(resampleFn))
-}
-
-/**
- * Resamples the stream of [Sample]s to match the output stream sample rate unless the [to] argument is specified explicitly.
- * The resampling is performed with the [resampleFn], where default implementation is [sincResampleFunc].
- * If the sampling rate is not changed the resampling function is not called at all.
- *
- * @param to if specified used as a target sample rate, otherwise specified as a derivative from downstream output
- *        or another resample bean.
- * @param resampleFn the resampling function as instance of [Fn]. Takes [ResamplingArgument] as an argument and
- *        returns [Sequence] of samples that are expected to be resampled to desired sample rate, and are treated
- *        accordingly.
- *
- * @return the stream that will be resampled to desired sample rate.
- */
-@OptIn(ExperimentalStdlibApi::class)
-@Suppress("UNCHECKED_CAST")
-@JvmName("resampleSampleStream")
-@JsName("resampleSampleStreamFn")
-inline fun <reified S : BeanStream<Sample>> S.resample(
-    to: Float? = null,
-    resampleFn: Fn<ResamplingArgument<Sample>, Sequence<Sample>> = sincResampleFunc(),
-): S {
-    return when (val streamType = typeOf<S>()) {
-        typeOf<BeanStream<Sample>>() ->
-            ResampleBeanStream(this, ResampleStreamParams(to, resampleFn)) as S
-
-        typeOf<FiniteStream<Sample>>() ->
-            ResampleFiniteStream(this as FiniteStream<Sample>, ResampleStreamParams(to, resampleFn)) as S
-
-        else -> throw UnsupportedOperationException("Type $streamType is not supported for resampling")
-    }
-
-}
-
-/**
  * Resamples the stream of type [T] to match the output stream sample rate unless the [to] argument is specified explicitly.
  * The resampling is performed with the [resampleFn].
  * If the sampling rate is not changed the resampling function is not called at all.
  *
  * @param to if specified used as a target sample rate, otherwise specified as a derivative from downstream output
  *        or another resample bean.
+ * @param scope the execution scope to use.
  * @param resampleFn the resampling function. Takes [ResamplingArgument] as an argument and returns [Sequence] of samples
  *        that are expected to be resampled to desired sample rate, and are treated accordingly.
  * @param T the type of the sample being processed.
  *
  * @return the stream that will be resampled to desired sample rate.
  */
-inline fun <reified S : BeanStream<T>, T : Any> S.resample(
-    to: Float? = null,
-    noinline resampleFn: (ResamplingArgument<T>) -> Sequence<T>,
-): S {
-    return this.resample(to, wrap(resampleFn))
-}
-
-/**
- * Resamples the stream of type [T] to match the output stream sample rate unless the [to] argument is specified explicitly.
- * The resampling is performed with the [resampleFn], where default implementation is [SimpleResampleFn] without
- * [SimpleResampleFn.reduceFn].
- * If the sampling rate is not changed the resampling function is not called at all.
- *
- * @param to if specified used as a target sample rate, otherwise specified as a derivative from downstream output
- *        or another resample bean.
- * @param resampleFn the resampling function as instance of [Fn]. Takes [ResamplingArgument] as an argument and
- *        returns [Sequence] of samples that are expected to be resampled to desired sample rate, and are treated
- *        accordingly.
- * @param T the type of the sample being processed.
- *
- * @return the stream that will be resampled to desired sample rate.
- */
-@OptIn(ExperimentalStdlibApi::class)
 @Suppress("UNCHECKED_CAST")
+@JvmName("resample")
+@JsName("resample")
 inline fun <reified S : BeanStream<T>, T : Any> S.resample(
+    noinline resampleFn: (ResamplingArgument<T>) -> Sequence<T> = { SimpleResampleFn<T> { it.first() }(it) },
     to: Float? = null,
-    resampleFn: Fn<ResamplingArgument<T>, Sequence<T>> = SimpleResampleFn(),
 ): S {
     val streamType = this
-    return when(streamType) {
+    return when (streamType) {
         is FiniteStream<*> ->
             ResampleFiniteStream(this as FiniteStream<T>, ResampleStreamParams(to, resampleFn)) as S
+
         is BeanStream<*> ->
             ResampleBeanStream(this, ResampleStreamParams(to, resampleFn)) as S
     }
 }
 
+@Suppress("UNCHECKED_CAST")
+@JvmName("resampleSample")
+@JsName("resampleSample")
+inline fun <reified S : BeanStream<Sample>> S.resample(
+    noinline resampleFn: (ResamplingArgument<Sample>) -> Sequence<Sample> = { sincResampleFunc(32)(it) },
+    to: Float? = null,
+): S {
+    val streamType = this
+    return when (streamType) {
+        is FiniteStream<*> ->
+            ResampleFiniteStream(this as FiniteStream<Sample>, ResampleStreamParams(to, resampleFn)) as S
+
+        is BeanStream<*> ->
+            ResampleBeanStream(this, ResampleStreamParams(to, resampleFn)) as S
+    }
+
+}
 /**
  * The argument of the resampling function:
  * * [inputSampleRate] - the sample rate of the input stream.
@@ -144,13 +88,12 @@ data class ResamplingArgument<T>(
  * Parameters for [ResampleStream]:
  * * [to] - if specified used as a target sample rate, otherwise specified as a derivative from downstream output
  *        or another resample bean.
- * * [resampleFn] - the resampling function as instance of [Fn]. Takes [ResamplingArgument] as an argument and
+ * * [resampleFn] - the resampling function. Takes [ResamplingArgument] as an argument and
  *        returns [Sequence] of samples that are expected to be resampled to desired sample rate, and are treated
  *        accordingly.
  *
  * @param T the type of the sample being processed.
  */
-//@Serializable(with = ResampleStreamParamsSerializer::class)
 class ResampleStreamParams<T>(
     /**
      * If specified used as a target sample rate, otherwise specified as a derivative from downstream output
@@ -158,54 +101,12 @@ class ResampleStreamParams<T>(
      */
     val to: Float?,
     /**
-     * The resampling function as instance of [Fn]. Takes [ResamplingArgument] as an argument and
+     * The resampling function. Takes [ResamplingArgument] as an argument and
      * returns [Sequence] of samples that are expected to be resampled to desired sample rate, and are treated
      * accordingly.
      */
-    val resampleFn: Fn<ResamplingArgument<T>, Sequence<T>>,
+    val resampleFn: (ResamplingArgument<T>) -> Sequence<T>,
 ) : BeanParams
-
-/**
- * Serializer for [ResampleStreamParams].
- */
-object ResampleStreamParamsSerializer : KSerializer<ResampleStreamParams<*>> {
-
-    override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor(ResampleStreamParamsSerializer::class.className()) {
-            element("to", Float.serializer().nullable.descriptor)
-            element("resampleFn", FnSerializer.descriptor)
-        }
-
-    override fun deserialize(decoder: Decoder): ResampleStreamParams<*> {
-        return decoder.decodeStructure(descriptor) {
-            var to: Float? = null
-            lateinit var resampleFn: Fn<ResamplingArgument<Any>, Sequence<Any>>
-            @Suppress("UNCHECKED_CAST")
-            loop@ while (true) {
-                when (val i = decodeElementIndex(descriptor)) {
-                    CompositeDecoder.DECODE_DONE -> break@loop
-                    0 -> to = decodeNullableSerializableElement(descriptor, i, Float.serializer().nullable)
-                    1 -> resampleFn = decodeSerializableElement(
-                        descriptor,
-                        i,
-                        FnSerializer
-                    ) as Fn<ResamplingArgument<Any>, Sequence<Any>>
-
-                    else -> throw SerializationException("Unknown index $i")
-                }
-            }
-
-            ResampleStreamParams(to, resampleFn)
-        }
-    }
-
-    override fun serialize(encoder: Encoder, value: ResampleStreamParams<*>) {
-        encoder.encodeStructure(descriptor) {
-            encodeNullableSerializableElement(descriptor, 0, Float.serializer(), value.to)
-            encodeSerializableElement(descriptor, 1, FnSerializer, value.resampleFn)
-        }
-    }
-}
 
 /**
  * Resamples the infinite stream of type [T] to match the output stream sample rate unless the [ResampleStreamParams.to]
@@ -278,7 +179,7 @@ abstract class AbstractResampleStream<T : Any>(
             val factor = ofs / ifs
             val argument = ResamplingArgument(ifs, ofs, factor, sequence)
             log.trace { "[$this] Initialized resampling from ${ifs}Hz to ${ofs}Hz ($argument) [input=$input, parameters=$parameters]" }
-            parameters.resampleFn.apply(argument)
+            parameters.resampleFn.invoke(argument)
         }
 
     }

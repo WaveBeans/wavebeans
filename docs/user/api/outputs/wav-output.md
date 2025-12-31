@@ -31,6 +31,9 @@ To store the stream into a wav-file you call one of the following function, each
 4. Mono 32 bit -- `toMono32bitWav("file:///path/to/file.wav")`
 
 ```kotlin
+// Register the driver
+WbFileDriver.registerDriver("file", LocalWbFileDriver)
+
 440.sine()
     .trim(1000)
     .toMono16bitWav("file:///path/to/file.wav")
@@ -55,10 +58,10 @@ int.withOutputSignal<Int, ArgumentType>(FlushOutputSignal, ArgumentType("some-va
 To be able to output `Managed` stream into wav-file you need to call one of the wav output functions (see above) specifying the suffix function that translates the argument into a string:
 
 ```kotlin
-managedStream.toMono8bitWav("file:///path/to/file.wav") { argument -> "-${format(argument)}" } 
+// Register the driver
+WbFileDriver.registerDriver("file", LocalWbFileDriver)
+
 managedStream.toMono16bitWav("file:///path/to/file.wav") { argument -> "-${format(argument)}" } 
-managedStream.toMono24bitWav("file:///path/to/file.wav") { argument -> "-${format(argument)}" } 
-managedStream.toMono32bitWav("file:///path/to/file.wav") { argument -> "-${format(argument)}" } 
 ```
 
 The argument is provided at the moment the signal is fired.
@@ -191,21 +194,18 @@ val endSignal = endSequence.input()
 val signal = 440.sine().trim(1000)
 val noise = input { sampleOf(Random.nextInt()) }
 
-class SequenceDetectFn(initParameters: FnInitParameters) : Fn<Window<Sample>, Managed<OutputSignal, Unit, SampleVector>>(initParameters) {
+class SequenceDetectFn(val endSequence: List<Sample>) {
 
-    constructor(endSequence: List<Sample>) : this(FnInitParameters().addDoubles("endSequence", endSequence))
-
-    override fun apply(argument: Window<Sample>): Managed<OutputSignal, Unit, SampleVector> {
-        val es = initParams.doubles("endSequence")
+    operator fun invoke(argument: Window<Sample>): Managed<OutputSignal, Unit, SampleVector> {
         val ei = argument.elements.iterator()
-        var ai = es.iterator()
+        var ai = endSequence.iterator()
         var startedAt = -1
         var i = 0
         while (ei.hasNext() && ai.hasNext()) {
             val e = ei.next()
             val a = ai.next()
             if (a != e) {
-                ai = es.iterator()
+                ai = endSequence.iterator()
                 startedAt = -1
             } else if (startedAt == -1) {
                 startedAt = i
@@ -223,9 +223,11 @@ class SequenceDetectFn(initParameters: FnInitParameters) : Fn<Window<Sample>, Ma
     }
 }
 
+val sequenceDetect = SequenceDetectFn(endSequence)
+
 (signal..endSignal..noise)
         .window(endSequence.size * 10)
-        .map(SequenceDetectFn(endSequence))
+        .map { sequenceDetect(it) }
         .toMono16bitWav("file:///home/user/sine.wav") { "-${Random.nextInt().toString(36)}" }
 ```
 

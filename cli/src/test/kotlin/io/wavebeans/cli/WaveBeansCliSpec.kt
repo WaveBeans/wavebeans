@@ -111,10 +111,10 @@ class WaveBeansCliSpec : DescribeSpec({
             val portRange = createPorts(2)
             val facilitators = portRange.map {
                 Facilitator(
-                    communicatorPort = it,
                     threadsNumber = 2,
+                    communicatorPort = it,
                     onServerShutdownTimeoutMillis = 100,
-                    podDiscovery = object : PodDiscovery() {}
+                    podDiscovery = object : PodDiscovery() {},
                 )
             }
             facilitators.forEach { it.start() }
@@ -178,10 +178,10 @@ class WaveBeansCliSpec : DescribeSpec({
             val httpCommunicatorPort = findFreePort()
             val gardeners = portRange.map {
                 Facilitator(
-                    communicatorPort = it,
                     threadsNumber = 2,
+                    communicatorPort = it,
                     onServerShutdownTimeoutMillis = 100,
-                    podDiscovery = object : PodDiscovery() {}
+                    podDiscovery = object : PodDiscovery() {},
                 )
             }
 

@@ -34,7 +34,7 @@ class CsvStreamOutputSpec : DescribeSpec({
                 .toCsv(
                     file.url,
                     header = listOf("time ms", "sample value"),
-                    elementSerializer = { (idx, sampleRate, sample) ->
+                    elementSerializer = { idx, sampleRate, sample ->
                         val sampleTime = samplesCountToLength(idx, sampleRate, TimeUnit.MILLISECONDS)
                         listOf(sampleTime.toString(), String.format("%.10f", sample))
                     }
@@ -60,7 +60,7 @@ class CsvStreamOutputSpec : DescribeSpec({
                 .toCsv(
                     file.url,
                     header = listOf("time ms") + (0..1).map { "sample#$it" },
-                    elementSerializer = { (idx, sampleRate, window) ->
+                    elementSerializer = { idx, sampleRate, window ->
                         val sampleTime = samplesCountToLength(idx, sampleRate, TimeUnit.MILLISECONDS)
                         listOf(sampleTime.toString()) + window.elements.map { String.format("%.10f", it) }
                     }
@@ -85,7 +85,7 @@ class CsvStreamOutputSpec : DescribeSpec({
                 .toCsv(
                     file.url,
                     header = listOf("time ms") + (0..1).map { "value#$it" },
-                    elementSerializer = { (idx, sampleRate, pair) ->
+                    elementSerializer = { idx, sampleRate, pair ->
                         val sampleTime = samplesCountToLength(idx, sampleRate, TimeUnit.MILLISECONDS)
                         listOf(
                             sampleTime.toString(),
@@ -119,14 +119,14 @@ class CsvStreamOutputSpec : DescribeSpec({
                     this.toCsv(
                         uri = "test://$${outputDir}/test.csv",
                         header = listOf("number", "value"),
-                        elementSerializer = { (i, _, sample) ->
+                        elementSerializer = { i, _, sample ->
                             listOf("$i", String.format("%.10f", sample))
                         },
                         suffix = { "-${it ?: 0}" }
                     )
 
                 seqStream()
-                    .merge(input { it.first }) { (s, i) -> requireNotNull(s); requireNotNull(i); IndexedSample(s, i) }
+                    .merge(input { x, _ -> x }) { s, i -> requireNotNull(s); requireNotNull(i); IndexedSample(s, i) }
                     .map {
                         if (it.index > 0 && it.index % 100 == 0L) {
                             it.sample.withOutputSignal(FlushOutputSignal, it.index / 100)
@@ -160,14 +160,14 @@ class CsvStreamOutputSpec : DescribeSpec({
                     this.toCsv(
                         uri = "test://${outputDir}/test.csv",
                         header = listOf("number", "value"),
-                        elementSerializer = { (i, _, sample) ->
+                        elementSerializer = { i, _, sample ->
                             listOf("$i", String.format("%.10f", sample))
                         },
                         suffix = { "-${it ?: 0}" }
                     )
 
                 seqStream()
-                    .merge(input { it.first }) { (s, i) -> requireNotNull(s); requireNotNull(i); IndexedSample(s, i) }
+                    .merge(input { x, _ -> x }) { s, i -> requireNotNull(s); requireNotNull(i); IndexedSample(s, i) }
                     .map {
                         if (it.index > 0 && it.index % 100 == 0L) {
                             val chunkIdx = it.index / 100
