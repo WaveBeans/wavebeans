@@ -2,6 +2,7 @@ package io.wavebeans.tests
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.File
+import kotlin.io.path.createTempDirectory
 
 private val log = KotlinLogging.logger { }
 
@@ -25,8 +26,8 @@ fun kotlincCmd(): String {
 }
 
 fun compileCode(codeFiles: Map<String, String>): File {
-    val jarFile = File(createTempDir("wavebeans-code").also { it.deleteOnExit() }, "code.jar")
-    val tempDir = createTempDir("wavebeans-test-code").also { it.deleteOnExit() }
+    val jarFile = File(createTempDirectory("wavebeans-code").toFile().also { it.deleteOnExit() }, "code.jar")
+    val tempDir = createTempDirectory("wavebeans-test-code").toFile().also { it.deleteOnExit() }
     val scriptFiles = codeFiles.entries.map { (name, content) ->
         File(tempDir, name).also { it.writeText(content) }
     }

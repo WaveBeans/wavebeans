@@ -3,8 +3,8 @@ package io.wavebeans.execution.podproxy
 import io.wavebeans.execution.medium.value
 import io.wavebeans.execution.pod.PodKey
 import io.wavebeans.lib.BeanStream
+import io.wavebeans.lib.TimeUnit
 import io.wavebeans.lib.stream.FiniteStream
-import java.util.concurrent.TimeUnit
 
 class AnyStreamPodProxy(
         podKey: PodKey,
@@ -32,7 +32,7 @@ class AnyFiniteStreamMergingPodProxy(
             val bush = podDiscovery.bushFor(pointedTo)
             val caller = bushCallerRepository.create(bush, pointedTo)
             caller.call("length?timeUnit=${timeUnit}")
-                    .get(5000, TimeUnit.MILLISECONDS)
+                    .get(5000, java.util.concurrent.TimeUnit.MILLISECONDS)
                     .value<Long>()
 
         }.maxOrNull()!!
@@ -43,7 +43,7 @@ class AnyFiniteStreamMergingPodProxy(
             val bush = podDiscovery.bushFor(pointedTo)
             val caller = bushCallerRepository.create(bush, pointedTo)
             caller.call("samplesCount")
-                    .get(5000, TimeUnit.MILLISECONDS)
+                    .get(5000, java.util.concurrent.TimeUnit.MILLISECONDS)
                     .value<Long>()
 
         }.maxOrNull()!!

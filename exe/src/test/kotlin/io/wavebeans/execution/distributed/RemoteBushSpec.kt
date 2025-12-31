@@ -40,12 +40,12 @@ class RemoteBushSpec : DescribeSpec({
         }
 
     val facilitator = Facilitator(
-        communicatorPort = communicatorPort,
         threadsNumber = 1,
+        communicatorPort = communicatorPort,
         gardener = gardener,
         onServerShutdownTimeoutMillis = 100,
         podCallResultBuilder = podCallResultBuilder,
-        podDiscovery = podDiscovery
+        podDiscovery = podDiscovery,
     )
 
     beforeSpec {
@@ -91,7 +91,7 @@ class RemoteBushSpec : DescribeSpec({
         }
 
         it("should fail on call") {
-            assertThat { remoteBush.call(PodKey(0, 0), "/answer").get() }
+            assertThat(runCatching { remoteBush.call(PodKey(0, 0), "/answer").get() })
                 .isFailure()
                 .isNotNull().isInstanceOf(ExecutionException::class)
                 .cause()

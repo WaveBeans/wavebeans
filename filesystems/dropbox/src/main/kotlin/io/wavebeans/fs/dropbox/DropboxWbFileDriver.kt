@@ -3,9 +3,9 @@ package io.wavebeans.fs.dropbox
 import com.dropbox.core.DbxRequestConfig
 import com.dropbox.core.v2.DbxClientV2
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.wavebeans.fs.core.WbFile
-import io.wavebeans.fs.core.WbFileDriver
-import java.net.URI
+import io.wavebeans.lib.io.WbFile
+import io.wavebeans.lib.io.WbFileDriver
+import io.wavebeans.lib.URI
 import kotlin.random.Random
 
 internal const val DROPBOX_DEFAULT_BUFFER_SIZE = 65536
@@ -67,7 +67,7 @@ class DropboxWbFileDriver(
             val rnd = (0..5).map { alphabet[Random.nextInt(alphabet.size)] }.joinToString("")
             file = DropboxWbFile(dropboxClient, URI("dropbox://$directory/$prefix.$rnd.$suffix"), dropboxDriverConfig)
             if (!file.exists()) break else file = null
-        } while (file == null && --attempts > 0)
+        } while (--attempts > 0)
         log.trace { "Temporary file is $file" }
         return file ?: throw IllegalStateException("Can't create temporary file")
     }

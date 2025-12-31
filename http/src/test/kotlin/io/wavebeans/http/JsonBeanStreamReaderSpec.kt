@@ -4,21 +4,20 @@ import assertk.all
 import assertk.assertThat
 import assertk.assertions.*
 import io.kotest.core.spec.style.DescribeSpec
+import io.wavebeans.lib.TimeUnit
 import io.wavebeans.lib.io.input
 import io.wavebeans.lib.sampleOf
 import io.wavebeans.lib.stream.SampleCountMeasurement
 import io.wavebeans.lib.stream.trim
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
-import java.io.BufferedReader
-import java.util.concurrent.TimeUnit
 
 class JsonBeanStreamReaderSpec : DescribeSpec({
 
     fun elementRegex(valueRegex: String) = Regex("\\{\"offset\":\\d+,\"value\":$valueRegex}")
 
     describe("Sequence of samples") {
-        val seq = input { (i, _) -> sampleOf(i) }.trim(50, TimeUnit.SECONDS)
+        val seq = input { i, _ -> sampleOf(i) }.trim(50, TimeUnit.SECONDS)
 
         it("should have 50 doubles") {
             val lines = JsonBeanStreamReader(seq, 1.0f).bufferedReader().use { it.readLines() }
@@ -35,7 +34,7 @@ class JsonBeanStreamReaderSpec : DescribeSpec({
 
         SampleCountMeasurement.registerType(S::class) { 1 }
 
-        val seq = input { (i, _) -> S(i) }.trim(50, TimeUnit.SECONDS)
+        val seq = input { i, _ -> S(i) }.trim(50, TimeUnit.SECONDS)
 
         it("should have 50 objects as json") {
             val lines = JsonBeanStreamReader(seq, 1.0f).bufferedReader().use { it.readLines() }
@@ -52,14 +51,14 @@ class JsonBeanStreamReaderSpec : DescribeSpec({
 
         SampleCountMeasurement.registerType(N::class) { 1 }
 
-        val seq = input { (i, _) -> N(i) }.trim(50, TimeUnit.SECONDS)
+        val seq = input { i, _ -> N(i) }.trim(50, TimeUnit.SECONDS)
 
         it("should throw an exception") {
-            assertThat {
+            assertThat(runCatching {
                 JsonBeanStreamReader(seq, 1.0f).bufferedReader()
-                    .use<BufferedReader, List<String>> { it.readLines() }
-            }
-                    .isFailure()
+                    .use { it.readLines() }
+            })
+                .isFailure()
                     .all {
                         message().isNotNull().startsWith("Serializer for class 'N' is not found.\n" +
                                 "Please ensure that class is marked as '@Serializable' and that the serialization compiler plugin is applied.")

@@ -1,3 +1,9 @@
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.add("-Xlambdas=class")
+    }
+}
+
 dependencies {
     implementation(project(":lib"))
     implementation(project(":exe"))

@@ -7,7 +7,7 @@ Map operation
 
 - [Overview](#overview)
 - [Using as lambda function](#using-as-lambda-function)
-- [Using as class](#using-as-class)
+- [Using with parameters (Distributed Mode)](#using-with-parameters-distributed-mode)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -50,35 +50,27 @@ Map function can also be used to convert one type to another. It is done the ver
 
 In that example the stream from the type `BeanStream<Sample>` is converted to `BeanStream<Int>` and instead of working with Sample you'll work with their signs only, and for example you may [merge](merge-operation.md) the stream with another stream and use that side effect that the sign will be changing with frequency 440Hz. 
 
-Using as class
---------
+## Using with parameters (Distributed Mode)
 
-When the function needs some arguments to be bypassed outside, or you just want to avoid defining the function in inline-style as the code of the function is too complex, you may define the map function as a class. First of all please follow [functions documentation](../functions.md).
-
-Map operation converts some value `T` to some value `R`, so the type arguments of the class `Fn` correspond one-to-one with the map function.
-
-Let's create a function that similar to example with lambda function above returns the sign of the sample, however ,instead of returning 1 or -1, applies the multiplier we provide, basically return some `value` with plus or minus sign. The class would look like this:
+If your map operation requires external parameters and you intend to run in distributed mode, you should use `ExecutionScope`.
 
 ```kotlin
-class SignFn(initParameters: FnInitParameters) : Fn<Sample, Int>(initParameters) {
-
-    constructor(value: Int) : this(FnInitParameters().add("value", value))
-
-    override fun apply(argument: Sample): Int {
-        val value = initParams.int("value")
-        return if (argument > 0) value else -value
-    }
+val factor = 2.0
+stream.map(executionScope { add("factor", factor) }) { sample ->
+    sample * parameters.double("factor")
 }
 ```
 
-For the sake of convenience, as suggested in [functions reference](../functions.md), the secondary constructor defined to encapsulate logic of serialization of parameters to string inside the class.
-
-Right now, to use that function within stream it as simple as instantiating the class with specific parameters using `map()` operation:
+You can still organize your logic into a class if it's complex, but instantiate it via `state`:
 
 ```kotlin
-    440.sine()
-            .map(SignFn(42))
-```
+class ComplexLogic(val factor: Double) {
+    fun apply(s: Sample): Sample = s * factor
+}
 
-*Note: when trying to run that examples do not forget to [trim](trim-operation.md) the stream and define the output.*
+stream.map(executionScope { add("factor", 2.0) }) { sample ->
+    val logic = state("logic") { ComplexLogic(parameters.double("factor")) }
+    logic.apply(sample)
+}
+```
 

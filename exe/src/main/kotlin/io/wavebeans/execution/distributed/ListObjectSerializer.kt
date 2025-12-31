@@ -33,7 +33,7 @@ object ListObjectSerializer : KSerializer<List<Any>> {
                     CompositeDecoder.DECODE_DONE -> break@loop
                     0 -> typeRef = decodeStringElement(descriptor, i)
                     1 -> list = if (typeRef != emptyListType) {
-                        val type = WaveBeansClassLoader.classForName(typeRef!!).kotlin
+                        val type = WaveBeansClassLoader.classForName(typeRef)
                         decodeSerializableElement(descriptor, i, ListSerializer(AnySerializer(type)))
                     } else {
                         decodeSerializableElement(descriptor, i, ListSerializer(AnySerializer()))

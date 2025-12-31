@@ -77,6 +77,9 @@ import io.wavebeans.lib.stream.*
 import java.io.File
 
 fun main() {
+    // register the driver
+    WbFileDriver.registerDriver("file", LocalWbFileDriver)
+
     // describe what you want compute
     val out = 440.sine()
             .trim(1000)

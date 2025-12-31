@@ -13,6 +13,7 @@ import io.wavebeans.lib.stream.window.WindowStream
 import io.wavebeans.lib.stream.window.WindowStreamParams
 import io.wavebeans.lib.stream.window.plus
 import io.wavebeans.lib.stream.window.window
+import io.wavebeans.lib.stream.window.Window
 import io.wavebeans.lib.table.*
 import kotlinx.serialization.Serializable
 
@@ -46,11 +47,12 @@ class TopologySerializerSpec : DescribeSpec({
                 size().isEqualTo(topology.refs.size)
                 each { beanRef ->
 
-                    beanRef.prop(BeanRef::type).isIn(*listOf(
-                        SineGeneratedInput::class,
-                        CsvStreamOutput::class,
-                        TrimmedFiniteStream::class
-                    ).map { it.qualifiedName }.toTypedArray()
+                    beanRef.prop(BeanRef::type).isIn(
+                        *listOf(
+                            SineGeneratedInput::class,
+                            CsvStreamOutput::class,
+                            TrimmedFiniteStream::class
+                        ).map { it.qualifiedName }.toTypedArray()
                     )
 
                     beanRef.prop(BeanRef::params).kClass().isIn(
@@ -74,16 +76,15 @@ class TopologySerializerSpec : DescribeSpec({
 
     describe("Input function") {
 
-        val i1 = input { (x, _) -> sampleOf(x) }
+        val i1 = input { x, _ -> sampleOf(x) }
 
-        class InputFn(initParameters: FnInitParameters) : Fn<Pair<Long, Float>, Sample?>(initParameters) {
-            override fun apply(argument: Pair<Long, Float>): Sample? {
-                return sampleOf(argument.first) * initParams.int("factor")
-            }
+        val factor = 2
+        val i2 = input(
+            executionScope { add("factor", factor) },
+        ) { x, _ ->
+            val factor = parameters.int("factor")
+            sampleOf(x) * factor
         }
-
-        val inputParameter = 2
-        val i2 = input(InputFn(FnInitParameters().add("factor", inputParameter)))
 
         val o1 = i1
             .trim(5000)
@@ -104,11 +105,12 @@ class TopologySerializerSpec : DescribeSpec({
                 size().isEqualTo(topology.refs.size)
                 each { nodeRef ->
 
-                    nodeRef.prop("type") { it.type }.isIn(*listOf(
-                        Input::class,
-                        CsvStreamOutput::class,
-                        TrimmedFiniteStream::class
-                    ).map { it.qualifiedName }.toTypedArray()
+                    nodeRef.prop("type") { it.type }.isIn(
+                        *listOf(
+                            Input::class,
+                            CsvStreamOutput::class,
+                            TrimmedFiniteStream::class
+                        ).map { it.qualifiedName }.toTypedArray()
                     )
 
                     nodeRef.prop("params") { it.params }.kClass().isIn(
@@ -132,21 +134,21 @@ class TopologySerializerSpec : DescribeSpec({
         }
     }
 
-    describe("Map function") {
-        class MapFn(initParams: FnInitParameters) : Fn<Sample, Sample>(initParams) {
-            override fun apply(argument: Sample): Sample {
-                val f = initParams["factor"]?.toInt()!!
-                return argument * f
-            }
-        }
-
+    describe("Map function with execution scope carrying parameters") {
         val factor = 2 // checking passing parameters from closure
+
         val o = listOf(
-            input<Sample> { fail("unreachable") }
+            input<Sample> { _, _ -> fail("unreachable") }
                 .map { it * 2 }
                 .toDevNull(),
-            input<Sample> { fail("unreachable") }
-                .map(MapFn(FnInitParameters().add("factor", factor.toString())))
+            input<Sample> { _, _ -> fail("unreachable") }
+                .map(
+                    executionScope { add("factor", factor) },
+                    {
+                        val f = parameters.int("factor")
+                        it * f
+                    }
+                )
                 .toDevNull()
         )
 
@@ -162,11 +164,12 @@ class TopologySerializerSpec : DescribeSpec({
                 size().isEqualTo(topology.refs.size)
                 each { nodeRef ->
 
-                    nodeRef.prop("type") { it.type }.isIn(*listOf(
-                        Input::class,
-                        MapStream::class,
-                        DevNullStreamOutput::class,
-                    ).map { it.qualifiedName }.toTypedArray()
+                    nodeRef.prop("type") { it.type }.isIn(
+                        *listOf(
+                            Input::class,
+                            MapStream::class,
+                            DevNullStreamOutput::class,
+                        ).map { it.qualifiedName }.toTypedArray()
                     )
 
                     nodeRef.prop("params") { it.params }.kClass().isIn(
@@ -193,37 +196,38 @@ class TopologySerializerSpec : DescribeSpec({
 
         val factor = 2 + 2 * 2
 
-        class MergeFn(initParams: FnInitParameters) : Fn<Pair<Sample?, Sample?>, Sample?>(initParams) {
-            override fun apply(argument: Pair<Sample?, Sample?>): Sample? {
-                val f = initParams["factor"]?.toInt()!!
-                return argument.first ?: ZeroSample * f + argument.second
-            }
+        fun merge(f: Int, argument: Pair<Sample?, Sample?>): Sample {
+            return argument.first ?: (ZeroSample * f + argument.second)
         }
 
         val functions = mapOf(
             "Sample merge with Lambda" to listOf(
-                input<Sample> { fail("unreachable") }
+                input<Sample> { _, _ -> fail("unreachable") }
                     .merge(
-                        with = input<Sample> { fail("unreachable") }
-                    ) { (x, y) -> x ?: ZeroSample + y }
+                        with = input<Sample> { _, _ -> fail("unreachable") }
+                    ) { x, y -> x ?: (ZeroSample + y) }
                     .toDevNull()
             ),
             "Sample merge with Fn and using outside data" to listOf(
-                input<Sample> { fail("unreachable") }
+                input<Sample> { _, _ -> fail("unreachable") }
                     .merge(
-                        with = input<Sample> { fail("unreachable") },
-                        merge = MergeFn(FnInitParameters().add("factor", factor.toString()))
+                        with = input { _, _ -> fail("unreachable") },
+                        scope = executionScope { add("factor", factor) },
+                        merge = { x, y ->
+                            val factor = parameters.int("factor")
+                            merge(factor, x to y)
+                        }
                     )
                     .toDevNull()
             ),
             "Window<Sample>.plus()" to listOf(
-                input<Sample> { fail("unreachable") }.window(2)
-                    .plus(input<Sample> { fail("unreachable") }.window(2))
+                input<Sample> { _, _ -> fail("unreachable") }.window(2)
+                    .plus(input<Sample> { _, _ -> fail("unreachable") }.window(2))
                     .toDevNull()
             ),
             "Sample.plus()" to listOf(
-                input<Sample> { fail("unreachable") }
-                    .plus(input<Sample> { fail("unreachable") })
+                input<Sample> { _, _ -> fail("unreachable") }
+                    .plus(input<Sample> { _, _ -> fail("unreachable") })
                     .toDevNull()
             )
         )
@@ -242,12 +246,13 @@ class TopologySerializerSpec : DescribeSpec({
                         size().isEqualTo(topology.refs.size)
                         each { nodeRef ->
 
-                            nodeRef.prop("type") { it.type }.isIn(*listOf(
-                                Input::class,
-                                WindowStream::class,
-                                FunctionMergedStream::class,
-                                DevNullStreamOutput::class
-                            ).map { it.qualifiedName }.toTypedArray()
+                            nodeRef.prop("type") { it.type }.isIn(
+                                *listOf(
+                                    Input::class,
+                                    WindowStream::class,
+                                    FunctionMergedStream::class,
+                                    DevNullStreamOutput::class
+                                ).map { it.qualifiedName }.toTypedArray()
                             )
 
                             nodeRef.prop("params") { it.params }.kClass().isIn(
@@ -292,10 +297,11 @@ class TopologySerializerSpec : DescribeSpec({
                 size().isEqualTo(topology.refs.size)
                 each { nodeRef ->
 
-                    nodeRef.prop("type") { it.type }.isIn(*listOf(
-                        ListAsInput::class,
-                        DevNullStreamOutput::class
-                    ).map { it.qualifiedName }.toTypedArray()
+                    nodeRef.prop("type") { it.type }.isIn(
+                        *listOf(
+                            ListAsInput::class,
+                            DevNullStreamOutput::class
+                        ).map { it.qualifiedName }.toTypedArray()
                     )
 
                     nodeRef.prop("params") { it.params }.kClass().isIn(
@@ -319,7 +325,7 @@ class TopologySerializerSpec : DescribeSpec({
     }
 
     describe("Table sink") {
-        val o = input<Sample> { fail("unreachable") }.toTable("table1")
+        val o = input<Sample> { _, _ -> fail("unreachable") }.toTable("table1")
         val q = TableRegistry.default.byName<Sample>("table1").last(2000.ms).toCsv("file:///path/to.csv")
 
         val topology = listOf(o, q).buildTopology()
@@ -333,12 +339,13 @@ class TopologySerializerSpec : DescribeSpec({
                 size().isEqualTo(topology.refs.size)
                 each { nodeRef ->
 
-                    nodeRef.prop("type") { it.type }.isIn(*listOf(
-                        Input::class,
-                        TableOutput::class,
-                        TableDriverInput::class,
-                        CsvStreamOutput::class
-                    ).map { it.qualifiedName }.toTypedArray()
+                    nodeRef.prop("type") { it.type }.isIn(
+                        *listOf(
+                            Input::class,
+                            TableOutput::class,
+                            TableDriverInput::class,
+                            CsvStreamOutput::class
+                        ).map { it.qualifiedName }.toTypedArray()
                     )
 
                     nodeRef.prop("params") { it.params }.kClass().isIn(
@@ -347,6 +354,56 @@ class TopologySerializerSpec : DescribeSpec({
                             TableOutputParams::class,
                             TableDriverStreamParams::class,
                             CsvStreamOutputParams::class
+                        ).toTypedArray()
+                    )
+                }
+            }
+        }
+
+        it("has same links") {
+            assertThat(deserializedTopology.links).all {
+                size().isEqualTo(topology.links.size)
+                each {
+                    it.isIn(*topology.links.toTypedArray())
+                }
+            }
+        }
+    }
+
+    describe("Resample and FlattenWindow") {
+        val o = 440.sine(1.0)
+            .resample(to = 2.0f)
+            .window(100)
+            .flatten(EmptyScope)
+            .toDevNull()
+
+        val topology = listOf(o).buildTopology()
+        val deserializedTopology = with(TopologySerializer) {
+            val topologySerialized = serialize(topology).also { log.debug { it } }
+            deserialize(topologySerialized)
+        }
+
+        it("has same refs") {
+            assertThat(deserializedTopology.refs).all {
+                size().isEqualTo(topology.refs.size)
+                each { nodeRef ->
+                    nodeRef.prop("type") { it.type }.isIn(
+                        *listOf(
+                            SineGeneratedInput::class,
+                            ResampleBeanStream::class,
+                            WindowStream::class,
+                            FlattenWindowStream::class,
+                            DevNullStreamOutput::class
+                        ).map { it.qualifiedName }.toTypedArray()
+                    )
+
+                    nodeRef.prop("params") { it.params }.kClass().isIn(
+                        *listOf(
+                            SineGeneratedInputParams::class,
+                            ResampleStreamParams::class,
+                            WindowStreamParams::class,
+                            FlattenWindowStreamsParams::class,
+                            NoParams::class
                         ).toTypedArray()
                     )
                 }

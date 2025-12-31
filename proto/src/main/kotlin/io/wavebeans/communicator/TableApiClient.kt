@@ -2,7 +2,6 @@ package io.wavebeans.communicator
 
 import com.google.protobuf.ByteString
 import io.grpc.Channel
-import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.TimeUnit.valueOf

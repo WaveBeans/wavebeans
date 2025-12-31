@@ -65,7 +65,7 @@ data class PodRef(
                 if (leftRefs.isEmpty()) return inputs.single()
                 val beanRef = leftRefs.first()
                 try {
-                    val beanClazz = WaveBeansClassLoader.classForName(beanRef.type).kotlin
+                    val beanClazz = WaveBeansClassLoader.classForName(beanRef.type)
                     val bean = when {
                         inputs.isEmpty() -> beanClazz.constructors.first {
                             it.parameters.size == 1 &&

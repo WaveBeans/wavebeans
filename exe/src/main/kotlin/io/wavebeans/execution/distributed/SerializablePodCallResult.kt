@@ -35,7 +35,7 @@ class SerializablePodCallResultBuilder : PodCallResultBuilder {
         val container = bytes.asObj(SerializablePodCallResultContainer.serializer())
         val serializerClazzRef = container.objSerializerRef
         val obj = if (serializerClazzRef != nullType) {
-            val cl = WaveBeansClassLoader.classForName(serializerClazzRef).kotlin
+            val cl = WaveBeansClassLoader.classForName(serializerClazzRef)
             val serializer = (cl.objectInstance ?: cl.createInstance()) as KSerializer<*>
             container.objBuffer.fromProtoValue()?.asObj(serializer)
         } else {

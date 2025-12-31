@@ -44,13 +44,13 @@ class MetricServiceSpec : DescribeSpec({
 
             it("shouldn't fail if exception is thrown by one of the connectors during increment") {
                 whenever(myMetricConnector.increment(any(), any())).thenThrow(IllegalStateException("shouldn't throw it"))
-                assertThat { myMetricObject.increment() }.isSuccess()
+                assertThat(runCatching { myMetricObject.increment() }).isSuccess()
                 verify(myMetricConnector).increment(eq(myMetricObject), eq(1.0))
             }
 
             it("shouldn't fail if exception is thrown by one of the connectors during decrement") {
                 whenever(myMetricConnector.decrement(any(), any())).thenThrow(IllegalStateException("shouldn't throw it"))
-                assertThat { myMetricObject.decrement() }.isSuccess()
+                assertThat(runCatching { myMetricObject.decrement() }).isSuccess()
                 verify(myMetricConnector).decrement(eq(myMetricObject), eq(1.0))
             }
         }
@@ -77,13 +77,13 @@ class MetricServiceSpec : DescribeSpec({
 
             it("shouldn't fail if exception is thrown by one of the connectors during gauge record") {
                 whenever(myMetricConnector.gauge(any(), ArgumentMatchers.anyDouble())).thenThrow(IllegalStateException("shouldn't throw it"))
-                assertThat { myMetricObject.set(1.0) }.isSuccess()
+                assertThat(runCatching { myMetricObject.set(1.0) }).isSuccess()
                 verify(myMetricConnector).gauge(eq(myMetricObject), eq(1.0))
             }
 
             it("shouldn't fail if exception is thrown by one of the connectors during gauge delta record") {
                 whenever(myMetricConnector.gaugeDelta(any(), ArgumentMatchers.anyDouble())).thenThrow(IllegalStateException("shouldn't throw it"))
-                assertThat { myMetricObject.increment(1.0) }.isSuccess()
+                assertThat(runCatching { myMetricObject.increment(1.0) }).isSuccess()
                 verify(myMetricConnector).gaugeDelta(eq(myMetricObject), eq(1.0))
             }
         }
@@ -105,7 +105,7 @@ class MetricServiceSpec : DescribeSpec({
 
             it("shouldn't fail if exception is thrown by one of the connectors during time record") {
                 whenever(myMetricConnector.time(any(), any())).thenThrow(IllegalStateException("shouldn't throw it"))
-                assertThat { myMetricObject.time(1L) }.isSuccess()
+                assertThat(runCatching { myMetricObject.time(1L) }).isSuccess()
                 verify(myMetricConnector).time(eq(myMetricObject), eq(1L))
             }
         }

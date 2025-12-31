@@ -22,9 +22,10 @@ Syntax
 To read the file it is as easy as call the function `wave`, currently only full URLs are supported, so in order to specify file in the local file system you would need to specify protocol `file://` and then absolute path for the file. Please be aware that the name and path of the file is OS dependent and might be even case-sensitive.
 
 ```kotlin
-wave("file:///path/to/file.wav") // for unix-like systems
+// Register the driver
+WbFileDriver.registerDriver("file", LocalWbFileDriver)
 
-wave("file://c:\\path\\to\\file.wav") // for windows systems
+wave("file:///path/to/file.wav") // for unix-like systems
 ```
 
 Using that API we can convert the file to infinite stream by defining the strategy for reading data when it's got rolled out, in this case we'll just fill the stream with zeros when the main stream is over:

@@ -1,10 +1,9 @@
-import org.gradle.kotlin.dsl.compileKotlin
 import org.gradle.kotlin.dsl.kotlin
-import org.gradle.kotlin.dsl.support.kotlinCompilerOptions
 
 plugins {
-    alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.retry)
+    alias(libs.plugins.retry) apply false
+    alias(libs.plugins.kotlin.multiplatform) apply false
+    alias(libs.plugins.kotlin.jvm) apply false
 
     `java-library`
     `maven-publish`
@@ -12,24 +11,20 @@ plugins {
 }
 
 allprojects {
-    apply {
-        plugin("kotlin")
-        plugin("org.gradle.test-retry")
-    }
-
     repositories {
         mavenCentral()
-    }
-
-    kotlin {
-        compilerOptions {
-            freeCompilerArgs.add("-Xlambdas=class")
-        }
-        jvmToolchain(11)
     }
 }
 
 subprojects {
+
+    if (name == "lib") {
+        // it's a multiplatform project and defined independently
+        return@subprojects
+    }
+
+    apply(plugin = "kotlin")
+    apply(plugin = "org.gradle.test-retry")
 
     group = "io.wavebeans"
 
@@ -75,15 +70,15 @@ subprojects {
 
 publishing {
     publications {
-        create<MavenPublication>("lib") {
-            from(subprojects.first { it.name == "lib" }.components["java"])
-            groupId = "io.wavebeans"
-            artifactId = "lib"
-            populatePom(
-                "WaveBeans Lib",
-                "WaveBeans API library. Provides the way to define bean streams and basic execution functionality."
-            )
-        }
+//        create<MavenPublication>("lib") {
+//            from(subprojects.first { it.name == "lib" }.components["java"])
+//            groupId = "io.wavebeans"
+//            artifactId = "lib"
+//            populatePom(
+//                "WaveBeans Lib",
+//                "WaveBeans API library. Provides the way to define bean streams and basic execution functionality."
+//            )
+//        }
         create<MavenPublication>("exe") {
             from(subprojects.first { it.name == "exe" }.components["java"])
             groupId = "io.wavebeans"

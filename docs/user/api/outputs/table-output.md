@@ -65,6 +65,9 @@ A few examples, assuming table is defined as above and has type `Sample`:
 * return last 2 seconds
 
     ```kotlin
+    // Register the driver
+    WbFileDriver.registerDriver("file", LocalWbFileDriver)
+
     table.last(2.s) 
         // we may store it to csv file
         .toCsv("file:///path/to/file.csv")

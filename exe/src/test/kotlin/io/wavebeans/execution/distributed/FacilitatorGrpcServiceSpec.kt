@@ -33,10 +33,10 @@ class FacilitatorGrpcServiceSpec : DescribeSpec({
     val port1 = findFreePort()
     val port2 = findFreePort()
     val facilitator = Facilitator(
-        communicatorPort = port1,
         threadsNumber = 1,
+        communicatorPort = port1,
         gardener = gardener,
-        podDiscovery = podDiscovery
+        podDiscovery = podDiscovery,
     )
     val facilitatorApiClient by lazy { FacilitatorApiClient("127.0.0.1:$port1") }
 
@@ -71,12 +71,12 @@ class FacilitatorGrpcServiceSpec : DescribeSpec({
         }
 
         it("should plant one bush") {
-            assertThat { plant(bushKey1, pods1) }.isSuccess()
+            assertThat(runCatching { plant(bushKey1, pods1) }).isSuccess()
             verify(gardener).plantBush(eq(jobKey), eq(bushKey1), any(), eq(44100.0f))
         }
 
         it("should plant second bush") {
-            assertThat { plant(bushKey2, pods2) }.isSuccess()
+            assertThat(runCatching { plant(bushKey2, pods2) }).isSuccess()
             verify(gardener).plantBush(eq(jobKey), eq(bushKey2), any(), eq(44100.0f))
         }
     }
@@ -138,7 +138,7 @@ class FacilitatorGrpcServiceSpec : DescribeSpec({
         val jobKey = newJobKey()
 
         it("should cancel the job") {
-            assertThat { facilitatorApiClient.stopJob(jobKey) }.isSuccess()
+            assertThat(runCatching { facilitatorApiClient.stopJob(jobKey) }).isSuccess()
             verify(gardener).stop(eq(jobKey))
         }
     }
@@ -147,7 +147,7 @@ class FacilitatorGrpcServiceSpec : DescribeSpec({
         val jobKey = newJobKey()
 
         it("should cancel the job") {
-            assertThat { facilitatorApiClient.startJob(jobKey) }.isSuccess()
+            assertThat(runCatching { facilitatorApiClient.startJob(jobKey) }).isSuccess()
             verify(gardener).start(eq(jobKey))
         }
     }
@@ -197,23 +197,23 @@ class FacilitatorGrpcServiceSpec : DescribeSpec({
         }
 
         it("should upload the file") {
-            assertThat { upload(jarFile) }.isSuccess()
+            assertThat(runCatching { upload(jarFile) }).isSuccess()
         }
 
         lateinit var myClass: Class<*>
         it("should be able to create class instance and invoke the method") {
-            myClass = WaveBeansClassLoader.classForName("io.wavebeans.execution.test.MyClass")
+            myClass = WaveBeansClassLoader.classForName("io.wavebeans.execution.test.MyClass").java
             assertThat(myClass)
                 .prop("[answer(): Int]") { it.getMethod("answer").invoke(it.getDeclaredConstructor().newInstance()) }
                 .isEqualTo(42)
         }
 
         it("should upload the second file") {
-            assertThat { upload(jarFile2) }.isSuccess()
+            assertThat(runCatching { upload(jarFile2) }).isSuccess()
         }
 
         it("should be able to create class instance and class loader should be the same") {
-            val myClass2 = WaveBeansClassLoader.classForName("io.wavebeans.execution.test.MyClass2")
+            val myClass2 = WaveBeansClassLoader.classForName("io.wavebeans.execution.test.MyClass2").java
             assertThat(myClass2).all {
                 prop("[answer(): Int]") { it.getMethod("answer").invoke(it.getDeclaredConstructor().newInstance()) }
                     .isEqualTo(42 * 2)
@@ -267,7 +267,7 @@ class FacilitatorGrpcServiceSpec : DescribeSpec({
                         .build()
                 )
                 .build()
-            assertThat { facilitatorApiClient.registerBushEndpoints(req) }.isSuccess()
+            assertThat(runCatching { facilitatorApiClient.registerBushEndpoints(req) }).isSuccess()
         }
         it("should discover remote bush 1") {
             assertThat(podDiscovery.bush(bushKey1))
@@ -393,7 +393,7 @@ class FacilitatorGrpcServiceSpec : DescribeSpec({
     describe("Terminating") {
         /* Though don't actually terminate as in real app. */
         it("should terminate") {
-            assertThat { facilitatorApiClient.terminate() }.isSuccess()
+            assertThat(runCatching { facilitatorApiClient.terminate() }).isSuccess()
             verify(gardener).stopAll()
         }
     }

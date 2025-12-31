@@ -3,6 +3,8 @@
 kotlin = "2.2.20"
 kotlinx-serialization = "1.9.0"
 kotlin-logging = "7.0.13"
+kotlinx-coroutines = "1.7.3"
+kotlinx-atomicfu = "0.30.0-beta"
 # fs compile scope
 dropbox = "7.0.0"
 # exe compile scope
@@ -14,7 +16,7 @@ logback = "1.5.20"
 # http compile scope
 javalin = "3.13.7"
 netty = "4.2.7.Final"
-# cli compile scopr
+# cli compile scope
 commons-cli = "1.4"
 # test scope
 kotest = "6.0.4"
@@ -28,21 +30,25 @@ osdetector = "1.7.1"
 
 [libraries]
 kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
+kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
 kotlin-scripting-jvm = { module = "org.jetbrains.kotlin:kotlin-scripting-jvm", version.ref = "kotlin" }
 kotlin-scripting-jvm-host = { module = "org.jetbrains.kotlin:kotlin-scripting-jvm-host", version.ref = "kotlin" }
 kotlin-scripting-common = { module = "org.jetbrains.kotlin:kotlin-scripting-common", version.ref = "kotlin" }
 kotlin-scripting-compiler-embeddable = { module = "org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable", version.ref = "kotlin" }
 kotlin-compiler-embeddable = { module = "org.jetbrains.kotlin:kotlin-compiler-embeddable", version.ref = "kotlin" }
+kotlin-test-js = { module = "org.jetbrains.kotlin:kotlin-test-js", version.ref = "kotlin" }
 kotlin-main-kts = { module = "org.jetbrains.kotlin:kotlin-main-kts", version.ref = "kotlin" }
 
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 kotlinx-serialization-protobuf = { module = "org.jetbrains.kotlinx:kotlinx-serialization-protobuf", version.ref = "kotlinx-serialization" }
+kotlinx-atomicfu = { module = "org.jetbrains.kotlinx:atomicfu" , version.ref = "kotlinx-atomicfu"}
 
 kotlin-logging = { module = "io.github.oshai:kotlin-logging", version.ref = "kotlin-logging" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 assertk = { module = "com.willowtreeapps.assertk:assertk-jvm", version.ref = "assertk" }
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito-kotlin" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 
 netty-all = { module = "io.netty:netty-all", version.ref = "netty" }
 javalin = { module = "io.javalin:javalin", version.ref = "javalin" }
@@ -72,7 +78,9 @@ konf = ["konf-core", "konf-hocon"]
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 osdetector = { id = "com.google.osdetector", version.ref = "osdetector" }
 retry = { id = "org.gradle.test-retry", version.ref = "test-retry" }
 protobuf = { id = "com.google.protobuf", version.ref = "gradle-protobuf-plugin" }
+atomicfu = { id = "org.jetbrains.kotlinx.atomicfu", version.ref = "kotlinx-atomicfu" }

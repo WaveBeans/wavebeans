@@ -29,7 +29,7 @@ class JavalinServletHandler(
 
     override fun initChannel(channel: SocketChannel) {
         channel.pipeline()
-            .addLast("HTTP decompressor", HttpContentDecompressor())
+            .addLast("HTTP decompressor", HttpContentDecompressor(0))
             .addLast("HTTP request decoder", HttpRequestDecoder())
             .addLast("HTTP object aggregator", HttpObjectAggregator(requestBufferSize))
             .addLast("HTTP response encoder", HttpResponseEncoder())

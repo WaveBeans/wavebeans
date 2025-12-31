@@ -110,7 +110,7 @@ class StreamingPodProxySpec : DescribeSpec({
             it("should not have value on 3rd iteration") {
                 assertThat(iterator)
                         .prop("hasNext") { it.hasNext() }.isEqualTo(false)
-                assertThat { iterator.next() }
+                assertThat(runCatching { iterator.next() })
                     .isFailure()
                     .isNotNull()
                     .isInstanceOf(NoSuchElementException::class)
@@ -142,7 +142,7 @@ class StreamingPodProxySpec : DescribeSpec({
             it("should not have value on 3rd iteration") {
                 assertThat(iterator)
                         .prop("hasNext") { it.hasNext() }.isEqualTo(false)
-                assertThat { iterator.next() }
+                assertThat(runCatching { iterator.next() })
                     .isFailure()
                     .isNotNull()
                     .isInstanceOf(NoSuchElementException::class)

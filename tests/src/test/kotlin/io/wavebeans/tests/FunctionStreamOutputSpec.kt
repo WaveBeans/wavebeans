@@ -4,7 +4,8 @@ import assertk.assertThat
 import assertk.fail
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.datatest.withData
-import io.wavebeans.fs.core.WbFileDriver
+import io.wavebeans.fs.local.LocalWbFileDriver
+import io.wavebeans.lib.io.WbFileDriver
 import io.wavebeans.lib.*
 import io.wavebeans.lib.io.*
 import io.wavebeans.lib.io.WriteFunctionPhase.*
@@ -14,7 +15,6 @@ import io.wavebeans.lib.stream.trim
 import io.wavebeans.lib.stream.window.window
 import io.wavebeans.metrics.MetricService
 import java.io.File
-import java.net.URI
 import kotlin.math.abs
 
 class FunctionStreamOutputSpec : DescribeSpec({
@@ -31,11 +31,13 @@ class FunctionStreamOutputSpec : DescribeSpec({
         Thread { startFacilitator(ports[1]) }.start()
         waitForFacilitatorToStart("localhost:${ports[0]}")
         waitForFacilitatorToStart("localhost:${ports[1]}")
+        WbFileDriver.registerDriver("file", LocalWbFileDriver)
     }
 
     afterSpec {
         terminateFacilitator("localhost:${ports[0]}")
         terminateFacilitator("localhost:${ports[1]}")
+        WbFileDriver.unregisterDriver("file")
     }
 
     data class Param(
@@ -58,50 +60,6 @@ class FunctionStreamOutputSpec : DescribeSpec({
 
     describe("Writing encoded samples") {
 
-        class FileEncoderFn<T : Any>(initParameters: FnInitParameters) :
-            Fn<WriteFunctionArgument<T>, Boolean>(initParameters) {
-
-            constructor(file: String) : this(FnInitParameters().add("file", file))
-
-            private val file by lazy {
-                WbFileDriver.createFile(URI(initParams.string("file")))
-                    .createWbFileOutputStream()
-            }
-            private val bytesPerSample = BitDepth.BIT_32.bytesPerSample
-            private val bitDepth = BitDepth.BIT_32
-
-            override fun apply(argument: WriteFunctionArgument<T>): Boolean {
-                when (argument.phase) {
-                    WRITE -> {
-                        when (argument.sampleClazz) {
-                            Sample::class -> {
-                                val element = argument.sample!! as Sample
-                                val buffer = ByteArray(bytesPerSample)
-                                buffer.encodeSampleLEBytes(0, element, bitDepth)
-                                file.write(buffer)
-                            }
-
-                            SampleVector::class -> {
-                                val element = argument.sample!! as SampleVector
-                                val buffer = ByteArray(bytesPerSample * element.size)
-                                for (i in element.indices) {
-                                    buffer.encodeSampleLEBytes(i * bytesPerSample, element[i], bitDepth)
-                                }
-                                file.write(buffer)
-                            }
-
-                            else -> fail("Unsupported $argument")
-                        }
-                    }
-
-                    CLOSE -> file.close()
-                    END -> {
-                        /*nothing to do*/
-                    }
-                }
-                return true
-            }
-        }
 
         val input = (440.sine() * 0.2).map { it * 2 }.trim(2000)
         val sampleRate = 4000.0f
@@ -121,7 +79,15 @@ class FunctionStreamOutputSpec : DescribeSpec({
 
         context("should store sample bytes as LE into a file") {
             withData(modes) { (mode, locateFacilitators, evaluate) ->
-                val o = input.out(FileEncoderFn("file://${outputFile.absolutePath}"))
+                val o = input.out(
+                    executionScope { add("fileName", outputFile.absolutePath) }
+                ) {
+                    val encoder = state("encoder") {
+                        val outputFile = File(parameters.string("fileName"))
+                        FileEncoderFn<Sample>("file://${outputFile.absolutePath}")
+                    }
+                    encoder(it)
+                }
                 evaluate(o, sampleRate, locateFacilitators())
 
                 assertThat(generated).isContainedBy(input.toList(sampleRate)) { a, b -> abs(a - b) < 1e-8 }
@@ -131,7 +97,15 @@ class FunctionStreamOutputSpec : DescribeSpec({
             withData(modes) { (mode, locateFacilitators, evaluate) ->
                 val o = input
                     .window(64).map { sampleVectorOf(it) }
-                    .out(FileEncoderFn("file://${outputFile.absolutePath}"))
+                    .out(
+                        executionScope { add("fileName", outputFile.absolutePath) }
+                    ) {
+                        val encoder = state("encoder") {
+                            val outputFile = File(parameters.string("fileName"))
+                            FileEncoderFn<SampleVector>("file://${outputFile.absolutePath}")
+                        }
+                        encoder(it)
+                    }
                 evaluate(o, sampleRate, locateFacilitators())
 
                 assertThat(generated).isContainedBy(input.toList(sampleRate)) { a, b -> abs(a - b) < 1e-8 }
@@ -139,3 +113,45 @@ class FunctionStreamOutputSpec : DescribeSpec({
         }
     }
 })
+
+private class FileEncoderFn<T : Any>(private val filePath: String) {
+
+    private val file by lazy {
+        WbFileDriver.createFile(uri(filePath))
+            .createWbFileOutputStream()
+    }
+    private val bytesPerSample = BitDepth.BIT_32.bytesPerSample
+    private val bitDepth = BitDepth.BIT_32
+
+    operator fun invoke(argument: WriteFunctionArgument<T>): Boolean {
+        when (argument.phase) {
+            WRITE -> {
+                when (argument.sampleClazz) {
+                    Sample::class -> {
+                        val element = argument.sample!! as Sample
+                        val buffer = ByteArray(bytesPerSample)
+                        buffer.encodeSampleLEBytes(0, element, bitDepth)
+                        file.write(buffer)
+                    }
+
+                    SampleVector::class -> {
+                        val element = argument.sample!! as SampleVector
+                        val buffer = ByteArray(bytesPerSample * element.size)
+                        for (i in element.indices) {
+                            buffer.encodeSampleLEBytes(i * bytesPerSample, element[i], bitDepth)
+                        }
+                        file.write(buffer)
+                    }
+
+                    else -> fail("Unsupported $argument")
+                }
+            }
+
+            CLOSE -> file.close()
+            END -> {
+                /*nothing to do*/
+            }
+        }
+        return true
+    }
+}

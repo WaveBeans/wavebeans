@@ -146,6 +146,7 @@ class NettyHttpServletRequestAdapter(
         TODO("Not yet implemented")
     }
 
+    @Deprecated("Deprecated in Java")
     override fun getRealPath(path: String?): String {
         TODO("Not yet implemented")
     }
@@ -289,6 +290,7 @@ class NettyHttpServletRequestAdapter(
         TODO("Not yet implemented")
     }
 
+    @Deprecated("Deprecated in Java")
     override fun isRequestedSessionIdFromUrl(): Boolean {
         TODO("Not yet implemented")
     }

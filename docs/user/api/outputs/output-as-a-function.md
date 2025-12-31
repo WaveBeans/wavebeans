@@ -20,28 +20,23 @@ The function expects to return the value of `Boolean` type, that controls the ou
 * In the `WRITE` phase if the function returns `true` the writer will continue processing the input, if it returns `false` the writer will stop processing, but anyway `CLOSE` phase will be initiated.
 * It doesn't affect anything in other phases.
 
-Here is some example writing into a shared memory storage, it writes the 1 second of 440Hz sine:
+Here is some example writing into a shared memory storage, it writes the 1 second of 440Hz sine.
+
+When running in distributed mode, you should use `ExecutionScope` and `state` to manage resources like files or network connections:
 
 ```kotlin
-/** 
-* It's not a proper storage, just to provide an idea. 
-* It is an object to be able to use function as lambda. 
-*/
-object Storage {
-    private val list = ArrayList<Sample>()
-
-    fun add(sample: Sample) { list += sample }
-
-    fun list(): List<Sample> = list
-}
-
-440.sine() // the stream is infinite, but we'll limit it in the output function
-        .out {
-            // write only samples within WRITE phase
-            if (it.phase == WRITE) Storage.add(it.sample!!)
-            // limit with one second of data
-            it.sampleIndex / it.sampleRate < 1.0f
+440.sine().trim(1000)
+    .out(executionScope { add("path", "/tmp/out.raw") }) {
+        val file = state("file") {
+            File(parameters.string("path")).outputStream()
         }
+        if (it.phase == WRITE) {
+            file.write(it.sample!!.asByteArray())
+        } else if (it.phase == CLOSE) {
+            file.close()
+        }
+        true
+    }
 ```
 
 Running in multi-threaded or distributed mode: by default outputs are evaluated as a single bean and are not parallelized, the function as an output is not exception. That means it is safe to say the output function may have some state in it, though it is not guaranteed that it will be launched in the very same thread every time. One more thing, if the stream is evaluated sequentially a few times in a row within the same process routine, the function is created only once, so the state should take this into account.

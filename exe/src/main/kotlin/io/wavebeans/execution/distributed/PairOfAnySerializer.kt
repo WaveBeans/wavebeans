@@ -33,11 +33,11 @@ object PairOfAnySerializer : KSerializer<Pair<Any, Any>> {
                 when (val i = decodeElementIndex(descriptor)) {
                     CompositeDecoder.DECODE_DONE -> break@loop
                     0 -> element1Class =
-                        WaveBeansClassLoader.classForName(decodeStringElement(descriptor, i)).kotlin
+                        WaveBeansClassLoader.classForName(decodeStringElement(descriptor, i))
 
                     1 -> element1 = decodeSerializableElement(descriptor, i, AnySerializer(element1Class))
                     2 -> element2Class =
-                        WaveBeansClassLoader.classForName(decodeStringElement(descriptor, i)).kotlin
+                        WaveBeansClassLoader.classForName(decodeStringElement(descriptor, i))
 
                     3 -> element2 = decodeSerializableElement(descriptor, i, AnySerializer(element2Class))
                     else -> throw SerializationException("Unknown index $i")

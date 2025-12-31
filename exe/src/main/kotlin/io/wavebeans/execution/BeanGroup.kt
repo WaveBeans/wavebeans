@@ -88,7 +88,7 @@ fun Topology.groupBeans(idResolver: GroupIdResolver = DefaultGroupIdResolver()):
     }
 
     this.refs
-            .filter { WaveBeansClassLoader.classForName(it.type).kotlin.isSubclassOf(SinkBean::class) }
+            .filter { WaveBeansClassLoader.classForName(it.type).isSubclassOf(SinkBean::class) }
             .forEach {
                 buildStrokes(it, emptyList(), it.partition)
             }

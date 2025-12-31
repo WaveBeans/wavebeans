@@ -102,13 +102,13 @@ class AudioServiceSpec : DescribeSpec({
     }
 })
 
-private fun input32Bit() = input { (i, _) -> sampleOf((i and 0xFFFFFFFF).toInt()) }
+private fun input32Bit() = input { i, _ -> sampleOf((i and 0xFFFFFFFF).toInt()) }
 
-private fun input24Bit() = input { (i, _) -> sampleOf((i and 0xFFFFFF).toInt(), as24bit = true) }
+private fun input24Bit() = input { i, _ -> sampleOf((i and 0xFFFFFF).toInt(), as24bit = true) }
 
-private fun input16Bit() = input { (i, _) -> sampleOf((i and 0xFFFF).toShort()) }
+private fun input16Bit() = input { i, _ -> sampleOf((i and 0xFFFF).toShort()) }
 
-private fun input8Bit() = input { (i, _) -> sampleOf((i and 0xFF).toByte()) }
+private fun input8Bit() = input { i, _ -> sampleOf((i and 0xFF).toByte()) }
 
 private fun <T : Any> assert8BitWavOutput(service: AudioService) {
     assertThat(service.stream<T>(AudioStreamOutputFormat.WAV, "table", BitDepth.BIT_8, null, 0.s)).all {

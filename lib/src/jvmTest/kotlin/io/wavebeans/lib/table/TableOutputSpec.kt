@@ -1,0 +1,62 @@
+package io.wavebeans.lib.table
+
+import assertk.assertThat
+import assertk.assertions.isFalse
+import assertk.assertions.isTrue
+import io.kotest.core.spec.IsolationMode
+import io.kotest.core.spec.style.DescribeSpec
+import io.wavebeans.lib.*
+import io.wavebeans.lib.io.input
+import io.wavebeans.lib.stream.map
+import io.wavebeans.lib.stream.window.window
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import kotlin.math.absoluteValue
+import kotlin.random.Random
+
+class TableOutputSpec : DescribeSpec({
+    isolationMode = IsolationMode.InstancePerTest
+
+    describe("SampleVector content") {
+        val driver = mock<TimeseriesTableDriver<SampleVector>>()
+
+        val params = TableOutputParams(
+            tableName = "test" + Random.nextLong().absoluteValue.toString(36),
+            tableType = SampleVector::class,
+            maximumDataLength = 1.m,
+            tableDriverFactory = { driver },
+            automaticCleanupEnabled = true
+        )
+
+        val output = TableOutput(
+            input { i, _ -> if (i < 2000) 1e-10 * i else null }
+                .window(1024)
+                .map { sampleVectorOf(it) },
+            params
+        )
+
+        val writer = output.writer(44100.0f)
+
+        it("should properly put correct values with according time markers") {
+
+            fun d(range: IntRange) = sampleVectorOf(
+                seqStream().asSequence(44100.0f)
+                    .drop(range.first)
+                    .take(range.last - range.first + 1)
+                    .toList()
+            )
+
+            fun ns(sampleIdx: Long) = (sampleIdx.toDouble() / 44100.0 * 1e9).ns
+
+            assertThat(writer.write()).isTrue()
+            verify(driver).put(eq(ns(0)), eq(d(0..1023)))
+
+            assertThat(writer.write()).isTrue()
+            verify(driver).put(eq(ns(1024)), eq(d(1024..1999)))
+
+            assertThat(writer.write()).isFalse()
+            verify(driver).finishStream()
+        }
+    }
+})
